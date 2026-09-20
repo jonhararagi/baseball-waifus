@@ -13,7 +13,14 @@ class ControlServerTests(unittest.TestCase):
         self.server = BridgeControl(
             "127.0.0.1",
             0,
-            lambda: {"ok": True, "recording": self.recording, "tracking_active": False},
+            lambda: {
+                "ok": True,
+                "service": "streaming_bridge",
+                "recording": self.recording,
+                "tracking_active": True,
+                "sent_packets": 7,
+                "uptime_s": 3.5,
+            },
             self._start,
             self._stop,
         )
@@ -51,6 +58,15 @@ class ControlServerTests(unittest.TestCase):
         status, payload = self._get("/api/status")
         self.assertEqual(status, 200)
         self.assertTrue(payload["ok"])
+        self.assertEqual(payload["service"], "streaming_bridge")
+        self.assertEqual(payload["sent_packets"], 7)
+
+    def test_health(self):
+        status, payload = self._get("/api/health")
+        self.assertEqual(status, 200)
+        self.assertTrue(payload["ok"])
+        self.assertTrue(payload["tracking_active"])
+        self.assertEqual(payload["sent_packets"], 7)
 
     def test_record_controls(self):
         _, started = self._post("/api/record/start")
