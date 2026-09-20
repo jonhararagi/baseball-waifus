@@ -10,6 +10,7 @@ var ai := OpponentAI.new()
 var runner_system := RunnerSystem.new()
 var rng := RandomNumberGenerator.new()
 var avatar_presenter: AvatarMatchPresenter
+var field_avatar_presenter: BaseballFieldAvatarPresenter
 var avatar_game_over_handled := false
 
 var batter: PlayerData
@@ -32,6 +33,11 @@ func _ready() -> void:
 	avatar_presenter = AvatarMatchPresenter.new()
 	add_child(avatar_presenter)
 	avatar_presenter.setup(batter, pitcher)
+
+	field_avatar_presenter = BaseballFieldAvatarPresenter.new()
+	add_child(field_avatar_presenter)
+	field_avatar_presenter.setup(_build_demo_defensive_roster())
+	field_avatar_presenter.sync_runners(state.bases)
 
 	var hud := GameHUD.new()
 	add_child(hud)
@@ -66,6 +72,38 @@ func _build_demo_roster() -> void:
 	pitcher.defense = 60
 	pitcher.stamina = 75
 	pitcher.potential = 4
+
+func _build_demo_defensive_roster() -> Dictionary:
+	var result := {}
+	var definitions := {
+		"C": ["demo_catcher", "Catcher", "catcher", "water"],
+		"1B": ["demo_first_base", "First Base", "defender", "nature"],
+		"2B": ["demo_second_base", "Second Base", "contact", "light"],
+		"3B": ["demo_third_base", "Third Base", "power", "fire"],
+		"SS": ["demo_shortstop", "Shortstop", "contact", "lightning"],
+		"LF": ["demo_left_field", "Left Field", "defender", "ice"],
+		"CF": ["demo_center_field", "Center Field", "runner", "wind"],
+		"RF": ["demo_right_field", "Right Field", "power", "darkness"]
+	}
+	for position in definitions.keys():
+		var values: Array = definitions[position]
+		var player := PlayerData.new()
+		player.id = str(values[0])
+		player.display_name = str(values[1])
+		player.position = str(position)
+		player.specialization = str(values[2])
+		player.element = str(values[3])
+		player.rarity = "SR"
+		player.level = 10
+		player.potential = 4
+		player.speed = 58
+		player.contact = 60
+		player.power = 62
+		player.defense = 64
+		player.stamina = 72
+		result[position] = player
+	result["C"].defense = 70
+	return result
 
 func _process(delta: float) -> void:
 	if state.game_over:
@@ -103,6 +141,8 @@ func _start_pitch() -> void:
 	_get_hud().clear_result()
 	if avatar_presenter != null:
 		avatar_presenter.on_pitch_selected()
+	if field_avatar_presenter != null:
+		field_avatar_presenter.on_pitch()
 
 func _update_pitch(delta: float) -> void:
 	pitch_elapsed += delta
@@ -136,6 +176,9 @@ func _swing() -> void:
 	_apply_batting_result(current_result)
 	if avatar_presenter != null:
 		avatar_presenter.on_batting_result(current_result)
+	if field_avatar_presenter != null:
+		field_avatar_presenter.on_batted_ball(current_result)
+		field_avatar_presenter.sync_runners(state.bases)
 	_get_hud().show_result(current_result)
 	phase = "RESULT"
 	result_timer = 1.2
@@ -169,6 +212,8 @@ func _attempt_steal() -> void:
 	var from_index := 2
 	while from_index >= 0 and not state.bases[from_index]:
 		from_index -= 1
+	if field_avatar_presenter != null:
+		field_avatar_presenter.on_steal_started(from_index)
 	var result := runner_system.attempt_steal(batter.speed, pitcher.defense)
 	message = result.result
 
