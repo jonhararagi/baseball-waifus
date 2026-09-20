@@ -1132,3 +1132,37 @@ La herramienta de diseño de personajes y el bridge ya no deben rediseñarse des
 2. Conectar AvatarProfile con datos reales de PlayerData.
 3. Completar el núcleo de béisbol pendiente.
 4. Expandir el motor central de probabilidades para economía, gacha, crianza, entrenamiento y equipamiento.
+
+
+# 15. Revisión 6: Adaptador PlayerData → AvatarProfile
+
+**Fecha:** 2026-09-20  
+**Tipo:** Integración de datos / desacoplamiento visual.
+
+### Qué se añade
+
+Se crea `game/avatar/player_avatar_adapter.gd` para convertir una jugadora del roster (`PlayerData`) en un perfil visual (`AvatarProfile`).
+
+El adaptador usa información que ya existe en el juego:
+- especialización para seleccionar una silueta base;
+- posición para detalles funcionales como gorra de pitcher;
+- elemento para el acento cromático;
+- id para que la generación inicial sea estable y reproducible.
+
+También se añade al Character Creator un botón de prueba de roster que construye una jugadora SSR de demostración y la pasa por el adaptador.
+
+### Decisión arquitectónica
+
+No se mezclan estadísticas, probabilidades o lógica de partido dentro del renderer. `PlayerData` describe gameplay, `AvatarProfile` describe apariencia y `PlayerAvatarAdapter` hace la conversión.
+
+Esto permite cambiar el sistema visual por un rig 2D, Live2D, VRM/Three.js o un modelo 3D sin modificar el núcleo de béisbol.
+
+### Resultado
+
+**Implementado:** primera ruta completa de roster → cuerpo → poses → tracking.
+
+**Pendiente:** cargar perfiles visuales específicos desde datos persistentes del roster, sistema definitivo de cabello/ropa/equipamiento por piezas y arte final.
+
+### Porcentaje
+
+El avance global se mantiene en **≈27%**. La integración mejora la reutilización del prototipo, pero no representa una gran fracción del alcance total del juego.
