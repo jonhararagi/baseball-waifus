@@ -257,16 +257,22 @@ func on_steal_result(from_base: int, success: bool, destination_base: int) -> vo
 	if not runner_avatars[from_base].visible:
 		return
 
-	if success and destination_base >= 0 and destination_base < 3:
-		var travel_start := runner_avatars[from_base].position
-		runner_avatars[from_base].position = travel_start
+	if success:
 		runner_motions[from_base].play(AnimeAvatar2D.Pose.RUN, 0.7, AnimeAvatar2D.Pose.IDLE)
-		trajectory.move_to(runner_avatars[from_base], BASE_POSITIONS[destination_base], 0.65, 14.0)
+		var target := HOME_POSITION if destination_base < 0 else BASE_POSITIONS[destination_base]
+		trajectory.move_to(runner_avatars[from_base], target, 0.65, 14.0)
+		get_tree().create_timer(0.72).timeout.connect(func():
+			sync_runners(runner_players_to_tokens_placeholder(), true)
+		)
 	else:
 		runner_motions[from_base].play(AnimeAvatar2D.Pose.OUT, 0.8, AnimeAvatar2D.Pose.IDLE)
 		get_tree().create_timer(0.65).timeout.connect(func():
 			runner_avatars[from_base].visible = false
 		)
+
+func runner_players_to_tokens_placeholder() -> Array:
+	var tokens: Array = [null, null, null]
+	return tokens
 
 func on_game_over(winner: int) -> void:
 	for position in field_avatars.keys():
