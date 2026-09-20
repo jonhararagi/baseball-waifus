@@ -283,3 +283,19 @@ python main.py --no-audio --no-screen --no-obs
 ```
 
 OBS es opt-in mediante enable_obs en config.json. MediaPipe es requisito del tracking; audio, pantalla y OBS son opcionales mientras estén desactivados.
+
+
+## Pruebas offline del Streaming Bridge
+
+La regresión integrada puede ejecutarse sin webcam, MediaPipe, OBS ni Godot:
+
+```text
+cd tools/streaming_bridge
+python -m unittest discover -p "test_*.py"
+```
+
+La prueba `test_streaming_pipeline.py` cubre el recorrido:
+
+`Avatar tracking simulado → protocol → JSONL recorder → replay → UDP`
+
+y verifica también que un payload con versión incorrecta sea rechazado antes de enviarse.
