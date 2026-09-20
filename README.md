@@ -169,3 +169,12 @@ Archivos principales:
 - `game/avatar/baseball_ball_controller.gd`
 - `scenes/baseball_ball_test.gd`
 - `scenes/baseball_ball_test.tscn`
+## Defensa determinista
+
+Los batazos que todavía pueden ser capturados ya no se convierten automáticamente en `OUT`.
+
+`BaseballSimulator` produce `FIELDING_CANDIDATE`, `BattedBallEvent` describe el punto de llegada y `FieldingResolver` calcula la captura antes de cerrar la jugada.
+
+La resolución usa `Defense`, posicionamiento, timing y calidad de contacto con reglas versionadas. No utiliza IA.
+
+La prueba aislada `scenes/fielding_test.tscn` permite revisar la resolución de captura fuera del partido.
