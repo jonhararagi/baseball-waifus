@@ -23,6 +23,7 @@ var field_avatars: Dictionary = {}
 var field_motions: Dictionary = {}
 var runner_avatars: Array[AnimeAvatar2D] = []
 var runner_motions: Array[AvatarMotionController] = []
+var trajectory := AvatarTrajectoryController.new()
 
 func setup(defensive_roster: Dictionary) -> void:
 	clear_field()
@@ -100,11 +101,16 @@ func on_batted_ball(result: Dictionary) -> void:
 			_play_position("CF", AnimeAvatar2D.Pose.CATCH, 0.65, AnimeAvatar2D.Pose.THROW)
 			_play_position("SS", AnimeAvatar2D.Pose.THROW, 0.65, AnimeAvatar2D.Pose.IDLE)
 			_play_position("2B", AnimeAvatar2D.Pose.CATCH, 0.65, AnimeAvatar2D.Pose.IDLE)
+			_move_field("LF", Vector2(470, 315), 0.42, 0.16)
+			_move_field("SS", Vector2(655, 335), 0.34, 0.10)
 			_animate_active_fielders()
 		"DOUBLE", "TRIPLE":
 			_play_position("CF", AnimeAvatar2D.Pose.RUN, 0.75, AnimeAvatar2D.Pose.THROW)
 			_play_position("LF", AnimeAvatar2D.Pose.RUN, 0.75, AnimeAvatar2D.Pose.THROW)
 			_play_position("RF", AnimeAvatar2D.Pose.RUN, 0.75, AnimeAvatar2D.Pose.THROW)
+			_move_field("CF", Vector2(610, 260), 0.55, 0.18)
+			_move_field("LF", Vector2(455, 305), 0.50, 0.14)
+			_move_field("RF", Vector2(825, 305), 0.50, 0.14)
 			_animate_active_fielders()
 		"HOME RUN":
 			for position in ["LF", "CF", "RF", "SS", "2B", "3B"]:
@@ -114,12 +120,13 @@ func on_batted_ball(result: Dictionary) -> void:
 			for position in ["SS", "2B", "1B", "3B"]:
 				_play_position(position, AnimeAvatar2D.Pose.CELEBRATE, 0.8, AnimeAvatar2D.Pose.IDLE)
 
-func sync_runners(bases: Array) -> void:
+func sync_runners(bases: Array, snap_to_base := true) -> void:
 	for i in range(min(3, runner_avatars.size())):
 		var active := bool(bases[i])
 		runner_avatars[i].visible = active
 		if active:
-			runner_avatars[i].position = RUNNER_POSITIONS[i]
+			if snap_to_base:
+				runner_avatars[i].position = RUNNER_POSITIONS[i]
 			runner_motions[i].play(AnimeAvatar2D.Pose.IDLE, 0.2, AnimeAvatar2D.Pose.IDLE)
 
 func on_steal_started(from_base: int) -> void:
@@ -136,10 +143,12 @@ func on_steal_result(from_base: int, success: bool, destination_base: int) -> vo
 		return
 
 	if success and destination_base >= 0 and destination_base < runner_avatars.size():
+		var travel_start := runner_avatars[from_base].position
 		runner_avatars[from_base].visible = false
 		runner_avatars[destination_base].visible = true
-		runner_avatars[destination_base].position = RUNNER_POSITIONS[destination_base]
+		runner_avatars[destination_base].position = travel_start
 		runner_motions[destination_base].play(AnimeAvatar2D.Pose.RUN, 0.7, AnimeAvatar2D.Pose.IDLE)
+		trajectory.move_to(runner_avatars[destination_base], RUNNER_POSITIONS[destination_base], 0.65, 14.0)
 	else:
 		runner_motions[from_base].play(AnimeAvatar2D.Pose.OUT, 0.8, AnimeAvatar2D.Pose.IDLE)
 		runner_avatars[from_base].visible = false
@@ -159,6 +168,12 @@ func _play_position(position: String, pose: AnimeAvatar2D.Pose, duration: float,
 		return
 	var motion: AvatarMotionController = field_motions[position]
 	motion.play(pose, duration, next_pose)
+
+func _move_field(position: String, destination: Vector2, duration: float, hold: float) -> void:
+	if not field_avatars.has(position):
+		return
+	var avatar: AnimeAvatar2D = field_avatars[position]
+	trajectory.move_and_return(avatar, destination, duration, hold)
 
 func _animate_active_fielders() -> void:
 	for position in ["SS", "2B", "1B", "3B"]:
