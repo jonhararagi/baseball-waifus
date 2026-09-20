@@ -94,6 +94,7 @@ def main():
     fps_window_frames = 0
     current_fps = 0.0
     last_tracking_active = False
+    obs_connected_cached = False
     control = None
 
     def start_recording():
@@ -123,7 +124,7 @@ def main():
             "sequence": max(sequence - 1, 0),
             "audio_enabled": audio.enabled,
             "screen_enabled": screen is not None,
-            "obs_connected": bool(obs and obs.status().get("connected")),
+            "obs_connected": obs_connected_cached,
             "recording": recording,
             "record_count": record_count,
             "record_path": record_path,
@@ -159,11 +160,17 @@ def main():
 
     try:
         next_tick = time.perf_counter()
+        next_obs_check = 0.0
         while True:
             frame = camera.read()
             if frame is None:
                 time.sleep(0.05)
                 continue
+
+            now_tick = time.perf_counter()
+            if obs is not None and now_tick >= next_obs_check:
+                obs_connected_cached = bool(obs.status().get("connected"))
+                next_obs_check = now_tick + 2.0
 
             tracking = tracker.process(frame)
             last_tracking_active = bool(tracking.get("tracking", False))
