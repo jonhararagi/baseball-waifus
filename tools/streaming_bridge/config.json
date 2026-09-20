@@ -1,0 +1,10 @@
+{
+  "camera_index": 0,
+  "godot_host": "127.0.0.1",
+  "godot_port": 8765,
+  "obs_host": "127.0.0.1",
+  "obs_port": 4455,
+  "obs_password": "",
+  "obs_scene": "",
+  "send_tracking_fps": 30
+}
