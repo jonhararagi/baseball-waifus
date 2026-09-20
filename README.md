@@ -1,40 +1,66 @@
 # Baseball Waifus
 
-Prototipo técnico jugable en Godot 4.x.
+Prototipo técnico modular en Godot 4.x.
 
-Controles:
+## Juego
+
+Controles del prototipo:
 - ESPACIO o click izquierdo: batear durante TIMING.
 - S: intentar robo cuando existe corredor.
 
 Arquitectura:
-- game/characters: datos de jugadoras.
-- game/baseball: pitches, simulación, estado y corredores.
-- game/ai: decisiones del rival.
-- game/ui: HUD.
-- scenes: composición y ejecución.
+- `game/characters`: datos de jugadoras.
+- `game/baseball`: pitches, simulación, estado y corredores.
+- `game/ai`: decisiones del rival.
+- `game/systems`: probabilidades, drops, auditoría y anti-exploit.
+- `game/avatar`: perfiles y renderizador procedural.
+- `game/streaming`: receptor de tracking.
+- `game/ui`: HUD.
+- `scenes`: composición y ejecución.
 
-El primer prototipo usa renderizado procedural para evitar depender de assets externos. Los assets con licencia compatible se incorporarán después de validar el núcleo jugable.
+El núcleo usa renderizado procedural para evitar depender de assets externos durante la etapa de validación.
 
+## Character Creator
 
-## Streaming + Avatar Lab
+La herramienta `scenes/character_creator.tscn` funciona como un laboratorio de diseño de jugadoras.
 
-Se añadió una herramienta local de desarrollo para probar personajes como avatares anime y preparar su integración con OBS.
+Permite:
+- presets de cuerpo;
+- altura y proporciones;
+- cabello;
+- rostro;
+- uniforme;
+- colores;
+- gorra;
+- poses de béisbol;
+- generación aleatoria;
+- guardar/cargar perfiles JSON.
+
+Para abrirla desde el editor de Godot:
+1. Abrir el proyecto.
+2. Abrir `scenes/character_creator.tscn`.
+3. Ejecutar la escena actual con F6.
+
+Los perfiles se guardan en:
+`user://baseball_waifus/characters/`
+
+## Streaming Bridge
 
 Arquitectura:
-- `tools/streaming_bridge`: Python, OpenCV, MediaPipe, captura de webcam, medidor de audio y cliente OBS WebSocket.
-- `game/streaming/tracking_receiver.gd`: receptor UDP local.
-- `game/avatar/avatar_profile.gd`: datos editables del cuerpo.
-- `game/avatar/anime_avatar_2d.gd`: cuerpo anime procedural y poses.
-- `scenes/avatar_lab.tscn`: laboratorio independiente del partido.
 
-El avatar puede probar Idle, Walk, Run, Bat, Pitch, Catch, Celebrate y Hit Reaction. También permite variar altura, cintura, cadera y hombros para probar rápidamente siluetas de jugadoras antes de producir arte final.
+**Webcam → OpenCV → MediaPipe → UDP/JSON → Godot Avatar**
 
-### Ejecutar el laboratorio
+**Micrófono → sounddevice → UDP/JSON → Godot**
 
-Abrir `scenes/avatar_lab.tscn` desde el editor de Godot.
+**Pantalla opcional → mss → diagnóstico**
 
-Para tracking:
-```
+**OBS Studio ↔ obsws-python ↔ bridge**
+
+El bridge no reemplaza OBS. OBS sigue siendo el responsable de capturar, mezclar, grabar y emitir.
+
+Instalación:
+
+```text
 cd tools/streaming_bridge
 python -m venv .venv
 .venv\\Scripts\\activate
@@ -42,4 +68,12 @@ pip install -r requirements.txt
 python main.py
 ```
 
-OBS continúa siendo el compositor/emisor. El bridge solamente aporta tracking, telemetría de audio y control opcional de escena.
+Configurar `config.json` para cámara, audio, pantalla, puerto UDP, smoothing y OBS.
+
+El tracking usa un protocolo versionado (`baseball-waifus-tracking`, v1) y `TrackingReceiver` descarta datos obsoletos.
+
+## Licencias y referencias
+
+La implementación procedural es propia. Las referencias externas se utilizan solo como patrones de arquitectura y se deben conservar separadas de cualquier contenido propietario.
+
+La bitácora de desarrollo está en `docs/bitacora.md`. Cada cambio estructural importante debe registrarse allí.
