@@ -23,10 +23,7 @@ func setup(batter: PlayerData, pitcher: PlayerData) -> void:
 	pitcher_motion.play(AnimeAvatar2D.Pose.IDLE, 0.1, AnimeAvatar2D.Pose.IDLE)
 
 func _create_avatar(profile: AvatarProfile, at: Vector2, order: int) -> AnimeAvatar2D:
-	var avatar := AnimeAvatar2D.new()
-	avatar.position = at
-	avatar.z_index = order
-	avatar.setup(profile)
+	var avatar := AvatarRendererFactory.create(profile, at, order) as AnimeAvatar2D
 	add_child(avatar)
 	return avatar
 
