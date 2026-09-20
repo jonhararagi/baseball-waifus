@@ -90,6 +90,14 @@ func apply_hit(batter: PlayerData, team_id: String, hit_bases: int) -> Dictionar
 		"plan": plan
 	}
 
+func remove_base_runner(index: int) -> RunnerToken:
+	if index < 0 or index >= 3:
+		return null
+	var runner: RunnerToken = base_runners[index]
+	base_runners[index] = null
+	_refresh_base_flags()
+	return runner
+
 func move_runner_on_steal(from_index: int, success: bool) -> Dictionary:
 	if from_index < 0 or from_index >= 3:
 		return {"success": false, "from": from_index, "to": -1}
@@ -121,10 +129,13 @@ func add_out() -> void:
 		end_half()
 
 func add_outs(count: int) -> void:
-	for _i in range(max(count, 0)):
-		add_out()
-		if game_over:
-			break
+	var safe_count := max(count, 0)
+	if safe_count <= 0:
+		return
+	outs += safe_count
+	reset_count()
+	if outs >= 3:
+		end_half()
 
 func end_half() -> void:
 	reset_count()
