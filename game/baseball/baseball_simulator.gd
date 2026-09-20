@@ -43,13 +43,13 @@ func resolve_batted_ball(batter: PlayerData, pitcher: PlayerData, pitch: Pitch, 
 	var roll := rng.randf()
 
 	if timing < 0.50:
-		return {"result": "FOUL" if roll < 0.35 else "OUT", "bases": 0, "timing": label}
+		return {"result": "FOUL" if roll < 0.35 else "FIELDING_CANDIDATE", "bases": 1, "timing": label, "contact_quality": quality, "fielding_required": true}
 
 	if roll < critical_chance and timing >= 0.85:
-		return {"result": "HOME RUN", "bases": 4, "timing": label}
+		return {"result": "HOME RUN", "bases": 4, "timing": label, "contact_quality": quality, "fielding_required": false}
 
 	var distance := quality + rng.randf_range(-0.12, 0.12)
-	if distance >= 0.82: return {"result": "TRIPLE", "bases": 3, "timing": label}
-	if distance >= 0.62: return {"result": "DOUBLE", "bases": 2, "timing": label}
-	if distance >= 0.36: return {"result": "SINGLE", "bases": 1, "timing": label}
-	return {"result": "OUT", "bases": 0, "timing": label}
+	if distance >= 0.82: return {"result": "TRIPLE", "bases": 3, "timing": label, "contact_quality": quality, "fielding_required": false}
+	if distance >= 0.62: return {"result": "DOUBLE", "bases": 2, "timing": label, "contact_quality": quality, "fielding_required": false}
+	if distance >= 0.36: return {"result": "SINGLE", "bases": 1, "timing": label, "contact_quality": quality, "fielding_required": false}
+	return {"result": "FIELDING_CANDIDATE", "bases": 1, "timing": label, "contact_quality": quality, "fielding_required": true}
