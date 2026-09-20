@@ -70,3 +70,17 @@ El transporte por defecto es localhost. Godot valida protocolo, versión y secue
 El Web Host también valida el origen y la ventana iframe antes de aceptar mensajes del juego.
 
 No guardar contraseñas reales de OBS en el repositorio.
+
+## Panel local de control
+
+El bridge puede iniciar un panel local en `http://127.0.0.1:8787/`.
+
+El panel muestra tracking, FPS, sequence, audio, OBS y estado de grabación. También permite iniciar/detener la grabación JSONL sin reiniciar el bridge.
+
+El panel escucha solo en localhost por diseño. `healthcheck.py` comprueba el puerto configurado.
+
+Para apagarlo:
+
+```text
+python main.py --no-control
+```
