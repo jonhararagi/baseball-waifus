@@ -14,7 +14,7 @@
   "control_host": "127.0.0.1",
   "control_port": 8787,
   "screen_monitor": 1,
-  "screen_diagnostics_interval": 2.0,
+  "screen_diagnostics_interval": 2,
   "godot_host": "127.0.0.1",
   "godot_port": 8765,
   "obs_host": "127.0.0.1",
@@ -22,5 +22,6 @@
   "obs_password": "",
   "obs_scene": "",
   "tracking_smoothing": 0.45,
-  "send_tracking_fps": 30
+  "send_tracking_fps": 30,
+  "enable_synthetic_tracking": false
 }
