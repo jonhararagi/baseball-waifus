@@ -105,3 +105,19 @@ AvatarProfile con art_style=rig usa ExternalRigAvatar2D si existe rig_scene_path
 - https://github.com/pixiv/three-vrm
 
 Licencias observadas en los repositorios consultados: BSD-2-Clause para Inochi2D/Creator y MIT para three-vrm. Live2D se mantiene solamente como adapter futuro porque su SDK no se clasifica aquí como un componente open source del runtime.
+
+
+## Revisión 18: observabilidad y replay
+
+El bridge ahora puede grabar el mismo paquete JSON que recibe Godot. La grabación usa JSONL y conserva `protocol`, `version`, `sequence`, `sent_at_ms`, `tracking`, `audio` y `capture`.
+
+`replay.py` reproduce esas grabaciones hacia UDP con velocidad ajustable, permitiendo depurar el avatar sin webcam ni MediaPipe. Esto crea una separación explícita entre:
+
+1. captura/tracking;
+2. transporte/protocolo;
+3. recepción Godot;
+4. renderer/avatar.
+
+Godot también valida protocolo, versión, objeto tracking y orden de secuencia. Los paquetes inválidos o atrasados se descartan.
+
+El Web Host valida además que el mensaje llegue desde el iframe de Godot esperado y desde su origen exacto. Un `client_id` vacío ya no intenta inicializar el SDK de Discord.
