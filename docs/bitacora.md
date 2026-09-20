@@ -2344,3 +2344,91 @@ No se contabilizan como terminados: rig artístico de producción; integración 
 No rehacer AvatarProfile, AnimeAvatar2D, AvatarMotionController ni AvatarTrajectoryController para obtener otro cuerpo procedural. El nuevo cuerpo ya es un backend compatible. Las próximas mejoras visuales deben extenderlo o añadir un adapter externo.
 
 healthcheck.py pasa a ser la primera prueba obligatoria antes de investigar problemas de webcam/audio/OBS.
+
+
+# 27. Revisión 18: observabilidad, replay y endurecimiento del transporte
+
+**Fecha:** 2026-09-20
+**Tipo:** Streaming / protocolo / seguridad / diagnóstico.
+
+### Motivo
+
+Después de la Revisión 17 el bridge ya era modular y diagnosticable, pero cualquier fallo de tracking todavía requería tener cámara y MediaPipe funcionando al mismo tiempo. Además, el receptor aceptaba cualquier JSON válido aunque no perteneciera al protocolo correcto y no distinguía paquetes viejos. El Web Host también confiaba demasiado en mensajes postMessage entrantes.
+
+### Implementado
+
+- tools/streaming_bridge/protocol.py
+  - nombre y versión explícitos del protocolo;
+  - sequence monotónica;
+  - sent_at_ms;
+  - validate_payload;
+  - encode_payload.
+
+- tools/streaming_bridge/recorder.py
+  - grabación JSONL;
+  - lectura reproducible;
+  - errores de JSON reportados con número de línea.
+
+- tools/streaming_bridge/replay.py
+  - reproducción offline hacia UDP;
+  - velocidad configurable;
+  - modo loop;
+  - validación de cada payload antes de enviarlo.
+
+- tools/streaming_bridge/main.py
+  - opción --record;
+  - configuración enable_recording y record_path;
+  - contador sequence;
+  - timestamp por paquete;
+  - cierre limpio del recorder.
+
+- game/streaming/tracking_receiver.gd
+  - valida protocol/version/tracking/sequence;
+  - descarta paquetes fuera de orden;
+  - mantiene invalid_packets para diagnóstico.
+
+- tools/web_host/src/main.ts
+  - acepta postMessage solamente desde el iframe de Godot esperado;
+  - valida origin;
+  - valida estructura básica del mensaje;
+  - Discord exige client_id antes de inicializar SDK.
+
+- tools/streaming_bridge/test_protocol.py
+  - 4 pruebas de regresión.
+
+- tools/streaming_bridge/test_recorder.py
+  - round-trip JSONL;
+  - detección de JSON inválido.
+
+### Pruebas y validación
+
+La suite de protocolo fue ampliada de 2 a 4 casos: payload válido, defaults seguros, versión incorrecta y tracking ausente.
+
+Se añadió una suite separada para recorder con round-trip y entrada corrupta.
+
+No se ejecutó runtime Godot/web porque el entorno sigue sin Godot ni build Web ejecutable.
+No se ejecutó la ruta física de webcam/MediaPipe/OBS porque esas dependencias y hardware no están disponibles aquí.
+
+### Error de implementación durante la revisión
+
+El primer intento de escritura de la revisión chocó con GitHub Contents API porque se usó create_file sobre archivos que ya existían y requerían SHA. Se corrigió usando update_file. No se perdió código funcional ni se produjo un archivo duplicado.
+
+### Decisión de continuidad
+
+El sistema de streaming queda dividido en:
+
+**Capture → Tracker → Protocol → Recorder/UDP → Godot Receiver → Avatar Renderer**
+
+La grabación/replay pasa a ser la vía recomendada para depurar el renderer sin involucrar hardware.
+
+### Porcentaje global revisado
+
+El avance global estimado pasa de **≈58% a ≈61%**.
+
+El aumento representa observabilidad y depuración reproducible del streaming, validación estricta del transporte y endurecimiento del host embebido.
+
+No se contabilizan como terminados: runtime real Godot, webcam, MediaPipe, OBS, export Web, rig artístico final, backend, economía, gacha, crianza y PvP.
+
+### Regla de continuidad
+
+No crear otro sistema de replay o logging para tracking mientras JSONL + `replay.py` cubran las pruebas. Los futuros formatos de grabación deben mantener el protocolo versionado o introducir una nueva revisión del contrato.
