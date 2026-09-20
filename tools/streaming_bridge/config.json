@@ -7,6 +7,7 @@
   "audio_blocksize": 1024,
   "enable_audio": true,
   "enable_screen_capture": false,
+  "enable_obs": false,
   "screen_monitor": 1,
   "screen_diagnostics_interval": 2.0,
   "godot_host": "127.0.0.1",
