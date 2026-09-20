@@ -1,7 +1,7 @@
 class_name AnimeAvatar2D
 extends Node2D
 
-enum Pose { IDLE, WALK, RUN, BAT, PITCH, CATCH, CELEBRATE, HIT_REACTION }
+enum Pose { IDLE, WALK, RUN, BAT, PITCH, CATCH, CELEBRATE, HIT_REACTION, THROW, STEAL, SLIDE, OUT, DEFEAT, MENU_IDLE }
 
 var profile: AvatarProfile
 var pose := Pose.IDLE
@@ -42,6 +42,7 @@ func _draw() -> void:
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2(scale_factor, scale_factor))
 
 	var sway := sin(walk_phase) * (8.0 if pose != Pose.IDLE else 2.0)
+	var hair_sway := sin(anim_time * 4.0) * (2.0 if pose == Pose.IDLE or pose == Pose.MENU_IDLE else 5.0)
 	var bob := abs(sin(walk_phase * 2.0)) * (-7.0 if pose == Pose.RUN else -3.0)
 
 	var tracked_roll := clamp(float(tracking.get("roll", 0.0)), -1.0, 1.0)
@@ -55,9 +56,17 @@ func _draw() -> void:
 	var torso_y := -5.0 + bob
 	var neck_y := -76.0 + bob
 	var head_y := -115.0 + bob + head_lift
+	if pose == Pose.DEFEAT:
+		head_y += 15.0
+	if pose == Pose.SLIDE:
+		head_y += 28.0
 
 	var leg_spread := 18.0 * profile.hip_width
 	var stride := sin(walk_phase) * (18.0 if pose == Pose.WALK else 28.0 if pose == Pose.RUN else 3.0)
+	if pose == Pose.STEAL:
+		stride = sin(walk_phase * 1.4) * 34.0
+	if pose == Pose.SLIDE:
+		stride = 40.0
 	var left_leg := Vector2(-leg_spread - stride, hip_y + 78.0)
 	var right_leg := Vector2(leg_spread + stride, hip_y + 78.0)
 	draw_line(Vector2(-leg_spread, hip_y), left_leg, profile.skin, 20.0)
@@ -121,6 +130,24 @@ func _draw() -> void:
 		Pose.HIT_REACTION:
 			arm_angle_l = 1.1
 			arm_angle_r = -1.1
+		Pose.THROW:
+			arm_angle_l = -1.25
+			arm_angle_r = 1.35
+		Pose.STEAL:
+			arm_angle_l = -1.2
+			arm_angle_r = 1.2
+		Pose.SLIDE:
+			arm_angle_l = -0.45
+			arm_angle_r = 0.45
+		Pose.OUT:
+			arm_angle_l = 0.45
+			arm_angle_r = -0.45
+		Pose.DEFEAT:
+			arm_angle_l = 1.4
+			arm_angle_r = -1.4
+		Pose.MENU_IDLE:
+			arm_angle_l = -0.12
+			arm_angle_r = 0.12
 	arm_angle_l += sway * 0.003
 	arm_angle_r -= sway * 0.003
 
@@ -142,7 +169,7 @@ func _draw() -> void:
 	match profile.hair_style:
 		"long":
 			draw_colored_polygon(PackedVector2Array([
-				Vector2(-hair_r, -5), Vector2(-hair_r + 12, 70),
+				Vector2(-hair_r + hair_sway, -5), Vector2(-hair_r + 12 + hair_sway, 70),
 				Vector2(-28, 48), Vector2(0, 72),
 				Vector2(25, 48), Vector2(hair_r - 12, 70), Vector2(hair_r, -5)
 			]), profile.hair)
@@ -162,7 +189,7 @@ func _draw() -> void:
 				Vector2(35, 46), Vector2(hair_r, -5)
 			]), profile.hair)
 			draw_colored_polygon(PackedVector2Array([
-				Vector2(hair_r - 5, 10), Vector2(hair_r + 40, 26),
+				Vector2(hair_r - 5 + hair_sway, 10), Vector2(hair_r + 40 + hair_sway, 26),
 				Vector2(hair_r + 22, 63), Vector2(hair_r - 9, 42)
 			]), profile.hair)
 		"twin_tail":
@@ -215,6 +242,10 @@ func _draw() -> void:
 
 	if pose == Pose.BAT:
 		draw_line(Vector2(25, 0), Vector2(105, -38), Color("#8b5a2b"), 10.0)
+	if pose == Pose.THROW:
+		draw_circle(Vector2(-32, -18), 8.0, Color("#f5f5f5"))
+	if pose == Pose.SLIDE:
+		draw_line(Vector2(-80, 118), Vector2(92, 118), Color("#d8d0c5"), 5.0)
 
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
