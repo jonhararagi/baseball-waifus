@@ -1996,3 +1996,139 @@ La arquitectura vigente es:
 **Streaming Bridge + AvatarProfile + AnimeAvatar2D + Match Presenter + Field Presenter + Trajectory Controller + BattedBallEvent + FieldingResolver + FieldingPlayEvent.**
 
 No se debe rehacer el contrato del avatar para introducir el rig definitivo.
+
+
+# 24. Revisión 15: Runners reales, lineup completo y defensa de segunda fase
+
+**Fecha:** 2026-09-20
+**Tipo:** Núcleo de partido / corredores / alineación / defensa avanzada / renderer.
+
+### Motivo
+
+El sistema ya podía mostrar rebotes y lanzamiento posterior, pero la parte lógica de los corredores seguía representada principalmente por booleanos de bases y la demostración utilizaba una bateadora fija.
+
+Esta revisión convierte la ocupación de bases en RunnerToken, rota la alineación durante todo el partido y añade consecuencias reales para errores de lanzamiento y doble play.
+
+### Implementado
+
+- game/baseball/runner_token.gd
+  - identidad persistente de cada corredora en base;
+  - player_id, display_name, team_id y speed.
+
+- game/baseball/game_state.gd
+  - base_runners;
+  - batting_indices por equipo;
+  - apply_hit con plan de movimiento;
+  - remove_base_runner;
+  - movimiento de robo sobre RunnerToken;
+  - add_outs seguro para doble play sin corromper el cambio de entrada.
+
+- game/characters/baseball_team_data.gd
+  - player_by_id;
+  - lineup_size.
+
+- game/characters/demo_team_factory.gd
+  - pitcher propio para el equipo del jugador;
+  - nueve bateadoras para ambos equipos;
+  - DH rival para mantener una alineación simétrica.
+
+- game/baseball/throw_resolver.gd
+  - throw_v1;
+  - error de lanzamiento reproducible;
+  - probabilidad dependiente de defensa, receptor y distancia;
+  - lanzamiento desviado.
+
+- game/baseball/double_play_resolver.gd
+  - double_play_v1;
+  - elegibilidad por outs, corredor en primera y defensa de infield;
+  - asistencia, pivote y putout;
+  - dos outs en una sola jugada.
+
+- game/baseball/fielding_resolver.gd
+  - integra DoublePlayResolver después de una captura.
+
+- game/baseball/fielding_play_event.gd
+  - metadatos de doble play y error de lanzamiento;
+  - evento válido incluso sin rebotes para una doble matanza.
+
+- game/avatar/baseball_ball_controller.gd
+  - visualización de doble play;
+  - wild throw cuando el lanzamiento falla.
+
+- game/avatar/baseball_field_avatar_presenter.gd
+  - movimiento de corredoras después de cada hit;
+  - avatar temporal para la nueva bateadora;
+  - perfiles visuales reales de las corredoras;
+  - secuencia visual de doble play;
+  - continuidad de robo y eliminación.
+
+- game/avatar/avatar_renderer_factory.gd
+- game/avatar/external_rig_avatar_2d.gd
+- game/avatar/avatar_render_backend.gd
+- docs/avatar-rig-integration.md
+  - contrato único para cambiar AnimeAvatar2D por un rig externo;
+  - soporte de rig_scene_path;
+  - fallback procedural;
+  - punto preparado para Inochi2D, Live2D o VRM/Three.js.
+
+- scenes/match_system_test.tscn + match_system_test.gd
+  - prueba de avance de corredoras, lineup y transición de entrada.
+
+### Flujo de partido actual
+
+TeamData → batting_indices → batter actual → pitch → timing → result → RunnerToken/FieldingResolver → GameState → Presenter.
+
+Al cambiar de mitad:
+
+equipo bateador → bateadora siguiente → pitcher contrario → roster defensivo contrario.
+
+### Arte y rig
+
+AvatarProfile conserva el contrato de datos. El renderer procedural continúa siendo el backend estable del prototipo, pero un perfil marcado como rig puede apuntar a una escena externa mediante AvatarRendererFactory.
+
+La dirección visual sigue siendo anime adulto deportivo, cuerpos atléticos redondeados y fanservice moderado. No se incorporan imitaciones directas de CLAMP o Jujutsu Kaisen. Fairy Tail permanece solamente como referencia funcional para proporciones shonen redondeadas.
+
+Las familias de benchmark continúan siendo Animagine XL, Illustrious XL, NoobAI-XL y Pony/SDXL. La búsqueda disponible fue mediante GitHub y no debe interpretarse como ranking mundial actual.
+
+### Estado
+
+**Implementado:**
+- streaming bridge modular;
+- tracking facial;
+- audio y captura de pantalla opcional;
+- Character Creator;
+- cuerpo procedural shonen_soft;
+- perfiles persistentes;
+- pelota compartida;
+- fielding determinista;
+- rebotes;
+- recogida y lanzamiento;
+- RunnerToken y movimiento de corredoras;
+- lineup real durante el partido;
+- errores de lanzamiento con consecuencia de bases;
+- doble play y registro de asistencia/putout;
+- adapter de renderer para futuros rigs;
+- pruebas aisladas nuevas.
+
+**Pendiente:**
+- force outs y rundown detallados;
+- errores de recepción independientes;
+- sliding integrado al cálculo;
+- arte/rig artístico definitivo;
+- integración concreta Live2D/Inochi2D/VRM;
+- backend, gacha, crianza, economía y progresión;
+- validación real Godot + webcam + OBS.
+
+### Porcentaje global revisado
+
+El avance global estimado pasa de **≈43% a ≈49%**.
+
+El incremento corresponde a la incorporación de identidad real de corredoras, rotación de alineación, defensa secundaria y un contrato de renderer intercambiable. No se considera terminado el backend ni la validación de runtime.
+
+### Regla de continuidad
+
+La arquitectura vigente queda:
+
+**Streaming Bridge + AvatarProfile + Renderer Factory + Match Presenter + Field Presenter + Trajectory Controller + BattedBallEvent + RunnerToken + FieldingResolver + ThrowResolver + DoublePlayResolver + FieldingPlayEvent.**
+
+El gameplay sigue siendo la única autoridad sobre resultados, carreras, outs y errores.
