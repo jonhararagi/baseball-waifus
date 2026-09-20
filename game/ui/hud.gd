@@ -56,7 +56,14 @@ func show_timing(v: float) -> void:
 	timing_bar.value = v * 100.0
 
 func show_result(result: Dictionary) -> void:
-	result_label.text = "%s • %s" % [result.get("result", ""), result.get("timing", "")]
+	var text := "%s • %s" % [result.get("result", ""), result.get("timing", "")]
+	var fielding: Dictionary = result.get("fielding", {})
+	if not fielding.is_empty():
+		var defender := str(fielding.get("defender_position", "FIELD"))
+		var reason := str(fielding.get("reason", ""))
+		var chance := int(float(fielding.get("chance", 0.0)) * 100.0)
+		text += " • %s %s %d%%" % [defender, reason, chance]
+	result_label.text = text
 
 func clear_result() -> void:
 	result_label.text = ""
