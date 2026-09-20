@@ -29,7 +29,7 @@ static func create_rival_team() -> BaseballTeamData:
 	team.team_id = "demo_rival"
 	team.team_name = "Rival Aces"
 
-	team.add_player(_player("rival_sr", "Rival Ace", "P", "pitcher", "ice"), true)
+	team.add_player(_player("rival_sr", "Rival Ace", "P", "pitcher", "ice"), false)
 	team.add_player(_player("rival_catcher", "Rival Catcher", "C", "catcher", "water"), true)
 	team.add_player(_player("rival_1b", "Rival First", "1B", "defender", "nature"), true)
 	team.add_player(_player("rival_2b", "Rival Second", "2B", "contact", "light"), true)
