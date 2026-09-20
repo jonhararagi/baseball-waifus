@@ -169,6 +169,15 @@ func _draw() -> void:
 	if mouth > 0.45:
 		draw_arc(Vector2(0, 27), 9, 0.15, PI - 0.15, 12, profile.eye, 3)
 
+	if pose == Pose.BAT:
+		var bat_color := AvatarVisualCatalog.bat_color(profile.accent, profile.equipment.bat_style)
+		draw_line(Vector2(25, 0), Vector2(105, -38), bat_color, 10.0)
+		draw_circle(Vector2(107, -38), 5.0, bat_color)
+	if pose == Pose.THROW:
+		draw_circle(Vector2(-34, -20), 8.0, Color.WHITE)
+	if pose == Pose.SLIDE:
+		draw_line(Vector2(-88, 118), Vector2(96, 118), Color("#d8d0c5"), 5.0)
+
 	if profile.show_cap or profile.equipment.cap_style != "cap_none":
 		draw_colored_polygon(PackedVector2Array([
 			Vector2(-head_radius - 5, -28),
