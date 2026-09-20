@@ -25,6 +25,8 @@ class BridgeControl:
         self.stop_recording = stop_recording
         self.server = None
         self.thread = None
+        if host not in {"127.0.0.1", "localhost"}:
+            raise ValueError("El panel de control solo puede escuchar en localhost")
 
     def start(self) -> None:
         provider = self
