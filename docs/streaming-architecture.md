@@ -82,3 +82,21 @@ La ruta 3D futura puede apoyarse en VRM/Three.js cuando el juego necesite modelo
 **Implementado:** bridge local, tracking facial, audio, captura de pantalla opcional, protocolo versionado, receptor UDP y creador anime procedural.
 
 **Pendiente:** validación hardware end-to-end, rig artístico definitivo, Live2D/VRM, físicas secundarias, lip-sync avanzado, expresiones completas, compositor propio, grabación y conexión final con el roster.
+
+
+## Generación de referencias anime
+
+Se añadió `tools/character_ai` como módulo opcional de concept art. Usa una instalación local de ComfyUI mediante su API, con workflows JSON y checkpoints externos. El juego no redistribuye modelos.
+
+Componentes:
+- `prompt_builder.py`: convierte `AvatarProfile` en prompt y negative prompt.
+- `comfy_client.py`: cola workflows y recupera imágenes mediante la API local.
+- `generate_service.py`: aplica seed, resolución y parámetros del workflow.
+- `art_server.py`: API local para el Character Creator.
+- `style_presets.json`: lenguaje visual propio del proyecto.
+- `model_profiles.json`: familias de checkpoints candidatas, sin fijar una dependencia.
+- `workflow_sdxl.json`: workflow base de text-to-image.
+
+El estilo objetivo usa anatomía adulta, proporciones shonen redondeadas y cuerpos atléticos algo más llenos, cel shading limpio y fanservice adulto moderado. No se imita la identidad visual de una franquicia concreta.
+
+El renderer procedural continúa siendo la fuente estable para probar movimiento. La IA solo produce referencias de diseño.
