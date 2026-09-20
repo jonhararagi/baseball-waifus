@@ -142,3 +142,19 @@ Esto mantiene separadas las responsabilidades:
 - OBS: composición y emisión.
 
 El panel puede desactivarse con `--no-control`.
+
+
+## Revisión 24: providers de tracking intercambiables
+
+El bridge incorpora `tracking_provider.py` como frontera explícita entre captura y protocolo.
+
+Backends actuales:
+- `MediaPipeTrackingProvider`: webcam real + MediaPipe.
+- `SyntheticTrackingProvider`: datos sintéticos para QA sin cámara.
+
+Ambos entregan el mismo contrato al loop principal y no cambian `protocol.py`, UDP ni Godot.
+
+Esto permite añadir OpenSeeFace como proveedor posterior sin crear otro bridge.
+El proveedor se identifica también en `capture.tracking_provider` para diagnósticos.
+
+La investigación externa se conserva en `docs/research/streaming_oss/`.
