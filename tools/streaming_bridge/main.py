@@ -9,8 +9,7 @@ from capture import AudioMeter, ScreenCapture, WebcamCapture
 from obs_client import OBSController
 from protocol import encode_payload, make_payload
 from recorder import TrackingRecorder
-from tracker import FaceTracker
-from synthetic_tracker import SyntheticFaceTracker
+from tracking_provider import create_tracking_provider
 from control_server import BridgeControl
 from qa_runner import QARunner
 
@@ -48,10 +47,11 @@ def main():
 
     synthetic_tracking = bool(config.get("enable_synthetic_tracking", False)) or args.synthetic_tracking
     camera = None
-    tracker = None
-    if synthetic_tracking:
-        tracker = SyntheticFaceTracker(config.get("tracking_smoothing", 0.45))
-    else:
+    tracker, synthetic_tracking = create_tracking_provider(
+        synthetic_tracking,
+        config.get("tracking_smoothing", 0.45),
+    )
+    if not synthetic_tracking:
         camera = WebcamCapture(
             config.get("camera_index", 0),
             config.get("camera_width", 1280),
@@ -59,6 +59,7 @@ def main():
         )
         if not camera.opened:
             camera.close()
+            tracker.close()
             raise RuntimeError("No se pudo abrir la webcam configurada.")
         tracker = FaceTracker(config.get("tracking_smoothing", 0.45))
 
@@ -169,6 +170,7 @@ def main():
 
     print("Baseball Waifus Streaming Bridge")
     print(f"Tracking UDP -> {target[0]}:{target[1]}")
+    print(f"Tracking provider -> {tracker.name}")
     if synthetic_tracking:
         print("Tracking source -> SYNTHETIC")
     else:
@@ -210,6 +212,7 @@ def main():
             capture_status = {
                 "camera": not synthetic_tracking,
                 "synthetic_tracking": synthetic_tracking,
+                "tracking_provider": tracker.name,
                 "screen": screen is not None,
             }
 
