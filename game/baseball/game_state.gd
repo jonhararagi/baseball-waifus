@@ -19,14 +19,14 @@ func reset_count() -> void:
 func advance_bases(hit_bases: int) -> int:
 	var runs := 0
 	if hit_bases >= 4:
-		for i in 3:
+		for i in range(3):
 			if bases[i]:
 				runs += 1
 		bases = [false, false, false]
 		return runs + 1
 
 	var moved := [false, false, false]
-	for i in 3:
+	for i in range(3):
 		if bases[i]:
 			var destination := i + hit_bases
 			if destination >= 3:
