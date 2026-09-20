@@ -126,3 +126,18 @@ Archivos principales:
 - `game/avatar/avatar_match_presenter.gd`
 - `game/avatar/avatar_profile_store.gd`
 - `scenes/main.gd`
+
+## Avatar de campo completo
+
+El prototipo de partido ahora muestra una formación defensiva además del pitcher y la bateadora.
+
+`BaseballFieldAvatarPresenter` mantiene catcher, infield, outfield y tres runners visuales. Las acciones se sincronizan con eventos del partido sin tocar la resolución de probabilidades.
+
+Esto permite usar el mismo cuerpo procedural para probar:
+- posición defensiva;
+- catcher y recepción;
+- carrera y robo;
+- reacción a hits/out;
+- celebración y derrota.
+
+El presenter es una capa de presentación y puede reemplazar posteriormente `AnimeAvatar2D` por un rig 2D o 3D sin cambiar la lógica de béisbol.
