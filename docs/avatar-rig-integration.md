@@ -47,3 +47,9 @@ Pendiente:
 ## Regla
 
 El gameplay nunca debe importar una librería de rigging. Solo el adaptador visual puede hacerlo.
+
+## Backend procedural articulado
+
+Además del renderer procedural simple, AvatarRendererFactory puede seleccionar AnimeBodyRig2D cuando art_style=rig y rig_scene_path está vacío. Esto permite utilizar la ruta de rigging incluso sin tener todavía un asset externo.
+
+El cuerpo articulado comparte AvatarProfile, enum de poses, tracking, datos de equipamiento, AvatarMotionController y AvatarTrajectoryController. El comportamiento del partido no conoce esta diferencia.
