@@ -112,9 +112,9 @@ func _update_timing(delta: float) -> void:
 	_get_hud().show_timing(timing_value)
 
 func _input(event: InputEvent) -> void:
-	if event.is_action_pressed("swing") and phase == "TIMING":
+	if ((event is InputEventKey and event.pressed and event.keycode == KEY_SPACE) or (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT)) and phase == "TIMING":
 		_swing()
-	elif event.is_action_pressed("steal") and phase == "PITCH_SELECT":
+	elif event is InputEventKey and event.pressed and event.keycode == KEY_S and phase == "PITCH_SELECT":
 		_attempt_steal()
 
 func _swing() -> void:
