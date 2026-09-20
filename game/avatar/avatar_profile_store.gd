@@ -11,7 +11,8 @@ func _safe_name(value: String) -> String:
 	var cleaned := value.strip_edges()
 	if cleaned.is_empty():
 		cleaned = "character"
-	for ch in ["/", "\\", ":", "*", "?", """, "<", ">", "|"]:
+	for ch in ["/", "\\", ":", "*", "?", "\"", "<", ">", "|"]:
+
 		cleaned = cleaned.replace(ch, "_")
 	return cleaned.to_lower()
 
