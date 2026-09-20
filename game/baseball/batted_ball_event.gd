@@ -24,7 +24,7 @@ func _configure_trajectory() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = abs(seed) + 1
 
-	switch result:
+	match result:
 		"HOME RUN":
 			target = Vector2(
 				rng.randf_range(560.0, 720.0),
@@ -42,7 +42,7 @@ func _configure_trajectory() -> void:
 				Vector2(430, 240),
 				Vector2(855, 240),
 				Vector2(680, 215)
-			][randi() % 3]
+			][rng.randi_range(0, 2)]
 			control = Vector2(target.x, max(125.0, target.y - 120.0))
 			duration = 1.0
 			arc_height = 85.0
@@ -51,7 +51,7 @@ func _configure_trajectory() -> void:
 				Vector2(470, 275),
 				Vector2(800, 265),
 				Vector2(665, 245)
-			][randi() % 3]
+			][rng.randi_range(0, 2)]
 			control = Vector2(target.x, max(155.0, target.y - 95.0))
 			duration = 0.9
 			arc_height = 68.0
@@ -60,7 +60,7 @@ func _configure_trajectory() -> void:
 				Vector2(520, 315),
 				Vector2(745, 300),
 				Vector2(865, 355)
-			][randi() % 3]
+			][rng.randi_range(0, 2)]
 			control = Vector2(target.x, max(205.0, target.y - 55.0))
 			duration = 0.72
 			arc_height = 42.0
@@ -78,7 +78,7 @@ func _configure_trajectory() -> void:
 				Vector2(745, 345),
 				Vector2(575, 325),
 				Vector2(895, 350)
-			][randi() % 4]
+			][rng.randi_range(0, 3)]
 			control = origin.lerp(target, 0.5) + Vector2(0, -35)
 			duration = 0.65
 			arc_height = 28.0
