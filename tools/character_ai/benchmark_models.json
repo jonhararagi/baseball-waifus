@@ -1,0 +1,12 @@
+{
+  "models": [
+    {"id": "animagine_xl", "checkpoint": "AnimagineXL3.1.safetensors"},
+    {"id": "illustrious_xl", "checkpoint": "YOUR_ILLUSTRIOUS_CHECKPOINT.safetensors"},
+    {"id": "noobai_xl", "checkpoint": "YOUR_NOOBAI_CHECKPOINT.safetensors"},
+    {"id": "pony_sdxl", "checkpoint": "YOUR_PONY_CHECKPOINT.safetensors"}
+  ],
+  "preset": "baseball_waifus_ecchi",
+  "seed": 424242,
+  "width": 768,
+  "height": 1152
+}
