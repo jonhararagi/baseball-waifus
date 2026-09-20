@@ -129,7 +129,6 @@ func _react_to_ball_zone(zone: String, target: Vector2, duration: float, next_po
 	_play_position(primary, AnimeAvatar2D.Pose.RUN, duration, next_pose)
 	_move_field(primary, target, duration, 0.08)
 
-
 func on_fielding_resolution(event: BattedBallEvent, resolution: Dictionary) -> void:
 	if event == null or resolution.is_empty():
 		return
@@ -140,9 +139,41 @@ func on_fielding_resolution(event: BattedBallEvent, resolution: Dictionary) -> v
 		_play_position(defender_position, AnimeAvatar2D.Pose.CATCH, 0.48, AnimeAvatar2D.Pose.CELEBRATE)
 		_move_field(defender_position, event.target, 0.18, 0.12)
 	else:
-		_play_position(defender_position, AnimeAvatar2D.Pose.HIT_REACTION, 0.48, AnimeAvatar2D.Pose.THROW)
-		_move_field(defender_position, event.target, 0.18, 0.04)
+		_play_position(defender_position, AnimeAvatar2D.Pose.HIT_REACTION, 0.36, AnimeAvatar2D.Pose.RUN)
+		_move_field(defender_position, event.target, 0.18, 0.03)
 		_play_position("C", AnimeAvatar2D.Pose.CATCH, 0.55, AnimeAvatar2D.Pose.IDLE)
+
+func on_fielding_play(event: BattedBallEvent, play: FieldingPlayEvent) -> void:
+	if event == null or play == null or not play.is_valid():
+		return
+	_animate_fielding_miss(event, play)
+
+func _animate_fielding_miss(event: BattedBallEvent, play: FieldingPlayEvent) -> void:
+	var defender_position := play.defender_position
+	if not field_avatars.has(defender_position):
+		return
+
+	var defender: AnimeAvatar2D = field_avatars[defender_position]
+	var defender_motion: AvatarMotionController = field_motions[defender_position]
+	trajectory.clear(defender)
+	defender_motion.play(AnimeAvatar2D.Pose.RUN, event.duration, AnimeAvatar2D.Pose.RUN)
+	trajectory.move_to(defender, event.target, event.duration, 12.0)
+	await get_tree().create_timer(event.duration + 0.03).timeout
+
+	for rebound in play.rebound_points:
+		if not is_instance_valid(defender):
+			return
+		defender_motion.play(AnimeAvatar2D.Pose.RUN, 0.24, AnimeAvatar2D.Pose.RUN)
+		trajectory.move_to(defender, rebound, 0.24, 8.0)
+		await get_tree().create_timer(0.25).timeout
+
+	if not is_instance_valid(defender):
+		return
+	defender_motion.play(AnimeAvatar2D.Pose.THROW, play.throw_duration, AnimeAvatar2D.Pose.IDLE)
+	var receiver_position := play.receiver_position
+	if field_motions.has(receiver_position):
+		var receiver_motion: AvatarMotionController = field_motions[receiver_position]
+		receiver_motion.play(AnimeAvatar2D.Pose.CATCH, play.throw_duration, AnimeAvatar2D.Pose.IDLE)
 
 func sync_runners(bases: Array, snap_to_base := true) -> void:
 	for i in range(min(3, runner_avatars.size())):
