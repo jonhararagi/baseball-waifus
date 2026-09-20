@@ -19,7 +19,9 @@
 **Proyecto:** Baseball Waifus  
 **Repositorio:** `jonhararagi/baseball-waifus`  
 **Rama principal:** `main`  
-**Estado actual:** Prototipo técnico en Godot 4.x + laboratorio de personajes + puente de streaming. El juego completo todavía no está terminado y varias áreas siguen en diseño/implementación.
+**Estado actual:** Prototipo técnico en Godot 4.x + laboratorio de personajes + puente de streaming + rig procedural interno. Godot 4.x queda adoptado como motor del prototipo y del juego actual; los adapters externos siguen siendo una capa visual opcional.
+
+**Avance global revisado:** ≈58%.
 
 ### Cómo vamos
 
@@ -39,7 +41,7 @@ La idea base del juego está definida a nivel conceptual:
 - Mapas y Demon Kings.
 - Herencia/crianza de personajes.
 - Torneos/PvP como sistemas posteriores.
-- Desarrollo previsto mediante GitHub y, para el prototipo, se ha considerado Godot como opción principal y Unity como alternativa. El motor todavía no está confirmado.
+- Desarrollo mediante GitHub con Godot 4.x como motor adoptado. Unity deja de ser una vía activa del prototipo salvo una decisión futura explícita.
 
 ---
 
@@ -574,7 +576,7 @@ El PvP se deja para una etapa avanzada debido a:
 
 ## Prioridad alta antes de programar el sistema completo
 
-- [ ] Elegir motor: Godot / Unity.
+- [x] Motor del prototipo: Godot 4.x.
 - [ ] Cerrar estadísticas definitivas.
 - [ ] Crear tabla maestra de qué hace cada estadística.
 - [ ] Definir fórmula de contacto.
