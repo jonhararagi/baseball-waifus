@@ -114,7 +114,7 @@ func _build_ui() -> void:
 	for pair in [["Idle", AnimeAvatar2D.Pose.IDLE], ["Walk", AnimeAvatar2D.Pose.WALK], ["Run", AnimeAvatar2D.Pose.RUN], ["Bat", AnimeAvatar2D.Pose.BAT], ["Pitch", AnimeAvatar2D.Pose.PITCH], ["Catch", AnimeAvatar2D.Pose.CATCH], ["Win", AnimeAvatar2D.Pose.CELEBRATE]]:
 		var button := Button.new()
 		button.text = pair[0]
-		button.pressed.connect(func(pose: int): avatar.set_pose(pose).bind(pair[1]))
+		button.pressed.connect(func(): avatar.set_pose(pair[1]))
 		pose_row.add_child(button)
 
 func _add_option(parent: Control, title: String, values: Array, key: String) -> void:
@@ -166,7 +166,7 @@ func _sync_controls() -> void:
 	for key in selectors.keys():
 		var option: OptionButton = selectors[key]
 		var current := str(profile.get({"preset":"body_preset","hair":"hair_style","uniform":"uniform_style","face":"face_style"}[key]))
-		for i in option.item_count:
+		for i in range(option.item_count):
 			if option.get_item_text(i) == current:
 				option.select(i)
 				break
