@@ -43,6 +43,7 @@ func _process(delta: float) -> void:
 	pitcher_motion.update(delta)
 
 func on_pitch_selected() -> void:
+	batter_motion.play(AnimeAvatar2D.Pose.IDLE, 0.2, AnimeAvatar2D.Pose.IDLE)
 	_pitcher_action(AnimeAvatar2D.Pose.PITCH, 0.85)
 
 func on_pitch_started() -> void:
