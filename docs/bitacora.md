@@ -969,3 +969,55 @@ El porcentaje no significa que el 24% del código final exista. Significa que ap
 6. Después, evaluar VRM/Three.js o Live2D como backend visual opcional.
 7. Volver al núcleo de béisbol para completar defensa, balls, fouls, innings y roster.
 
+
+# 13. Revisión 4: Motor de probabilidades sin IA
+
+**Fecha:** 2026-09-20  
+**Tipo:** Arquitectura de sistemas / anti-exploit / economía.
+
+### Decisión
+
+Se descarta la necesidad de una IA interna para decidir recompensas, drops o probabilidades. El proyecto utilizará tablas de probabilidades explícitas, versionadas y auditables.
+
+La razón es de control: una tabla puede expresar exactamente qué puede caer en cada zona, dificultad, objeto o actividad. La IA no tendrá autoridad para inventar o alterar resultados.
+
+### Implementado
+
+- ProbabilityTable: pesos y normalización.
+- DropTable: tablas identificadas y versionadas.
+- RewardResolver: tiradas aleatorias reproducibles mediante seed para QA.
+- GameTables: primeras tablas para campaña, fragmentos de Demon King y fusión.
+- ProbabilityAudit: conteo de resultados y comparación contra distribución esperada.
+- AntiExploit: límites de ejecuciones por actividad.
+- RewardService: única capa que resuelve recompensas y valida contexto.
+- Documento de arquitectura de probabilidades.
+
+### Regla fundamental
+
+Un mapa no obtiene sus recompensas mediante una IA. Obtiene sus recompensas mediante una tabla asociada al contexto.
+
+Ejemplo conceptual:
+
+zona + dificultad + actividad + objeto -> tabla -> tirada -> resultado
+
+Los límites se verifican antes de la tirada. Por diseño actual:
+- Normal: 10 ejecuciones;
+- Hard: 10;
+- Hell: 10;
+- Demon King: 3.
+
+### Protección contra el problema planteado
+
+No se confía en que una IA se comporte correctamente para evitar una explotación. La cantidad de ejecuciones y las tablas están separadas.
+
+Tampoco se utiliza una simple probabilidad global para todos los mapas. Cada tabla puede tener pesos diferentes.
+
+### Estado
+
+**Implementado:** infraestructura base.
+
+**Pendiente:** completar las tablas definitivas de todo el juego, definir todos los pools de objetos, pity/garantías, inventario persistente, panel de balance y pruebas estadísticas automáticas.
+
+### Revisión contabilizada
+
+La revisión 4 reemplaza la idea de una IA decisora de recompensas por un sistema explícito de reglas. No se debe volver a diseñar este punto desde cero salvo que se cambie deliberadamente la arquitectura.
