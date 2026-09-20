@@ -13,6 +13,7 @@ var rng := RandomNumberGenerator.new()
 var avatar_presenter: AvatarMatchPresenter
 var field_avatar_presenter: BaseballFieldAvatarPresenter
 var ball_controller: BaseballBallController
+var fielding_resolver := FieldingResolver.new()
 var avatar_game_over_handled := false
 
 var player_team: BaseballTeamData
@@ -127,19 +128,43 @@ func _input(event: InputEvent) -> void:
 		_attempt_steal()
 
 func _swing() -> void:
-	current_result = simulator.resolve_batted_ball(batter, pitcher, current_pitch, timing_value, rng)
+	var preliminary_result := simulator.resolve_batted_ball(batter, pitcher, current_pitch, timing_value, rng)
+	var ball_event := BattedBallEvent.from_result(preliminary_result, BATTER_POS, rng.randi())
+	var fielding_result: Dictionary = {}
+
+	if str(preliminary_result.get("result", "")) == "FIELDING_CANDIDATE":
+		fielding_result = fielding_resolver.resolve(
+			ball_event,
+			_build_demo_defensive_roster(),
+			timing_value,
+			rng
+		)
+		current_result = preliminary_result.duplicate()
+		current_result["result"] = str(fielding_result.get("final_result", "SINGLE"))
+		current_result["bases"] = int(fielding_result.get("bases", 1))
+		current_result["fielding"] = fielding_result
+	else:
+		current_result = preliminary_result
+
 	_apply_batting_result(current_result)
-	var ball_event := BattedBallEvent.from_result(current_result, BATTER_POS, rng.randi())
+
 	if ball_controller != null:
 		if str(current_result.get("result", "")) == "STRIKE":
 			ball_controller.play_miss_to_catcher(BATTER_POS, CATCHER_POS)
 		else:
 			ball_controller.play_batted_event(ball_event)
+
 	if avatar_presenter != null:
 		avatar_presenter.on_batting_result(current_result)
+
 	if field_avatar_presenter != null:
 		field_avatar_presenter.on_batted_ball_event(ball_event)
-		field_avatar_presenter.sync_runners(state.bases)
+		if fielding_result.is_empty():
+			field_avatar_presenter.sync_runners(state.bases)
+		else:
+			field_avatar_presenter.on_fielding_resolution(ball_event, fielding_result)
+			field_avatar_presenter.sync_runners(state.bases)
+
 	_get_hud().show_result(current_result)
 	phase = "RESULT"
 	result_timer = 1.2
