@@ -2536,3 +2536,85 @@ No se contabilizan como terminados:
 ### Regla de continuidad
 
 No crear otra interfaz de control para el bridge mientras `dashboard.html` + `control_server.py` cubran la operación local. Cualquier evolución de UI debe ampliar este panel o migrarlo de forma explícita, no duplicarlo.
+
+
+# 29. Revisión 20: observabilidad de sesión y health endpoint
+
+**Fecha:** 2026-09-20  
+**Tipo:** Streaming / observabilidad / pruebas de regresión / documentación.
+
+### Qué existía antes
+
+La Revisión 19 dejó operativo el panel local con estado básico, control de grabación y protección localhost. La arquitectura de captura, tracking, protocolo, recorder/replay y avatar ya estaba cerrada como baseline de prototipo.
+
+### Qué se cambia
+
+Se amplía la observabilidad sin crear otro sistema de control:
+
+- `tools/streaming_bridge/main.py`
+  - uptime de la sesión;
+  - paquetes enviados;
+  - timestamp del último frame con tracking activo;
+  - edad calculada del último tracking;
+  - campo `service` para identificar la instancia del bridge.
+
+- `tools/streaming_bridge/control_server.py`
+  - nuevo `GET /api/health`;
+  - respuesta ligera para comprobar que el proceso está vivo sin descargar todo el diagnóstico.
+
+- `tools/streaming_bridge/dashboard.html`
+  - muestra edad del tracking;
+  - paquetes enviados;
+  - uptime;
+  - conserva el diagnóstico JSON completo.
+
+- `tools/streaming_bridge/test_control_server.py`
+  - cobertura del nuevo endpoint de health;
+  - comprobación de métricas básicas del status.
+
+- `README.md`
+  - documenta el dashboard y sus endpoints actuales.
+
+### Por qué
+
+La herramienta ya tenía recorder/replay y un panel, pero todavía era difícil distinguir rápidamente entre "el bridge está vivo", "está enviando", y "el tracking está fresco". Las métricas nuevas separan esas tres situaciones y sirven como diagnóstico antes de culpar al renderer o a Godot.
+
+### Seguridad
+
+No cambia la frontera de seguridad. El servidor sigue limitado a `127.0.0.1`/localhost y no expone webcam, micrófono ni contenido de vídeo.
+
+### Pruebas nuevas
+
+La regresión del servidor debe comprobar:
+
+1. `GET /api/status` devuelve servicio y contador de paquetes.
+2. `GET /api/health` devuelve estado del proceso.
+3. `POST /api/record/start` y `POST /api/record/stop` siguen funcionando.
+
+La validación de runtime físico continúa pendiente porque este entorno no dispone de Godot ejecutable, webcam, micrófono, MediaPipe ni OBS físico.
+
+### Error detectado durante la revisión
+
+La primera propuesta de cambio intentó reconstruir archivos completos desde memoria, lo que no era necesario y aumentaba el riesgo de perder historia. Se descartó ese enfoque y se aplicó una modificación quirúrgica sobre los archivos actuales usando sus versiones reales del repositorio. No se modifica el contrato del avatar ni se duplica el Character Creator.
+
+### Estado después de la revisión
+
+**Implementado:** observabilidad de sesión, health endpoint, dashboard enriquecido y tests del panel.
+
+**No validado todavía:** runtime real con Godot + webcam + MediaPipe + OBS; exportaciones de plataforma; rig artístico definitivo.
+
+### Porcentaje global revisado
+
+El avance global estimado pasa de **≈63% a ≈64%**.
+
+El aumento es deliberadamente pequeño: esta revisión mejora una capa operativa ya existente, no crea una nueva gran área del juego.
+
+### Regla de continuidad
+
+No crear un segundo dashboard ni un segundo healthcheck del bridge. `control_server.py` + `dashboard.html` + `healthcheck.py` quedan como la superficie de diagnóstico vigente.
+
+El sistema de personaje sigue siendo:
+
+**AvatarProfile → AnimeAvatar2D / AnimeBodyRig2D / ExternalRigAvatar2D**
+
+y no debe rehacerse para resolver problemas de streaming.
