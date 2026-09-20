@@ -7,11 +7,13 @@ var receiver: TrackingReceiver
 var info: Label
 var sliders := {}
 var selectors := {}
+var colors := {}
 var save_name := "designer_last.json"
 
 func _ready() -> void:
 	profile.display_name = "Prototype Player"
 	profile.apply_body_preset("balanced")
+
 	avatar = AnimeAvatar2D.new()
 	avatar.position = Vector2(365, 430)
 	avatar.setup(profile)
@@ -38,6 +40,7 @@ func _build_ui() -> void:
 	preview.size = Vector2(650, 650)
 	preview.color = Color("#17232f")
 	add_child(preview)
+	move_child(preview, 1)
 
 	var title := Label.new()
 	title.position = Vector2(40, 38)
@@ -81,6 +84,17 @@ func _build_ui() -> void:
 	_make_slider(root, "Cadera", 0.70, 1.45, 0.01, "hip_width")
 	_make_slider(root, "Pecho", 0.70, 1.45, 0.01, "bust")
 	_make_slider(root, "Cabeza", 0.80, 1.20, 0.01, "head_scale")
+	_make_color_picker(root, "Piel", "skin")
+	_make_color_picker(root, "Cabello", "hair")
+	_make_color_picker(root, "Acento", "accent")
+	_make_color_picker(root, "Ojos", "eye")
+
+	var cap_check := CheckButton.new()
+	cap_check.text = "Gorra de juego"
+	cap_check.button_pressed = profile.show_cap
+	cap_check.toggled.connect(func(value: bool): profile.show_cap = value)
+	root.add_child(cap_check)
+	selectors["cap"] = cap_check
 
 	var actions := HBoxContainer.new()
 	actions.position = Vector2(25, 545)
@@ -88,22 +102,22 @@ func _build_ui() -> void:
 	panel.add_child(actions)
 
 	var random_button := Button.new()
-	random_button.text = "🎲 Generar"
+	random_button.text = "Generar"
 	random_button.pressed.connect(_randomize_profile)
 	actions.add_child(random_button)
 
 	var save_button := Button.new()
-	save_button.text = "💾 Guardar"
+	save_button.text = "Guardar"
 	save_button.pressed.connect(_save_profile)
 	actions.add_child(save_button)
 
 	var load_button := Button.new()
-	load_button.text = "📂 Cargar"
+	load_button.text = "Cargar"
 	load_button.pressed.connect(_load_profile)
 	actions.add_child(load_button)
 
 	var reset_button := Button.new()
-	reset_button.text = "↺ Reset"
+	reset_button.text = "Reset"
 	reset_button.pressed.connect(_reset_profile)
 	actions.add_child(reset_button)
 
@@ -111,44 +125,77 @@ func _build_ui() -> void:
 	pose_row.position = Vector2(40, 640)
 	pose_row.size = Vector2(630, 40)
 	add_child(pose_row)
-	for pair in [["Idle", AnimeAvatar2D.Pose.IDLE], ["Walk", AnimeAvatar2D.Pose.WALK], ["Run", AnimeAvatar2D.Pose.RUN], ["Bat", AnimeAvatar2D.Pose.BAT], ["Pitch", AnimeAvatar2D.Pose.PITCH], ["Catch", AnimeAvatar2D.Pose.CATCH], ["Win", AnimeAvatar2D.Pose.CELEBRATE]]:
+
+	var pose_data := [
+		["Idle", AnimeAvatar2D.Pose.IDLE],
+		["Walk", AnimeAvatar2D.Pose.WALK],
+		["Run", AnimeAvatar2D.Pose.RUN],
+		["Bat", AnimeAvatar2D.Pose.BAT],
+		["Pitch", AnimeAvatar2D.Pose.PITCH],
+		["Catch", AnimeAvatar2D.Pose.CATCH],
+		["Win", AnimeAvatar2D.Pose.CELEBRATE]
+	]
+	for pair in pose_data:
 		var button := Button.new()
-		button.text = pair[0]
-		button.pressed.connect(func(): avatar.set_pose(pair[1]))
+		var pose_value: int = pair[1]
+		button.text = str(pair[0])
+		button.pressed.connect(func(): avatar.set_pose(pose_value))
 		pose_row.add_child(button)
 
 func _add_option(parent: Control, title: String, values: Array, key: String) -> void:
 	var row := HBoxContainer.new()
 	row.custom_minimum_size.y = 38
 	parent.add_child(row)
+
 	var label := Label.new()
 	label.text = title
 	label.custom_minimum_size.x = 120
 	row.add_child(label)
+
 	var option := OptionButton.new()
 	option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	for value in values:
 		option.add_item(str(value))
 	row.add_child(option)
 	selectors[key] = option
-	option.item_selected.connect(func(index: int): _option_changed(key, values[index]))
+	option.item_selected.connect(func(index: int): _option_changed(key, str(values[index])))
 
 func _make_slider(parent: Control, title: String, min_value: float, max_value: float, step: float, key: String) -> void:
 	var row := VBoxContainer.new()
 	parent.add_child(row)
+
 	var label := Label.new()
 	label.text = title
 	row.add_child(label)
+
 	var slider := HSlider.new()
 	slider.min_value = min_value
 	slider.max_value = max_value
 	slider.step = step
+	slider.value = float(profile.get(key))
 	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(slider)
 	sliders[key] = slider
 	slider.value_changed.connect(func(value: float): profile.set(key, value))
 
-func _make_color_picker(parent: Control, title: String, key: String) -> void:\n\tvar row := HBoxContainer.new()\n\trow.custom_minimum_size.y = 38\n\tparent.add_child(row)\n\tvar label := Label.new()\n\tlabel.text = title\n\tlabel.custom_minimum_size.x = 120\n\trow.add_child(label)\n\tvar picker := ColorPickerButton.new()\n\tpicker.color = profile.get(key)\n\tpicker.size_flags_horizontal = Control.SIZE_EXPAND_FILL\n\trow.add_child(picker)\n\tcolors[key] = picker\n\tpicker.color_changed.connect(func(value: Color): profile.set(key, value))\n\nfunc _option_changed(key: String, value: String) -> void:
+func _make_color_picker(parent: Control, title: String, key: String) -> void:
+	var row := HBoxContainer.new()
+	row.custom_minimum_size.y = 38
+	parent.add_child(row)
+
+	var label := Label.new()
+	label.text = title
+	label.custom_minimum_size.x = 120
+	row.add_child(label)
+
+	var picker := ColorPickerButton.new()
+	picker.color = profile.get(key)
+	picker.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(picker)
+	colors[key] = picker
+	picker.color_changed.connect(func(value: Color): profile.set(key, value))
+
+func _option_changed(key: String, value: String) -> void:
 	match key:
 		"preset":
 			profile.apply_body_preset(value)
@@ -162,18 +209,36 @@ func _make_color_picker(parent: Control, title: String, key: String) -> void:\n\
 
 func _sync_controls() -> void:
 	for key in sliders.keys():
-		sliders[key].set_value_no_signal(float(profile.get(key)))
-	for key in selectors.keys():
+		var slider: HSlider = sliders[key]
+		slider.set_value_no_signal(float(profile.get(key)))
+
+	var selector_properties := {
+		"preset": "body_preset",
+		"hair": "hair_style",
+		"uniform": "uniform_style",
+		"face": "face_style"
+	}
+	for key in selector_properties.keys():
 		var option: OptionButton = selectors[key]
-		var current := str(profile.get({"preset":"body_preset","hair":"hair_style","uniform":"uniform_style","face":"face_style"}[key]))
+		var current := str(profile.get(selector_properties[key]))
 		for i in range(option.item_count):
 			if option.get_item_text(i) == current:
 				option.select(i)
 				break
+
+	var cap: CheckButton = selectors["cap"]
+	cap.set_pressed_no_signal(profile.show_cap)
+
+	for key in colors.keys():
+		var picker: ColorPickerButton = colors[key]
+		picker.color = profile.get(key)
+
 	avatar.setup(profile)
 	_update_info()
 
 func _update_info() -> void:
+	if info == null or receiver == null:
+		return
 	var pose_name := AnimeAvatar2D.Pose.keys()[avatar.pose]
 	info.text = "Perfil: %s    Pose: %s    Tracking: %s\nAltura %.2f  Hombros %.2f  Cintura %.2f  Cadera %.2f  Pecho %.2f  Cabeza %.2f\nUDP: 127.0.0.1:%d    Guardado: user://baseball_waifus/characters/%s" % [
 		profile.display_name,
