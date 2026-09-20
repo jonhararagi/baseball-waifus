@@ -1,6 +1,7 @@
 import argparse
 import json
 import socket
+import threading
 import time
 from pathlib import Path
 
@@ -70,7 +71,9 @@ def main():
     record_enabled = bool(config.get("enable_recording", False)) or args.record
     recorder = None
     record_path = str(ROOT / config.get("record_path", "recordings/session.jsonl"))
-    record_lock = __import__("threading").Lock()
+    record_lock = threading.Lock()
+    if record_enabled:
+        recorder = TrackingRecorder(record_path)
 
     obs_enabled = bool(config.get("enable_obs", False)) and not args.no_obs
     if obs_enabled:
