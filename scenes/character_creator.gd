@@ -9,6 +9,9 @@ var sliders := {}
 var selectors := {}
 var colors := {}
 var save_name := "designer_last.json"
+var ai_request: HTTPRequest
+var ai_status: Label
+var ai_preview: TextureRect
 
 func _ready() -> void:
 	profile.display_name = "Prototype Player"
@@ -23,6 +26,11 @@ func _ready() -> void:
 	receiver.stale_timeout = 0.75
 	add_child(receiver)
 	receiver.attach(avatar)
+
+	ai_request = HTTPRequest.new()
+	ai_request.timeout = 190.0
+	add_child(ai_request)
+	ai_request.request_completed.connect(_on_ai_request_completed)
 
 	_build_ui()
 	_sync_controls()
@@ -121,10 +129,29 @@ func _build_ui() -> void:
 	reset_button.pressed.connect(_reset_profile)
 	actions.add_child(reset_button)
 
+	var ai_button := Button.new()
+	ai_button.text = "AI ref"
+	ai_button.pressed.connect(_generate_ai_reference)
+	actions.add_child(ai_button)
+
 	var demo_button := Button.new()
 	demo_button.text = "Demo roster"
 	demo_button.pressed.connect(_load_demo_player)
 	actions.add_child(demo_button)
+
+	ai_status = Label.new()
+	ai_status.position = Vector2(730, 575)
+	ai_status.text = "AI reference: offline until Character AI bridge is running"
+	add_child(ai_status)
+
+	ai_preview = TextureRect.new()
+	ai_preview.position = Vector2(45, 85)
+	ai_preview.size = Vector2(220, 330)
+	ai_preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	ai_preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	ai_preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ai_preview.visible = false
+	add_child(ai_preview)
 
 	var pose_row := HBoxContainer.new()
 	pose_row.position = Vector2(40, 640)
@@ -280,6 +307,41 @@ func _reset_profile() -> void:
 	profile.apply_body_preset("balanced")
 	avatar.setup(profile)
 	_sync_controls()
+
+func _generate_ai_reference() -> void:
+	var payload := {
+		"profile": profile.to_dictionary(),
+		"preset": "baseball_waifus_ecchi"
+	}
+	var headers := ["Content-Type: application/json"]
+	var body := JSON.stringify(payload)
+	var err := ai_request.request("http://127.0.0.1:8766/generate", headers, HTTPClient.METHOD_POST, body)
+	if err != OK:
+		ai_status.text = "AI reference: no se pudo iniciar la petición"
+	else:
+		ai_status.text = "AI reference: generando..."
+
+func _on_ai_request_completed(result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
+	if result != HTTPRequest.RESULT_SUCCESS or response_code < 200 or response_code >= 300:
+		ai_status.text = "AI reference: error HTTP %d" % response_code
+		return
+	var parsed = JSON.parse_string(body.get_string_from_utf8())
+	if not (parsed is Dictionary) or not parsed.get("ok", false):
+		ai_status.text = "AI reference: " + str(parsed.get("error", "error desconocido"))
+		return
+	var result_data: Dictionary = parsed.get("result", {})
+	var encoded := str(result_data.get("image_base64", ""))
+	var raw := Marshalls.base64_to_raw_array(encoded)
+	var image := Image.new()
+	var err := image.load_png_from_buffer(raw)
+	if err != OK:
+		err = image.load_jpg_from_buffer(raw)
+	if err != OK:
+		ai_status.text = "AI reference: imagen recibida pero no se pudo abrir"
+		return
+	ai_preview.texture = ImageTexture.create_from_image(image)
+	ai_preview.visible = true
+	ai_status.text = "AI reference: lista • seed %s" % str(result_data.get("seed", "?"))
 
 func _load_demo_player() -> void:
 	var player := PlayerData.new()
