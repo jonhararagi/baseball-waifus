@@ -19,7 +19,7 @@
 **Proyecto:** Baseball Waifus  
 **Repositorio:** `jonhararagi/baseball-waifus`  
 **Rama principal:** `main`  
-**Estado actual:** Diseño y planificación. El repositorio todavía no contiene el juego implementado.
+**Estado actual:** Prototipo técnico en Godot 4.x + laboratorio de personajes + puente de streaming. El juego completo todavía no está terminado y varias áreas siguen en diseño/implementación.
 
 ### Cómo vamos
 
@@ -661,9 +661,9 @@ Se probó la combinación probabilística de estadísticas, elementos, habilidad
 
 ## Prueba técnica
 
-**Todavía no se ha realizado un prototipo jugable en este repositorio.**
+El estado inicial de esta sección era "sin prototipo". Desde la Revisión 2 existe un prototipo técnico en Godot con campo, pitcher, bateadora, timing, resultados básicos, bases, carreras, marcador, robo y HUD. Desde la Revisión 3 existe además un laboratorio procedural de avatar y un bridge local de tracking.
 
-No marcar como "implementado" ningún sistema hasta que exista código y se compruebe dentro del proyecto.
+**Validación pendiente:** no se ha ejecutado una prueba hardware end-to-end en este entorno, por lo que el código se considera implementado pero el runtime físico sigue pendiente de validar.
 
 ---
 
@@ -713,7 +713,7 @@ Cuando una idea sea descartada en adelante, registrar:
 | G-014 | Crianza/herencia | En desarrollo | 2026-09-20 |
 | G-015 | Torneos | Planificado | 2026-09-20 |
 | G-016 | PvP | Planificado, posterior | 2026-09-20 |
-| G-017 | Motor | Pendiente | 2026-09-20 |
+| G-017 | Motor | Godot 4.x adoptado para el prototipo | 2026-09-20 |
 
 ---
 
@@ -1021,3 +1021,114 @@ Tampoco se utiliza una simple probabilidad global para todos los mapas. Cada tab
 ### Revisión contabilizada
 
 La revisión 4 reemplaza la idea de una IA decisora de recompensas por un sistema explícito de reglas. No se debe volver a diseñar este punto desde cero salvo que se cambie deliberadamente la arquitectura.
+
+
+# 14. Revisión 5: Character Creator + Streaming Bridge endurecido
+
+**Fecha:** 2026-09-20  
+**Tipo:** Implementación técnica / herramientas de producción.
+
+### Motivo
+
+La primera versión del Avatar Lab servía para demostrar que era posible dibujar y mover un cuerpo anime, pero todavía no funcionaba como una herramienta reutilizable de creación de jugadoras. El bridge de streaming también necesitaba un contrato de datos más explícito y tolerancia a dispositivos ausentes.
+
+### Qué existía antes
+
+- AvatarProfile con proporciones básicas.
+- AnimeAvatar2D procedural con varias poses.
+- TrackingReceiver UDP simple.
+- Bridge Python con OpenCV, MediaPipe, audio y OBS.
+- Avatar Lab manual.
+
+### Qué se cambia
+
+Se introduce una capa de datos de personaje visual más completa y un diseñador independiente:
+
+- game/avatar/avatar_profile.gd
+  - presets de cuerpo;
+  - estilos de cabello;
+  - estilos de uniforme;
+  - formas de rostro;
+  - colores;
+  - gorra;
+  - serialización JSON;
+  - generación aleatoria con seed.
+
+- game/avatar/avatar_profile_store.gd
+  - guardado/carga de perfiles;
+  - carpeta user://baseball_waifus/characters/.
+
+- scenes/character_creator.tscn
+- scenes/character_creator.gd
+  - sliders de cuerpo;
+  - selectores;
+  - colores;
+  - poses;
+  - generar;
+  - guardar/cargar;
+  - reset.
+
+- game/avatar/anime_avatar_2d.gd
+  - render procedural de cabello, rostro, gorra, uniforme y silueta;
+  - lectura del tracking facial;
+  - reutilización de poses.
+
+- tools/streaming_bridge/protocol.py
+  - protocolo baseball-waifus-tracking v1;
+  - separación de tracking/audio/capture.
+
+- tools/streaming_bridge/tracker.py
+  - suavizado configurable para reducir jitter.
+
+- tools/streaming_bridge/capture.py
+  - webcam validable;
+  - audio tolerante a fallos;
+  - captura de pantalla opcional.
+
+- tools/streaming_bridge/main.py
+  - pipeline unificado;
+  - configuración externa;
+  - diagnóstico opcional de pantalla;
+  - limpieza segura de recursos.
+
+- game/streaming/tracking_receiver.gd
+  - compatibilidad con el envoltorio de protocolo;
+  - timeout de tracking obsoleto;
+  - señales tracking_updated y tracking_lost.
+
+- documentación actualizada en README.md y docs/streaming-architecture.md.
+
+### Investigación externa
+
+Para la elección de arquitectura se consultaron repositorios públicos de referencia y documentación disponible en GitHub, especialmente patrones de OpenSeeFace e Inochi2D. No se incorporó código ni assets de esos proyectos.
+
+### Resultado
+
+Ahora existe una cadena coherente:
+
+**Diseñador → AvatarProfile → Renderer procedural → TrackingReceiver → Streaming Bridge → OBS**
+
+La misma estructura de perfil puede utilizarse posteriormente para reemplazar el dibujo procedural por un rig artístico 2D, Live2D, VRM/Three.js o un modelo propio.
+
+### Estado
+
+**Implementado en código:** Character Creator, persistencia de perfiles, poses, tracking versionado, smoothing, audio/screen capture modular y manejo de tracking obsoleto.
+
+**Pendiente:** prueba real con Godot + webcam + micrófono + OBS, arte final, rig 2D profesional, Live2D/VRM y conexión definitiva con el roster del juego.
+
+### Porcentaje global revisado
+
+Conservando la misma métrica aproximada utilizada en la Revisión 3 y contabilizando el nuevo bloque técnico, el avance global estimado pasa de **≈24% a ≈27%**.
+
+El 27% no significa que el 27% de los assets finales estén terminados. Representa el avance ponderado del alcance técnico conocido: diseño maestro consolidado, prototipo de béisbol, sistema explícito de probabilidades, herramientas de avatar/streaming y una parte todavía pequeña de progresión/contenido.
+
+### Regla de continuidad
+
+La herramienta de diseño de personajes y el bridge ya no deben rediseñarse desde cero. Las próximas revisiones deben ampliar estas capas o reemplazar componentes concretos con una razón registrada.
+
+### Próximo bloque recomendado
+
+1. Validar runtime del Character Creator y Streaming Bridge en hardware real.
+2. Conectar AvatarProfile con datos reales de PlayerData.
+3. Completar el núcleo de béisbol pendiente.
+4. Expandir el motor central de probabilidades para economía, gacha, crianza, entrenamiento y equipamiento.
