@@ -2882,3 +2882,90 @@ La primera prueba manual anterior falló por un error del arnés temporal de pru
 QARunner queda como único ejecutor de QA del Streaming Bridge. No crear otra capa de ejecución de tests mientras este runner y la suite `test_*.py` cubran la necesidad.
 
 El porcentaje global permanece en **≈64%**.
+
+
+# 24. Revisión 24: auditoría OSS y frontera de providers de tracking
+
+**Fecha:** 2026-09-20  
+**Tipo:** Investigación externa / refactor arquitectónico / documentación.
+
+### Motivo
+
+Se realizó una auditoría específica del Streaming Bridge para comprobar si hacía falta crear otra aplicación o duplicar componentes ya existentes.
+
+Resultado: el bridge actual ya contiene las cuatro piezas solicitadas:
+- captura webcam;
+- captura audio y diagnóstico de pantalla;
+- puente de tracking hacia Godot;
+- integración opcional con OBS;
+- ejecución principal unificada.
+
+No se crea otro bridge.
+
+### Investigación OSS
+
+Se revisaron repositorios públicos relacionados con:
+- OBS WebSocket;
+- OpenSeeFace;
+- MediaPipe;
+- Inochi2D;
+- Inochi Creator;
+- three-vrm;
+- obsws-python.
+
+La investigación quedó archivada en:
+`docs/research/streaming_oss/`
+
+Archivos:
+- `README.md`
+- `SOURCES.md`
+- `ANALYSIS.md`
+- `ADOPTION-MATRIX.md`
+
+### Decisiones derivadas
+
+1. OBS permanece como compositor/streamer externo.
+2. El tracking sigue separado del transporte.
+3. El contrato `baseball-waifus-tracking v1` no cambia.
+4. `AvatarProfile` continúa siendo la frontera de datos visuales.
+5. Se añade `tracking_provider.py` para permitir proveedores intercambiables.
+
+### Implementado
+
+- `MediaPipeTrackingProvider`
+- `SyntheticTrackingProvider`
+- `create_tracking_provider()`
+- identificación del proveedor en el payload de diagnóstico;
+- tests unitarios del factory;
+- documentación de la arquitectura;
+- documentación de fuentes OSS y decisiones de adopción.
+
+### Licencias
+
+Se evitó copiar código de terceros al repositorio.
+OBS WebSocket fue identificado como GPL-2.0; por tanto se usa como referencia/protocolo de integración, no como fuente para incrustar código en Baseball Waifus.
+OpenSeeFace e Inochi2D fueron identificados con BSD-2-Clause en los metadatos revisados.
+three-vrm fue identificado con MIT en los metadatos revisados.
+
+Para cualquier futura dependencia redistribuida se debe verificar la licencia del release concreto y sus archivos incluidos.
+
+### Resultado
+
+La arquitectura queda preparada para:
+
+`Capture → Tracking Provider → Tracking Contract → UDP → Godot Receiver → Avatar Renderer`
+
+con OBS en paralelo como compositor.
+
+No se crea ningún segundo dashboard, recorder, replay, QA runner ni character creator.
+
+### Porcentaje
+
+El avance global permanece en **≈64%**.
+La revisión mejora la modularidad de tooling, pero no aumenta significativamente el alcance funcional del juego porque el próximo gran bloque sigue siendo el núcleo definitivo de béisbol.
+
+### Estado de pruebas
+
+El código nuevo cuenta con pruebas unitarias del factory y del proveedor sintético. No se ejecutó todavía una suite completa sobre un checkout local del repositorio en este entorno.
+
+La validación hardware end-to-end con Godot + cámara + micrófono + OBS sigue pendiente.
