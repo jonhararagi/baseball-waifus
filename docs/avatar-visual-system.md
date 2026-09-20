@@ -44,3 +44,38 @@ El editor de personajes expone actualmente las seis ranuras visuales de `AvatarE
 ## Verificación de modelos
 
 La selección del checkpoint no se considera cerrada hasta ejecutar `benchmark_models.py` con las opciones locales. La comparación debe usar el mismo seed, prompt, resolución y negative prompt.
+
+## Roster persistente
+
+AvatarRosterService es la frontera entre gameplay y apariencia persistente.
+
+- `PlayerData` sigue siendo exclusivamente datos de juego.
+- `PlayerAvatarAdapter` crea la apariencia inicial a partir de especialización, posición y elemento.
+- `AvatarProfileStore` guarda los perfiles en `user://baseball_waifus/characters/`.
+- Los perfiles asociados a jugadoras usan archivos `player_<id>.json`.
+- Si existe un perfil guardado, el runtime lo reutiliza en lugar de regenerar el cuerpo.
+
+Esto permite cambiar la forma visual de una jugadora sin alterar sus estadísticas.
+
+## Avatar dentro del partido
+
+`AvatarMatchPresenter` conecta los eventos del partido con `AvatarMotionController`.
+
+Flujo actual:
+
+`PlayerData → AvatarRosterService → AvatarProfile → AnimeAvatar2D`
+
+y durante el partido:
+
+`PITCH_SELECT → Pitcher pose`
+`PITCHING → Pitcher pose`
+`TIMING → Batter pose`
+`hit/result → reacción correspondiente`
+`steal → Steal/Run`
+`game over → Celebrate/Defeat`
+
+El presenter es una capa de presentación. No calcula probabilidades, no cambia estadísticas y no decide recompensas.
+
+## Estado de producción
+
+El cuerpo procedural ya funciona como banco de pruebas para jugadores reales del roster y sus acciones. El siguiente reemplazo natural sigue siendo el renderer artístico, no otro rediseño de la arquitectura de datos.
