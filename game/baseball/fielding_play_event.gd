@@ -37,6 +37,9 @@ var putout_position := "1B"
 func pivot_target() -> Vector2:
 	return BASE_POSITIONS.get(pivot_position, BASE_POSITIONS["2B"])
 
+func receiver_target() -> Vector2:
+	return throw_target
+
 static func from_resolution(event: BattedBallEvent, resolution: Dictionary) -> FieldingPlayEvent:
 	var play := FieldingPlayEvent.new()
 	if event == null:
