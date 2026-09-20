@@ -100,3 +100,15 @@ El modo sintético genera yaw, pitch, roll, blink y mouth deterministas de forma
 También puede activarse en `config.json` mediante `enable_synthetic_tracking: true`.
 
 `--max-packets N` permite ejecutar una sesión finita para automatización y CI local.
+
+
+## QA desde el dashboard
+
+El panel local puede lanzar la suite Python sin salir de la interfaz:
+
+```text
+POST /api/qa/run
+GET  /api/qa/status
+```
+
+La ejecución se hace en un proceso separado con límite de tiempo y conserva la salida más reciente para diagnóstico. Sigue siendo una herramienta local: el servidor nunca escucha fuera de localhost.
