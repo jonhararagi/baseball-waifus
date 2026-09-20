@@ -145,19 +145,16 @@ func on_fielding_resolution(event: BattedBallEvent, resolution: Dictionary) -> v
 	var double_play: Dictionary = resolution.get("double_play", {})
 
 	if bool(double_play.get("success", false)):
+		_play_position(defender_position, AnimeAvatar2D.Pose.THROW, 0.75, AnimeAvatar2D.Pose.IDLE)
 		var pivot := str(double_play.get("pivot_position", "2B"))
-		_play_position(defender_position, AnimeAvatar2D.Pose.RUN, 0.42, AnimeAvatar2D.Pose.THROW)
-		_move_field(defender_position, event.target, 0.32, 0.04)
-		_play_position(pivot, AnimeAvatar2D.Pose.CATCH, 0.55, AnimeAvatar2D.Pose.THROW)
-		_play_position("1B", AnimeAvatar2D.Pose.CATCH, 0.85, AnimeAvatar2D.Pose.IDLE)
+		_play_position(pivot, AnimeAvatar2D.Pose.CATCH, 0.75, AnimeAvatar2D.Pose.THROW)
+		_play_position("1B", AnimeAvatar2D.Pose.CATCH, 1.1, AnimeAvatar2D.Pose.IDLE)
 		return
 
 	if success:
 		_play_position(defender_position, AnimeAvatar2D.Pose.CATCH, 0.48, AnimeAvatar2D.Pose.CELEBRATE)
-		_move_field(defender_position, event.target, 0.18, 0.12)
 	else:
 		_play_position(defender_position, AnimeAvatar2D.Pose.HIT_REACTION, 0.36, AnimeAvatar2D.Pose.RUN)
-		_move_field(defender_position, event.target, 0.18, 0.03)
 		_play_position("C", AnimeAvatar2D.Pose.CATCH, 0.55, AnimeAvatar2D.Pose.IDLE)
 
 func on_fielding_play(event: BattedBallEvent, play: FieldingPlayEvent) -> void:
