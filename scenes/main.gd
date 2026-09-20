@@ -13,6 +13,8 @@ var avatar_presenter: AvatarMatchPresenter
 var field_avatar_presenter: BaseballFieldAvatarPresenter
 var avatar_game_over_handled := false
 
+var player_team: BaseballTeamData
+var rival_team: BaseballTeamData
 var batter: PlayerData
 var pitcher: PlayerData
 var current_pitch: Pitch
@@ -46,65 +48,13 @@ func _ready() -> void:
 	queue_redraw()
 
 func _build_demo_roster() -> void:
-	batter = PlayerData.new()
-	batter.id = "starter_ssr"
-	batter.display_name = "Starter"
-	batter.rarity = "SSR"
-	batter.element = "fire"
-	batter.position = "CF"
-	batter.specialization = "power"
-	batter.power = 78
-	batter.contact = 68
-	batter.speed = 58
-	batter.defense = 55
-	batter.critical = 24
-	batter.stamina = 78
-	batter.potential = 5
-
-	pitcher = PlayerData.new()
-	pitcher.id = "rival_sr"
-	pitcher.display_name = "Rival Ace"
-	pitcher.rarity = "SR"
-	pitcher.element = "ice"
-	pitcher.position = "P"
-	pitcher.pitch = 70
-	pitcher.control = 64
-	pitcher.defense = 60
-	pitcher.stamina = 75
-	pitcher.potential = 4
+	player_team = DemoTeamFactory.create_player_team()
+	rival_team = DemoTeamFactory.create_rival_team()
+	batter = player_team.batting_player(8)
+	pitcher = rival_team.pitcher()
 
 func _build_demo_defensive_roster() -> Dictionary:
-	var result := {}
-	var definitions := {
-		"C": ["demo_catcher", "Catcher", "catcher", "water"],
-		"1B": ["demo_first_base", "First Base", "defender", "nature"],
-		"2B": ["demo_second_base", "Second Base", "contact", "light"],
-		"3B": ["demo_third_base", "Third Base", "power", "fire"],
-		"SS": ["demo_shortstop", "Shortstop", "contact", "lightning"],
-		"LF": ["demo_left_field", "Left Field", "defender", "ice"],
-		"CF": ["demo_center_field", "Center Field", "runner", "nature"],
-		"RF": ["demo_right_field", "Right Field", "power", "darkness"]
-	}
-	for position in definitions.keys():
-		var values: Array = definitions[position]
-		var player := PlayerData.new()
-		player.id = str(values[0])
-		player.display_name = str(values[1])
-		player.position = str(position)
-		player.specialization = str(values[2])
-		player.element = str(values[3])
-		player.rarity = "SR"
-		player.level = 10
-		player.potential = 4
-		player.speed = 58
-		player.contact = 60
-		player.power = 62
-		player.defense = 64
-		player.stamina = 72
-		result[position] = player
-	var catcher: PlayerData = result["C"]
-	catcher.defense = 70
-	return result
+	return rival_team.defensive_roster()
 
 func _process(delta: float) -> void:
 	if state.game_over:
