@@ -77,3 +77,18 @@ El tracking usa un protocolo versionado (`baseball-waifus-tracking`, v1) y `Trac
 La implementación procedural es propia. Las referencias externas se utilizan solo como patrones de arquitectura y se deben conservar separadas de cualquier contenido propietario.
 
 La bitácora de desarrollo está en `docs/bitacora.md`. Cada cambio estructural importante debe registrarse allí.
+
+
+## AI Character Reference Bridge
+
+El Character Creator puede pedir una referencia visual a un ComfyUI local mediante `tools/character_ai`. Esto es opcional y no forma parte de la lógica del juego.
+
+Ejecución conjunta de las herramientas locales:
+
+```text
+python tools/run_local_tools.py
+```
+
+La configuración del generador está en `tools/character_ai/config.json`. Debes instalar un checkpoint local compatible con ComfyUI y escribir su nombre exacto en `model`. El proyecto no incluye ni redistribuye checkpoints.
+
+El botón `AI ref` del Character Creator envía el `AvatarProfile` actual y recibe una referencia para comparar cuerpo, cabello, uniforme y lectura visual. Las poses de gameplay siguen siendo las del renderer de Godot.
