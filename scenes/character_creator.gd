@@ -84,7 +84,8 @@ func _build_ui() -> void:
 	root.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(root)
 
-	_add_option(root, "Cuerpo", ["slim", "balanced", "athletic", "curvy", "power"], "preset")
+	_add_option(root, "Cuerpo", ["slim", "balanced", "athletic", "curvy", "power", "shonen_soft"], "preset")
+	_add_option(root, "Arte", ["soft", "ecchi", "rig"], "art_style")
 	_add_option(root, "Cabello", ["long", "short", "bob", "ponytail", "twin_tail"], "hair")
 	_add_option(root, "Uniforme", ["standard", "sporty", "jacket", "sleeveless"], "uniform")
 	_add_option(root, "Rostro", ["soft", "sharp", "round"], "face")
@@ -269,6 +270,8 @@ func _option_changed(key: String, value: String) -> void:
 			profile.uniform_style = value
 		"face":
 			profile.face_style = value
+		"art_style":
+			profile.art_style = value
 	_sync_controls()
 
 func _sync_controls() -> void:
@@ -280,7 +283,8 @@ func _sync_controls() -> void:
 		"preset": "body_preset",
 		"hair": "hair_style",
 		"uniform": "uniform_style",
-		"face": "face_style"
+		"face": "face_style",
+		"art_style": "art_style"
 	}
 	for key in selector_properties.keys():
 		var option: OptionButton = selectors[key]
