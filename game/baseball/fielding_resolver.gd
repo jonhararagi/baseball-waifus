@@ -13,7 +13,7 @@ const FIELD_POSITIONS := {
 	"RF": Vector2(850, 295)
 }
 
-func resolve(event: BattedBallEvent, defensive_roster: Dictionary, timing_value: float, rng: RandomNumberGenerator) -> Dictionary:
+func resolve(event: BattedBallEvent, defensive_roster: Dictionary, timing_value: float, base_runners: Array, outs: int, rng: RandomNumberGenerator) -> Dictionary:
 	if event == null:
 		return _miss_result("no_event")
 	if event.result != "FIELDING_CANDIDATE":
@@ -46,7 +46,7 @@ func resolve(event: BattedBallEvent, defensive_roster: Dictionary, timing_value:
 
 	var roll := rng.randf()
 	var success := roll < chance
-	return {
+	var result := {
 		"required": true,
 		"success": success,
 		"final_result": "OUT" if success else "SINGLE",
@@ -60,8 +60,17 @@ func resolve(event: BattedBallEvent, defensive_roster: Dictionary, timing_value:
 		"chance": chance,
 		"roll": roll,
 		"rule_version": RULE_VERSION,
-		"reason": "CAUGHT" if success else "FIELDING MISS"
+		"reason": "CAUGHT" if success else "FIELDING MISS",
+		"double_play": {}
 	}
+
+	var double_play_resolver := DoublePlayResolver.new()
+	var double_play := double_play_resolver.resolve(event, result, base_runners, outs, rng)
+	result["double_play"] = double_play
+	if bool(double_play.get("success", false)):
+		result["final_result"] = "DOUBLE PLAY"
+		result["bases"] = 0
+	return result
 
 func _nearest_defender(target: Vector2) -> String:
 	var nearest := "CF"
@@ -82,5 +91,6 @@ func _miss_result(reason: String) -> Dictionary:
 		"defender_position": "CF",
 		"chance": 0.0,
 		"rule_version": RULE_VERSION,
-		"reason": reason
+		"reason": reason,
+		"double_play": {}
 	}
