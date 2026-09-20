@@ -22,6 +22,12 @@ func player_at(position: String) -> PlayerData:
 			return player
 	return null
 
+func player_by_id(player_id: String) -> PlayerData:
+	for player in players:
+		if player != null and player.id == player_id:
+			return player
+	return null
+
 func batting_player(order_index: int) -> PlayerData:
 	if batting_order.is_empty():
 		return null
@@ -30,6 +36,9 @@ func batting_player(order_index: int) -> PlayerData:
 	if player_index < 0 or player_index >= players.size():
 		return null
 	return players[player_index]
+
+func lineup_size() -> int:
+	return batting_order.size()
 
 func pitcher() -> PlayerData:
 	if pitcher_index >= 0 and pitcher_index < players.size():
