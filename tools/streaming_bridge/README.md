@@ -31,6 +31,7 @@ python main.py
 python main.py --no-audio --no-screen --no-obs
 python main.py --record
 python main.py --config config.json
+python main.py --synthetic-tracking --no-audio --no-screen --no-obs --max-packets 120
 ```
 
 ## Diagnóstico
@@ -84,3 +85,18 @@ Para apagarlo:
 ```text
 python main.py --no-control
 ```
+
+
+## Tracking sintético para QA
+
+Para probar el bridge completo sin webcam ni MediaPipe:
+
+```text
+python main.py --synthetic-tracking --no-audio --no-screen --no-obs --no-control --max-packets 120
+```
+
+El modo sintético genera yaw, pitch, roll, blink y mouth deterministas de forma continua y utiliza exactamente el mismo protocolo UDP que el tracking real. No reemplaza MediaPipe para producción; existe para probar transporte, recorder, dashboard y receptor de avatar sin hardware.
+
+También puede activarse en `config.json` mediante `enable_synthetic_tracking: true`.
+
+`--max-packets N` permite ejecutar una sesión finita para automatización y CI local.
