@@ -2266,3 +2266,74 @@ encima de:
 **MobileInputRouter + PlatformBridge + Web Host**
 
 Telegram y Discord se consideran hosts de presentación/entorno, no fuentes de autoridad para resultados de béisbol.
+## 26. Revisión 17: rig procedural anime + endurecimiento del Streaming Bridge
+
+Fecha: 2026-09-20
+Tipo: Arquitectura visual / Character Creator / streaming / pruebas.
+
+### Motivo
+
+Había un Character Creator funcional y un renderer procedural estable, pero el camino de rig estaba preparado solamente como contrato para un asset externo. Para poder probar de inmediato cuerpos de jugadoras y sus movimientos, se incorpora un segundo backend visual interno con articulaciones procedurales, sin cambiar AvatarProfile ni la lógica del béisbol.
+
+En paralelo, el Streaming Bridge tenía dos problemas de mantenimiento: audio/pantalla se importaban como dependencias obligatorias aunque estuvieran desactivados, y OBS ocultaba sus fallos de conexión. Se corrigen ambos puntos y se añade un healthcheck reproducible.
+
+### Investigación técnica realizada
+
+Se revisaron repositorios públicos del ecosistema de avatares:
+
+- Inochi2D/inochi-creator: editor de puppets Inochi2D; licencia BSD-2-Clause en el repositorio consultado.
+- Inochi2D/inochi2d: runtime Inochi2D; licencia BSD-2-Clause en el repositorio consultado.
+- pixiv/three-vrm: runtime VRM sobre Three.js; licencia MIT en el repositorio consultado.
+- Live2D Cubism se mantiene como adapter futuro, no como dependencia open source del prototipo.
+
+La implementación no copia assets ni código de esos proyectos. Se adopta su separación funcional: datos de personaje → capas/rig → runtime.
+
+### Implementado
+
+- game/avatar/anime_body_rig_2d.gd: segundo backend visual de AvatarRendererFactory; articulaciones virtuales de pelvis, torso, hombros, codos, manos, rodillas, pies y cabeza; locomoción procedural; poses de béisbol; tracking facial.
+- game/avatar/avatar_renderer_factory.gd: art_style=rig sin rig_scene_path usa AnimeBodyRig2D; rig_scene_path continúa reservado para rigs externos; soft/ecchi mantienen AnimeAvatar2D.
+- scenes/anime_body_rig_test.tscn + anime_body_rig_test.gd: prueba aislada del nuevo cuerpo, ciclo automático, cambio manual, tracking simulado y ajuste de proporciones.
+- tools/streaming_bridge/main.py: argumentos --config, --no-audio, --no-screen, --no-obs; OBS opt-in; cierre limpio de recursos.
+- tools/streaming_bridge/capture.py: mss y sounddevice pasan a ser opcionales cuando sus funciones están apagadas.
+- tools/streaming_bridge/tracker.py: MediaPipe ausente produce error legible.
+- tools/streaming_bridge/obs_client.py: expone diagnóstico de conexión.
+- tools/streaming_bridge/config.json: enable_obs=false por defecto.
+- tools/streaming_bridge/healthcheck.py: módulos, warnings opcionales y bind UDP.
+- tools/streaming_bridge/README.md: instalación, ejecución y diagnóstico.
+
+### Pruebas realizadas
+
+Prueba 1, dependencias del entorno: OpenCV y NumPy disponibles; MediaPipe, mss, sounddevice y obsws-python no instalados; Godot no instalado. Por tanto el healthcheck debe marcar MediaPipe como fallo requerido y los demás como warnings opcionales cuando corresponda.
+
+Prueba 2, revisión estática del bridge: main.py → capture.py → tracker.py → obs_client.py → protocol.py. Resultado: audio, pantalla y OBS quedan desacoplados; tracking real sigue requiriendo MediaPipe; UDP continúa en localhost por defecto.
+
+Prueba 3, revisión de continuidad: AvatarProfile sigue siendo el contrato común y la lógica de béisbol no conoce librerías de rigging. Resultado: contrato conservado.
+
+Prueba 4, runtime Godot: no ejecutada porque Godot no está instalado en el entorno actual.
+
+Prueba 5, runtime físico: no ejecutada porque no hay webcam, micrófono ni instancia OBS accesibles desde este entorno.
+
+### Errores detectados y corregidos
+
+1. capture.py podía fallar en el import global si mss o sounddevice no estaban instalados aunque esas funciones estuvieran apagadas. Corrección: imports opcionales y errores locales.
+2. OBSController silenciaba las causas de fallo. Corrección: propiedad error y status() con diagnóstico.
+3. main.py intentaba conectar OBS aunque no existiera escena configurada. Corrección: OBS opt-in con enable_obs=false.
+4. La bitácora seguía diciendo que el motor no estaba confirmado aunque G-017 ya registraba Godot 4.x como adoptado. Corrección: estado global alineado.
+
+### Decisión visual de continuidad
+
+AvatarProfile → AnimeAvatar2D para renderer procedural existente → AnimeBodyRig2D para cuerpo articulado de prueba → ExternalRigAvatar2D para rig externo → futuras implementaciones concretas de Inochi2D / Live2D / VRM sin tocar gameplay.
+
+### Porcentaje global revisado
+
+El avance global estimado pasa de ≈53% a ≈58%.
+
+El incremento representa backend visual articulado, integración de factory, prueba aislada, mayor tolerancia del bridge y diagnóstico reproducible.
+
+No se contabilizan como terminados: rig artístico de producción; integración final Inochi2D/Live2D/VRM; exportaciones móviles/web reales; validación física; backend, economía, gacha, crianza y PvP.
+
+### Regla de continuidad
+
+No rehacer AvatarProfile, AnimeAvatar2D, AvatarMotionController ni AvatarTrajectoryController para obtener otro cuerpo procedural. El nuevo cuerpo ya es un backend compatible. Las próximas mejoras visuales deben extenderlo o añadir un adapter externo.
+
+healthcheck.py pasa a ser la primera prueba obligatoria antes de investigar problemas de webcam/audio/OBS.
