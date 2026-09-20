@@ -1,0 +1,3 @@
+# No Python package is required by the bridge itself.
+# ComfyUI runs as a separate local process.
+# Optional future additions: requests, websockets, Pillow.
