@@ -10,7 +10,8 @@ extends Resource
 @export_range(0.70, 1.45, 0.01) var bust := 1.0
 @export_range(0.80, 1.20, 0.01) var head_scale := 1.0
 
-@export_enum("slim", "balanced", "athletic", "curvy", "power") var body_preset := "balanced"
+@export_enum("slim", "balanced", "athletic", "curvy", "power", "shonen_soft") var body_preset := "balanced"
+@export_enum("soft", "ecchi", "rig") var art_style := "soft"
 @export_enum("long", "short", "bob", "ponytail", "twin_tail") var hair_style := "long"
 @export_enum("standard", "sporty", "jacket", "sleeveless") var uniform_style := "standard"
 @export_enum("soft", "sharp", "round") var face_style := "soft"
@@ -53,6 +54,11 @@ func apply_body_preset(name: String) -> void:
 			shoulder_width = 1.18
 			waist_width = 1.02
 			hip_width = 1.10
+			bust = 1.08
+		"shonen_soft":
+			shoulder_width = 1.02
+			waist_width = 0.88
+			hip_width = 1.12
 			bust = 1.08
 
 func randomize_profile(seed_value: int = 0) -> void:
@@ -101,6 +107,7 @@ func to_dictionary() -> Dictionary:
 		"bust": bust,
 		"head_scale": head_scale,
 		"body_preset": body_preset,
+		"art_style": art_style,
 		"hair_style": hair_style,
 		"uniform_style": uniform_style,
 		"face_style": face_style,
@@ -126,6 +133,7 @@ static func from_dictionary(data: Dictionary) -> AvatarProfile:
 	p.bust = float(data.get("bust", p.bust))
 	p.head_scale = float(data.get("head_scale", p.head_scale))
 	p.body_preset = str(data.get("body_preset", p.body_preset))
+	p.art_style = str(data.get("art_style", p.art_style))
 	p.hair_style = str(data.get("hair_style", p.hair_style))
 	p.uniform_style = str(data.get("uniform_style", p.uniform_style))
 	p.face_style = str(data.get("face_style", p.face_style))
