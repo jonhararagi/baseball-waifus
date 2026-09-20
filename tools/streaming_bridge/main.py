@@ -1,3 +1,4 @@
+import argparse
 import json
 import socket
 import time
@@ -8,8 +9,24 @@ from obs_client import OBSController
 from protocol import make_payload
 from tracker import FaceTracker
 
+
 ROOT = Path(__file__).resolve().parent
-CONFIG = json.loads((ROOT / "config.json").read_text(encoding="utf-8"))
+
+
+def load_config(path_value: str | None) -> dict:
+    path = Path(path_value) if path_value else ROOT / "config.json"
+    if not path.is_absolute():
+        path = ROOT / path
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Baseball Waifus local streaming bridge")
+    parser.add_argument("--config", default=None, help="Ruta opcional al config JSON")
+    parser.add_argument("--no-audio", action="store_true", help="Desactiva captura de micrófono")
+    parser.add_argument("--no-screen", action="store_true", help="Desactiva captura de pantalla")
+    parser.add_argument("--no-obs", action="store_true", help="Desactiva conexión OBS")
+    return parser.parse_args()
 
 
 def send_udp(sock, address, payload):
@@ -18,46 +35,59 @@ def send_udp(sock, address, payload):
 
 
 def main():
+    args = parse_args()
+    config = load_config(args.config)
+
     camera = WebcamCapture(
-        CONFIG.get("camera_index", 0),
-        CONFIG.get("camera_width", 1280),
-        CONFIG.get("camera_height", 720),
+        config.get("camera_index", 0),
+        config.get("camera_width", 1280),
+        config.get("camera_height", 720),
     )
     if not camera.opened:
+        camera.close()
         raise RuntimeError("No se pudo abrir la webcam configurada.")
 
-    tracker = FaceTracker(CONFIG.get("tracking_smoothing", 0.45))
+    tracker = FaceTracker(config.get("tracking_smoothing", 0.45))
 
     audio = AudioMeter(
-        device=CONFIG.get("audio_device"),
-        samplerate=CONFIG.get("audio_samplerate", 48000),
-        blocksize=CONFIG.get("audio_blocksize", 1024),
+        device=config.get("audio_device"),
+        samplerate=config.get("audio_samplerate", 48000),
+        blocksize=config.get("audio_blocksize", 1024),
     )
-    if CONFIG.get("enable_audio", True):
+    audio_enabled = bool(config.get("enable_audio", True)) and not args.no_audio
+    if audio_enabled:
         audio.start()
 
     screen = None
-    if CONFIG.get("enable_screen_capture", False):
+    screen_enabled = bool(config.get("enable_screen_capture", False)) and not args.no_screen
+    if screen_enabled:
         screen = ScreenCapture()
 
-    obs = OBSController(
-        CONFIG.get("obs_host", "127.0.0.1"),
-        CONFIG.get("obs_port", 4455),
-        CONFIG.get("obs_password", ""),
-    )
-    obs.switch_scene(CONFIG.get("obs_scene", ""))
+    obs = None
+    obs_enabled = bool(config.get("enable_obs", False)) and not args.no_obs
+    if obs_enabled:
+        obs = OBSController(
+            config.get("obs_host", "127.0.0.1"),
+            config.get("obs_port", 4455),
+            config.get("obs_password", ""),
+        )
+        obs.switch_scene(config.get("obs_scene", ""))
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    target = (CONFIG.get("godot_host", "127.0.0.1"), CONFIG.get("godot_port", 8765))
-    interval = 1.0 / max(1, CONFIG.get("send_tracking_fps", 30))
-    diagnostics_every = max(1, CONFIG.get("screen_diagnostics_interval", 2.0))
+    target = (config.get("godot_host", "127.0.0.1"), config.get("godot_port", 8765))
+    interval = 1.0 / max(1, config.get("send_tracking_fps", 30))
+    diagnostics_every = max(0.1, config.get("screen_diagnostics_interval", 2.0))
     next_diagnostics = time.perf_counter()
 
     print("Baseball Waifus Streaming Bridge")
     print(f"Tracking UDP -> {target[0]}:{target[1]}")
-    print(f"Camera -> {camera.index} ({CONFIG.get('camera_width', 1280)}x{CONFIG.get('camera_height', 720)})")
+    print(f"Camera -> {camera.index} ({config.get('camera_width', 1280)}x{config.get('camera_height', 720)})")
     print(f"Audio -> {'ON' if audio.enabled else 'OFF'}")
     print(f"Screen diagnostics -> {'ON' if screen else 'OFF'}")
+    if obs is not None:
+        print(f"OBS -> {'CONNECTED' if obs.status().get('connected') else 'UNAVAILABLE'}")
+    else:
+        print("OBS -> OFF")
     print("Ctrl+C para salir.")
 
     try:
@@ -76,7 +106,7 @@ def main():
 
             now = time.perf_counter()
             if screen is not None and now >= next_diagnostics:
-                preview = screen.grab(CONFIG.get("screen_monitor", 1))
+                preview = screen.grab(config.get("screen_monitor", 1))
                 capture_status["screen_width"] = int(preview.shape[1])
                 capture_status["screen_height"] = int(preview.shape[0])
                 next_diagnostics = now + diagnostics_every
