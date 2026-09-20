@@ -114,19 +114,35 @@ func on_batted_ball_event(event: BattedBallEvent) -> void:
 		"FOUL":
 			_play_position("C", AnimeAvatar2D.Pose.CATCH, 0.55, AnimeAvatar2D.Pose.IDLE)
 			_move_field("C", event.target, 0.28, 0.05)
+		"FIELDING_CANDIDATE":
+			_react_to_ball_zone(zone, event.target, 0.56, AnimeAvatar2D.Pose.CATCH)
 		"OUT":
-			_react_to_ball_zone(zone, event.target, 0.48)
+			_react_to_ball_zone(zone, event.target, 0.48, AnimeAvatar2D.Pose.THROW)
 			_play_position("C", AnimeAvatar2D.Pose.CATCH, 0.6, AnimeAvatar2D.Pose.IDLE)
 		"STRIKE":
 			_play_position("C", AnimeAvatar2D.Pose.CATCH, 0.55, AnimeAvatar2D.Pose.IDLE)
 
-func _react_to_ball_zone(zone: String, target: Vector2, duration: float) -> void:
+func _react_to_ball_zone(zone: String, target: Vector2, duration: float, next_pose: AnimeAvatar2D.Pose = AnimeAvatar2D.Pose.THROW) -> void:
 	var primary := zone
 	if not field_avatars.has(primary):
 		primary = "CF"
-	_play_position(primary, AnimeAvatar2D.Pose.RUN, duration, AnimeAvatar2D.Pose.THROW)
+	_play_position(primary, AnimeAvatar2D.Pose.RUN, duration, next_pose)
 	_move_field(primary, target, duration, 0.08)
 
+
+func on_fielding_resolution(event: BattedBallEvent, resolution: Dictionary) -> void:
+	if event == null or resolution.is_empty():
+		return
+	var defender_position := str(resolution.get("defender_position", event.target_zone()))
+	var success := bool(resolution.get("success", false))
+
+	if success:
+		_play_position(defender_position, AnimeAvatar2D.Pose.CATCH, 0.48, AnimeAvatar2D.Pose.CELEBRATE)
+		_move_field(defender_position, event.target, 0.18, 0.12)
+	else:
+		_play_position(defender_position, AnimeAvatar2D.Pose.HIT_REACTION, 0.48, AnimeAvatar2D.Pose.THROW)
+		_move_field(defender_position, event.target, 0.18, 0.04)
+		_play_position("C", AnimeAvatar2D.Pose.CATCH, 0.55, AnimeAvatar2D.Pose.IDLE)
 
 func sync_runners(bases: Array, snap_to_base := true) -> void:
 	for i in range(min(3, runner_avatars.size())):
