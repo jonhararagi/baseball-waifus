@@ -3,6 +3,7 @@ extends Node2D
 const BALL_START := Vector2(610, 350)
 const BATTER_POS := Vector2(1040, 430)
 const PITCHER_POS := Vector2(640, 370)
+const CATCHER_POS := Vector2(1035, 485)
 
 var simulator := BaseballSimulator.new()
 var state := BaseballGameState.new()
@@ -11,6 +12,7 @@ var runner_system := RunnerSystem.new()
 var rng := RandomNumberGenerator.new()
 var avatar_presenter: AvatarMatchPresenter
 var field_avatar_presenter: BaseballFieldAvatarPresenter
+var ball_controller: BaseballBallController
 var avatar_game_over_handled := false
 
 var player_team: BaseballTeamData
@@ -18,8 +20,6 @@ var rival_team: BaseballTeamData
 var batter: PlayerData
 var pitcher: PlayerData
 var current_pitch: Pitch
-var ball_position := BALL_START
-var ball_progress := 0.0
 var pitch_elapsed := 0.0
 var timing_value := 0.0
 var timing_direction := 1.0
@@ -40,6 +40,10 @@ func _ready() -> void:
 	add_child(field_avatar_presenter)
 	field_avatar_presenter.setup(_build_demo_defensive_roster())
 	field_avatar_presenter.sync_runners(state.bases)
+
+	ball_controller = BaseballBallController.new()
+	add_child(ball_controller)
+	ball_controller.ball_position = BALL_START
 
 	var hud := GameHUD.new()
 	add_child(hud)
@@ -85,8 +89,6 @@ func _process(delta: float) -> void:
 
 func _start_pitch() -> void:
 	current_pitch = Pitch.create(ai.choose_pitch(pitcher, state.strikes, state.balls))
-	ball_position = BALL_START
-	ball_progress = 0.0
 	pitch_elapsed = 0.0
 	phase = "PITCHING"
 	_get_hud().clear_result()
@@ -94,15 +96,17 @@ func _start_pitch() -> void:
 		avatar_presenter.on_pitch_selected()
 	if field_avatar_presenter != null:
 		field_avatar_presenter.on_pitch()
+	if ball_controller != null:
+		ball_controller.play_pitch(BALL_START, BATTER_POS, 1.55 / current_pitch.speed, current_pitch.break_amount)
 
 func _update_pitch(delta: float) -> void:
 	pitch_elapsed += delta
-	ball_progress = clamp(pitch_elapsed / (1.55 / current_pitch.speed), 0.0, 1.0)
-	ball_position = BALL_START.lerp(BATTER_POS, ball_progress)
-	if ball_progress >= 1.0:
+	if pitch_elapsed >= 1.55 / current_pitch.speed:
 		phase = "TIMING"
 		timing_value = 0.0
 		timing_direction = 1.0
+		if ball_controller != null:
+			ball_controller.stop()
 		if avatar_presenter != null:
 			avatar_presenter.on_timing_started()
 
@@ -125,10 +129,16 @@ func _input(event: InputEvent) -> void:
 func _swing() -> void:
 	current_result = simulator.resolve_batted_ball(batter, pitcher, current_pitch, timing_value, rng)
 	_apply_batting_result(current_result)
+	var ball_event := BattedBallEvent.from_result(current_result, BATTER_POS, rng.randi())
+	if ball_controller != null:
+		if str(current_result.get("result", "")) == "STRIKE":
+			ball_controller.play_miss_to_catcher(BATTER_POS, CATCHER_POS)
+		else:
+			ball_controller.play_batted_event(ball_event)
 	if avatar_presenter != null:
 		avatar_presenter.on_batting_result(current_result)
 	if field_avatar_presenter != null:
-		field_avatar_presenter.on_batted_ball(current_result)
+		field_avatar_presenter.on_batted_ball_event(ball_event)
 		field_avatar_presenter.sync_runners(state.bases)
 	_get_hud().show_result(current_result)
 	phase = "RESULT"
@@ -227,5 +237,3 @@ func _draw() -> void:
 	for base in [home, first, second, third]:
 		draw_circle(base, 12, Color.WHITE)
 
-	if phase == "PITCHING" or phase == "TIMING":
-		draw_circle(ball_position, 9, Color.WHITE)
