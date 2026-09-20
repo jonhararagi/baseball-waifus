@@ -72,6 +72,22 @@ Configurar `config.json` para cámara, audio, pantalla, puerto UDP, smoothing y 
 
 El tracking usa un protocolo versionado (`baseball-waifus-tracking`, v1) y `TrackingReceiver` descarta datos obsoletos.
 
+### Panel local de control
+
+Con el bridge activo, abrir:
+
+`http://127.0.0.1:8787/`
+
+El panel muestra tracking, edad del último frame válido, FPS, cantidad de paquetes enviados, uptime, audio, OBS y estado de grabación. También permite iniciar/detener el recorder JSONL.
+
+Endpoints locales:
+- `GET /api/status`
+- `GET /api/health`
+- `POST /api/record/start`
+- `POST /api/record/stop`
+
+El servidor de control solo acepta localhost y no sirve video ni audio.
+
 ## Licencias y referencias
 
 La implementación procedural es propia. Las referencias externas se utilizan solo como patrones de arquitectura y se deben conservar separadas de cualquier contenido propietario.
