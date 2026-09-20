@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 
 from tracking_provider import create_tracking_provider
 
@@ -14,7 +15,14 @@ class TrackingProviderTests(unittest.TestCase):
         finally:
             provider.close()
 
-    def test_mediapipe_provider_is_constructed_lazily(self):
-        # The provider is only constructed for the real-camera path.
-        # Runtime dependency availability is validated by the existing tracker/health tests.
-        self.assertFalse(create_tracking_provider.__name__ == "")
+    def test_mediapipe_provider_creation_is_lazy_to_runtime_path(self):
+        fake = object()
+        with patch("tracking_provider.MediaPipeTrackingProvider", return_value=fake) as constructor:
+            provider, synthetic = create_tracking_provider(False, 0.45)
+        self.assertIs(provider, fake)
+        self.assertFalse(synthetic)
+        constructor.assert_called_once_with(0.45)
+
+
+if __name__ == "__main__":
+    unittest.main()
