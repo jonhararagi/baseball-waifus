@@ -10,12 +10,14 @@ var control := Vector2.ZERO
 var duration := 0.8
 var arc_height := 0.0
 var is_home_run := false
+var contact_quality := 0.0
 
 static func from_result(result_data: Dictionary, origin_position: Vector2, seed_value: int) -> BattedBallEvent:
 	var event := BattedBallEvent.new()
 	event.result = str(result_data.get("result", "OUT"))
 	event.timing = str(result_data.get("timing", ""))
 	event.seed = seed_value
+	event.contact_quality = float(result_data.get("contact_quality", 0.0))
 	event.origin = origin_position
 	event._configure_trajectory()
 	return event
