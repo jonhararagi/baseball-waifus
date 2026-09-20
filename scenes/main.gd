@@ -31,6 +31,7 @@ var result_timer := 0.0
 var current_result := {}
 var message := ""
 var active_role_signature := ""
+var pitch_select_elapsed := 0.0
 var input_router: MobileInputRouter
 var mobile_controls: MobileControls
 var platform_bridge: PlatformBridge
@@ -120,7 +121,9 @@ func _build_runner_player_lookup() -> Dictionary:
 func _process(delta: float) -> void:
 	if mobile_controls != null:
 		mobile_controls.set_swing_enabled(phase == "TIMING")
-		mobile_controls.set_steal_visible(phase == "PITCH_SELECT" and state.base_runners.has(true))
+		var has_runner := state.base_runners[0] != null or state.base_runners[1] != null or state.base_runners[2] != null
+		mobile_controls.set_steal_visible(phase == "PITCH_SELECT" and has_runner)
+
 	if state.game_over:
 		if avatar_presenter != null:
 			avatar_presenter.on_game_over(state.winner)
@@ -130,7 +133,9 @@ func _process(delta: float) -> void:
 
 	match phase:
 		"PITCH_SELECT":
-			_start_pitch()
+			pitch_select_elapsed += delta
+			if pitch_select_elapsed >= 1.0:
+				_start_pitch()
 		"PITCHING":
 			_update_pitch(delta)
 		"TIMING":
@@ -141,12 +146,14 @@ func _process(delta: float) -> void:
 				current_result = {}
 				message = ""
 				phase = "PITCH_SELECT"
+				pitch_select_elapsed = 0.0
 				_get_hud().clear_result()
 
 	_update_hud()
 	queue_redraw()
 
 func _start_pitch() -> void:
+	pitch_select_elapsed = 0.0
 	_sync_match_roles()
 	current_pitch = Pitch.create(ai.choose_pitch(pitcher, state.strikes, state.balls))
 	pitch_elapsed = 0.0
