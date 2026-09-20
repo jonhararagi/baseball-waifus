@@ -1,0 +1,11 @@
+{
+  "server_host": "127.0.0.1",
+  "server_port": 8766,
+  "comfyui_url": "http://127.0.0.1:8188",
+  "workflow_template": "tools/character_ai/workflow_sdxl.json",
+  "model": "PUT_YOUR_ANIME_CHECKPOINT_HERE.safetensors",
+  "default_preset": "baseball_waifus_soft",
+  "output_timeout_seconds": 180,
+  "poll_interval_seconds": 1.0,
+  "output_dir": "generated"
+}
