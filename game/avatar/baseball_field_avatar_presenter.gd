@@ -253,11 +253,14 @@ func on_steal_started(from_base: int) -> void:
 		return
 	runner_motions[from_base].play(AnimeAvatar2D.Pose.STEAL, 0.9, AnimeAvatar2D.Pose.RUN)
 
-func on_steal_result(from_base: int, success: bool, destination_base: int) -> void:
+func on_steal_result(from_base: int, success: bool, destination_base: int, after_runners: Array = []) -> void:
 	if from_base < 0 or from_base >= 3:
 		return
 	if not runner_avatars[from_base].visible:
 		return
+
+	if not after_runners.is_empty():
+		current_runners = after_runners.duplicate()
 
 	if success:
 		runner_motions[from_base].play(AnimeAvatar2D.Pose.RUN, 0.7, AnimeAvatar2D.Pose.IDLE)
