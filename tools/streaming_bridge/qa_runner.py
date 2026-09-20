@@ -9,13 +9,14 @@ class QARunner:
     def __init__(self, root: Path, timeout_seconds: float = 120.0):
         self.root = Path(root)
         self.timeout_seconds = max(5.0, float(timeout_seconds))
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
         self._running = False
         self._started_at = None
         self._finished_at = None
         self._exit_code = None
         self._output = ""
         self._command = None
+        self._process = None
 
     def status(self) -> dict:
         with self._lock:
@@ -55,20 +56,27 @@ class QARunner:
     def _worker(self) -> None:
         command = self._command or []
         try:
-            completed = subprocess.run(
+            process = subprocess.Popen(
                 command,
                 cwd=self.root,
                 text=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
-                timeout=self.timeout_seconds,
-                check=False,
             )
-            exit_code = int(completed.returncode)
-            output = completed.stdout or ""
-        except subprocess.TimeoutExpired as exc:
-            exit_code = 124
-            output = (exc.stdout or "") + "\nQA timeout after %.1fs" % self.timeout_seconds
+            with self._lock:
+                self._process = process
+            try:
+                stdout, _ = process.communicate(timeout=self.timeout_seconds)
+                exit_code = int(process.returncode)
+                output = stdout or ""
+            except subprocess.TimeoutExpired:
+                process.kill()
+                stdout, _ = process.communicate()
+                exit_code = 124
+                output = (stdout or "") + "\nQA timeout after %.1fs" % self.timeout_seconds
+            finally:
+                with self._lock:
+                    self._process = None
         except OSError as exc:
             exit_code = 127
             output = f"QA launch failed: {exc}"
@@ -80,6 +88,10 @@ class QARunner:
             self._output = output[-20000:]
 
     def close(self) -> None:
-        # subprocess.run lives in a daemon worker; no process survives bridge shutdown
-        # beyond the current OS process because the worker is not detached.
+        with self._lock:
+            process = self._process
+            self._process = None
+            running = self._running
+            if process is not None and running:
+                process.kill()
         return
