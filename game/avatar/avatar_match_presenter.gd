@@ -59,13 +59,13 @@ func on_batting_result(result: Dictionary) -> void:
 		"HOME RUN":
 			batter_motion.play(AnimeAvatar2D.Pose.CELEBRATE, 1.2, AnimeAvatar2D.Pose.IDLE)
 			pitcher_motion.play(AnimeAvatar2D.Pose.HIT_REACTION, 0.85, AnimeAvatar2D.Pose.IDLE)
-		"SINGLE", "DOUBLE", "TRIPLE":
+		"SINGLE", "DOUBLE", "TRIPLE", "FIELDING ERROR":
 			batter_motion.play(AnimeAvatar2D.Pose.HIT_REACTION, 0.75, AnimeAvatar2D.Pose.RUN)
 			pitcher_motion.play(AnimeAvatar2D.Pose.HIT_REACTION, 0.75, AnimeAvatar2D.Pose.IDLE)
 		"FOUL":
 			batter_motion.play(AnimeAvatar2D.Pose.HIT_REACTION, 0.6, AnimeAvatar2D.Pose.BAT)
 			pitcher_motion.play(AnimeAvatar2D.Pose.IDLE, 0.4, AnimeAvatar2D.Pose.IDLE)
-		"OUT", "STRIKE":
+		"OUT", "DOUBLE PLAY", "STRIKE":
 			batter_motion.play(AnimeAvatar2D.Pose.OUT, 0.85, AnimeAvatar2D.Pose.IDLE)
 			pitcher_motion.play(AnimeAvatar2D.Pose.CELEBRATE, 0.85, AnimeAvatar2D.Pose.IDLE)
 		_:
