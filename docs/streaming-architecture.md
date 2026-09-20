@@ -121,3 +121,24 @@ El bridge ahora puede grabar el mismo paquete JSON que recibe Godot. La grabaci�
 Godot también valida protocolo, versión, objeto tracking y orden de secuencia. Los paquetes inválidos o atrasados se descartan.
 
 El Web Host valida además que el mensaje llegue desde el iframe de Godot esperado y desde su origen exacto. Un `client_id` vacío ya no intenta inicializar el SDK de Discord.
+
+## Revisión 19: control operativo local
+
+La herramienta de streaming ahora incluye un panel HTTP local independiente del gameplay:
+
+`Bridge Runtime → Control Server → Dashboard HTML`
+
+El servidor usa la biblioteca estándar de Python, `ThreadingHTTPServer` y escucha solamente en localhost. Expone `GET /api/status`, `POST /api/record/start` y `POST /api/record/stop`.
+
+El panel no recibe video ni audio. Solo muestra métricas y controla la grabación del protocolo JSONL.
+
+Esto mantiene separadas las responsabilidades:
+
+- OpenCV/MediaPipe: captura y tracking.
+- Recorder: persistencia de paquetes.
+- UDP: transporte al avatar.
+- Control Server: operación local.
+- Godot: recepción y render.
+- OBS: composición y emisión.
+
+El panel puede desactivarse con `--no-control`.
