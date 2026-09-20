@@ -23,5 +23,6 @@
   "obs_scene": "",
   "tracking_smoothing": 0.45,
   "send_tracking_fps": 30,
-  "enable_synthetic_tracking": false
+  "enable_synthetic_tracking": false,
+  "qa_timeout_seconds": 120
 }
