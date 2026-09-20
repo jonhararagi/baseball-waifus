@@ -16,33 +16,50 @@ ComfyUI se usa como backend de generación porque expone una API local y trabaja
 
 ## Modelos
 
-El proyecto no redistribuye checkpoints. El config acepta cualquier modelo compatible con el workflow. Puede utilizar familias anime XL habituales, siempre que el usuario tenga una copia legal y compruebe la licencia concreta del checkpoint o LoRA.
+El proyecto no redistribuye checkpoints. El config acepta cualquier modelo compatible con el workflow.
 
-## Preset visual del juego
+Familias preparadas para comparación:
+- Animagine XL
+- Illustrious XL
+- NoobAI-XL
+- Pony/SDXL
 
-- anatomía anime adulta;
-- proporciones shonen heroicas;
+No se asigna un ranking fijo dentro del código. El benchmark utiliza el mismo personaje, seed, resolución, prompt y negative prompt, y deja la evaluación visual para comprobar consistencia, anatomía, legibilidad y adecuación al estilo del juego.
+
+## Benchmark
+
+1. Instalar localmente los checkpoints que quieras comparar.
+2. Editar `benchmark_models.json` con sus nombres exactos.
+3. Ejecutar ComfyUI.
+4. Ejecutar `python benchmark_models.py`.
+5. Comparar los resultados de `generated/benchmark/`.
+
+El benchmark no descarga modelos y no los redistribuye.
+
+## Estilo de Baseball Waifus
+
+- anime adulto;
+- proporciones shonen redondeadas;
 - cuerpos atléticos con formas suaves y algo más llenas;
 - ojos expresivos;
 - cel shading limpio;
 - colores vivos;
 - siluetas legibles;
 - uniformes deportivos;
-- fanservice adulto moderado;
-- diseño de personaje de videojuego.
+- fanservice adulto moderado.
 
-Se evita deliberadamente chibi, anatomía infantil y copiar la identidad visual de una franquicia concreta.
+Se evita chibi, anatomía infantil, fotorealismo y la imitación directa de una franquicia.
 
 ## Ejecución
 
-1. Ejecutar ComfyUI localmente.
-2. Instalar el checkpoint elegido en ComfyUI.
-3. Verificar manualmente el workflow.
-4. Ejecutar el bridge de Baseball Waifus.
-5. Ejecutar el Character Creator.
+Ejecutar el bridge:
 
-Endpoint local: POST http://127.0.0.1:8766/generate
+`python art_server.py`
 
-## Estado
+Endpoint local:
 
-Implementado como módulo opcional. No sustituye el renderer procedural y no es necesario para jugar.
+`POST http://127.0.0.1:8766/generate`
+
+## Licencias
+
+Cada checkpoint y LoRA debe verificarse individualmente para uso comercial y redistribución. El repositorio solo contiene código y metadatos propios.
