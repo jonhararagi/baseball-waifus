@@ -9,6 +9,7 @@ from obs_client import OBSController
 from protocol import encode_payload, make_payload
 from recorder import TrackingRecorder
 from tracker import FaceTracker
+from control_server import BridgeControl
 
 
 ROOT = Path(__file__).resolve().parent
@@ -28,6 +29,7 @@ def parse_args():
     parser.add_argument("--no-screen", action="store_true", help="Desactiva captura de pantalla")
     parser.add_argument("--no-obs", action="store_true", help="Desactiva conexión OBS")
     parser.add_argument("--record", action="store_true", help="Graba paquetes JSONL además de enviarlos")
+    parser.add_argument("--no-control", action="store_true", help="Desactiva el panel local de control")
     return parser.parse_args()
 
 
@@ -67,8 +69,8 @@ def main():
     obs = None
     record_enabled = bool(config.get("enable_recording", False)) or args.record
     recorder = None
-    if record_enabled:
-        recorder = TrackingRecorder(str(ROOT / config.get("record_path", "recordings/session.jsonl")))
+    record_path = str(ROOT / config.get("record_path", "recordings/session.jsonl"))
+    record_lock = __import__("threading").Lock()
 
     obs_enabled = bool(config.get("enable_obs", False)) and not args.no_obs
     if obs_enabled:
@@ -85,6 +87,56 @@ def main():
     diagnostics_every = max(0.1, config.get("screen_diagnostics_interval", 2.0))
     next_diagnostics = time.perf_counter()
     sequence = 0
+    fps_window_start = time.perf_counter()
+    fps_window_frames = 0
+    current_fps = 0.0
+    last_tracking_active = False
+    control = None
+
+    def start_recording():
+        nonlocal recorder
+        with record_lock:
+            if recorder is None:
+                recorder = TrackingRecorder(record_path)
+            return {"ok": True, "recording": True, "path": str(recorder.path)}
+
+    def stop_recording():
+        nonlocal recorder
+        with record_lock:
+            if recorder is not None:
+                recorder.close()
+                recorder = None
+            return {"ok": True, "recording": False}
+
+    def status_provider():
+        with record_lock:
+            current_recorder = recorder
+            recording = current_recorder is not None and current_recorder.file is not None
+            record_count = current_recorder.count if current_recorder is not None else 0
+        return {
+            "ok": True,
+            "tracking_active": last_tracking_active,
+            "fps": current_fps,
+            "sequence": max(sequence - 1, 0),
+            "audio_enabled": audio.enabled,
+            "screen_enabled": screen is not None,
+            "obs_connected": bool(obs and obs.status().get("connected")),
+            "recording": recording,
+            "record_count": record_count,
+            "record_path": record_path,
+            "target": f"{target[0]}:{target[1]}",
+        }
+
+    control_enabled = bool(config.get("enable_control_server", True)) and not args.no_control
+    if control_enabled:
+        control = BridgeControl(
+            config.get("control_host", "127.0.0.1"),
+            int(config.get("control_port", 8787)),
+            status_provider,
+            start_recording,
+            stop_recording,
+        )
+        control.start()
 
     print("Baseball Waifus Streaming Bridge")
     print(f"Tracking UDP -> {target[0]}:{target[1]}")
@@ -92,6 +144,10 @@ def main():
     print(f"Audio -> {'ON' if audio.enabled else 'OFF'}")
     print(f"Screen diagnostics -> {'ON' if screen else 'OFF'}")
     print(f"Recording -> {'ON' if recorder else 'OFF'}")
+    if control is not None:
+        print(f"Control panel -> http://{config.get('control_host', '127.0.0.1')}:{control.server.server_address[1]}/")
+    else:
+        print("Control panel -> OFF")
     if obs is not None:
         print(f"OBS -> {'CONNECTED' if obs.status().get('connected') else 'UNAVAILABLE'}")
     else:
@@ -107,6 +163,7 @@ def main():
                 continue
 
             tracking = tracker.process(frame)
+            last_tracking_active = bool(tracking.get("tracking", False))
             capture_status = {
                 "camera": True,
                 "screen": screen is not None,
@@ -120,10 +177,18 @@ def main():
                 next_diagnostics = now + diagnostics_every
 
             payload = make_payload(tracking, audio.snapshot(), capture_status, sequence=sequence, sent_at_ms=int(time.time() * 1000))
-            if recorder:
-                recorder.write(payload)
+            with record_lock:
+                if recorder is not None:
+                    recorder.write(payload)
             send_udp(sock, target, payload)
             sequence += 1
+            fps_window_frames += 1
+            fps_now = time.perf_counter()
+            elapsed = fps_now - fps_window_start
+            if elapsed >= 1.0:
+                current_fps = fps_window_frames / elapsed
+                fps_window_frames = 0
+                fps_window_start = fps_now
 
             next_tick += interval
             sleep_for = next_tick - time.perf_counter()
@@ -139,8 +204,11 @@ def main():
         audio.close()
         if screen is not None:
             screen.close()
-        if recorder is not None:
-            recorder.close()
+        with record_lock:
+            if recorder is not None:
+                recorder.close()
+        if control is not None:
+            control.close()
         sock.close()
 
 
