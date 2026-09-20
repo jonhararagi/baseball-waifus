@@ -90,6 +90,9 @@ def main():
     diagnostics_every = max(0.1, config.get("screen_diagnostics_interval", 2.0))
     next_diagnostics = time.perf_counter()
     sequence = 0
+    sent_packets = 0
+    last_tracking_ms = 0
+    started_at = time.monotonic()
     fps_window_start = time.perf_counter()
     fps_window_frames = 0
     current_fps = 0.0
@@ -117,11 +120,21 @@ def main():
             current_recorder = recorder
             recording = current_recorder is not None and current_recorder.file is not None
             record_count = current_recorder.count if current_recorder is not None else 0
+
+        now_ms = int(time.time() * 1000)
+        tracking_age_ms = None
+        if last_tracking_ms > 0:
+            tracking_age_ms = max(0, now_ms - last_tracking_ms)
+
         return {
             "ok": True,
+            "service": "streaming_bridge",
             "tracking_active": last_tracking_active,
+            "tracking_age_ms": tracking_age_ms,
             "fps": current_fps,
             "sequence": max(sequence - 1, 0),
+            "sent_packets": sent_packets,
+            "uptime_s": max(0.0, time.monotonic() - started_at),
             "audio_enabled": audio.enabled,
             "screen_enabled": screen is not None,
             "obs_connected": obs_connected_cached,
@@ -174,6 +187,8 @@ def main():
 
             tracking = tracker.process(frame)
             last_tracking_active = bool(tracking.get("tracking", False))
+            if last_tracking_active:
+                last_tracking_ms = int(time.time() * 1000)
             capture_status = {
                 "camera": True,
                 "screen": screen is not None,
@@ -192,6 +207,7 @@ def main():
                     recorder.write(payload)
             send_udp(sock, target, payload)
             sequence += 1
+            sent_packets += 1
             fps_window_frames += 1
             fps_now = time.perf_counter()
             elapsed = fps_now - fps_window_start
