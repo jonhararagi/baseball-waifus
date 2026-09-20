@@ -131,6 +131,7 @@ func _swing() -> void:
 	var preliminary_result := simulator.resolve_batted_ball(batter, pitcher, current_pitch, timing_value, rng)
 	var ball_event := BattedBallEvent.from_result(preliminary_result, BATTER_POS, rng.randi())
 	var fielding_result: Dictionary = {}
+	var fielding_play: FieldingPlayEvent = null
 
 	if str(preliminary_result.get("result", "")) == "FIELDING_CANDIDATE":
 		fielding_result = fielding_resolver.resolve(
@@ -143,6 +144,14 @@ func _swing() -> void:
 		current_result["result"] = str(fielding_result.get("final_result", "SINGLE"))
 		current_result["bases"] = int(fielding_result.get("bases", 1))
 		current_result["fielding"] = fielding_result
+
+		if not bool(fielding_result.get("success", false)):
+			fielding_play = FieldingPlayEvent.from_resolution(ball_event, fielding_result)
+			current_result["fielding_play"] = {
+				"rebound_count": fielding_play.rebound_points.size(),
+				"receiver": fielding_play.receiver_position,
+				"throw_duration": fielding_play.throw_duration
+			}
 	else:
 		current_result = preliminary_result
 
@@ -151,6 +160,8 @@ func _swing() -> void:
 	if ball_controller != null:
 		if str(current_result.get("result", "")) == "STRIKE":
 			ball_controller.play_miss_to_catcher(BATTER_POS, CATCHER_POS)
+		elif fielding_play != null:
+			ball_controller.play_fielding_play(ball_event, fielding_play)
 		else:
 			ball_controller.play_batted_event(ball_event)
 
@@ -163,11 +174,13 @@ func _swing() -> void:
 			field_avatar_presenter.sync_runners(state.bases)
 		else:
 			field_avatar_presenter.on_fielding_resolution(ball_event, fielding_result)
+			if fielding_play != null:
+				field_avatar_presenter.on_fielding_play(ball_event, fielding_play)
 			field_avatar_presenter.sync_runners(state.bases)
 
 	_get_hud().show_result(current_result)
 	phase = "RESULT"
-	result_timer = 1.2
+	result_timer = 2.0 if fielding_play != null else 1.2
 
 func _apply_batting_result(result: Dictionary) -> void:
 	match result.result:
@@ -261,4 +274,3 @@ func _draw() -> void:
 
 	for base in [home, first, second, third]:
 		draw_circle(base, 12, Color.WHITE)
-
