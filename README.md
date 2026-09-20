@@ -299,3 +299,27 @@ La prueba `test_streaming_pipeline.py` cubre el recorrido:
 `Avatar tracking simulado → protocol → JSONL recorder → replay → UDP`
 
 y verifica también que un payload con versión incorrecta sea rechazado antes de enviarse.
+
+
+### Tracking providers
+
+El bridge usa una frontera común de proveedores de tracking:
+
+- MediaPipe para webcam real.
+- Synthetic para QA offline.
+- OpenSeeFace queda previsto como adapter futuro.
+
+El protocolo UDP y el receptor de Godot no dependen del proveedor.
+
+### QA y control local
+
+Además del recorder, el panel local expone:
+
+- `GET /api/status`
+- `GET /api/health`
+- `GET /api/qa/status`
+- `POST /api/record/start`
+- `POST /api/record/stop`
+- `POST /api/qa/run`
+
+La investigación OSS del pipeline está en `docs/research/streaming_oss/`.
