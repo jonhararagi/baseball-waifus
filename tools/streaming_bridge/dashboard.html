@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Baseball Waifus Streaming Control</title>
+  <style>
+    :root{color-scheme:dark;font-family:system-ui,sans-serif}
+    body{margin:0;background:#0d1117;color:#eef2f7;min-height:100vh}
+    main{max-width:980px;margin:0 auto;padding:28px}
+    h1{margin:0 0 6px}
+    .sub{color:#98a2b3;margin:0 0 24px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+    .card{background:#151b23;border:1px solid #293241;border-radius:14px;padding:16px}
+    .label{font-size:12px;color:#98a2b3;text-transform:uppercase;letter-spacing:.08em}
+    .value{font-size:28px;font-weight:700;margin-top:4px}
+    .ok{color:#7ee787}.warn{color:#f2cc60}.bad{color:#ff7b72}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+    button{border:0;border-radius:10px;padding:12px 16px;font-weight:700;cursor:pointer}
+    #start{background:#2ea043;color:#fff} #stop{background:#d1242f;color:#fff}
+    pre{background:#0a0f14;border-radius:12px;padding:12px;overflow:auto;color:#a8dadc}
+    footer{margin-top:20px;color:#667085;font-size:13px}
+  </style>
+</head>
+<body>
+<main>
+  <h1>Baseball Waifus • Streaming Control</h1>
+  <p class="sub">Panel local del bridge. El servidor escucha solamente en localhost.</p>
+
+  <section class="grid">
+    <div class="card"><div class="label">Tracking</div><div id="tracking" class="value">--</div></div>
+    <div class="card"><div class="label">FPS</div><div id="fps" class="value">--</div></div>
+    <div class="card"><div class="label">Sequence</div><div id="sequence" class="value">--</div></div>
+    <div class="card"><div class="label">Audio</div><div id="audio" class="value">--</div></div>
+    <div class="card"><div class="label">OBS</div><div id="obs" class="value">--</div></div>
+    <div class="card"><div class="label">Grabación</div><div id="recording" class="value">--</div></div>
+  </section>
+
+  <div class="actions">
+    <button id="start">Iniciar grabación</button>
+    <button id="stop">Detener grabación</button>
+  </div>
+
+  <h3>Diagnóstico</h3>
+  <pre id="detail">Cargando...</pre>
+  <footer>Solo accesible desde esta máquina. No expone cámara, micrófono ni tracking a Internet.</footer>
+</main>
+
+<script>
+const el = (id) => document.getElementById(id);
+async function request(path, options = {}) {
+  const response = await fetch(path, { ...options, headers: {"Content-Type":"application/json"} });
+  const data = await response.json();
+  if (!response.ok || data.ok === false) throw new Error(data.error || "request failed");
+  return data;
+}
+function setClass(node, value) {
+  node.className = "value " + value;
+}
+async function refresh() {
+  try {
+    const s = await request("/api/status");
+    el("tracking").textContent = s.tracking_active ? "ACTIVO" : "SIN TRACKING";
+    setClass(el("tracking"), s.tracking_active ? "ok" : "warn");
+    el("fps").textContent = (s.fps || 0).toFixed(1);
+    el("sequence").textContent = String(s.sequence ?? 0);
+    el("audio").textContent = s.audio_enabled ? "ON" : "OFF";
+    setClass(el("audio"), s.audio_enabled ? "ok" : "warn");
+    el("obs").textContent = s.obs_connected ? "CONECTADO" : "OFFLINE";
+    setClass(el("obs"), s.obs_connected ? "ok" : "warn");
+    el("recording").textContent = s.recording ? "GRABANDO" : "DETENIDO";
+    setClass(el("recording"), s.recording ? "ok" : "warn");
+    el("detail").textContent = JSON.stringify(s, null, 2);
+  } catch (error) {
+    el("detail").textContent = String(error);
+  }
+}
+el("start").addEventListener("click", async () => { try { await request("/api/record/start",{method:"POST"}); await refresh(); } catch(e){ alert(e); } });
+el("stop").addEventListener("click", async () => { try { await request("/api/record/stop",{method:"POST"}); await refresh(); } catch(e){ alert(e); } });
+refresh();
+setInterval(refresh, 1000);
+</script>
+</body>
+</html>
