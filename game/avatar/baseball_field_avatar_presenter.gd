@@ -62,7 +62,13 @@ func _create_runner_placeholder(index: int) -> AnimeAvatar2D:
 	player.position = "RF"
 	player.specialization = "runner"
 	player.element = "neutral"
-	return _create_avatar(player, RUNNER_POSITIONS[index], 17)
+	var avatar := AnimeAvatar2D.new()
+	avatar.position = RUNNER_POSITIONS[index]
+	avatar.z_index = 17
+	avatar.scale = Vector2(0.68, 0.68)
+	avatar.setup(PlayerAvatarAdapter.from_player(player))
+	add_child(avatar)
+	return avatar
 
 func clear_field() -> void:
 	for avatar in field_avatars.values():
