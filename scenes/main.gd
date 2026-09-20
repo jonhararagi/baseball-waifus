@@ -31,6 +31,9 @@ var result_timer := 0.0
 var current_result := {}
 var message := ""
 var active_role_signature := ""
+var input_router: MobileInputRouter
+var mobile_controls: MobileControls
+var platform_bridge: PlatformBridge
 
 func _ready() -> void:
 	rng.randomize()
@@ -45,6 +48,23 @@ func _ready() -> void:
 	ball_controller = BaseballBallController.new()
 	add_child(ball_controller)
 	ball_controller.ball_position = BALL_START
+
+	input_router = MobileInputRouter.new()
+	add_child(input_router)
+	input_router.swing_requested.connect(_swing)
+	input_router.steal_requested.connect(_attempt_steal)
+
+	mobile_controls = MobileControls.new()
+	add_child(mobile_controls)
+	mobile_controls.swing_requested.connect(input_router.request_swing)
+	mobile_controls.steal_requested.connect(input_router.request_steal)
+	var small_screen := get_viewport().get_visible_rect().size.x < 900.0
+	mobile_controls.set_mobile_active(OS.has_feature("mobile") or small_screen)
+
+	platform_bridge = PlatformBridge.new()
+	add_child(platform_bridge)
+	platform_bridge.initialize()
+	platform_bridge.set_fullscreen()
 
 	var hud := GameHUD.new()
 	add_child(hud)
@@ -98,6 +118,9 @@ func _build_runner_player_lookup() -> Dictionary:
 	return lookup
 
 func _process(delta: float) -> void:
+	if mobile_controls != null:
+		mobile_controls.set_swing_enabled(phase == "TIMING")
+		mobile_controls.set_steal_visible(phase == "PITCH_SELECT" and state.base_runners.has(true))
 	if state.game_over:
 		if avatar_presenter != null:
 			avatar_presenter.on_game_over(state.winner)
@@ -153,10 +176,20 @@ func _update_timing(delta: float) -> void:
 	_get_hud().show_timing(timing_value)
 
 func _input(event: InputEvent) -> void:
-	if ((event is InputEventKey and event.pressed and event.keycode == KEY_SPACE) or (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT)) and phase == "TIMING":
-		_swing()
+	if event is InputEventScreenTouch and event.pressed:
+		if mobile_controls != null:
+			mobile_controls.set_mobile_active(true)
+		return
+
+	if input_router == null:
+		return
+
+	if event is InputEventKey and event.pressed and event.keycode == KEY_SPACE and phase == "TIMING":
+		input_router.request_swing()
+	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT and phase == "TIMING":
+		input_router.request_swing()
 	elif event is InputEventKey and event.pressed and event.keycode == KEY_S and phase == "PITCH_SELECT":
-		_attempt_steal()
+		input_router.request_steal()
 
 func _swing() -> void:
 	var preliminary_result := simulator.resolve_batted_ball(batter, pitcher, current_pitch, timing_value, rng)
