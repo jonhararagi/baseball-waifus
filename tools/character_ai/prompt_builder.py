@@ -17,9 +17,10 @@ def build_prompt(profile: dict, preset_name: str = 'baseball_waifus_soft') -> tu
     bust = profile.get('bust', 1.0)
     head = profile.get('head_scale', 1.0)
     display_name = profile.get('display_name', 'Baseball Waifu')
-    positive = ', '.join([
+    body_language = {
         preset['positive'],
         f'character name {display_name}',
+        body_language,
         f'body preset {body}',
         f'hair style {hair}',
         f'uniform style {uniform}',
