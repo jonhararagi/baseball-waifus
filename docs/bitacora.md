@@ -2140,3 +2140,127 @@ El gameplay sigue siendo la única autoridad sobre resultados, carreras, outs y 
 - los perfiles visuales de las corredoras se recuperan desde PlayerData mediante player_id.
 
 El porcentaje global permanece en **≈49%**.
+
+# 25. Revisión 16: Mobile-first y plataformas embebidas
+
+**Fecha:** 2026-09-20
+**Tipo:** UX móvil / entrada táctil / Web Host / Telegram / Discord.
+
+### Motivo
+
+El objetivo del juego no es solamente funcionar en PC. La experiencia debe poder jugarse con controles simples en móvil y transportarse a un host web integrado en plataformas sociales.
+
+Se adopta un diseño one-tap:
+
+pelota → timing → HIT
+
+y una acción contextual secundaria:
+
+STEAL cuando existe corredora.
+
+### Implementado
+
+- game/input/mobile_input_router.gd
+  - normaliza entrada móvil;
+  - señales swing_requested y steal_requested;
+  - permite mantener teclado/mouse sin cambiar el gameplay.
+
+- game/ui/mobile_controls.gd
+  - botón táctil HIT grande;
+  - botón STEAL contextual;
+  - hint de timing;
+  - vibración corta opcional.
+
+- scenes/mobile_controls_test.tscn + mobile_controls_test.gd
+  - prueba aislada de la interfaz táctil.
+
+- scenes/main.gd
+  - integra MobileInputRouter;
+  - habilita controles móviles en dispositivos pequeños/táctiles;
+  - mantiene Space/click/S en desktop;
+  - añade una ventana pre-pitch de 1 segundo para robo contextual.
+
+- game/platform/platform_bridge.gd
+  - hosts LOCAL, TELEGRAM y DISCORD;
+  - detección por query string en Web;
+  - puente mediante postMessage;
+  - expansión/fullscreen y haptics.
+
+- tools/web_host/
+  - host Vite independiente del gameplay;
+  - SDK oficial de Discord Embedded Apps;
+  - Telegram WebApp bridge;
+  - iframe para el build Web de Godot;
+  - parámetro godot para seleccionar build;
+  - propagación de platform=telegram o platform=discord.
+
+- docs/mobile-platform.md
+  - describe arquitectura nativa y embebida;
+  - separa host de gameplay;
+  - documenta el flujo local.
+
+### Referencias de plataforma
+
+Se revisaron los repositorios públicos oficiales de:
+
+https://github.com/discord/embedded-app-sdk
+https://github.com/TelegramMessenger/TGMiniAppsJsSDK
+
+El paquete oficial de Discord consultado marca actualmente la versión 2.5.0 y se fija esa versión en tools/web_host/package.json.
+
+### Arquitectura móvil
+
+Desktop:
+
+keyboard/mouse → MobileInputRouter → gameplay
+
+Mobile:
+
+touch buttons → MobileInputRouter → gameplay
+
+Web host:
+
+Telegram/Discord → Web Host → Godot Web iframe → PlatformBridge
+
+El gameplay no importa SDKs de plataformas.
+
+### Estado
+
+**Implementado:**
+- experiencia táctil principal;
+- acción HIT;
+- acción STEAL contextual;
+- entrada unificada;
+- haptics opcionales;
+- host local Web;
+- adaptador Telegram;
+- adaptador Discord;
+- separación entre plataforma y gameplay;
+- prueba de controles móviles.
+
+**Pendiente:**
+- export Web real de Godot generado en el entorno;
+- build Android/iOS firmado;
+- configuración final de bot de Telegram;
+- configuración final de Discord Activity/client id;
+- despliegue HTTPS externo;
+- validación real en teléfonos;
+- backend online y sincronización multijugador.
+
+### Porcentaje global revisado
+
+El avance global estimado pasa de **≈49% a ≈53%**.
+
+El incremento representa la incorporación completa de la capa de entrada móvil y el primer host multiplataforma Web. No se contabilizan como terminadas las exportaciones ni la validación física en dispositivos reales.
+
+### Regla de continuidad
+
+El núcleo permanece independiente de la plataforma:
+
+**BaseballGameState + BaseballSimulator + RunnerSystem + resolvers + Avatar presenters**
+
+encima de:
+
+**MobileInputRouter + PlatformBridge + Web Host**
+
+Telegram y Discord se consideran hosts de presentación/entorno, no fuentes de autoridad para resultados de béisbol.
