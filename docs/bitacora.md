@@ -1652,3 +1652,102 @@ La arquitectura vigente queda:
 **Streaming Bridge + Avatar por capas + Roster persistente + TeamData + Match Presenter + Field Presenter + Trajectory Controller.**
 
 El siguiente salto lógico es conectar el resultado del béisbol con una pelota y trayectorias físicas compartidas, y después migrar el renderer procedural al rig artístico definitivo.
+
+# 21. Revisión 12: Pelota compartida y trayectoria única
+
+**Fecha:** 2026-09-20
+**Tipo:** Integración gameplay/presentación / movimiento de pelota / depuración visual.
+
+### Motivo
+
+La Revisión 11 dejó runners y defensores con trayectorias temporales, pero la pelota seguía siendo un dibujo interno de `main.gd`. Eso podía producir una separación entre el resultado lógico y la escena visual.
+
+El siguiente paso fue convertir la pelota en una entidad visual independiente y compartir un evento de trayectoria entre el motor de partido y los presenters.
+
+### Implementado
+
+- `game/baseball/batted_ball_event.gd`
+  - contrato común de resultado + trayectoria;
+  - seed visual reproducible;
+  - origen, destino y punto de control;
+  - duración y tipo de arco;
+  - clasificación de zona para el defensor.
+
+- `game/avatar/baseball_ball_controller.gd`
+  - pelota visible independiente del `main.gd`;
+  - trayectoria de pitch;
+  - trayectoria de batazo;
+  - devolución al catcher en strike;
+  - interpolación cuadrática;
+  - dibujo de pelota y lectura de movimiento.
+
+- `game/avatar/baseball_field_avatar_presenter.gd`
+  - recibe el mismo `BattedBallEvent`;
+  - determina qué defensor reacciona según la zona del destino;
+  - usa el destino real del evento para la trayectoria visual del fielder.
+
+- `scenes/main.gd`
+  - entrega la misma trayectoria a pelota y campo;
+  - elimina el antiguo círculo de pelota dibujado directamente por `main.gd`.
+
+- `scenes/baseball_ball_test.tscn`
+- `scenes/baseball_ball_test.gd`
+  - prueba aislada de Pitch, Single, Double, Triple, Home Run, Foul y Out.
+
+### Arquitectura
+
+```text
+BaseballSimulator
+      ↓
+resultado lógico
+      ↓
+BattedBallEvent
+      ├──────────────→ BaseballBallController
+      │                 ↓
+      │              pelota
+      │
+      └──────────────→ BaseballFieldAvatarPresenter
+                        ↓
+                    defensor
+```
+
+El renderer no decide si una jugada fue hit, out o home run. Recibe el resultado ya resuelto.
+
+### Estado
+
+**Implementado:**
+- streaming base;
+- Character Creator;
+- avatar por capas;
+- roster persistente;
+- TeamData reutilizable;
+- presenters de partido y campo;
+- trayectorias de jugadores;
+- pelota independiente;
+- evento compartido de trayectoria;
+- prueba aislada de pelota.
+
+**Pendiente:**
+- defensa resuelta con captura real antes de cerrar el resultado;
+- rebotes y lanzamientos posteriores de la pelota;
+- movimiento completo de runners para Single/Double/Triple/Home Run;
+- lineup real durante todos los innings;
+- rig artístico definitivo;
+- validación runtime Godot + cámara + OBS;
+- benchmark de checkpoints concretos instalados.
+
+### Porcentaje global revisado
+
+El avance global estimado pasa de **≈37% a ≈39%**.
+
+El incremento representa una integración real entre simulación y presentación. No se cuenta como terminado el sistema defensivo completo, porque todavía falta que la captura de pelota forme parte de la resolución de la jugada.
+
+### Investigación de modelos
+
+Se mantiene la búsqueda en familias anime candidatas y el benchmark local. No se declara una jerarquía de popularidad o calidad global sin datos actuales completos. Los checkpoints no se incorporan al repositorio y deben verificarse por licencia.
+
+La dirección artística permanece en anime deportivo adulto, redondeado, atlético, con fanservice ecchi no explícito y sin copiar identidades visuales de franquicias.
+
+### Regla de continuidad
+
+`BattedBallEvent` pasa a ser el contrato oficial para la trayectoria visual de una pelota bateada. No se debe volver a dibujar la pelota directamente desde `main.gd` salvo una herramienta de depuración.
