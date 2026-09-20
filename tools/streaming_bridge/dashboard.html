@@ -17,7 +17,7 @@
     .ok{color:#7ee787}.warn{color:#f2cc60}.bad{color:#ff7b72}
     .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
     button{border:0;border-radius:10px;padding:12px 16px;font-weight:700;cursor:pointer}
-    #start{background:#2ea043;color:#fff} #stop{background:#d1242f;color:#fff}
+    #start{background:#2ea043;color:#fff} #stop{background:#d1242f;color:#fff} #qa{background:#8957e5;color:#fff}
     pre{background:#0a0f14;border-radius:12px;padding:12px;overflow:auto;color:#a8dadc}
     footer{margin-top:20px;color:#667085;font-size:13px}
   </style>
@@ -42,7 +42,9 @@
   <div class="actions">
     <button id="start">Iniciar grabación</button>
     <button id="stop">Detener grabación</button>
+    <button id="qa">Ejecutar QA</button>
   </div>
+  <p id="qa-status" class="sub">QA: nunca ejecutado</p>
 
   <h3>Diagnóstico</h3>
   <pre id="detail">Cargando...</pre>
@@ -101,6 +103,35 @@ async function refresh() {
 }
 el("start").addEventListener("click", async () => { try { await request("/api/record/start",{method:"POST"}); await refresh(); } catch(e){ alert(e); } });
 el("stop").addEventListener("click", async () => { try { await request("/api/record/stop",{method:"POST"}); await refresh(); } catch(e){ alert(e); } });
+el("qa").addEventListener("click", async () => {
+  try {
+    await request("/api/qa/run", {method:"POST"});
+    await refreshQA();
+  } catch(e) {
+    alert(e);
+  }
+});
+async function refreshQA() {
+  try {
+    const q = await request("/api/qa/status");
+    if (q.running) {
+      el("qa-status").textContent = "QA: ejecutándose...";
+      setTimeout(refreshQA, 500);
+      return;
+    }
+    if (q.exit_code === null) {
+      el("qa-status").textContent = "QA: nunca ejecutado";
+      return;
+    }
+    el("qa-status").textContent = q.passed
+      ? "QA: PASS"
+      : "QA: FAIL (código " + q.exit_code + ")";
+    if (q.output) el("detail").textContent = q.output;
+  } catch (error) {
+    el("qa-status").textContent = "QA: " + String(error);
+  }
+}
+refreshQA();
 refresh();
 setInterval(refresh, 1000);
 </script>
