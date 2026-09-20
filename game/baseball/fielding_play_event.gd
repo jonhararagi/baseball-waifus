@@ -34,6 +34,9 @@ var assist_position := ""
 var pivot_position := ""
 var putout_position := "1B"
 
+func pivot_target() -> Vector2:
+	return BASE_POSITIONS.get(pivot_position, BASE_POSITIONS["2B"])
+
 static func from_resolution(event: BattedBallEvent, resolution: Dictionary) -> FieldingPlayEvent:
 	var play := FieldingPlayEvent.new()
 	if event == null:
@@ -52,7 +55,7 @@ static func from_resolution(event: BattedBallEvent, resolution: Dictionary) -> F
 	var rng := RandomNumberGenerator.new()
 	rng.seed = play.seed
 
-	var rebound_count := 1 if rng.randf() < 0.68 else 2
+	var rebound_count := 0 if play.is_double_play else (1 if rng.randf() < 0.68 else 2)
 	var direction := event.target.direction_to(DEFENSIVE_POSITIONS.get(play.defender_position, event.target))
 	if direction.length_squared() < 0.01:
 		direction = Vector2(0.0, 1.0)
@@ -81,4 +84,4 @@ static func _receiver_for_bases(bases: int) -> String:
 			return "1B"
 
 func is_valid() -> bool:
-	return not defender_position.is_empty() and not rebound_points.is_empty()
+	return not defender_position.is_empty() and (not rebound_points.is_empty() or is_double_play)
