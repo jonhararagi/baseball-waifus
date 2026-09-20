@@ -27,6 +27,12 @@ var throw_target := Vector2.ZERO
 var throw_duration := 0.55
 var throw_arc := 45.0
 var seed := 0
+var throw_error := false
+var wild_throw_target := Vector2.ZERO
+var is_double_play := false
+var assist_position := ""
+var pivot_position := ""
+var putout_position := "1B"
 
 static func from_resolution(event: BattedBallEvent, resolution: Dictionary) -> FieldingPlayEvent:
 	var play := FieldingPlayEvent.new()
@@ -37,6 +43,11 @@ static func from_resolution(event: BattedBallEvent, resolution: Dictionary) -> F
 	play.defender_position = str(resolution.get("defender_position", event.target_zone()))
 	play.receiver_position = _receiver_for_bases(int(resolution.get("bases", 1)))
 	play.throw_target = BASE_POSITIONS.get(play.receiver_position, BASE_POSITIONS["1B"])
+	var double_play: Dictionary = resolution.get("double_play", {})
+	play.is_double_play = bool(double_play.get("success", false))
+	play.assist_position = str(double_play.get("assist_position", ""))
+	play.pivot_position = str(double_play.get("pivot_position", ""))
+	play.putout_position = str(double_play.get("putout_position", "1B"))
 
 	var rng := RandomNumberGenerator.new()
 	rng.seed = play.seed
