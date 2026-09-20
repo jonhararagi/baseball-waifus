@@ -1301,3 +1301,105 @@ Este valor representa el alcance técnico ponderado. El juego completo sigue lej
 ### Regla de continuidad
 
 El avatar por capas es ahora la base visual vigente. No se debe volver al renderer monolítico anterior salvo para comparar una regresión o reemplazar una capa concreta.
+
+# 18. Revisión 9: Avatares persistentes y movimiento conectado al partido
+
+**Fecha:** 2026-09-20
+**Tipo:** Integración de roster / presentación de partido / persistencia visual.
+
+### Motivo
+
+La revisión 8 ya tenía cuerpo procedural, capas visuales, equipamiento, poses y una escena automática de prueba. El siguiente paso útil era comprobar que ese mismo personaje no fuera solo un laboratorio aislado, sino una parte real del partido.
+
+No se rediseña el sistema visual por capas. Se añade una capa de integración encima.
+
+### Implementado
+
+- `game/avatar/avatar_roster_service.gd`
+  - resuelve el perfil visual persistente de una jugadora;
+  - crea el perfil desde `PlayerAvatarAdapter` solo cuando no existe;
+  - permite guardar, borrar y listar perfiles por jugadora.
+
+- `game/avatar/avatar_profile_store.gd`
+  - añade perfiles identificados por `player_<id>.json`;
+  - mantiene la persistencia visual separada de `PlayerData`.
+
+- `game/avatar/avatar_match_presenter.gd`
+  - instancia los avatares de batter y pitcher;
+  - usa `AvatarMotionController`;
+  - traduce fases y resultados del partido a poses;
+  - maneja robo de base y final del partido.
+
+- `scenes/main.gd`
+  - conecta el presenter al partido;
+  - el pitcher cambia de pose durante el lanzamiento;
+  - el bateador entra en pose de timing;
+  - los resultados activan reacciones visuales;
+  - el robo dispara Steal/Run;
+  - el final del partido dispara Celebrate/Defeat.
+
+- `docs/avatar-visual-system.md`
+  - documenta la frontera PlayerData → AvatarProfile;
+  - documenta el nuevo presenter y el flujo de acciones.
+
+- `README.md`
+  - documenta la integración del roster visual con el partido.
+
+### Arquitectura resultante
+
+```
+PlayerData
+    ↓
+AvatarRosterService
+    ↓
+AvatarProfile
+    ↓
+AnimeAvatar2D
+    ↑
+AvatarMatchPresenter
+    ↑
+Baseball match state/events
+```
+
+El presenter solamente expresa el resultado del sistema de juego visualmente. No calcula estadísticas, no decide probabilidades y no entrega recompensas.
+
+### Estado
+
+**Implementado en código:**
+- perfil persistente por jugadora;
+- cuerpo visual derivado del roster;
+- avatares visibles dentro del partido;
+- poses conectadas a eventos reales del partido;
+- separación gameplay/visual conservada.
+
+**Pendiente:**
+- validar ejecución real en Godot con hardware;
+- hacer que todos los innings, defensa y corredores tengan representación visual completa;
+- conectar equipamiento visual a un sistema de estadísticas de equipo separado;
+- reemplazar el renderer procedural por arte/rig de producción;
+- ejecutar el benchmark con checkpoints reales instalados y elegir una configuración final.
+
+### Investigación de modelos
+
+Se mantiene el benchmark determinista entre familias anime candidatas. No se declara un checkpoint como “el mejor” ni como el más popular sin una comparación real de las versiones exactas instaladas. La web general no estuvo disponible durante esta revisión, así que no se presenta una afirmación de popularidad actual como hecho.
+
+La dirección artística permanece:
+- anime deportivo adulto;
+- silueta redondeada y atlética;
+- proporciones shonen suaves;
+- fanservice/ecchi no explícito;
+- sin copiar identidades visuales concretas;
+- sin CLAMP/Jujutsu Kaisen;
+- el preset `shonen_soft` se conserva como base para pruebas.
+
+### Porcentaje global revisado
+
+El avance global estimado pasa de **≈31% a ≈33%**.
+
+El 33% representa avance técnico ponderado del proyecto completo. El sistema de avatar/streaming está bastante más adelantado que economía, gacha, crianza, contenido de campaña, backend y producción artística final, que siguen siendo bloques grandes.
+
+### Regla de continuidad
+
+El avatar por capas + roster persistente + presenter de partido pasa a ser la base vigente.
+
+No se vuelve a diseñar desde cero. Las siguientes mejoras deben extender estas interfaces o sustituir componentes concretos con una razón registrada.
