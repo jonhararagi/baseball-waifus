@@ -39,6 +39,7 @@ func _draw() -> void:
 		return
 
 	var scale_factor := profile.height
+	var equipment: AvatarEquipment = profile.equipment
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2(scale_factor, scale_factor))
 
 	var sway := sin(walk_phase) * (8.0 if pose != Pose.IDLE else 2.0)
@@ -98,6 +99,11 @@ func _draw() -> void:
 			uniform_color = profile.uniform.lightened(0.08)
 	draw_colored_polygon(torso, uniform_color)
 
+	var vest_color := AvatarVisualCatalog.clothing_color(uniform_color, equipment.vest_style)
+	if equipment.vest_style != "vest_basic":
+		draw_line(Vector2(-torso_mid, torso_y + 8), Vector2(-torso_bottom + 4, hip_y - 2), vest_color, 6.0)
+		draw_line(Vector2(torso_mid, torso_y + 8), Vector2(torso_bottom - 4, hip_y - 2), vest_color, 6.0)
+
 	var chest_r := 13.0 * profile.bust
 	if profile.bust > 0.9:
 		draw_circle(Vector2(-18, torso_y + 29), chest_r, profile.uniform.darkened(0.04))
@@ -110,7 +116,7 @@ func _draw() -> void:
 	draw_colored_polygon(PackedVector2Array([
 		Vector2(-38, hip_y - 3), Vector2(38, hip_y - 3),
 		Vector2(skirt_w, hip_y + skirt_h), Vector2(-skirt_w, hip_y + skirt_h)
-	]), profile.accent)
+	]), AvatarVisualCatalog.clothing_color(profile.accent, equipment.skirt_style))
 
 	var arm_angle_l := -0.25
 	var arm_angle_r := 0.25
@@ -158,6 +164,22 @@ func _draw() -> void:
 	draw_line(Vector2(torso_top, torso_y + 5), right_hand, profile.skin, 15.0)
 	draw_circle(left_hand, 9.0, profile.skin)
 	draw_circle(right_hand, 9.0, profile.skin)
+
+	var glove_color := profile.accessory
+	match equipment.gloves_style:
+		"glove_gold":
+			glove_color = Color("#d7b84c")
+		"glove_precision":
+			glove_color = Color("#c9d1d9")
+		"glove_guardian":
+			glove_color = Color("#5d6570")
+	if equipment.gloves_style != "glove_basic":
+		draw_circle(left_hand, 11.0, glove_color)
+		draw_circle(right_hand, 11.0, glove_color)
+
+	var shoe_color := AvatarVisualCatalog.footwear_color(profile.accent, equipment.shoes_style)
+	draw_line(left_leg + Vector2(-7, 52), left_leg + Vector2(13, 52), shoe_color, 8.0)
+	draw_line(right_leg + Vector2(-13, 52), right_leg + Vector2(7, 52), shoe_color, 8.0)
 
 	draw_line(Vector2(0, neck_y + 12), Vector2(0, neck_y - 5), profile.skin, 20.0)
 	var head_r := 52.0 * profile.head_scale
@@ -230,7 +252,7 @@ func _draw() -> void:
 	if mouth > 0.45:
 		draw_arc(Vector2(0, 27), 9.0, 0.15, PI - 0.15, 12, profile.eye, 3.0)
 
-	if profile.show_cap:
+	if profile.show_cap or equipment.cap_style != "cap_none":
 		draw_colored_polygon(PackedVector2Array([
 			Vector2(-head_r - 5, -28), Vector2(0, -head_r - 18),
 			Vector2(head_r + 5, -28), Vector2(head_r - 7, -14),
@@ -241,7 +263,9 @@ func _draw() -> void:
 	draw_circle(Vector2(0, 42), 5.0, profile.accessory)
 
 	if pose == Pose.BAT:
-		draw_line(Vector2(25, 0), Vector2(105, -38), Color("#8b5a2b"), 10.0)
+		var bat_color := AvatarVisualCatalog.bat_color(profile.accent, equipment.bat_style)
+		draw_line(Vector2(25, 0), Vector2(105, -38), bat_color, 10.0)
+		draw_circle(Vector2(107, -38), 5.0, bat_color)
 	if pose == Pose.THROW:
 		draw_circle(Vector2(-32, -18), 8.0, Color("#f5f5f5"))
 	if pose == Pose.SLIDE:
