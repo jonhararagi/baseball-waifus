@@ -1,10 +1,20 @@
 {
   "camera_index": 0,
+  "camera_width": 1280,
+  "camera_height": 720,
+  "audio_device": null,
+  "audio_samplerate": 48000,
+  "audio_blocksize": 1024,
+  "enable_audio": true,
+  "enable_screen_capture": false,
+  "screen_monitor": 1,
+  "screen_diagnostics_interval": 2.0,
   "godot_host": "127.0.0.1",
   "godot_port": 8765,
   "obs_host": "127.0.0.1",
   "obs_port": 4455,
   "obs_password": "",
   "obs_scene": "",
+  "tracking_smoothing": 0.45,
   "send_tracking_fps": 30
 }
