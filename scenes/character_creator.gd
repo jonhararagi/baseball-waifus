@@ -18,9 +18,7 @@ func _ready() -> void:
 	profile.display_name = "Prototype Player"
 	profile.apply_body_preset("balanced")
 
-	avatar = AnimeAvatar2D.new()
-	avatar.position = Vector2(365, 430)
-	avatar.setup(profile)
+	avatar = AvatarRendererFactory.create(profile, Vector2(365, 430), 10) as AnimeAvatar2D
 	add_child(avatar)
 	motion.setup(avatar)
 
@@ -274,7 +272,27 @@ func _option_changed(key: String, value: String) -> void:
 			profile.art_style = value
 	_sync_controls()
 
+func _ensure_avatar_renderer() -> void:
+	var should_use_rig := profile.art_style == "rig"
+	var is_rig_renderer := avatar is AnimeBodyRig2D or avatar is ExternalRigAvatar2D
+	if should_use_rig == is_rig_renderer:
+		return
+
+	var old_position := avatar.position if avatar != null else Vector2(365, 430)
+	if avatar != null:
+		remove_child(avatar)
+		avatar.queue_free()
+
+	avatar = AvatarRendererFactory.create(profile, old_position, 10) as AnimeAvatar2D
+	add_child(avatar)
+	move_child(avatar, 2)
+	motion.setup(avatar)
+	if receiver != null:
+		receiver.attach(avatar)
+
 func _sync_controls() -> void:
+	_ensure_avatar_renderer()
+
 	for key in sliders.keys():
 		var slider: HSlider = sliders[key]
 		slider.set_value_no_signal(float(profile.get(key)))
