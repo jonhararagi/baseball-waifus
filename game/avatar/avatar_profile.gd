@@ -25,6 +25,7 @@ extends Resource
 @export var blush := Color("#e8958d")
 @export var accessory := Color("#f6d35f")
 @export var show_cap := false
+@export var rig_scene_path := ""
 @export var equipment := AvatarEquipment.new()
 
 func apply_body_preset(name: String) -> void:
@@ -120,6 +121,7 @@ func to_dictionary() -> Dictionary:
 		"blush": blush.to_html(false),
 		"accessory": accessory.to_html(false),
 		"show_cap": show_cap,
+		"rig_scene_path": rig_scene_path,
 		"equipment": equipment.to_dictionary()
 	}
 
@@ -146,6 +148,7 @@ static func from_dictionary(data: Dictionary) -> AvatarProfile:
 	p.blush = Color.from_string(str(data.get("blush", p.blush.to_html(false))), p.blush)
 	p.accessory = Color.from_string(str(data.get("accessory", p.accessory.to_html(false))), p.accessory)
 	p.show_cap = bool(data.get("show_cap", p.show_cap))
+	p.rig_scene_path = str(data.get("rig_scene_path", p.rig_scene_path))
 	p.equipment = AvatarEquipment.from_dictionary(data.get("equipment", {}))
 	return p
 
