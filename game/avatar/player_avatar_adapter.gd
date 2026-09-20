@@ -5,10 +5,11 @@ static func from_player(player: PlayerData) -> AvatarProfile:
 	var profile := AvatarProfile.new()
 	profile.display_name = player.display_name if not player.display_name.is_empty() else player.id
 	profile.randomize_profile(abs(player.id.hash()))
-	profile.body_preset = "athletic" if player.specialization in ["runner", "defender"] else "power" if player.specialization == "power" else "balanced"
+	profile.body_preset = "athletic" if player.specialization in ["runner", "defender"] else "shonen_soft" if player.specialization == "power" else "balanced"
 	profile.apply_body_preset(profile.body_preset)
 	profile.show_cap = player.position == "P"
 	profile.equipment.cap_style = "cap_classic" if profile.show_cap else "cap_none"
+	profile.art_style = "ecchi"
 
 	match player.specialization:
 		"power":
