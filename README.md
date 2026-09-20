@@ -141,3 +141,16 @@ Esto permite usar el mismo cuerpo procedural para probar:
 - celebración y derrota.
 
 El presenter es una capa de presentación y puede reemplazar posteriormente `AnimeAvatar2D` por un rig 2D o 3D sin cambiar la lógica de béisbol.
+
+## Equipos y movimiento
+
+El prototipo ya separa los datos de equipo en `BaseballTeamData` y `DemoTeamFactory`.
+
+La presentación visual usa `AvatarTrajectoryController` para que runners y defensores se desplacen de forma continua en lugar de teletransportarse entre puntos.
+
+Archivos principales:
+
+- `game/characters/baseball_team_data.gd`
+- `game/characters/demo_team_factory.gd`
+- `game/avatar/avatar_trajectory_controller.gd`
+- `game/avatar/baseball_field_avatar_presenter.gd`
