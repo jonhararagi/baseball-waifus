@@ -93,32 +93,40 @@ func _process(delta: float) -> void:
 func on_pitch() -> void:
 	_play_position("C", AnimeAvatar2D.Pose.CATCH, 0.75, AnimeAvatar2D.Pose.IDLE)
 
-func on_batted_ball(result: Dictionary) -> void:
-	var result_name := str(result.get("result", ""))
+func on_batted_ball_event(event: BattedBallEvent) -> void:
+	if event == null:
+		return
+
+	var result_name := event.result
+	var zone := event.target_zone()
+
 	match result_name:
 		"SINGLE":
-			_play_position("LF", AnimeAvatar2D.Pose.RUN, 0.65, AnimeAvatar2D.Pose.IDLE)
-			_play_position("CF", AnimeAvatar2D.Pose.CATCH, 0.65, AnimeAvatar2D.Pose.THROW)
-			_play_position("SS", AnimeAvatar2D.Pose.THROW, 0.65, AnimeAvatar2D.Pose.IDLE)
-			_play_position("2B", AnimeAvatar2D.Pose.CATCH, 0.65, AnimeAvatar2D.Pose.IDLE)
-			_move_field("LF", Vector2(470, 315), 0.42, 0.16)
-			_move_field("SS", Vector2(655, 335), 0.34, 0.10)
+			_play_position("C", AnimeAvatar2D.Pose.CATCH, 0.45, AnimeAvatar2D.Pose.IDLE)
+			_react_to_ball_zone(zone, event.target, 0.52)
 			_animate_active_fielders()
 		"DOUBLE", "TRIPLE":
-			_play_position("CF", AnimeAvatar2D.Pose.RUN, 0.75, AnimeAvatar2D.Pose.THROW)
-			_play_position("LF", AnimeAvatar2D.Pose.RUN, 0.75, AnimeAvatar2D.Pose.THROW)
-			_play_position("RF", AnimeAvatar2D.Pose.RUN, 0.75, AnimeAvatar2D.Pose.THROW)
-			_move_field("CF", Vector2(610, 260), 0.55, 0.18)
-			_move_field("LF", Vector2(455, 305), 0.50, 0.14)
-			_move_field("RF", Vector2(825, 305), 0.50, 0.14)
+			_react_to_ball_zone(zone, event.target, 0.68)
 			_animate_active_fielders()
 		"HOME RUN":
 			for position in ["LF", "CF", "RF", "SS", "2B", "3B"]:
 				_play_position(position, AnimeAvatar2D.Pose.HIT_REACTION, 0.8, AnimeAvatar2D.Pose.IDLE)
-		"OUT", "STRIKE":
-			_play_position("C", AnimeAvatar2D.Pose.CELEBRATE, 0.8, AnimeAvatar2D.Pose.IDLE)
-			for position in ["SS", "2B", "1B", "3B"]:
-				_play_position(position, AnimeAvatar2D.Pose.CELEBRATE, 0.8, AnimeAvatar2D.Pose.IDLE)
+		"FOUL":
+			_play_position("C", AnimeAvatar2D.Pose.CATCH, 0.55, AnimeAvatar2D.Pose.IDLE)
+			_move_field("C", event.target, 0.28, 0.05)
+		"OUT":
+			_react_to_ball_zone(zone, event.target, 0.48)
+			_play_position("C", AnimeAvatar2D.Pose.CATCH, 0.6, AnimeAvatar2D.Pose.IDLE)
+		"STRIKE":
+			_play_position("C", AnimeAvatar2D.Pose.CATCH, 0.55, AnimeAvatar2D.Pose.IDLE)
+
+func _react_to_ball_zone(zone: String, target: Vector2, duration: float) -> void:
+	var primary := zone
+	if not field_avatars.has(primary):
+		primary = "CF"
+	_play_position(primary, AnimeAvatar2D.Pose.RUN, duration, AnimeAvatar2D.Pose.THROW)
+	_move_field(primary, target, duration, 0.08)
+
 
 func sync_runners(bases: Array, snap_to_base := true) -> void:
 	for i in range(min(3, runner_avatars.size())):
