@@ -8,6 +8,7 @@ static func from_player(player: PlayerData) -> AvatarProfile:
 	profile.body_preset = "athletic" if player.specialization in ["runner", "defender"] else "power" if player.specialization == "power" else "balanced"
 	profile.apply_body_preset(profile.body_preset)
 	profile.show_cap = player.position == "P"
+	profile.equipment.cap_style = "cap_classic" if profile.show_cap else "cap_none"
 
 	match player.specialization:
 		"power":
@@ -18,6 +19,18 @@ static func from_player(player: PlayerData) -> AvatarProfile:
 			profile.uniform_style = "sleeveless"
 		_:
 			profile.uniform_style = "standard"
+
+	match player.specialization:
+		"power":
+			profile.equipment.bat_style = "bat_power"
+		"contact":
+			profile.equipment.bat_style = "bat_precision"
+		"runner":
+			profile.equipment.shoes_style = "shoes_runner"
+		"defender":
+			profile.equipment.gloves_style = "glove_guardian"
+		_:
+			profile.equipment.bat_style = "bat_basic"
 
 	match player.element:
 		"fire":
