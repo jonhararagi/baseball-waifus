@@ -3,6 +3,7 @@ extends Node2D
 var ball: BaseballBallController
 var event_index := 0
 var elapsed := 0.0
+var status: Label
 var samples := [
 	["PITCH", 1.2],
 	["SINGLE", 1.0],
@@ -48,11 +49,8 @@ func _process(delta: float) -> void:
 
 	if Input.is_key_pressed(KEY_ESCAPE):
 		get_tree().quit()
-	if Input.is_key_pressed(KEY_SPACE):
-		elapsed = 0.0
-		event_index = (event_index + 1) % samples.size()
-		_play_current()
 
+	status.text = "Trajectory: " + str(samples[event_index][0])
 	queue_redraw()
 
 func _input(event: InputEvent) -> void:
@@ -81,8 +79,3 @@ func _draw() -> void:
 	for base in [home, first, second, third]:
 		draw_circle(base, 12, Color.WHITE)
 
-	var label := Label.new()
-	label.position = Vector2(950, 90)
-	label.text = "Trajectory: " + str(samples[event_index][0])
-	label.add_theme_font_size_override("font_size", 22)
-	add_child(label)
