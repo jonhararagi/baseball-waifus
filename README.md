@@ -178,3 +178,35 @@ Los batazos que todavía pueden ser capturados ya no se convierten automáticame
 La resolución usa `Defense`, posicionamiento, timing y calidad de contacto con reglas versionadas. No utiliza IA.
 
 La prueba aislada `scenes/fielding_test.tscn` permite revisar la resolución de captura fuera del partido.
+
+## Partido completo: lineup y runners
+
+El prototipo ahora mantiene RunnerToken para las tres bases y una alineación de nueve bateadoras por equipo.
+
+Cada hit genera un plan real de desplazamiento para las corredoras existentes y la nueva bateadora. La presentación anima el recorrido mientras GameState conserva la resolución definitiva.
+
+Al cambiar de mitad de entrada se actualizan automáticamente equipo bateador, bateadora, pitcher y defensa.
+
+Escena de comprobación: scenes/match_system_test.tscn
+
+## Defensa avanzada
+
+FieldingResolver mantiene la captura determinista.
+
+Ahora existen además:
+- ThrowResolver para errores de lanzamiento con una consecuencia de base adicional;
+- DoublePlayResolver para dobles matanzas con asistencia y putout;
+- FieldingPlayEvent para la cadena defensiva;
+- BaseballBallController para la trayectoria completa de rebote y lanzamiento.
+
+El renderer no decide ningún resultado.
+
+## Renderer y rig
+
+AvatarRendererFactory es el punto único de entrada del renderer.
+
+Por defecto se utiliza AnimeAvatar2D. Un AvatarProfile con art_style=rig y rig_scene_path configurado puede cargar un scene externo mediante ExternalRigAvatar2D.
+
+Esto prepara el camino para conectar Inochi2D, Live2D o VRM/Three.js sin tocar el gameplay.
+
+Detalles: docs/avatar-rig-integration.md
