@@ -90,3 +90,18 @@ Implementado: bridge local, tracking facial, audio, captura de pantalla opcional
 Pendiente: validación hardware end-to-end con Godot + webcam + OBS, rig artístico de producción, Live2D/Inochi2D/VRM final, lip-sync avanzado y compositor propio.
 
 Nota: en el entorno actual no se ejecutó Godot con cámara/micrófono/OBS, por lo que ese tramo sigue marcado como no validado en runtime.
+## Hardening del bridge
+
+El bridge admite ejecución selectiva con --no-audio, --no-screen, --no-obs y --config. healthcheck.py permite separar un problema de dependencias de un problema de hardware. MediaPipe es obligatorio para tracking. mss, sounddevice y OBS son opcionales mientras sus funciones estén apagadas. La conexión OBS es opt-in y su estado se informa explícitamente.
+
+## Contrato de renderer actualizado
+
+AvatarProfile con art_style=rig usa ExternalRigAvatar2D si existe rig_scene_path. Sin rig_scene_path usa AnimeBodyRig2D. Los perfiles soft/ecchi mantienen AnimeAvatar2D. AnimeBodyRig2D es un backend propio para pruebas y comparte las mismas poses, tracking y datos visuales del perfil.
+
+## Referencias open source revisadas
+
+- https://github.com/Inochi2D/inochi-creator
+- https://github.com/Inochi2D/inochi2d
+- https://github.com/pixiv/three-vrm
+
+Licencias observadas en los repositorios consultados: BSD-2-Clause para Inochi2D/Creator y MIT para three-vrm. Live2D se mantiene solamente como adapter futuro porque su SDK no se clasifica aquí como un componente open source del runtime.
