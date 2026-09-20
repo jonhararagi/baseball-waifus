@@ -243,3 +243,27 @@ Archivos principales:
 
 Prueba visual:
 scenes/mobile_controls_test.tscn
+## Rig corporal articulado
+
+La ruta art_style=rig ahora funciona incluso sin un asset externo. AvatarRendererFactory usa AnimeBodyRig2D para generar un cuerpo anime articulado de prueba y permite validar poses y movimiento antes de integrar un rig artístico.
+
+Prueba aislada: scenes/anime_body_rig_test.tscn.
+
+Controles del laboratorio: SPACE cambia pose, P alterna ciclo automático, R reinicia la secuencia, 0-9 selecciona poses rápidas, flechas simulan tracking facial y Q/E/A/D ajustan proporciones.
+
+## Diagnóstico del Streaming Bridge
+
+Antes de conectar hardware:
+
+```text
+cd tools/streaming_bridge
+python healthcheck.py
+```
+
+El bridge también admite:
+
+```text
+python main.py --no-audio --no-screen --no-obs
+```
+
+OBS es opt-in mediante enable_obs en config.json. MediaPipe es requisito del tracking; audio, pantalla y OBS son opcionales mientras estén desactivados.
