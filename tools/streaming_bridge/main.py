@@ -6,7 +6,8 @@ from pathlib import Path
 
 from capture import AudioMeter, ScreenCapture, WebcamCapture
 from obs_client import OBSController
-from protocol import make_payload
+from protocol import encode_payload, make_payload
+from recorder import TrackingRecorder
 from tracker import FaceTracker
 
 
@@ -26,12 +27,12 @@ def parse_args():
     parser.add_argument("--no-audio", action="store_true", help="Desactiva captura de micrófono")
     parser.add_argument("--no-screen", action="store_true", help="Desactiva captura de pantalla")
     parser.add_argument("--no-obs", action="store_true", help="Desactiva conexión OBS")
+    parser.add_argument("--record", action="store_true", help="Graba paquetes JSONL además de enviarlos")
     return parser.parse_args()
 
 
 def send_udp(sock, address, payload):
-    raw = json.dumps(payload, separators=(",", ":")).encode("utf-8")
-    sock.sendto(raw, address)
+    sock.sendto(encode_payload(payload), address)
 
 
 def main():
@@ -64,6 +65,11 @@ def main():
         screen = ScreenCapture()
 
     obs = None
+    record_enabled = bool(config.get("enable_recording", False)) or args.record
+    recorder = None
+    if record_enabled:
+        recorder = TrackingRecorder(str(ROOT / config.get("record_path", "recordings/session.jsonl")))
+
     obs_enabled = bool(config.get("enable_obs", False)) and not args.no_obs
     if obs_enabled:
         obs = OBSController(
@@ -78,12 +84,14 @@ def main():
     interval = 1.0 / max(1, config.get("send_tracking_fps", 30))
     diagnostics_every = max(0.1, config.get("screen_diagnostics_interval", 2.0))
     next_diagnostics = time.perf_counter()
+    sequence = 0
 
     print("Baseball Waifus Streaming Bridge")
     print(f"Tracking UDP -> {target[0]}:{target[1]}")
     print(f"Camera -> {camera.index} ({config.get('camera_width', 1280)}x{config.get('camera_height', 720)})")
     print(f"Audio -> {'ON' if audio.enabled else 'OFF'}")
     print(f"Screen diagnostics -> {'ON' if screen else 'OFF'}")
+    print(f"Recording -> {'ON' if recorder else 'OFF'}")
     if obs is not None:
         print(f"OBS -> {'CONNECTED' if obs.status().get('connected') else 'UNAVAILABLE'}")
     else:
@@ -111,8 +119,11 @@ def main():
                 capture_status["screen_height"] = int(preview.shape[0])
                 next_diagnostics = now + diagnostics_every
 
-            payload = make_payload(tracking, audio.snapshot(), capture_status)
+            payload = make_payload(tracking, audio.snapshot(), capture_status, sequence=sequence, sent_at_ms=int(time.time() * 1000))
+            if recorder:
+                recorder.write(payload)
             send_udp(sock, target, payload)
+            sequence += 1
 
             next_tick += interval
             sleep_for = next_tick - time.perf_counter()
@@ -128,6 +139,8 @@ def main():
         audio.close()
         if screen is not None:
             screen.close()
+        if recorder is not None:
+            recorder.close()
         sock.close()
 
 
