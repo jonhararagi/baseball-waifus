@@ -30,15 +30,30 @@ func play_fielding_play(event: BattedBallEvent, play: FieldingPlayEvent) -> void
 
 	var points: Array[Vector2] = _sample_quadratic(event.origin, event.control, event.target, 22)
 	var current := event.target
-	for rebound in play.rebound_points:
-		var control := current.lerp(rebound, 0.5) + Vector2(0, -22)
-		_append_segment(points, _sample_quadratic(current, control, rebound, 10))
-		current = rebound
 
-	var throw_control := current.lerp(play.throw_target, 0.5) + Vector2(0, -play.throw_arc)
-	_append_segment(points, _sample_quadratic(current, throw_control, play.throw_target, 16))
+	if not play.is_double_play:
+		for rebound in play.rebound_points:
+			var rebound_control := current.lerp(rebound, 0.5) + Vector2(0, -22)
+			_append_segment(points, _sample_quadratic(current, rebound_control, rebound, 10))
+			current = rebound
 
-	var total_duration := event.duration + float(play.rebound_points.size()) * 0.24 + play.throw_duration
+		var final_target := play.wild_throw_target if play.throw_error else play.throw_target
+		var throw_control := current.lerp(final_target, 0.5) + Vector2(0, -play.throw_arc)
+		_append_segment(points, _sample_quadratic(current, throw_control, final_target, 16))
+	else:
+		var pivot_target := FieldingPlayEvent.BASE_POSITIONS.get(play.pivot_position, FieldingPlayEvent.BASE_POSITIONS["2B"])
+		var pivot_control := current.lerp(pivot_target, 0.5) + Vector2(0, -play.throw_arc)
+		_append_segment(points, _sample_quadratic(current, pivot_control, pivot_target, 14))
+		current = pivot_target
+		var first_target := FieldingPlayEvent.BASE_POSITIONS["1B"]
+		var first_control := current.lerp(first_target, 0.5) + Vector2(0, -play.throw_arc)
+		_append_segment(points, _sample_quadratic(current, first_control, first_target, 14))
+
+	var total_duration := event.duration
+	if not play.is_double_play:
+		total_duration += float(play.rebound_points.size()) * 0.24 + play.throw_duration
+	else:
+		total_duration += play.throw_duration * 2.0
 	_start_path(points, total_duration)
 
 func play_miss_to_catcher(origin: Vector2, target: Vector2) -> void:
