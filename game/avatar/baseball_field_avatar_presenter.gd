@@ -55,11 +55,8 @@ func set_runner_players(players: Dictionary) -> void:
 
 
 func _create_avatar(player: PlayerData, at: Vector2, order: int) -> AnimeAvatar2D:
-	var avatar := AnimeAvatar2D.new()
-	avatar.position = at
-	avatar.z_index = order
+	var avatar := AvatarRendererFactory.create(roster.profile_for_player(player), at, order) as AnimeAvatar2D
 	avatar.scale = Vector2(0.72, 0.72)
-	avatar.setup(roster.profile_for_player(player))
 	add_child(avatar)
 	return avatar
 
