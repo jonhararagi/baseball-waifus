@@ -755,3 +755,79 @@ Orden recomendado:
 9. Prototipo jugable mínimo.
 
 Una vez que ese núcleo funcione, el resto de los sistemas podrá construirse encima sin tener que rehacer constantemente la base.
+
+
+# 10. Revisión 1: Documento Maestro de Diseño Integral v1.0
+
+**Fecha:** 2026-09-20  
+**Sistema:** G-001 a G-017 y sistemas derivados  
+**Motivo:** consolidar las ideas internas del proyecto con patrones de diseño externos del género y convertirlas en una especificación integral apta para iniciar implementación.
+
+### Qué existía antes
+
+Existían sistemas conceptuales separados para:
+- partido;
+- timing;
+- estadísticas;
+- elementos;
+- energía;
+- felicidad;
+- entrenamiento;
+- campaña;
+- Demon Kings;
+- equipamiento;
+- gacha;
+- crianza;
+- fusión;
+- torneos;
+- PvP.
+
+Muchos tenían números todavía provisionales.
+
+### Qué se cambia
+
+Se crea `docs/game-design.md` como Documento Maestro de Diseño Integral v1.0.
+
+Se fijan como baseline de diseño:
+- 8 estadísticas principales;
+- 3 tipos de lanzamiento;
+- 5 niveles de timing;
+- 9 posiciones;
+- 6 especializaciones;
+- 7 elementos;
+- niveles 1-100;
+- potencial 1-5;
+- energía 0-100;
+- felicidad 0-100;
+- 6 ranuras de equipo;
+- campaña de 10 mapas + Demon King;
+- límites de 10 intentos normales y 3 de Demon King;
+- crianza probabilística;
+- fusión R+R como sistema separado de crianza;
+- torneos antes de PvP;
+- arquitectura de datos desacoplada de la presentación.
+
+### Resultado
+
+**Diseño integral disponible para comenzar el prototipo.**
+
+Los valores numéricos se consideran baseline de prueba, no balance definitivo. Cualquier cambio posterior debe registrarse como nueva revisión.
+
+### Trabajo externo
+
+Se estableció formalmente que los recursos externos pueden utilizarse para:
+- estudiar arquitectura;
+- reutilizar código con licencia compatible;
+- reutilizar assets con licencia compatible;
+- estudiar animación y flujos de producción.
+
+No se copiarán recursos propietarios de Baseball Heroes u otros juegos.
+
+### Importante
+
+La implementación técnica sigue siendo **0% implementada como juego completo**. El documento de diseño no debe confundirse con código funcional.
+
+### Próxima revisión recomendada
+
+Implementar el prototipo mínimo:
+**pitcher → lanzamiento → timing → contacto → hit/out/Home Run → marcador.**
