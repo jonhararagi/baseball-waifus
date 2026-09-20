@@ -1,0 +1,14 @@
+{
+  "baseball_waifus_soft": {
+    "positive": "adult anime woman, full body, colorful sports anime character design, heroic shonen proportions, rounded stylized anatomy, healthy athletic build, slightly soft fuller limbs, expressive large eyes, strong readable silhouette, clean medium-weight lineart, crisp cel shading, vibrant colors, polished game character sheet, tasteful fanservice, fitted baseball uniform, baseball accessories, dynamic but natural pose, friendly energetic expression",
+    "negative": "child, loli, underage, childlike proportions, chibi, super deformed, clamp style, jujutsu kaisen style, horror, photorealistic, 3d render, western comic, grotesque anatomy, extra fingers, extra limbs, bad hands, cropped feet, text, watermark, logo"
+  },
+  "baseball_waifus_ecchi": {
+    "positive": "adult anime woman, full body, attractive mature anime game character, curvy athletic proportions, rounded stylized anatomy, fuller hips and thighs, expressive eyes, polished cel shading, colorful fantasy sports anime aesthetic, tasteful ecchi fanservice, fitted baseball uniform, confident pose, dynamic baseball action, clean silhouette, detailed hair, detailed outfit, game splash art",
+    "negative": "child, loli, underage, childlike body, explicit nudity, pornographic, exposed genitals, sexual act, fetish close-up, chibi, super deformed, clamp style, jujutsu kaisen style, photorealistic, western comic, malformed hands, extra digits, extra limbs, text, watermark, logo"
+  },
+  "baseball_waifus_rig": {
+    "positive": "adult anime woman character reference sheet, front view, side view, back view, neutral standing pose, A-pose, clean silhouette, clear separate hair masses, clear clothing layers, readable sleeves and skirt, symmetrical face, consistent proportions, sports anime character design, rounded stylized anatomy, game-ready turnaround, clean cel shading, plain background",
+    "negative": "child, loli, underage, chibi, super deformed, dramatic perspective, action pose, cropped body, complex background, text, watermark, logo, extra limbs, malformed anatomy"
+  }
+}
