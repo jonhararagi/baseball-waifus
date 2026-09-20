@@ -21,7 +21,7 @@
 **Rama principal:** `main`  
 **Estado actual:** Prototipo técnico en Godot 4.x + laboratorio de personajes + puente de streaming + rig procedural interno. Godot 4.x queda adoptado como motor del prototipo y del juego actual; los adapters externos siguen siendo una capa visual opcional.
 
-**Avance global revisado:** ≈61%.
+**Avance global revisado:** ≈63%.
 
 ### Cómo vamos
 
@@ -720,6 +720,8 @@ Cuando una idea sea descartada en adelante, registrar:
 | G-019 | Streaming healthcheck y dependencias opcionales | Implementado | 2026-09-20 |
 | G-020 | Tracking recorder/replay JSONL | Implementado en prototipo | 2026-09-20 |
 | G-021 | Validación de orden y origen de tracking/host | Implementado | 2026-09-20 |
+| G-022 | Panel local de control del Streaming Bridge | Implementado en prototipo | 2026-09-20 |
+| G-023 | Control de grabación desde dashboard | Implementado en prototipo | 2026-09-20 |
 
 ---
 
@@ -2435,3 +2437,102 @@ No se contabilizan como terminados: runtime real Godot, webcam, MediaPipe, OBS, 
 ### Regla de continuidad
 
 No crear otro sistema de replay o logging para tracking mientras JSONL + `replay.py` cubran las pruebas. Los futuros formatos de grabación deben mantener el protocolo versionado o introducir una nueva revisión del contrato.
+
+
+# 28. Revisión 19: panel local de control y operación del Streaming Bridge
+
+**Fecha:** 2026-09-20
+**Tipo:** Herramienta de streaming / interfaz local / observabilidad.
+
+### Motivo
+
+El bridge ya podía capturar, trackear, enviar, grabar y reproducir tracking, pero todavía requería manejar todo mediante consola. Para acercarlo al patrón operativo de herramientas de streaming reales se añade una interfaz local separada del gameplay.
+
+### Implementado
+
+- tools/streaming_bridge/control_server.py
+  - servidor HTTP con ThreadingHTTPServer;
+  - escucha solamente en localhost;
+  - GET /api/status;
+  - POST /api/record/start;
+  - POST /api/record/stop;
+  - dashboard servido desde el mismo proceso.
+
+- tools/streaming_bridge/dashboard.html
+  - estado de tracking;
+  - FPS;
+  - sequence;
+  - audio;
+  - OBS;
+  - grabación;
+  - contador de paquetes;
+  - botones para iniciar/detener grabación;
+  - diagnóstico JSON en tiempo real.
+
+- tools/streaming_bridge/main.py
+  - --no-control;
+  - servidor de control integrado;
+  - callbacks seguros para iniciar/detener recorder;
+  - lock para acceso concurrente al recorder;
+  - caché de estado de OBS;
+  - URL del dashboard mostrada en consola;
+  - compatibilidad con --record y control desde UI.
+
+- tools/streaming_bridge/config.json
+  - enable_control_server;
+  - control_host=127.0.0.1;
+  - control_port=8787.
+
+- tools/streaming_bridge/healthcheck.py
+  - comprobación adicional del puerto del panel.
+
+### Seguridad
+
+El servidor rechaza hosts distintos de localhost para evitar convertir accidentalmente el panel en un servicio de red expuesto.
+
+El dashboard no recibe video ni audio. Solo consulta estado y controla grabación.
+
+### Prueba realizada
+
+Se creó y ejecutó una regresión independiente del servidor HTTP con Python:
+- GET /api/status: PASS;
+- POST /api/record/start: PASS;
+- POST /api/record/stop: PASS;
+- compilación con py_compile: PASS.
+
+La prueba valida el comportamiento básico del servidor sin requerir cámara, MediaPipe, OBS ni Godot.
+
+### Error detectado y corregido
+
+Durante la integración del panel se detectó que la ruta de grabación iniciada con --record podía quedar preparada pero no reflejada en el nuevo controlador. Se corrigió para que el recorder sea compartido entre el loop principal y el servidor mediante lock.
+
+También se detectó que consultar OBS directamente desde cada petición podía introducir latencia si OBS estaba apagado. Se añadió caché de estado con actualización periódica de 2 segundos.
+
+### Diseño de personaje y rig
+
+No se creó un segundo Character Creator. La Revisión 17 ya estableció el sistema:
+AvatarProfile → AnimeAvatar2D / AnimeBodyRig2D / ExternalRigAvatar2D.
+
+El panel nuevo queda completamente separado del sistema visual y no modifica el contrato de avatar.
+
+### Porcentaje global revisado
+
+El avance global estimado pasa de **≈61% a ≈63%**.
+
+El incremento representa una capa operativa real para el streaming, control de grabación y observabilidad local.
+
+No se contabilizan como terminados:
+- runtime real Godot;
+- webcam + MediaPipe;
+- OBS físico;
+- export Web/Android/iOS;
+- rig artístico final;
+- backend;
+- economía;
+- gacha;
+- crianza;
+- PvP.
+
+### Regla de continuidad
+
+No crear otra interfaz de control para el bridge mientras `dashboard.html` + `control_server.py` cubran la operación local. Cualquier evolución de UI debe ampliar este panel o migrarlo de forma explícita, no duplicarlo.
