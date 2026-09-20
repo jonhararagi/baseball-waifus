@@ -74,8 +74,6 @@ func _draw() -> void:
 	draw_line(Vector2(leg_spread, hip_y), right_leg, profile.skin, 20.0)
 	draw_line(left_leg, left_leg + Vector2(0, 52), profile.accent, 18.0)
 	draw_line(right_leg, right_leg + Vector2(0, 52), profile.accent, 18.0)
-	draw_line(left_leg + Vector2(-7, 52), left_leg + Vector2(13, 52), Color("#302a32"), 8.0)
-	draw_line(right_leg + Vector2(-13, 52), right_leg + Vector2(7, 52), Color("#302a32"), 8.0)
 
 	var torso_top := 55.0 * profile.shoulder_width
 	var torso_mid := 38.0 * profile.waist_width
