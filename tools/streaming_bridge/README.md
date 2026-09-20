@@ -24,38 +24,49 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-En Linux/macOS cambia la orden de activación de la venv según tu shell.
-
 ## Ejecución
 
 ```text
 python main.py
 python main.py --no-audio --no-screen --no-obs
+python main.py --record
 python main.py --config config.json
 ```
 
-Antes de conectar hardware:
+## Diagnóstico
 
 ```text
 python healthcheck.py
+python -m unittest test_protocol.py test_recorder.py
 ```
+
+## Grabación y replay
+
+Con `--record` el bridge guarda cada paquete de tracking en JSONL. La grabación contiene protocolo, versión, secuencia, timestamp y datos de tracking/audio/captura.
+
+Para reproducirla contra el avatar sin webcam:
+
+```text
+python replay.py recordings/session.jsonl
+python replay.py recordings/session.jsonl --speed 0.5
+python replay.py recordings/session.jsonl --speed 2.0
+python replay.py recordings/session.jsonl --loop
+```
+
+Esto permite separar los bugs de cámara/tracking de los bugs de Godot o del avatar.
 
 ## Configuración
 
-config.json controla cámara, FPS, smoothing, audio, captura de pantalla, OBS y host/puerto UDP de Godot.
+`config.json` controla cámara, FPS, smoothing, audio, captura de pantalla, OBS, grabación y host/puerto UDP de Godot.
 
 MediaPipe es requisito para tracking real. mss, sounddevice y obsws-python son opcionales si sus funciones están desactivadas.
 
-OBS es opt-in con enable_obs=false por defecto. Los errores de conexión se muestran en el diagnóstico del proceso.
+OBS es opt-in con `enable_obs=false` por defecto.
 
 ## Seguridad
 
-El transporte por defecto es localhost. No se expone el tracking facial a Internet.
+El transporte por defecto es localhost. Godot valida protocolo, versión y secuencia y descarta paquetes viejos o inválidos.
+
+El Web Host también valida el origen y la ventana iframe antes de aceptar mensajes del juego.
 
 No guardar contraseñas reales de OBS en el repositorio.
-
-## Referencias de arquitectura
-
-OpenSeeFace se conserva como referencia histórica de tracking por webcam y transporte UDP. El prototipo utiliza MediaPipe directamente.
-
-Para avatares externos, el contrato actual deja una ruta futura para Inochi2D, Live2D o VRM/Three.js sin mezclar SDKs con el gameplay.
