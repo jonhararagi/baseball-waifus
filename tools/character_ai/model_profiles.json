@@ -1,0 +1,12 @@
+{
+  "anime_xl_candidates": {
+    "families": ["Animagine XL", "Illustrious XL", "NoobAI-XL", "Pony/SDXL"],
+    "fit": "anime game characters, strong anatomy control, wide LoRA ecosystem",
+    "license_note": "verify the license of the exact checkpoint and attached LoRAs before commercial use"
+  },
+  "recommended_game_profile": {
+    "default_style": "baseball_waifus_soft",
+    "use_case": "adult anime baseball roster concepts, turnaround references and action poses",
+    "avoid": ["childlike anatomy", "chibi", "franchise style imitation", "photorealism"]
+  }
+}
