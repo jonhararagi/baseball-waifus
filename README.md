@@ -154,3 +154,18 @@ Archivos principales:
 - `game/characters/demo_team_factory.gd`
 - `game/avatar/avatar_trajectory_controller.gd`
 - `game/avatar/baseball_field_avatar_presenter.gd`
+
+## Pelota y trayectorias compartidas
+
+La pelota ya tiene una representación propia mediante `BaseballBallController`.
+
+El resultado de una jugada crea `BattedBallEvent`, y ese mismo evento se entrega a la pelota y a los defensores. Así, una jugada no tiene una trayectoria lógica por un lado y una animación inventada por otro.
+
+La escena `scenes/baseball_ball_test.tscn` permite revisar las trayectorias de forma aislada.
+
+Archivos principales:
+
+- `game/baseball/batted_ball_event.gd`
+- `game/avatar/baseball_ball_controller.gd`
+- `scenes/baseball_ball_test.gd`
+- `scenes/baseball_ball_test.tscn`
