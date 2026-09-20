@@ -9,6 +9,8 @@ var state := BaseballGameState.new()
 var ai := OpponentAI.new()
 var runner_system := RunnerSystem.new()
 var rng := RandomNumberGenerator.new()
+var avatar_presenter: AvatarMatchPresenter
+var avatar_game_over_handled := false
 
 var batter: PlayerData
 var pitcher: PlayerData
@@ -26,6 +28,11 @@ var message := ""
 func _ready() -> void:
 	rng.randomize()
 	_build_demo_roster()
+
+	avatar_presenter = AvatarMatchPresenter.new()
+	add_child(avatar_presenter)
+	avatar_presenter.setup(batter, pitcher)
+
 	var hud := GameHUD.new()
 	add_child(hud)
 	hud.setup()
@@ -62,6 +69,9 @@ func _build_demo_roster() -> void:
 
 func _process(delta: float) -> void:
 	if state.game_over:
+		if not avatar_game_over_handled and avatar_presenter != null:
+			avatar_presenter.on_game_over(state.winner)
+			avatar_game_over_handled = true
 		_update_hud()
 		queue_redraw()
 		return
@@ -91,6 +101,8 @@ func _start_pitch() -> void:
 	pitch_elapsed = 0.0
 	phase = "PITCHING"
 	_get_hud().clear_result()
+	if avatar_presenter != null:
+		avatar_presenter.on_pitch_selected()
 
 func _update_pitch(delta: float) -> void:
 	pitch_elapsed += delta
@@ -100,6 +112,8 @@ func _update_pitch(delta: float) -> void:
 		phase = "TIMING"
 		timing_value = 0.0
 		timing_direction = 1.0
+		if avatar_presenter != null:
+			avatar_presenter.on_timing_started()
 
 func _update_timing(delta: float) -> void:
 	timing_value += delta * timing_direction * 1.25
@@ -120,6 +134,8 @@ func _input(event: InputEvent) -> void:
 func _swing() -> void:
 	current_result = simulator.resolve_batted_ball(batter, pitcher, current_pitch, timing_value, rng)
 	_apply_batting_result(current_result)
+	if avatar_presenter != null:
+		avatar_presenter.on_batting_result(current_result)
 	_get_hud().show_result(current_result)
 	phase = "RESULT"
 	result_timer = 1.2
@@ -146,11 +162,16 @@ func _attempt_steal() -> void:
 		phase = "RESULT"
 		result_timer = 0.8
 		return
+
+	if avatar_presenter != null:
+		avatar_presenter.on_steal_started()
+
 	var from_index := 2
 	while from_index >= 0 and not state.bases[from_index]:
 		from_index -= 1
 	var result := runner_system.attempt_steal(batter.speed, pitcher.defense)
 	message = result.result
+
 	if result.success:
 		state.bases[from_index] = false
 		if from_index == 2:
@@ -159,6 +180,10 @@ func _attempt_steal() -> void:
 			state.bases[from_index + 1] = true
 	else:
 		state.add_out()
+
+	if avatar_presenter != null:
+		avatar_presenter.on_steal_result(result.success)
+
 	phase = "RESULT"
 	current_result = {"result": result.result, "timing": "%d%%" % int(result.chance * 100.0)}
 	result_timer = 1.2
@@ -199,10 +224,6 @@ func _draw() -> void:
 
 	for base in [home, first, second, third]:
 		draw_circle(base, 12, Color.WHITE)
-
-	draw_circle(PITCHER_POS, 18, Color("e9d6c2"))
-	draw_circle(BATTER_POS, 20, Color("f0c7b4"))
-	draw_line(BATTER_POS + Vector2(-20, 10), BATTER_POS + Vector2(30, -20), Color("8b5a2b"), 8)
 
 	if phase == "PITCHING" or phase == "TIMING":
 		draw_circle(ball_position, 9, Color.WHITE)
