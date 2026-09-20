@@ -9,6 +9,8 @@ var strikes := 0
 var balls := 0
 var score := [0, 0]
 var bases := [false, false, false]
+var base_runners: Array = [null, null, null]
+var batting_indices := [0, 0]
 var game_over := false
 var winner := -1
 
@@ -16,27 +18,101 @@ func reset_count() -> void:
 	strikes = 0
 	balls = 0
 
-func advance_bases(hit_bases: int) -> int:
-	var runs := 0
-	if hit_bases >= 4:
-		for i in range(3):
-			if bases[i]:
-				runs += 1
-		bases = [false, false, false]
-		return runs + 1
+func current_batter_index() -> int:
+	return int(batting_indices[half])
 
-	var moved := [false, false, false]
-	for i in range(3):
-		if bases[i]:
-			var destination := i + hit_bases
-			if destination >= 3:
-				runs += 1
-			else:
-				moved[destination] = true
-	if hit_bases > 0:
-		moved[hit_bases - 1] = true
-	bases = moved
-	return runs
+func advance_lineup() -> void:
+	batting_indices[half] = int(batting_indices[half]) + 1
+
+func clear_bases() -> void:
+	bases = [false, false, false]
+	base_runners = [null, null, null]
+
+func apply_hit(batter: PlayerData, team_id: String, hit_bases: int) -> Dictionary:
+	var safe_bases := clamp(hit_bases, 1, 4)
+	var before_ids := _runner_id_snapshot()
+	var plan: Array = []
+	var after: Array = [null, null, null]
+	var runs := 0
+
+	for source in range(3):
+		var runner: RunnerToken = base_runners[source]
+		if runner == null:
+			continue
+		var destination := source + safe_bases
+		if destination >= 3:
+			runs += 1
+			plan.append({
+				"kind": "runner",
+				"runner": runner,
+				"from": source,
+				"to": -1,
+				"scored": true
+			})
+		else:
+			after[destination] = runner
+			plan.append({
+				"kind": "runner",
+				"runner": runner,
+				"from": source,
+				"to": destination,
+				"scored": false
+			})
+
+	var batter_token := RunnerToken.from_player(batter, team_id)
+	if safe_bases >= 4:
+		runs += 1
+		plan.append({
+			"kind": "batter",
+			"runner": batter_token,
+			"from": -1,
+			"to": -1,
+			"scored": true
+		})
+	else:
+		var batter_destination := safe_bases - 1
+		after[batter_destination] = batter_token
+		plan.append({
+			"kind": "batter",
+			"runner": batter_token,
+			"from": -1,
+			"to": batter_destination,
+			"scored": false
+		})
+
+	base_runners = after
+	_refresh_base_flags()
+
+	return {
+		"runs": runs,
+		"before_ids": before_ids,
+		"after_ids": _runner_id_snapshot(),
+		"plan": plan
+	}
+
+func move_runner_on_steal(from_index: int, success: bool) -> Dictionary:
+	if from_index < 0 or from_index >= 3:
+		return {"success": false, "from": from_index, "to": -1}
+
+	var runner: RunnerToken = base_runners[from_index]
+	if runner == null:
+		return {"success": false, "from": from_index, "to": -1}
+
+	if not success:
+		base_runners[from_index] = null
+		_refresh_base_flags()
+		return {"success": false, "from": from_index, "to": -1, "runner": runner}
+
+	var destination := from_index + 1
+	base_runners[from_index] = null
+	if destination >= 3:
+		score[team_batting()] += 1
+		_refresh_base_flags()
+		return {"success": true, "from": from_index, "to": -1, "runner": runner, "scored": true}
+
+	base_runners[destination] = runner
+	_refresh_base_flags()
+	return {"success": true, "from": from_index, "to": destination, "runner": runner, "scored": false}
 
 func add_out() -> void:
 	outs += 1
@@ -44,9 +120,15 @@ func add_out() -> void:
 	if outs >= 3:
 		end_half()
 
+func add_outs(count: int) -> void:
+	for _i in range(max(count, 0)):
+		add_out()
+		if game_over:
+			break
+
 func end_half() -> void:
 	reset_count()
-	bases = [false, false, false]
+	clear_bases()
 	outs = 0
 	if half == 0:
 		half = 1
@@ -59,6 +141,24 @@ func end_half() -> void:
 			winner = 0
 		elif score[1] > score[0]:
 			winner = 1
+		else:
+			winner = -1
 
 func team_batting() -> int:
 	return half
+
+func _refresh_base_flags() -> void:
+	bases = [
+		base_runners[0] != null,
+		base_runners[1] != null,
+		base_runners[2] != null
+	]
+
+func _runner_id_snapshot() -> Array:
+	var result: Array = []
+	for runner in base_runners:
+		if runner == null:
+			result.append("")
+		else:
+			result.append(str(runner.player_id))
+	return result
