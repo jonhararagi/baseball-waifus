@@ -1,0 +1,42 @@
+{
+  "policy": {
+    "never_bundle_weights": true,
+    "require_exact_checkpoint_license_review": true,
+    "use_same_seed_for_benchmark": true,
+    "do_not_rank_by_repo_search_alone": true
+  },
+  "candidates": [
+    {
+      "id": "animagine_xl_3",
+      "family": "Animagine XL",
+      "role": "anime character reference and game concept benchmark",
+      "source_hint": "Animagine-xl-3.0 family on Hugging Face/GitHub mirrors",
+      "style_fit": "clean anime, expressive faces, broad character coverage",
+      "priority": 1
+    },
+    {
+      "id": "illustrious_xl",
+      "family": "Illustrious XL",
+      "role": "anime detail and anatomy A/B benchmark",
+      "source_hint": "Illustrious XL ecosystem",
+      "style_fit": "detailed anime rendering and strong prompt control",
+      "priority": 1
+    },
+    {
+      "id": "noobai_xl",
+      "family": "NoobAI-XL",
+      "role": "modern anime prompt-control benchmark",
+      "source_hint": "NoobAI-XL ecosystem",
+      "style_fit": "anime-focused variation and LoRA ecosystem",
+      "priority": 2
+    },
+    {
+      "id": "pony_xl",
+      "family": "Pony/SDXL",
+      "role": "secondary stylization benchmark",
+      "source_hint": "Pony diffusion ecosystem",
+      "style_fit": "large anime-oriented community ecosystem; use only after exact license review",
+      "priority": 3
+    }
+  ]
+}
