@@ -1,9 +1,18 @@
 import math
 import threading
+
 import cv2
-import mss
 import numpy as np
-import sounddevice as sd
+
+try:
+    import mss
+except ImportError:
+    mss = None
+
+try:
+    import sounddevice as sd
+except ImportError:
+    sd = None
 
 
 class WebcamCapture:
@@ -28,6 +37,8 @@ class WebcamCapture:
 
 class ScreenCapture:
     def __init__(self):
+        if mss is None:
+            raise RuntimeError("mss no está instalado. Ejecuta pip install -r requirements.txt.")
         self.sct = mss.mss()
 
     @property
@@ -53,6 +64,12 @@ class AudioMeter:
         self.enabled = False
         self.error = ""
         self._lock = threading.Lock()
+        self.stream = None
+
+        if sd is None:
+            self.error = "sounddevice no está instalado"
+            return
+
         try:
             self.stream = sd.InputStream(
                 device=device,
@@ -62,7 +79,6 @@ class AudioMeter:
                 callback=self._callback,
             )
         except Exception as exc:
-            self.stream = None
             self.error = str(exc)
 
     def _callback(self, indata, frames, _time, _status):
