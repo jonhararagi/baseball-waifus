@@ -50,7 +50,7 @@ func _ready() -> void:
 	help.text = "SPACE  siguiente pose
 P  alternar auto-ciclo
 R  reiniciar secuencia
-1-9  poses rápidas
+0-9  poses rápidas
 Flechas  tracking simulado
 Q/E  hombros
 A/D  caderas"
@@ -75,6 +75,26 @@ Altura %.2f  Hombros %.2f  Cintura %.2f  Cadera %.2f" % [
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		match event.keycode:
+			KEY_1:
+				_set_pose(AnimeAvatar2D.Pose.IDLE)
+			KEY_2:
+				_set_pose(AnimeAvatar2D.Pose.WALK)
+			KEY_3:
+				_set_pose(AnimeAvatar2D.Pose.RUN)
+			KEY_4:
+				_set_pose(AnimeAvatar2D.Pose.BAT)
+			KEY_5:
+				_set_pose(AnimeAvatar2D.Pose.PITCH)
+			KEY_6:
+				_set_pose(AnimeAvatar2D.Pose.CATCH)
+			KEY_7:
+				_set_pose(AnimeAvatar2D.Pose.THROW)
+			KEY_8:
+				_set_pose(AnimeAvatar2D.Pose.STEAL)
+			KEY_9:
+				_set_pose(AnimeAvatar2D.Pose.SLIDE)
+			KEY_0:
+				_set_pose(AnimeAvatar2D.Pose.CELEBRATE)
 			KEY_SPACE:
 				pose_index = (pose_index + 1) % pose_sequence.size()
 				_set_pose(pose_sequence[pose_index])
