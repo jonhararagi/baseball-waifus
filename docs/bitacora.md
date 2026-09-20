@@ -2618,3 +2618,83 @@ El sistema de personaje sigue siendo:
 **AvatarProfile → AnimeAvatar2D / AnimeBodyRig2D / ExternalRigAvatar2D**
 
 y no debe rehacerse para resolver problemas de streaming.
+
+
+# 30. Revisión 21: regresión integrada offline del Streaming Bridge
+
+**Fecha:** 2026-09-20  
+**Tipo:** Streaming / integración / pruebas automatizadas.
+
+### Qué existía antes
+
+Las revisiones 18 a 20 ya cubrían protocolo versionado, recorder/replay, receptor Godot, panel local, health endpoint y métricas de sesión. Las pruebas estaban separadas por módulo.
+
+### Qué se cambia
+
+Se añade:
+
+- `tools/streaming_bridge/test_streaming_pipeline.py`
+  - crea payloads de tracking válidos;
+  - los persiste mediante `TrackingRecorder`;
+  - los recupera mediante `read_recording`;
+  - los reproduce con `replay.send_recording`;
+  - recibe los datagramas en un socket UDP local;
+  - vuelve a validar protocolo y versión;
+  - comprueba orden de sequence;
+  - comprueba que un recording con versión incorrecta sea rechazado.
+
+También se documenta en `README.md` la ejecución de toda la suite offline con `unittest discover`.
+
+### Por qué
+
+Las pruebas unitarias podían demostrar que cada módulo funcionaba de forma aislada, pero no garantizaban que el contrato entre módulos siguiera intacto. Esta prueba cruza las fronteras principales sin necesitar hardware.
+
+### Prueba realizada
+
+En un entorno aislado sin cámara, MediaPipe, OBS ni Godot:
+
+- pipeline protocolo → recorder → replay → UDP: **PASS**;
+- rechazo de versión incompatible durante replay: **PASS**;
+- resultado: **2/2 pruebas de integración**.
+
+La ejecución confirmó que los paquetes llegan por UDP, conservan su sequence y siguen siendo válidos después de serializar, guardar, leer y reproducir.
+
+### Observación del entorno
+
+El entorno de ejecución produjo advertencias internas del runtime de herramientas durante el arranque de Python, pero esas advertencias no afectaron la prueba. El proceso de prueba terminó con código 0 y ambos casos pasaron.
+
+### Errores o riesgos detectados
+
+No apareció un error funcional en el pipeline integrado.
+
+La validación sigue siendo offline: no demuestra todavía que MediaPipe produzca tracking correcto, que Godot procese el paquete en runtime, ni que OBS mantenga una sesión física estable.
+
+### Estado después de la revisión
+
+**Implementado:**
+- prueba de integración del pipeline de streaming;
+- validación UDP offline;
+- validación de rechazo de protocolo durante replay;
+- documentación del comando de regresión.
+
+**Pendiente:**
+- ejecución de suite con dependencias físicas reales;
+- runtime Godot + TrackingReceiver;
+- webcam + MediaPipe;
+- OBS físico;
+- exportaciones Web/Android/iOS;
+- rig artístico final.
+
+### Porcentaje global revisado
+
+El avance global **permanece en ≈64%**.
+
+No se aumenta artificialmente el porcentaje por una mejora de pruebas. La revisión aumenta confianza en una parte existente de la arquitectura, pero no añade un bloque grande del producto final.
+
+### Regla de continuidad
+
+El pipeline vigente queda:
+
+**Capture → Tracker → Protocol → Recorder/Replay/UDP → Godot Receiver → Avatar Renderer**
+
+No crear otra cadena de transporte para pruebas. Las pruebas nuevas deben apoyarse en este contrato o registrar explícitamente una revisión de protocolo.
