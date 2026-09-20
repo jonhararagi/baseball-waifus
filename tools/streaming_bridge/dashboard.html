@@ -29,8 +29,11 @@
 
   <section class="grid">
     <div class="card"><div class="label">Tracking</div><div id="tracking" class="value">--</div></div>
+    <div class="card"><div class="label">Tracking age</div><div id="tracking-age" class="value">--</div></div>
     <div class="card"><div class="label">FPS</div><div id="fps" class="value">--</div></div>
     <div class="card"><div class="label">Sequence</div><div id="sequence" class="value">--</div></div>
+    <div class="card"><div class="label">Paquetes</div><div id="sent" class="value">--</div></div>
+    <div class="card"><div class="label">Uptime</div><div id="uptime" class="value">--</div></div>
     <div class="card"><div class="label">Audio</div><div id="audio" class="value">--</div></div>
     <div class="card"><div class="label">OBS</div><div id="obs" class="value">--</div></div>
     <div class="card"><div class="label">Grabación</div><div id="recording" class="value">--</div></div>
@@ -57,13 +60,34 @@ async function request(path, options = {}) {
 function setClass(node, value) {
   node.className = "value " + value;
 }
+function formatAge(ageMs) {
+  if (ageMs === null || ageMs === undefined) return "N/A";
+  if (ageMs < 1000) return ageMs + " ms";
+  return (ageMs / 1000).toFixed(1) + " s";
+}
+function formatUptime(seconds) {
+  const total = Math.max(0, Math.floor(seconds || 0));
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const secs = total % 60;
+  return hours > 0
+    ? hours + "h " + minutes + "m"
+    : minutes > 0
+      ? minutes + "m " + secs + "s"
+      : secs + "s";
+}
 async function refresh() {
   try {
     const s = await request("/api/status");
     el("tracking").textContent = s.tracking_active ? "ACTIVO" : "SIN TRACKING";
     setClass(el("tracking"), s.tracking_active ? "ok" : "warn");
+    const age = s.tracking_age_ms;
+    el("tracking-age").textContent = formatAge(age);
+    setClass(el("tracking-age"), age !== null && age < 500 ? "ok" : "warn");
     el("fps").textContent = (s.fps || 0).toFixed(1);
     el("sequence").textContent = String(s.sequence ?? 0);
+    el("sent").textContent = String(s.sent_packets ?? 0);
+    el("uptime").textContent = formatUptime(s.uptime_s);
     el("audio").textContent = s.audio_enabled ? "ON" : "OFF";
     setClass(el("audio"), s.audio_enabled ? "ok" : "warn");
     el("obs").textContent = s.obs_connected ? "CONECTADO" : "OFFLINE";
