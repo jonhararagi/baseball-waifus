@@ -885,3 +885,87 @@ Archivos principales:
 **No implementado:** juego completo, roster, gacha, crianza, economía, campaña completa, assets finales, animaciones finales, audio, backend y PvP.
 
 La próxima revisión debe probar el proyecto en una instalación real de Godot y corregir cualquier error de ejecución antes de añadir sistemas secundarios.
+
+
+# 12. Revisión 3: Herramienta de Streaming + Anime Avatar Lab
+
+**Fecha:** 2026-09-20  
+**Tipo:** Implementación técnica y ampliación de arquitectura.
+
+### Motivo
+
+El proyecto necesitaba una ruta práctica para probar el cuerpo, las poses y el movimiento de las jugadoras antes de invertir en sprites, rig 2D, Live2D o modelos 3D definitivos. También se incorporó una base de streaming que pueda convivir con OBS sin convertir OBS en una dependencia del núcleo del juego.
+
+### Investigación realizada
+
+Se revisaron proyectos y patrones públicos de tracking/avatar. OpenSeeFace fue especialmente útil como referencia porque documenta tracking facial por webcam con transporte UDP y una arquitectura desacoplada. También se identificó VRM/three-vrm como ruta futura para avatares 3D.
+
+Decisión: no copiar código ni assets de terceros. Para el primer prototipo se implementa un avatar 2D procedural propio y un contrato de tracking pequeño.
+
+### Implementado
+
+- `game/avatar/avatar_profile.gd`
+  - perfil editable de personaje;
+  - altura;
+  - hombros;
+  - cintura;
+  - cadera;
+  - busto;
+  - cabeza;
+  - colores;
+  - cabello.
+
+- `game/avatar/anime_avatar_2d.gd`
+  - cuerpo anime procedural;
+  - cabeza, cabello, ojos, ropa, brazos y piernas;
+  - movimiento Idle/Walk/Run;
+  - poses Bat/Pitch/Catch;
+  - Celebrate y Hit Reaction;
+  - respuesta a yaw, roll, blink y mouth provenientes del tracking.
+
+- `game/streaming/tracking_receiver.gd`
+  - receptor UDP local en 127.0.0.1:8765;
+  - convierte JSON de tracking en datos para el avatar.
+
+- `scenes/avatar_lab.tscn` + `scenes/avatar_lab.gd`
+  - laboratorio independiente;
+  - controles para cambiar poses;
+  - controles para modificar proporciones corporales durante la prueba.
+
+- `tools/streaming_bridge`
+  - OpenCV para webcam;
+  - MediaPipe Face Mesh para tracking facial;
+  - sounddevice para nivel de audio;
+  - mss como módulo de captura de pantalla disponible para la herramienta;
+  - obsws-python para control opcional de OBS WebSocket;
+  - transporte JSON/UDP hacia Godot;
+  - configuración externa en `config.json`.
+
+### Estado de esta revisión
+
+**Implementado en código:** arquitectura base del streaming y primer cuerpo anime funcional como prototipo.
+
+**No implementado todavía:** captura de video/audio dentro de OBS mediante el bridge, rig artístico final, Live2D, VRM/Three.js, físicas secundarias de pelo/ropa, lip-sync avanzado, expresiones completas, compositor propio, grabación, escenas automáticas y sistema final de creación de personajes.
+
+### Importante sobre pruebas
+
+Los archivos fueron incorporados al repositorio, pero en este entorno no existe una instalación de Godot, cámara, micrófono u OBS ejecutándose para hacer una prueba de hardware end-to-end. Por tanto, esta revisión se marca como **código implementado, validación de runtime pendiente**, no como integración hardware ya verificada.
+
+### Porcentaje de trabajo
+
+Estimación de avance global del proyecto, contando diseño + implementación real y ponderando los sistemas todavía ausentes:
+
+**≈ 24% completado.**
+
+El porcentaje no significa que el 24% del código final exista. Significa que aproximadamente una cuarta parte del alcance técnico previsto ya tiene especificación consolidada o prototipo funcional. El núcleo de partido y el primer laboratorio de avatar están ahora mucho más adelantados que economía, contenido, arte final, crianza, gacha, torneos y PvP.
+
+### Próximo bloque
+
+1. Validar el Avatar Lab en Godot.
+2. Validar el bridge con webcam y MediaPipe.
+3. Conectar una jugadora real del roster al `AvatarProfile`.
+4. Separar capas de cabello/ropa/equipamiento.
+5. Añadir un rig 2D artístico intercambiable.
+6. Después, evaluar VRM/Three.js o Live2D como backend visual opcional.
+7. Volver al núcleo de béisbol para completar defensa, balls, fouls, innings y roster.
+
