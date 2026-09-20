@@ -90,7 +90,6 @@ func _process(delta: float) -> void:
 		motion.update(delta)
 
 func on_pitch() -> void:
-	_play_position("P", AnimeAvatar2D.Pose.PITCH, 0.85, AnimeAvatar2D.Pose.IDLE)
 	_play_position("C", AnimeAvatar2D.Pose.CATCH, 0.75, AnimeAvatar2D.Pose.IDLE)
 
 func on_batted_ball(result: Dictionary) -> void:
@@ -111,8 +110,9 @@ func on_batted_ball(result: Dictionary) -> void:
 			for position in ["LF", "CF", "RF", "SS", "2B", "3B"]:
 				_play_position(position, AnimeAvatar2D.Pose.HIT_REACTION, 0.8, AnimeAvatar2D.Pose.IDLE)
 		"OUT", "STRIKE":
-			_play_position("P", AnimeAvatar2D.Pose.CELEBRATE, 0.8, AnimeAvatar2D.Pose.IDLE)
 			_play_position("C", AnimeAvatar2D.Pose.CELEBRATE, 0.8, AnimeAvatar2D.Pose.IDLE)
+			for position in ["SS", "2B", "1B", "3B"]:
+				_play_position(position, AnimeAvatar2D.Pose.CELEBRATE, 0.8, AnimeAvatar2D.Pose.IDLE)
 
 func sync_runners(bases: Array) -> void:
 	for i in range(min(3, runner_avatars.size())):
