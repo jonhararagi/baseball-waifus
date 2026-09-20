@@ -1,31 +1,61 @@
 # Streaming Bridge
 
-Puente local para webcam + tracking facial + audio con el laboratorio de avatar de Godot y control opcional de OBS Studio.
+Puente local de captura y tracking para Baseball Waifus.
 
-## Arquitectura
+## Flujo
 
-Webcam -> OpenCV -> MediaPipe Face Mesh -> JSON/UDP -> Godot Avatar Lab
-Micrófono -> sounddevice -> medidor RMS -> JSON/UDP -> Godot
-OBS Studio <-> obsws-python <-> Streaming Bridge
+Webcam → OpenCV → MediaPipe → JSON/UDP → Godot
 
-OBS sigue siendo el responsable de capturar, mezclar y emitir. El bridge no reemplaza OBS ni intenta transportar el video completo por UDP.
+Micrófono → sounddevice → JSON/UDP → Godot
+
+Pantalla opcional → mss → diagnóstico
+
+OBS opcional → obsws-python → cambio de escena/control externo
+
+El bridge nunca resuelve gameplay. Solo publica tracking/captura y, de forma opcional, comunica acciones de OBS. OBS sigue siendo el responsable de capturar, mezclar, grabar y emitir.
 
 ## Instalación
 
-Python 3.10+ recomendado:
+Python 3.10+:
 
+```text
 python -m venv .venv
-.venv\Scripts\activate
+.venv\\Scripts\\activate
 pip install -r requirements.txt
+```
 
-Después:
-1. Ejecutar scenes/avatar_lab.tscn en Godot.
-2. Ejecutar python main.py desde esta carpeta.
-3. Activar el WebSocket Server de OBS si se quiere controlarlo.
-4. Ajustar config.json para cámara, puertos o escena.
+En Linux/macOS cambia la orden de activación de la venv según tu shell.
 
-## Referencias
+## Ejecución
 
-OpenSeeFace fue revisado como referencia de arquitectura: tracking por webcam y envío de datos por UDP. En este prototipo se usa MediaPipe directamente para mantener el bridge pequeño.
+```text
+python main.py
+python main.py --no-audio --no-screen --no-obs
+python main.py --config config.json
+```
 
-Para avatares 3D futuros se puede añadir soporte VRM con Three.js/three-vrm sin acoplarlo al sistema de datos de personaje.
+Antes de conectar hardware:
+
+```text
+python healthcheck.py
+```
+
+## Configuración
+
+config.json controla cámara, FPS, smoothing, audio, captura de pantalla, OBS y host/puerto UDP de Godot.
+
+MediaPipe es requisito para tracking real. mss, sounddevice y obsws-python son opcionales si sus funciones están desactivadas.
+
+OBS es opt-in con enable_obs=false por defecto. Los errores de conexión se muestran en el diagnóstico del proceso.
+
+## Seguridad
+
+El transporte por defecto es localhost. No se expone el tracking facial a Internet.
+
+No guardar contraseñas reales de OBS en el repositorio.
+
+## Referencias de arquitectura
+
+OpenSeeFace se conserva como referencia histórica de tracking por webcam y transporte UDP. El prototipo utiliza MediaPipe directamente.
+
+Para avatares externos, el contrato actual deja una ruta futura para Inochi2D, Live2D o VRM/Three.js sin mezclar SDKs con el gameplay.
