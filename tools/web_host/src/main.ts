@@ -19,6 +19,42 @@ function detectHost(): Host {
   return "local";
 }
 
+function withPlatform(url: string, platform: Host): string {
+  if (platform === "local") return url;
+  const target = new URL(url, window.location.href);
+  target.searchParams.set("platform", platform);
+  return target.toString();
+}
+
+function handleGodotMessage(event: MessageEvent) {
+  const data = event.data;
+  if (!data || data.type !== "baseball-waifus-host") return;
+
+  if (data.action === "ready") {
+    setStatus(host === "telegram" ? "Telegram Mini App ready" : host === "discord" ? "Discord Activity ready" : "Local ready");
+  }
+
+  if (data.action === "expand" && host === "telegram") {
+    (window as any).Telegram?.WebApp?.expand?.();
+  }
+
+  if (data.action === "fullscreen" && host === "discord") {
+    const iframe = document.querySelector<HTMLIFrameElement>("#game-root iframe");
+    iframe?.requestFullscreen?.();
+  }
+
+  if (data.action === "haptic") {
+    const style = data.style || "light";
+    if (host === "telegram") {
+      (window as any).Telegram?.WebApp?.HapticFeedback?.impactOccurred(style);
+    } else if (navigator.vibrate) {
+      navigator.vibrate(style === "heavy" ? 35 : style === "medium" ? 25 : 15);
+    }
+  }
+}
+
+window.addEventListener("message", handleGodotMessage);
+
 async function boot() {
   host = detectHost();
 
@@ -28,7 +64,6 @@ async function boot() {
     tg.expand?.();
     tg.disableVerticalSwipes?.();
     setStatus("Telegram Mini App");
-    window.dispatchEvent(new CustomEvent("baseball-waifus-host-ready", { detail: "telegram" }));
   }
 
   if (host === "discord") {
@@ -36,11 +71,10 @@ async function boot() {
     await discordSdk.ready();
     (window as any).__BASEBALL_WAIFUS_DISCORD_READY__ = true;
     setStatus("Discord Activity");
-    window.dispatchEvent(new CustomEvent("baseball-waifus-host-ready", { detail: "discord" }));
   }
 
   const iframe = document.createElement("iframe");
-  iframe.src = godotUrl;
+  iframe.src = withPlatform(godotUrl, host);
   iframe.allow = "autoplay; fullscreen; gamepad; microphone; camera";
   iframe.allowFullscreen = true;
   iframe.setAttribute("title", "Baseball Waifus");
@@ -49,20 +83,9 @@ async function boot() {
   iframe.style.border = "0";
   document.querySelector("#game-root")?.replaceChildren(iframe);
 
-  (window as any).BaseballWaifusHost = {
-    ready: () => setStatus(host === "telegram" ? "Telegram Mini App ready" : host === "discord" ? "Discord Activity ready" : "Local ready"),
-    expand: () => {
-      if (host === "telegram") (window as any).Telegram.WebApp.expand?.();
-    },
-    fullscreen: () => iframe.requestFullscreen?.(),
-    haptic: (style: "light" | "medium" | "heavy") => {
-      if (host === "telegram") {
-        (window as any).Telegram.WebApp.HapticFeedback?.impactOccurred(style);
-      } else if (navigator.vibrate) {
-        navigator.vibrate(style === "heavy" ? 35 : style === "medium" ? 25 : 15);
-      }
-    },
-  };
+  if (host === "local") {
+    setStatus("Local web host");
+  }
 }
 
 boot().catch((error) => setStatus("Host error: " + String(error)));
