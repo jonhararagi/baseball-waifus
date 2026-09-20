@@ -67,7 +67,7 @@ func randomize_profile(seed_value: int = 0) -> void:
 		rng.randomize()
 	else:
 		rng.seed = seed_value
-	var presets := ["slim", "balanced", "athletic", "curvy", "power"]
+	var presets := ["slim", "balanced", "athletic", "curvy", "power", "shonen_soft"]
 	apply_body_preset(presets[rng.randi_range(0, presets.size() - 1)])
 	height = snapped(rng.randf_range(0.82, 1.20), 0.01)
 	head_scale = snapped(rng.randf_range(0.90, 1.10), 0.01)
