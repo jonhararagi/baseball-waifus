@@ -102,3 +102,16 @@ Fuentes de ecosistema consultadas:
 ## Regla de licencias
 
 El repositorio no redistribuye checkpoints, LoRA, modelos VRM ni arte de terceros.
+## Revisión 17: sistema de cuerpo articulado
+
+La investigación de rigging se aterriza en un backend que puede funcionar sin assets externos.
+
+AnimeBodyRig2D usa el mismo AvatarProfile y construye una figura anime adulta mediante puntos articulares virtuales: pelvis, torso, cuello/cabeza, hombros, codos, manos, rodillas y pies.
+
+Las extremidades se calculan desde la pose y la fase de locomoción. El resultado no pretende ser el arte final, sino un maniquí de gameplay con lectura de silueta y movimiento suficiente para validar altura y proporciones, carrera, robo, deslizamiento, bateo, lanzamiento, recepción, reacción y tracking facial.
+
+Inochi2D aporta un camino 2D abierto y compatible con una futura arquitectura de puppet. three-vrm ofrece una ruta web/3D separada. En lugar de acoplar el juego a cualquiera de ellos ahora, el proyecto adopta una interfaz visual neutral y prueba primero el comportamiento con un cuerpo propio.
+
+Licencias revisadas: Inochi Creator BSD-2-Clause; Inochi2D BSD-2-Clause; three-vrm MIT. La implementación de Baseball Waifus no redistribuye código ni assets de terceros consultados.
+
+Ahora existen tres niveles útiles: procedural simple, procedural articulado y rig externo. El segundo nivel queda marcado como implementado en prototipo y no debe rediseñarse como un nuevo sistema mientras no aparezca una necesidad funcional concreta.
