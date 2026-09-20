@@ -145,3 +145,32 @@ Cada equipo puede almacenar:
 `DemoTeamFactory` crea equipos de demostración reproducibles para las pruebas.
 
 La finalidad es que el Character Creator pueda pasar posteriormente de personajes de laboratorio a equipos completos sin reescribir el presenter visual.
+
+## Pelota compartida entre gameplay y presentación
+
+`BattedBallEvent` se convierte en el contrato visual común para una pelota bateada.
+
+El motor de béisbol decide primero el resultado. Después se crea un evento con:
+
+- resultado;
+- timing;
+- seed visual reproducible;
+- origen;
+- destino;
+- punto de control;
+- duración;
+- tipo de trayectoria.
+
+El mismo evento se entrega a:
+
+`BaseballBallController` → dibuja y anima la pelota.
+
+`BaseballFieldAvatarPresenter` → decide qué defensor reacciona y hacia qué punto se mueve.
+
+Esto evita que el renderer invente una trayectoria diferente a la que está mostrando el gameplay.
+
+## Prueba aislada de pelota
+
+`scenes/baseball_ball_test.tscn` ejecuta una secuencia de Pitch, Single, Double, Triple, Home Run, Foul y Out sin iniciar un partido completo.
+
+Sirve para depurar velocidad, arco, destino y lectura visual de las acciones antes de introducir arte final.
