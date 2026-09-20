@@ -111,3 +111,18 @@ El gameplay y el renderer permanecen desacoplados: el equipo visible representa 
 `tools/character_ai/benchmark_models.py` permite comparar checkpoints locales usando una misma configuración de personaje y seed. Los checkpoints deben instalarse por separado en ComfyUI y sus licencias deben verificarse individualmente.
 
 El repositorio prepara candidatos de familias anime XL, pero no fija un ranking permanente ni redistribuye modelos.
+
+## Avatar roster y partido
+
+El runtime de partido ya instancia los avatares directamente desde `PlayerData`.
+
+`AvatarRosterService` genera y persiste un `AvatarProfile` por jugadora, mientras `AvatarMatchPresenter` traduce eventos del partido a acciones visuales. De esta forma el cuerpo probado en `Character Creator` pasa a ser el mismo cuerpo utilizado durante un partido.
+
+La persistencia visual permanece separada de las estadísticas: cambiar pelo, proporciones, uniforme o equipamiento visual no modifica por sí mismo el resultado de una jugada.
+
+Archivos principales:
+
+- `game/avatar/avatar_roster_service.gd`
+- `game/avatar/avatar_match_presenter.gd`
+- `game/avatar/avatar_profile_store.gd`
+- `scenes/main.gd`
