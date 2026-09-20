@@ -2,7 +2,6 @@ class_name BaseballFieldAvatarPresenter
 extends Node2D
 
 const DEFENSIVE_POSITIONS := {
-	"P": Vector2(640, 405),
 	"C": Vector2(1035, 485),
 	"1B": Vector2(870, 390),
 	"2B": Vector2(690, 315),
