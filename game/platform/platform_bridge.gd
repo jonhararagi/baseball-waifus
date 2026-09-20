@@ -30,25 +30,20 @@ func detect_host() -> Host:
 func initialize() -> void:
 	host = detect_host()
 	initialized = true
-	if host == Host.TELEGRAM or host == Host.DISCORD:
-		_js("window.parent !== window && window.parent.BaseballWaifusHost ? window.parent.BaseballWaifusHost.ready() : (window.BaseballWaifusHost && window.BaseballWaifusHost.ready ? window.BaseballWaifusHost.ready() : null);")
+	if host != Host.LOCAL:
+		_post_host_message("ready")
 
 func set_fullscreen() -> void:
-	match host:
-		Host.TELEGRAM:
-			_js("window.parent !== window && window.parent.BaseballWaifusHost ? window.parent.BaseballWaifusHost.expand() : null;")
-		Host.DISCORD:
-			_js("window.parent !== window && window.parent.BaseballWaifusHost ? window.parent.BaseballWaifusHost.fullscreen() : null;")
-		_:
-			pass
+	if host == Host.TELEGRAM:
+		_post_host_message("expand")
+	elif host == Host.DISCORD:
+		_post_host_message("fullscreen")
 
 func haptic_light() -> void:
-	match host:
-		Host.TELEGRAM, Host.DISCORD:
-			_js("window.parent !== window && window.parent.BaseballWaifusHost ? window.parent.BaseballWaifusHost.haptic('light') : null;")
-		_:
-			if OS.has_feature("mobile"):
-				Input.vibrate_handheld(15)
+	if host == Host.TELEGRAM or host == Host.DISCORD:
+		_post_host_message("haptic", {"style": "light"})
+	elif OS.has_feature("mobile"):
+		Input.vibrate_handheld(15)
 
 func host_name() -> String:
 	match host:
@@ -59,11 +54,17 @@ func host_name() -> String:
 		_:
 			return "Local"
 
+func _post_host_message(action: String, payload: Dictionary = {}) -> void:
+	if not OS.has_feature("web"):
+		return
+	var data := payload.duplicate()
+	data["type"] = "baseball-waifus-host"
+	data["action"] = action
+	var json := JSON.stringify(data)
+	JavaScriptBridge.eval("window.parent.postMessage(" + json + ", '*');")
+
 func _eval_bool(expression: String) -> bool:
 	if not OS.has_feature("web"):
 		return false
 	return bool(JavaScriptBridge.eval(expression))
 
-func _js(code: String) -> void:
-	if OS.has_feature("web"):
-		JavaScriptBridge.eval(code)
