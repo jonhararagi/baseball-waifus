@@ -234,7 +234,7 @@ func _attempt_steal() -> void:
 		if destination_base > 2:
 			destination_base = -1
 		field_avatar_presenter.on_steal_result(from_index, result.success, destination_base)
-		field_avatar_presenter.sync_runners(state.bases)
+		field_avatar_presenter.sync_runners(state.bases, false)
 
 	phase = "RESULT"
 	current_result = {"result": result.result, "timing": "%d%%" % int(result.chance * 100.0)}
