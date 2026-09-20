@@ -2407,6 +2407,7 @@ La suite de protocolo fue ampliada de 2 a 4 casos: payload válido, defaults seg
 Se añadió una suite separada para recorder con round-trip y entrada corrupta.
 
 No se ejecutó runtime Godot/web porque el entorno sigue sin Godot ni build Web ejecutable.
+Se ejecutó una regresión aislada de los módulos Python nuevos (`protocol.py` + `recorder.py`): 5/5 pruebas pasaron y `py_compile` no reportó errores. Esta prueba usa exactamente el código de la revisión para validar sintaxis y comportamiento básico fuera del hardware.
 No se ejecutó la ruta física de webcam/MediaPipe/OBS porque esas dependencias y hardware no están disponibles aquí.
 
 ### Error de implementación durante la revisión
