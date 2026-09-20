@@ -1,25 +1,24 @@
 class_name ExternalRigAvatar2D
-extends Node2D
+extends AnimeAvatar2D
 
-var profile: AvatarProfile
 var rig_instance: Node2D
 
 func setup(p: AvatarProfile) -> void:
-	profile = p
+	super.setup(p)
 	_load_rig()
 	queue_redraw()
 
-func set_pose(pose: int) -> void:
-	if rig_instance == null:
-		return
-	if rig_instance.has_method("set_pose"):
-		rig_instance.call("set_pose", pose)
+func set_pose(next_pose: Pose) -> void:
+	pose = next_pose
+	if rig_instance != null and rig_instance.has_method("set_pose"):
+		rig_instance.call("set_pose", int(next_pose))
+	queue_redraw()
 
 func apply_tracking(data: Dictionary) -> void:
-	if rig_instance == null:
-		return
-	if rig_instance.has_method("apply_tracking"):
+	tracking = data
+	if rig_instance != null and rig_instance.has_method("apply_tracking"):
 		rig_instance.call("apply_tracking", data)
+	queue_redraw()
 
 func _load_rig() -> void:
 	if profile == null or profile.rig_scene_path.is_empty():
