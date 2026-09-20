@@ -210,7 +210,7 @@ func _swing() -> void:
 
 	if current_result.has("hit_plan"):
 		var hit_data: Dictionary = current_result["hit_plan"]
-		field_avatar_presenter.animate_hit(hit_data["plan"], hit_data["after_runners"])
+		field_avatar_presenter.animate_hit(hit_data["plan"], hit_data["after_runners"], batter)
 	else:
 		field_avatar_presenter.sync_runners(state.base_runners)
 
