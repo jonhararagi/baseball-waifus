@@ -716,6 +716,8 @@ Cuando una idea sea descartada en adelante, registrar:
 | G-015 | Torneos | Planificado | 2026-09-20 |
 | G-016 | PvP | Planificado, posterior | 2026-09-20 |
 | G-017 | Motor | Godot 4.x adoptado para el prototipo | 2026-09-20 |
+| G-018 | Rig procedural articulado | Implementado en prototipo | 2026-09-20 |
+| G-019 | Streaming healthcheck y dependencias opcionales | Implementado | 2026-09-20 |
 
 ---
 
@@ -2319,6 +2321,7 @@ Prueba 5, runtime físico: no ejecutada porque no hay webcam, micrófono ni inst
 2. OBSController silenciaba las causas de fallo. Corrección: propiedad error y status() con diagnóstico.
 3. main.py intentaba conectar OBS aunque no existiera escena configurada. Corrección: OBS opt-in con enable_obs=false.
 4. La bitácora seguía diciendo que el motor no estaba confirmado aunque G-017 ya registraba Godot 4.x como adoptado. Corrección: estado global alineado.
+5. Character Creator todavía instanciaba AnimeAvatar2D directamente y no utilizaba la nueva factory. Corrección: el creador ahora usa AvatarRendererFactory y reconstruye el renderer al cambiar entre procedural y rig.
 
 ### Decisión visual de continuidad
 
