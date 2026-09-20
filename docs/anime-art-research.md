@@ -2,64 +2,103 @@
 
 ## Arquitectura elegida
 
-Se evaluó separar tres responsabilidades:
+Se mantienen separadas tres responsabilidades:
 
 1. generación de referencias visuales;
 2. cuerpo/runtime del juego;
 3. rigging 2D/3D final.
 
-Decisión:
+Decisión vigente:
 
-- ComfyUI: backend opcional para concept art local.
-- AvatarProfile + AnimeAvatar2D: backend estable para gameplay y pruebas.
-- Inochi2D: candidato futuro para rigging 2D de alta calidad.
-- VRM/Three.js: candidato futuro para pipeline 3D.
+- ComfyUI: backend local opcional para concept art.
+- AvatarProfile + AnimeAvatar2D: cuerpo/runtime estable para gameplay y pruebas.
+- Inochi2D: candidato para rig 2D definitivo.
+- VRM/Three.js: candidato para pipeline 3D futuro.
+
+Esto evita que una decisión estética del generador rompa la lógica del jugador.
+
+## Sistema de diseño implementado
+
+El proyecto ya tiene un sistema procedural reutilizable que permite probar cuerpos y movimiento sin depender de assets externos:
+
+- AvatarProfile guarda proporciones, cabello, rostro, uniforme y estilo.
+- AnimeAvatar2D dibuja cuerpo, cabeza, cabello y equipamiento por capas.
+- AvatarMotionController controla acciones de béisbol.
+- AvatarTrajectoryController mueve jugadoras con trayectorias continuas.
+- Character Creator permite editar y guardar perfiles.
+- Avatar Motion Test prueba Bat, Pitch, Throw, Catch, Steal, Slide, Out, Win y Defeat.
+- Fielding Play Test prueba ahora rebote, recogida y lanzamiento a primera.
+
+El preset visual de referencia se mantiene como shonen_soft: adulto, deportivo, redondeado, con torso, caderas y muslos algo más llenos, sin anatomía infantil ni estética chibi.
 
 ## Familias de modelos candidatas
 
-| Familia | Uso previsto | Nota |
+| Familia | Uso | Encaje con el proyecto |
 |---|---|---|
-| Animagine XL | personajes anime y hojas de diseño | candidato conocido del ecosistema SDXL; comprobar checkpoint/licencia concreta |
-| Illustrious XL | anime detallado y variaciones de personaje | candidato para comparar anatomía, cabello y vestuario |
-| NoobAI-XL | anime moderno y gran control mediante ecosistema de prompts/LoRA | candidato para pruebas A/B |
-| Pony/SDXL | personajes estilizados con amplio ecosistema de LoRA | útil como prueba secundaria; comprobar licencia y términos de cada recurso |
+| Animagine XL | referencias de personajes anime y hojas de diseño | bueno para establecer una base anime consistente |
+| Illustrious XL | detalle anime, anatomía y variación de personaje | candidato fuerte para A/B de arte |
+| NoobAI-XL | anime moderno y control por prompts/LoRA | candidato secundario |
+| Pony/SDXL | ecosistema amplio de estilización anime | referencia secundaria, con revisión de licencia más estricta |
 
-Esta tabla no pretende ser un ranking actual de popularidad o calidad. El rendimiento de los modelos y sus licencias cambian, y la selección final debe hacerse con los checkpoints concretos instalados.
+La búsqueda realizada mediante repositorios de GitHub sirve para localizar el ecosistema, no para declarar un ganador de popularidad o calidad. La web general no está disponible en esta sesión, así que no presento este inventario como ranking global actual.
 
-## Estilo de Baseball Waifus
+## Pipeline de benchmark
 
-El objetivo visual se define por características, no por copiar una franquicia:
+tools/character_ai/benchmark_models.py usa:
+
+- mismo perfil;
+- misma seed base;
+- mismo preset;
+- checkpoint exacto instalado localmente;
+- salida separada por modelo.
+
+tools/character_ai/model_catalog.json centraliza las familias candidatas y las reglas de no redistribuir pesos.
+
+Antes de usar un checkpoint en un producto comercial se debe comprobar su licencia exacta, versión, condiciones de uso y las licencias de sus LoRA o embeddings.
+
+## Dirección visual de Baseball Waifus
+
+Objetivo:
 
 - anime adulto;
-- proporciones shonen heroicas;
-- anatomía redondeada y algo más llena;
-- cuerpos atléticos;
-- ojos expresivos;
+- shonen deportivo;
+- cuerpos atléticos pero redondeados;
+- proporciones heroicas;
+- piernas y caderas con más volumen;
+- expresividad alta;
 - cel shading limpio;
 - colores vivos;
-- siluetas claras;
+- uniforme de béisbol reconocible;
 - fanservice adulto moderado;
-- uniformes deportivos;
-- lectura de videojuego de colección.
+- siluetas legibles a escala de partido.
 
-Se excluyen deliberadamente:
-- chibi o super-deformed;
+No se incorporan:
+
+- CLAMP;
+- Jujutsu Kaisen;
+- chibi/super-deformed;
 - anatomía infantil;
-- fotorealismo;
-- estética sombría/horror como lenguaje dominante;
-- imitación directa de la identidad visual de una obra concreta.
+- imitación directa de una franquicia;
+- fotorealismo como estilo base.
 
-## Herramientas abiertas investigadas
+La referencia de Fairy Tail se trata como una dirección funcional de proporciones shonen redondeadas, no como una copia del estilo gráfico.
 
-- ComfyUI: motor nodal con API local y workflows reutilizables.
-- Inochi Creator: editor open source para rigs Inochi2D.
-- Inochi2D: runtime de deformación 2D y binding para Godot mediante GDExtension.
+## Próximo salto de arte
 
-Fuentes GitHub consultadas:
+Cuando llegue el arte/rig definitivo, se conserva el mismo AvatarProfile como contrato. El renderer procedural se reemplaza por un adaptador de rig, no se reescribe el gameplay.
+
+## Herramientas abiertas de rigging
+
+- ComfyUI para concept art local.
+- Inochi Creator e Inochi2D para un camino 2D abierto.
+- VRM/Three.js como camino 3D.
+
+Fuentes de ecosistema consultadas:
+
 - https://github.com/Comfy-Org/ComfyUI
 - https://github.com/Inochi2D/inochi-creator
 - https://github.com/Inochi2D/inochi2d
 
 ## Regla de licencias
 
-El repositorio no redistribuye checkpoints, LoRA, modelos VRM ni arte de terceros. Antes de incorporar cualquier recurso se debe comprobar la licencia exacta del archivo utilizado y registrar autor, versión, uso comercial y redistribución.
+El repositorio no redistribuye checkpoints, LoRA, modelos VRM ni arte de terceros.
