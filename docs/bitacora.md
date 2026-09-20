@@ -831,3 +831,57 @@ La implementación técnica sigue siendo **0% implementada como juego completo**
 
 Implementar el prototipo mínimo:
 **pitcher → lanzamiento → timing → contacto → hit/out/Home Run → marcador.**
+
+
+# 11. Revisión 2: Primer esqueleto técnico ejecutable
+
+**Fecha:** 2026-09-20  
+**Tipo:** Implementación técnica.
+
+Se creó el primer esqueleto modular del juego en Godot 4.x.
+
+Archivos principales:
+- `project.godot`
+- `scenes/main.tscn`
+- `scenes/main.gd`
+- `game/characters/player_data.gd`
+- `game/baseball/pitch.gd`
+- `game/baseball/baseball_simulator.gd`
+- `game/baseball/game_state.gd`
+- `game/baseball/runner_system.gd`
+- `game/ai/opponent_ai.gd`
+- `game/ui/hud.gd`
+
+### Implementado
+
+- campo procedural;
+- pitcher y bateadora de demostración;
+- tres tipos de pitch;
+- desplazamiento de pelota;
+- minijuego de timing;
+- cálculo de probabilidad de contacto;
+- elementos Fire/Ice con modificador;
+- Single/Double/Triple/Home Run;
+- Strike/Foul/Out;
+- bases;
+- carreras;
+- outs;
+- innings;
+- marcador;
+- intento de robo;
+- IA básica de selección de lanzamiento;
+- HUD;
+- controles de teclado y mouse;
+- arquitectura modular separada.
+
+### Correcciones realizadas durante la implementación
+
+- Se reemplazaron rangos implícitos por `range(3)` en el estado del partido.
+- Se simplificó el mapa de inputs para utilizar eventos directos de Godot y evitar dependencias innecesarias del formato del proyecto.
+
+### Estado técnico
+
+**Implementado:** núcleo inicial de prototipo.  
+**No implementado:** juego completo, roster, gacha, crianza, economía, campaña completa, assets finales, animaciones finales, audio, backend y PvP.
+
+La próxima revisión debe probar el proyecto en una instalación real de Godot y corregir cualquier error de ejecución antes de añadir sistemas secundarios.
