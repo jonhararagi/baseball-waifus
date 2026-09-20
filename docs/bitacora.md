@@ -2850,3 +2850,35 @@ No crear un segundo ejecutor de pruebas ni otra interfaz de QA. El pipeline oper
 
 El sistema de personajes permanece sin cambios:
 **AvatarProfile → AnimeAvatar2D / AnimeBodyRig2D / ExternalRigAvatar2D**
+
+
+### Corrección de Revisión 23-A: deadlock del QARunner
+
+Durante la validación aislada del nuevo ejecutor apareció un problema real: `start()` tomaba `_lock` y después llamaba a `status()`, que intentaba tomar el mismo lock. Con `threading.Lock` eso producía un deadlock.
+
+La corrección fue:
+
+- cambiar el lock interno del QARunner a `threading.RLock`;
+- sustituir `subprocess.run` por `Popen + communicate` para poder terminar el proceso si el bridge se cierra;
+- añadir referencia interna al proceso activo;
+- matar el proceso cuando `close()` se ejecuta durante una prueba activa.
+
+### Prueba de corrección
+
+Se ejecutó una prueba aislada con una suite `unittest` real creada temporalmente:
+
+- QARunner inicia: PASS;
+- subprocess termina: PASS;
+- exit code 0: PASS;
+- `passed=true`: PASS;
+- salida de unittest capturada: PASS.
+
+Resultado: **PASS**.
+
+La primera prueba manual anterior falló por un error del arnés temporal de prueba, que intentaba usar una variable fuera de su alcance. Ese fallo no pertenecía al QARunner. Se corrigió el arnés y la validación real del runner pasó.
+
+### Estado de continuidad
+
+QARunner queda como único ejecutor de QA del Streaming Bridge. No crear otra capa de ejecución de tests mientras este runner y la suite `test_*.py` cubran la necesidad.
+
+El porcentaje global permanece en **≈64%**.
