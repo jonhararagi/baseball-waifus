@@ -2132,3 +2132,11 @@ La arquitectura vigente queda:
 **Streaming Bridge + AvatarProfile + Renderer Factory + Match Presenter + Field Presenter + Trajectory Controller + BattedBallEvent + RunnerToken + FieldingResolver + ThrowResolver + DoublePlayResolver + FieldingPlayEvent.**
 
 El gameplay sigue siendo la única autoridad sobre resultados, carreras, outs y errores.
+### Ajustes de cierre de Revisión 15
+
+- el pitcher rival queda fuera de su alineación de bateo y el DH completa las nueve bateadoras;
+- el robo actualiza la animación usando el estado final de las bases para evitar ranuras visuales obsoletas;
+- el presenter separa la pose de resolución defensiva de la trayectoria física posterior;
+- los perfiles visuales de las corredoras se recuperan desde PlayerData mediante player_id.
+
+El porcentaje global permanece en **≈49%**.
