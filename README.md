@@ -92,3 +92,22 @@ python tools/run_local_tools.py
 La configuración del generador está en `tools/character_ai/config.json`. Debes instalar un checkpoint local compatible con ComfyUI y escribir su nombre exacto en `model`. El proyecto no incluye ni redistribuye checkpoints.
 
 El botón `AI ref` del Character Creator envía el `AvatarProfile` actual y recibe una referencia para comparar cuerpo, cabello, uniforme y lectura visual. Las poses de gameplay siguen siendo las del renderer de Godot.
+
+
+## Avatar Motion Test
+
+La escena `scenes/avatar_motion_test.tscn` sirve para probar automáticamente el cuerpo con una secuencia de acciones de béisbol: Bat, Pitch, Throw, Catch, Steal, Slide, Out, Win y Defeat.
+
+Abrir la escena en Godot y ejecutar con F6. `SPACE` avanza al siguiente movimiento y las teclas 1-9 disparan acciones individuales.
+
+## Sistema visual por capas
+
+El avatar utiliza `AvatarProfile` + `AvatarEquipment` para separar cuerpo, cabello, uniforme y equipamiento. Las piezas visuales actualmente prototipadas son bate, guantes, gorra, chaleco, falda y calzado.
+
+El gameplay y el renderer permanecen desacoplados: el equipo visible representa datos, pero no decide sus propias estadísticas.
+
+## Benchmark de modelos anime
+
+`tools/character_ai/benchmark_models.py` permite comparar checkpoints locales usando una misma configuración de personaje y seed. Los checkpoints deben instalarse por separado en ComfyUI y sus licencias deben verificarse individualmente.
+
+El repositorio prepara candidatos de familias anime XL, pero no fija un ranking permanente ni redistribuye modelos.
