@@ -1,11 +1,18 @@
 import math
 import time
+
 import cv2
-import mediapipe as mp
+
+try:
+    import mediapipe as mp
+except ImportError:
+    mp = None
 
 
 class FaceTracker:
     def __init__(self, smoothing=0.45):
+        if mp is None:
+            raise RuntimeError("MediaPipe no está instalado. Ejecuta pip install -r requirements.txt.")
         self.smoothing = max(0.0, min(1.0, smoothing))
         self.mesh = mp.solutions.face_mesh.FaceMesh(
             static_image_mode=False,
