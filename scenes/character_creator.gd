@@ -358,9 +358,14 @@ func _reset_profile() -> void:
 	_sync_controls()
 
 func _generate_ai_reference() -> void:
+	var preset_map := {
+		"soft": "baseball_waifus_soft",
+		"ecchi": "baseball_waifus_ecchi",
+		"rig": "baseball_waifus_rig"
+	}
 	var payload := {
 		"profile": profile.to_dictionary(),
-		"preset": "baseball_waifus_ecchi"
+		"preset": preset_map.get(profile.art_style, "baseball_waifus_ecchi")
 	}
 	var headers := ["Content-Type: application/json"]
 	var body := JSON.stringify(payload)
