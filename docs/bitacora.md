@@ -21,7 +21,7 @@
 **Rama principal:** `main`  
 **Estado actual:** Prototipo técnico en Godot 4.x + laboratorio de personajes + puente de streaming + rig procedural interno. Godot 4.x queda adoptado como motor del prototipo y del juego actual; los adapters externos siguen siendo una capa visual opcional.
 
-**Avance global revisado:** ≈58%.
+**Avance global revisado:** ≈61%.
 
 ### Cómo vamos
 
@@ -718,6 +718,8 @@ Cuando una idea sea descartada en adelante, registrar:
 | G-017 | Motor | Godot 4.x adoptado para el prototipo | 2026-09-20 |
 | G-018 | Rig procedural articulado | Implementado en prototipo | 2026-09-20 |
 | G-019 | Streaming healthcheck y dependencias opcionales | Implementado | 2026-09-20 |
+| G-020 | Tracking recorder/replay JSONL | Implementado en prototipo | 2026-09-20 |
+| G-021 | Validación de orden y origen de tracking/host | Implementado | 2026-09-20 |
 
 ---
 
