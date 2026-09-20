@@ -1531,3 +1531,124 @@ El sistema vigente es:
 **Avatar por capas + perfil persistente + presenter de partido + presenter de campo.**
 
 No se debe rehacer esta arquitectura para introducir el arte definitivo. El siguiente reemplazo esperado es el renderer, no el contrato de datos ni la lógica de juego.
+
+# 20. Revisión 11: Trayectorias de avatar y equipos reutilizables
+
+**Fecha:** 2026-09-20
+**Tipo:** Animación de gameplay / estructura de roster / desacoplamiento de prototipo.
+
+### Motivo
+
+La Revisión 10 ya mostraba defensores y runners, pero algunas acciones cambiaban la posición de forma instantánea y el roster de prueba seguía definido dentro de `main.gd`.
+
+Para que el cuerpo sirva realmente como banco de pruebas de jugadores, la presentación necesita movimiento continuo y los equipos deben existir como datos reutilizables.
+
+### Implementado
+
+- `game/avatar/avatar_trajectory_controller.gd`
+  - desplazamiento lineal;
+  - dash;
+  - trayectoria curva;
+  - movimiento con retorno automático;
+  - cancelación de tween anterior por avatar.
+
+- `game/avatar/baseball_field_avatar_presenter.gd`
+  - runners se desplazan desde la base de origen hasta la base destino;
+  - outfielders e infielders pueden entrar temporalmente en la trayectoria de la pelota;
+  - conserva el estado visual de cada posición.
+
+- `game/characters/baseball_team_data.gd`
+  - nombre e identificación del equipo;
+  - colección de jugadoras;
+  - orden de bateo;
+  - pitcher;
+  - consultas por posición;
+  - roster defensivo.
+
+- `game/characters/demo_team_factory.gd`
+  - crea equipo de jugadores y equipo rival;
+  - elimina el hardcode principal del roster de `main.gd`.
+
+- `scenes/main.gd`
+  - ahora consume `BaseballTeamData`;
+  - mantiene la simulación separada de la presentación visual.
+
+### Arquitectura
+
+```text
+PlayerData
+    ↓
+BaseballTeamData
+    ↓
+AvatarRosterService
+    ↓
+AvatarProfile
+    ↓
+AnimeAvatar2D
+    ↑
+AvatarMatchPresenter / BaseballFieldAvatarPresenter
+    ↑
+AvatarTrajectoryController
+    ↑
+eventos del partido
+```
+
+### Dirección visual
+
+La silueta sigue orientada a:
+
+- personaje anime adulto;
+- cuerpo atlético redondeado;
+- torso y extremidades ligeramente más llenos;
+- caderas y muslos redondeados;
+- proporciones shonen suaves;
+- fanservice ecchi de videojuego sin contenido sexual explícito.
+
+La dirección sigue evitando la copia directa de franquicias y mantiene fuera los estilos indicados anteriormente.
+
+### Investigación de modelos
+
+La comprobación adicional mediante GitHub encontró infraestructura y repositorios relacionados con Illustrious XL, Animagine XL y herramientas de anime, pero no produce por sí sola una métrica fiable de popularidad mundial.
+
+Por diseño se mantiene:
+
+familia candidata → checkpoint exacto → benchmark idéntico → revisión de licencia → decisión local
+
+No se introducen pesos de terceros dentro del repositorio.
+
+### Estado
+
+**Implementado:**
+- streaming base;
+- Character Creator;
+- perfil persistente;
+- avatar por capas;
+- cuerpo `shonen_soft`;
+- presenters de batter/pitcher y campo;
+- catcher, infield, outfield y runners;
+- trayectorias visuales;
+- equipos de prueba reutilizables;
+- benchmark local de checkpoints.
+
+**Pendiente:**
+- lineup real durante todo el partido;
+- movimiento completo de todos los runners después de cada batazo;
+- trayectoria física de la pelota como entidad compartida por gameplay y presentación;
+- defensa con resolución de atrapada antes del resultado final;
+- arte/rig de producción;
+- runtime real de Godot + webcam + OBS;
+- benchmark con checkpoints concretos instalados.
+
+### Porcentaje global revisado
+
+El avance global estimado pasa de **≈35% a ≈37%**.
+
+El aumento viene de convertir la presentación visual en un sistema reutilizable de movimiento y equipos, no simplemente de añadir más dibujos.
+
+### Regla de continuidad
+
+La arquitectura vigente queda:
+
+**Streaming Bridge + Avatar por capas + Roster persistente + TeamData + Match Presenter + Field Presenter + Trajectory Controller.**
+
+El siguiente salto lógico es conectar el resultado del béisbol con una pelota y trayectorias físicas compartidas, y después migrar el renderer procedural al rig artístico definitivo.
