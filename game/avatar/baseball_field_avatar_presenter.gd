@@ -53,6 +53,7 @@ func setup(defensive_roster: Dictionary) -> void:
 func set_runner_players(players: Dictionary) -> void:
 	runner_players = players.duplicate()
 
+
 func _create_avatar(player: PlayerData, at: Vector2, order: int) -> AnimeAvatar2D:
 	var avatar := AnimeAvatar2D.new()
 	avatar.position = at
@@ -208,7 +209,7 @@ func _animate_fielding_play(event: BattedBallEvent, play: FieldingPlayEvent) -> 
 			AnimeAvatar2D.Pose.IDLE
 		)
 
-func animate_hit(plan: Array, after_runners: Array) -> void:
+func animate_hit(plan: Array, after_runners: Array, batter_player: PlayerData = null) -> void:
 	var animation_time := 0.85
 	for item in plan:
 		var kind := str(item.get("kind", "runner"))
@@ -223,6 +224,8 @@ func animate_hit(plan: Array, after_runners: Array) -> void:
 			trajectory.move_to(avatar, target, animation_time, 16.0)
 		elif kind == "batter":
 			var avatar: AnimeAvatar2D = runner_avatars[3]
+			if batter_player != null:
+				avatar.setup(roster.profile_for_player(batter_player))
 			avatar.visible = true
 			runner_motions[3].play(AnimeAvatar2D.Pose.RUN, animation_time, AnimeAvatar2D.Pose.IDLE)
 			var target := HOME_POSITION if scored else BASE_POSITIONS[destination]
@@ -238,9 +241,12 @@ func sync_runners(runners: Array, snap_to_base := true) -> void:
 		var token: RunnerToken = runners[i] if i < runners.size() else null
 		var active := token != null
 		runner_avatars[i].visible = active
-		if active and snap_to_base:
-			runner_avatars[i].position = BASE_POSITIONS[i]
 		if active:
+			var player: PlayerData = runner_players.get(token.player_id)
+			if player != null:
+				runner_avatars[i].setup(roster.profile_for_player(player))
+			if snap_to_base:
+				runner_avatars[i].position = BASE_POSITIONS[i]
 			runner_motions[i].play(AnimeAvatar2D.Pose.IDLE, 0.2, AnimeAvatar2D.Pose.IDLE)
 	runner_avatars[3].visible = false
 
