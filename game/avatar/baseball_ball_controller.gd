@@ -23,6 +23,24 @@ func play_batted_event(event: BattedBallEvent) -> void:
 		return
 	_start_path(_sample_quadratic(event.origin, event.control, event.target, 26), event.duration)
 
+func play_fielding_play(event: BattedBallEvent, play: FieldingPlayEvent) -> void:
+	if event == null or play == null or not play.is_valid():
+		play_batted_event(event)
+		return
+
+	var points: Array[Vector2] = _sample_quadratic(event.origin, event.control, event.target, 22)
+	var current := event.target
+	for rebound in play.rebound_points:
+		var control := current.lerp(rebound, 0.5) + Vector2(0, -22)
+		_append_segment(points, _sample_quadratic(current, control, rebound, 10))
+		current = rebound
+
+	var throw_control := current.lerp(play.throw_target, 0.5) + Vector2(0, -play.throw_arc)
+	_append_segment(points, _sample_quadratic(current, throw_control, play.throw_target, 16))
+
+	var total_duration := event.duration + float(play.rebound_points.size()) * 0.24 + play.throw_duration
+	_start_path(points, total_duration)
+
 func play_miss_to_catcher(origin: Vector2, target: Vector2) -> void:
 	var control := origin.lerp(target, 0.5) + Vector2(0, -22)
 	_start_path(_sample_quadratic(origin, control, target, 16), 0.42)
@@ -68,6 +86,13 @@ func _draw() -> void:
 	draw_circle(ball_position, ball_radius + 2.0, Color(0.92, 0.92, 0.92, 0.18))
 	draw_circle(ball_position, ball_radius, Color.WHITE)
 	draw_arc(ball_position, ball_radius - 2.0, -0.75, 0.75, 10, Color(0.85, 0.15, 0.15), 1.4)
+
+func _append_segment(points: Array[Vector2], segment: Array[Vector2]) -> void:
+	if segment.is_empty():
+		return
+	var start_index := 1 if not points.is_empty() else 0
+	for i in range(start_index, segment.size()):
+		points.append(segment[i])
 
 func _sample_quadratic(start: Vector2, control: Vector2, target: Vector2, samples: int) -> Array[Vector2]:
 	var points: Array[Vector2] = []
