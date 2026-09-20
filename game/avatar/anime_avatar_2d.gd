@@ -38,17 +38,23 @@ func _draw() -> void:
 	if profile == null:
 		return
 
+	var scale_factor := profile.height
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2(scale_factor, scale_factor))
+
 	var sway := sin(walk_phase) * (8.0 if pose != Pose.IDLE else 2.0)
 	var bob := abs(sin(walk_phase * 2.0)) * (-7.0 if pose == Pose.RUN else -3.0)
-	var tracked_roll := float(tracking.get("roll", 0.0))
+
+	var tracked_roll := clamp(float(tracking.get("roll", 0.0)), -1.0, 1.0)
 	var tracked_yaw := clamp(float(tracking.get("yaw", 0.0)), -1.0, 1.0)
+	var tracked_pitch := clamp(float(tracking.get("pitch", 0.0)), -1.0, 1.0)
 	var head_tilt := tracked_roll * 0.35
 	var face_shift := tracked_yaw * 8.0
+	var head_lift := tracked_pitch * 8.0
 
 	var hip_y := 70.0 + bob
 	var torso_y := -5.0 + bob
 	var neck_y := -76.0 + bob
-	var head_y := -115.0 + bob
+	var head_y := -115.0 + bob + head_lift
 
 	var leg_spread := 18.0 * profile.hip_width
 	var stride := sin(walk_phase) * (18.0 if pose == Pose.WALK else 28.0 if pose == Pose.RUN else 3.0)
@@ -72,12 +78,29 @@ func _draw() -> void:
 		Vector2(-torso_bottom, hip_y),
 		Vector2(-torso_mid, torso_y + 54)
 	])
-	draw_colored_polygon(torso, profile.uniform)
+
+	var uniform_color := profile.uniform
+	match profile.uniform_style:
+		"sporty":
+			uniform_color = profile.uniform.lightened(0.04)
+		"jacket":
+			uniform_color = profile.uniform.darkened(0.04)
+		"sleeveless":
+			uniform_color = profile.uniform.lightened(0.08)
+	draw_colored_polygon(torso, uniform_color)
+
+	var chest_r := 13.0 * profile.bust
+	if profile.bust > 0.9:
+		draw_circle(Vector2(-18, torso_y + 29), chest_r, profile.uniform.darkened(0.04))
+		draw_circle(Vector2(18, torso_y + 29), chest_r, profile.uniform.darkened(0.04))
 
 	var skirt_w := 66.0 * profile.hip_width
+	var skirt_h := 35.0
+	if profile.uniform_style == "jacket":
+		skirt_h = 31.0
 	draw_colored_polygon(PackedVector2Array([
 		Vector2(-38, hip_y - 3), Vector2(38, hip_y - 3),
-		Vector2(skirt_w, hip_y + 35), Vector2(-skirt_w, hip_y + 35)
+		Vector2(skirt_w, hip_y + skirt_h), Vector2(-skirt_w, hip_y + skirt_h)
 	]), profile.accent)
 
 	var arm_angle_l := -0.25
@@ -98,6 +121,9 @@ func _draw() -> void:
 		Pose.HIT_REACTION:
 			arm_angle_l = 1.1
 			arm_angle_r = -1.1
+	arm_angle_l += sway * 0.003
+	arm_angle_r -= sway * 0.003
+
 	var arm_len := 70.0 * profile.shoulder_width
 	var left_hand := Vector2(cos(arm_angle_l), sin(arm_angle_l)) * arm_len + Vector2(-torso_top, torso_y)
 	var right_hand := Vector2(cos(arm_angle_r), sin(arm_angle_r)) * arm_len + Vector2(torso_top, torso_y)
@@ -108,40 +134,89 @@ func _draw() -> void:
 
 	draw_line(Vector2(0, neck_y + 12), Vector2(0, neck_y - 5), profile.skin, 20.0)
 	var head_r := 52.0 * profile.head_scale
-	draw_set_transform(Vector2(face_shift, head_y), head_tilt, Vector2.ONE)
+	draw_set_transform(Vector2(face_shift, head_y), head_tilt, Vector2(scale_factor, scale_factor))
 	draw_circle(Vector2.ZERO, head_r, profile.skin)
 
 	var hair_r := head_r + 7.0
 	draw_arc(Vector2.ZERO, hair_r, PI, TAU, 24, profile.hair, 16.0)
-	if profile.hair_style == "long":
-		draw_colored_polygon(PackedVector2Array([
-			Vector2(-hair_r, -5), Vector2(-hair_r + 12, 70),
-			Vector2(-28, 48), Vector2(0, 72),
-			Vector2(25, 48), Vector2(hair_r - 12, 70), Vector2(hair_r, -5)
-		]), profile.hair)
-	else:
-		draw_colored_polygon(PackedVector2Array([
-			Vector2(-hair_r, -5), Vector2(-38, 42), Vector2(0, 28),
-			Vector2(35, 42), Vector2(hair_r, -5)
-		]), profile.hair)
+	match profile.hair_style:
+		"long":
+			draw_colored_polygon(PackedVector2Array([
+				Vector2(-hair_r, -5), Vector2(-hair_r + 12, 70),
+				Vector2(-28, 48), Vector2(0, 72),
+				Vector2(25, 48), Vector2(hair_r - 12, 70), Vector2(hair_r, -5)
+			]), profile.hair)
+		"short":
+			draw_colored_polygon(PackedVector2Array([
+				Vector2(-hair_r, -5), Vector2(-38, 32), Vector2(0, 23),
+				Vector2(35, 32), Vector2(hair_r, -5)
+			]), profile.hair)
+		"bob":
+			draw_colored_polygon(PackedVector2Array([
+				Vector2(-hair_r, -5), Vector2(-hair_r + 6, 55), Vector2(-30, 42),
+				Vector2(0, 55), Vector2(30, 42), Vector2(hair_r - 6, 55), Vector2(hair_r, -5)
+			]), profile.hair)
+		"ponytail":
+			draw_colored_polygon(PackedVector2Array([
+				Vector2(-hair_r, -5), Vector2(-38, 46), Vector2(0, 30),
+				Vector2(35, 46), Vector2(hair_r, -5)
+			]), profile.hair)
+			draw_colored_polygon(PackedVector2Array([
+				Vector2(hair_r - 5, 10), Vector2(hair_r + 40, 26),
+				Vector2(hair_r + 22, 63), Vector2(hair_r - 9, 42)
+			]), profile.hair)
+		"twin_tail":
+			draw_colored_polygon(PackedVector2Array([
+				Vector2(-hair_r, -5), Vector2(-38, 44), Vector2(0, 28),
+				Vector2(36, 44), Vector2(hair_r, -5)
+			]), profile.hair)
+			draw_colored_polygon(PackedVector2Array([
+				Vector2(-hair_r + 3, 5), Vector2(-hair_r - 40, 25),
+				Vector2(-hair_r - 18, 62), Vector2(-hair_r + 10, 43)
+			]), profile.hair)
+			draw_colored_polygon(PackedVector2Array([
+				Vector2(hair_r - 3, 5), Vector2(hair_r + 40, 25),
+				Vector2(hair_r + 18, 62), Vector2(hair_r - 10, 43)
+			]), profile.hair)
 
-	var blink := float(tracking.get("blink", 0.0))
-	var mouth := float(tracking.get("mouth", 0.0))
-	var eye_open := 1.0 - clamp(blink, 0.0, 1.0)
+	var blink := clamp(float(tracking.get("blink", 0.0)), 0.0, 1.0)
+	var mouth := clamp(float(tracking.get("mouth", 0.0)), 0.0, 1.0)
+	var eye_open := 1.0 - blink
+	var eye_y := 5.0
 	for x in [-19.0, 19.0]:
-		draw_ellipse(Vector2(x, 5), Vector2(9, 13 * eye_open + 1), profile.eye)
+		var eye_height := 13.0 * eye_open + 1.0
+		match profile.face_style:
+			"sharp":
+				eye_height *= 0.78
+			"round":
+				eye_height *= 1.18
+		draw_ellipse(Vector2(x, eye_y), Vector2(9, eye_height), profile.eye)
 		draw_circle(Vector2(x + 2, 2), 3.0, Color.WHITE)
+
+	if profile.face_style == "sharp":
+		draw_line(Vector2(-27, -8), Vector2(-13, -11), profile.eye, 3.0)
+		draw_line(Vector2(13, -11), Vector2(27, -8), profile.eye, 3.0)
+
+	draw_circle(Vector2(-27, 24), 7.0, Color(profile.blush, 0.34))
+	draw_circle(Vector2(27, 24), 7.0, Color(profile.blush, 0.34))
 	draw_line(Vector2(-10, 27), Vector2(10, 27), profile.eye, 3.0)
 	if mouth > 0.45:
 		draw_arc(Vector2(0, 27), 9.0, 0.15, PI - 0.15, 12, profile.eye, 3.0)
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
-	var ear_y := head_y + 3.0
-	draw_circle(Vector2(-head_r - 2, ear_y), 10.0, profile.accent)
-	draw_circle(Vector2(head_r + 2, ear_y), 10.0, profile.accent)
+	if profile.show_cap:
+		draw_colored_polygon(PackedVector2Array([
+			Vector2(-head_r - 5, -28), Vector2(0, -head_r - 18),
+			Vector2(head_r + 5, -28), Vector2(head_r - 7, -14),
+			Vector2(-head_r + 5, -14)
+		]), profile.accent)
+		draw_line(Vector2(18, -34), Vector2(44, -28), profile.accessory, 5.0)
+
+	draw_circle(Vector2(0, 42), 5.0, profile.accessory)
 
 	if pose == Pose.BAT:
 		draw_line(Vector2(25, 0), Vector2(105, -38), Color("#8b5a2b"), 10.0)
+
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 func draw_ellipse(center: Vector2, radii: Vector2, color: Color) -> void:
 	var points := PackedVector2Array()
