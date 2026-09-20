@@ -1878,3 +1878,121 @@ El incremento corresponde a una parte real del núcleo de béisbol, porque la de
 
 `FieldingResolver` pasa a ser la única puerta válida para cerrar los `FIELDING_CANDIDATE`.
 No se debe volver a introducir un `OUT` automático para este tipo de batazo en el renderer ni en `main.gd`.
+
+# 23. Revisión 14: Rebotes, recogida y lanzamiento posterior
+
+**Fecha:** 2026-09-20
+**Tipo:** Secuencia defensiva / pelota compartida / herramientas de arte.
+
+### Motivo
+
+La Revisión 13 ya resolvía la captura antes de cerrar un OUT, pero un error defensivo terminaba visualmente en el mismo punto de llegada. El siguiente paso era representar la continuación natural de la jugada: pelota que rebota, defensora que la recoge y lanzamiento posterior a una base.
+
+### Implementado
+
+- game/baseball/fielding_play_event.gd
+  - contrato explícito para una secuencia defensiva fallida;
+  - uno o dos puntos de rebote reproducibles por seed;
+  - posición de recogida;
+  - base receptora del lanzamiento;
+  - duración y arco del lanzamiento;
+  - no decide el resultado del partido.
+
+- game/avatar/baseball_ball_controller.gd
+  - nuevo recorrido pelota → rebote → rebote opcional → lanzamiento;
+  - mantiene BattedBallEvent como origen de la trayectoria;
+  - un único controlador visual representa toda la pelota.
+
+- game/avatar/baseball_field_avatar_presenter.gd
+  - la defensora corre hacia el punto de caída;
+  - sigue los rebotes;
+  - cambia a THROW;
+  - la defensora receptora realiza CATCH;
+  - la animación se mantiene fuera de la lógica estadística.
+
+- scenes/main.gd
+  - genera FieldingPlayEvent cuando FieldingResolver devuelve miss;
+  - el resultado lógico continúa siendo SINGLE en esta revisión;
+  - el nuevo evento solo describe la continuación visual de la jugada;
+  - la fase RESULT se mantiene algo más para no cortar la secuencia defensiva.
+
+- scenes/fielding_play_test.tscn
+- scenes/fielding_play_test.gd
+  - prueba aislada de rebotes y lanzamiento a 1B;
+  - SPACE repite;
+  - R cambia el seed para inspeccionar variantes.
+
+### Regla de continuidad
+
+FieldingResolver sigue siendo responsable del resultado de captura.
+FieldingPlayEvent solo describe qué ocurre con la pelota después de un miss.
+
+La futura resolución de errores de lanzamiento, doble play, asistencias y outs forzados debe construirse sobre este contrato sin trasladar decisiones al renderer.
+
+### Arte anime
+
+- se añadió tools/character_ai/model_catalog.json;
+- se corrigió tools/character_ai/prompt_builder.py;
+- el prompt builder ahora construye correctamente prompts deterministas a partir de AvatarProfile y sus presets corporales;
+- la dirección visual sigue siendo anime adulto deportivo, redondeado, atlético, con fanservice moderado y sin copiar CLAMP ni Jujutsu Kaisen;
+- la referencia funcional de Fairy Tail se conserva únicamente como orientación de proporciones shonen redondeadas;
+- se mantienen como familias candidatas para benchmark local Animagine XL, Illustrious XL, NoobAI-XL y Pony/SDXL.
+
+### Streaming
+
+Se consolidó docs/streaming-architecture.md con la división:
+
+Webcam/OpenCV → MediaPipe → tracker → protocol → UDP → Godot
+
+Micrófono/sounddevice → protocol → UDP → Godot
+
+OBS ↔ obsws-python ↔ Streaming Bridge
+
+La captura y el tracking siguen separados del gameplay y del renderer.
+
+### Investigación de modelos
+
+La búsqueda disponible fue mediante repositorios GitHub. Sirve para localizar familias y tooling, pero no constituye una métrica mundial de popularidad o calidad. No se incorporan pesos de terceros al repositorio y cada checkpoint deberá revisarse por licencia antes de uso comercial.
+
+### Estado
+
+**Implementado:**
+- streaming bridge modular;
+- tracking facial;
+- audio;
+- captura de pantalla opcional;
+- protocolo versionado;
+- Character Creator;
+- cuerpo procedural shonen_soft;
+- perfiles persistentes;
+- movimiento de avatar;
+- pelota compartida;
+- fielding determinista;
+- rebotes;
+- recogida;
+- lanzamiento posterior;
+- prueba aislada de la secuencia.
+
+**Pendiente:**
+- movimiento completo de runners después de Single/Double/Triple/Home Run;
+- lineup real durante todo el partido;
+- errores de lanzamiento con consecuencias de gameplay;
+- doble play y asistencias;
+- arte/rig 2D definitivo;
+- Live2D/Inochi2D/VRM;
+- backend, gacha, crianza, economía y progresión;
+- validación real Godot + webcam + OBS.
+
+### Porcentaje global revisado
+
+El avance global estimado pasa de **≈41% a ≈43%**.
+
+El aumento representa una integración adicional del núcleo defensivo y la consolidación del laboratorio visual. No se contabiliza como completado ningún bloque que todavía requiera runtime real o backend.
+
+### Regla de continuidad
+
+La arquitectura vigente es:
+
+**Streaming Bridge + AvatarProfile + AnimeAvatar2D + Match Presenter + Field Presenter + Trajectory Controller + BattedBallEvent + FieldingResolver + FieldingPlayEvent.**
+
+No se debe rehacer el contrato del avatar para introducir el rig definitivo.
