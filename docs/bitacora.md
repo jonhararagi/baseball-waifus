@@ -1403,3 +1403,131 @@ El 33% representa avance técnico ponderado del proyecto completo. El sistema de
 El avatar por capas + roster persistente + presenter de partido pasa a ser la base vigente.
 
 No se vuelve a diseñar desde cero. Las siguientes mejoras deben extender estas interfaces o sustituir componentes concretos con una razón registrada.
+
+# 19. Revisión 10: Campo completo, defensores y runners visuales
+
+**Fecha:** 2026-09-20
+**Tipo:** Integración visual de gameplay / presentación del campo / continuidad del sistema de avatar.
+
+### Motivo
+
+La Revisión 9 conectó los avatares persistentes al duelo pitcher/batter y a algunas acciones del partido. El siguiente límite evidente era que el cuerpo seguía sin ocupar el campo completo.
+
+La arquitectura por capas no se modifica. Se añade una segunda capa de presentación visual para posiciones defensivas y corredores.
+
+### Implementado
+
+- `game/avatar/baseball_field_avatar_presenter.gd`
+  - catcher;
+  - primera base;
+  - segunda base;
+  - tercera base;
+  - shortstop;
+  - left field;
+  - center field;
+  - right field;
+  - tres runners visuales asociados a las bases;
+  - acciones de Catch, Run, Steal, Out, Throw, Celebrate y Defeat;
+  - sincronización con el estado de bases.
+
+- `scenes/main.gd`
+  - crea una alineación defensiva de demostración;
+  - integra el presenter del campo;
+  - sincroniza runners después de batazos;
+  - sincroniza la animación del robo;
+  - activa la recepción del catcher y reacciones defensivas.
+
+- `tools/character_ai/style_presets.json`
+  - refuerza la dirección corporal de Baseball Waifus;
+  - añade de forma explícita silueta adulta deportiva, torso algo más lleno, caderas redondeadas, muslos más llenos y anatomía shonen suave;
+  - mantiene prohibiciones contra anatomía infantil, chibi y estilos de franquicia concretos.
+
+- `docs/avatar-visual-system.md`
+  - documenta el campo completo y la separación entre presentación y lógica.
+
+- `README.md`
+  - documenta el nuevo presenter y sus acciones.
+
+### Arquitectura actual
+
+```
+PlayerData
+    ↓
+AvatarRosterService
+    ↓
+AvatarProfile
+    ↓
+AnimeAvatar2D
+    ↑                 ↑
+AvatarMatchPresenter  BaseballFieldAvatarPresenter
+    ↑                 ↑
+batter/pitcher       catcher/infield/outfield/runners
+    _________________/
+             ↑
+       partido Godot
+```
+
+Los presenters únicamente traducen estado de gameplay a presentación visual.
+
+No modifican:
+- probabilidades;
+- estadísticas;
+- recompensas;
+- inventario;
+- gacha;
+- crianza.
+
+Los runners creados específicamente para el laboratorio son temporales y no se guardan en el roster persistente.
+
+### Estado
+
+**Implementado:**
+- cuerpo procedural reutilizable;
+- perfiles persistentes por jugadora;
+- pitcher y batter;
+- catcher;
+- infield;
+- outfield;
+- runners visuales;
+- acciones visuales básicas del campo;
+- integración con batazos, out, strike y robo.
+
+**Pendiente:**
+- roster real de ambos equipos en lugar del roster demo;
+- movimiento físico continuo entre bases;
+- trayectorias reales de pelota y defensores;
+- defensa completa con reglas de captura;
+- animaciones profesionales;
+- renderer artístico/rig 2D definitivo;
+- validación runtime en Godot, webcam y OBS;
+- benchmark real con checkpoints locales y licencia verificada de cada recurso.
+
+### Investigación de modelos
+
+Se hizo una comprobación adicional mediante búsqueda de repositorios de GitHub para familias de modelos anime y tooling de rigging. Los resultados sirven como pista de ecosistema, no como ranking de calidad o popularidad.
+
+La selección del proyecto sigue siendo comparativa y determinista:
+- mismo prompt;
+- misma seed;
+- misma resolución;
+- mismo negative prompt;
+- checkpoint exacto instalado localmente;
+- licencia exacta verificada antes de uso comercial.
+
+La dirección artística continúa buscando anime deportivo adulto con cuerpos redondeados, atléticos y algo más llenos. Se mantiene fuera de la identidad visual directa de CLAMP o Jujutsu Kaisen.
+
+### Porcentaje global revisado
+
+El avance global estimado pasa de **≈33% a ≈35%**.
+
+La subida corresponde a una nueva capa funcional de presentación de gameplay y a que el cuerpo ya puede evaluarse en pitcher, bateo, catcher, defensa, outfield y corredores.
+
+No se aumenta artificialmente el porcentaje por investigación o por assets todavía no validados.
+
+### Regla de continuidad
+
+El sistema vigente es:
+
+**Avatar por capas + perfil persistente + presenter de partido + presenter de campo.**
+
+No se debe rehacer esta arquitectura para introducir el arte definitivo. El siguiente reemplazo esperado es el renderer, no el contrato de datos ni la lógica de juego.
