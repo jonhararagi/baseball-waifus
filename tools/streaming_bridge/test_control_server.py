@@ -23,6 +23,8 @@ class ControlServerTests(unittest.TestCase):
             },
             self._start,
             self._stop,
+            self._start_qa,
+            lambda: {"running": False, "exit_code": 0, "passed": True},
         )
         self.server.start()
         self.port = self.server.server.server_address[1]
@@ -39,6 +41,9 @@ class ControlServerTests(unittest.TestCase):
         with self.lock:
             self.recording = False
         return {"ok": True, "recording": False}
+
+    def _start_qa(self):
+        return {"ok": True, "running": True, "exit_code": None, "passed": None}
 
     def _get(self, path):
         with urllib.request.urlopen(f"http://127.0.0.1:{self.port}{path}", timeout=2) as response:
@@ -73,6 +78,13 @@ class ControlServerTests(unittest.TestCase):
         self.assertTrue(started["recording"])
         _, stopped = self._post("/api/record/stop")
         self.assertFalse(stopped["recording"])
+
+    def test_qa_status_and_run(self):
+        _, status = self._get("/api/qa/status")
+        self.assertTrue(status["ok"])
+        _, started = self._post("/api/qa/run")
+        self.assertTrue(started["ok"])
+        self.assertTrue(started["running"])
 
 
 if __name__ == "__main__":
