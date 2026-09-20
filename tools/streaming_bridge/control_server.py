@@ -64,6 +64,20 @@ class BridgeControl:
                     self._json(200, provider.status_provider())
                     return
 
+                if self.path == "/api/health":
+                    try:
+                        status = provider.status_provider()
+                        self._json(200, {
+                            "ok": True,
+                            "service": status.get("service", "streaming_bridge"),
+                            "tracking_active": bool(status.get("tracking_active", False)),
+                            "sent_packets": int(status.get("sent_packets", 0)),
+                            "uptime_s": float(status.get("uptime_s", 0.0)),
+                        })
+                    except Exception as exc:
+                        self._json(500, {"ok": False, "error": f"healthcheck_failed: {exc}"})
+                    return
+
                 self._json(404, {"ok": False, "error": "not_found"})
 
             def do_POST(self) -> None:
