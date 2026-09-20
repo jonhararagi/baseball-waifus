@@ -8,6 +8,7 @@ const godotUrl = query.get("godot") || "./godot/index.html";
 
 let host: Host = "local";
 let discordSdk: DiscordSDK | null = null;
+let gameFrame: HTMLIFrameElement | null = null;
 
 function setStatus(text: string) {
   if (status) status.textContent = text;
@@ -26,21 +27,31 @@ function withPlatform(url: string, platform: Host): string {
   return target.toString();
 }
 
+function isTrustedGameMessage(event: MessageEvent): boolean {
+  if (!gameFrame || event.source !== gameFrame.contentWindow) return false;
+  const gameOrigin = new URL(gameFrame.src, window.location.href).origin;
+  return event.origin === gameOrigin;
+}
+
 function handleGodotMessage(event: MessageEvent) {
+  if (!isTrustedGameMessage(event)) return;
+
   const data = event.data;
-  if (!data || data.type !== "baseball-waifus-host") return;
+  if (!data || typeof data !== "object" || data.type !== "baseball-waifus-host") return;
 
   if (data.action === "ready") {
     setStatus(host === "telegram" ? "Telegram Mini App ready" : host === "discord" ? "Discord Activity ready" : "Local ready");
+    return;
   }
 
   if (data.action === "expand" && host === "telegram") {
     (window as any).Telegram?.WebApp?.expand?.();
+    return;
   }
 
   if (data.action === "fullscreen" && host === "discord") {
-    const iframe = document.querySelector<HTMLIFrameElement>("#game-root iframe");
-    iframe?.requestFullscreen?.();
+    gameFrame?.requestFullscreen?.();
+    return;
   }
 
   if (data.action === "haptic") {
@@ -67,21 +78,23 @@ async function boot() {
   }
 
   if (host === "discord") {
-    discordSdk = new DiscordSDK(query.get("client_id") || "");
+    const clientId = query.get("client_id") || "";
+    if (!clientId) throw new Error("Falta client_id para Discord Activity");
+    discordSdk = new DiscordSDK(clientId);
     await discordSdk.ready();
     (window as any).__BASEBALL_WAIFUS_DISCORD_READY__ = true;
     setStatus("Discord Activity");
   }
 
-  const iframe = document.createElement("iframe");
-  iframe.src = withPlatform(godotUrl, host);
-  iframe.allow = "autoplay; fullscreen; gamepad; microphone; camera";
-  iframe.allowFullscreen = true;
-  iframe.setAttribute("title", "Baseball Waifus");
-  iframe.style.width = "100vw";
-  iframe.style.height = "100vh";
-  iframe.style.border = "0";
-  document.querySelector("#game-root")?.replaceChildren(iframe);
+  gameFrame = document.createElement("iframe");
+  gameFrame.src = withPlatform(godotUrl, host);
+  gameFrame.allow = "autoplay; fullscreen; gamepad; microphone; camera";
+  gameFrame.allowFullscreen = true;
+  gameFrame.setAttribute("title", "Baseball Waifus");
+  gameFrame.style.width = "100vw";
+  gameFrame.style.height = "100vh";
+  gameFrame.style.border = "0";
+  document.querySelector("#game-root")?.replaceChildren(gameFrame);
 
   if (host === "local") {
     setStatus("Local web host");
