@@ -24,6 +24,7 @@ extends Resource
 @export var blush := Color("#e8958d")
 @export var accessory := Color("#f6d35f")
 @export var show_cap := false
+@export var equipment := AvatarEquipment.new()
 
 func apply_body_preset(name: String) -> void:
 	body_preset = name
@@ -82,6 +83,13 @@ func randomize_profile(seed_value: int = 0) -> void:
 	eye = Color(palette["eye"])
 	accessory = accent.lightened(0.35)
 	show_cap = rng.randf() > 0.65
+	equipment = AvatarEquipment.new()
+	equipment.bat_style = ["bat_basic", "bat_power", "bat_precision", "bat_shadow"][rng.randi_range(0, 3)]
+	equipment.gloves_style = ["glove_basic", "glove_gold", "glove_precision", "glove_guardian"][rng.randi_range(0, 3)]
+	equipment.cap_style = "cap_classic" if show_cap else "cap_none"
+	equipment.vest_style = ["vest_basic", "vest_power", "vest_guardian", "vest_light"][rng.randi_range(0, 3)]
+	equipment.skirt_style = ["skirt_basic", "skirt_pleated", "skirt_sport", "skirt_special"][rng.randi_range(0, 3)]
+	equipment.shoes_style = ["shoes_basic", "shoes_runner", "shoes_power", "shoes_ace"][rng.randi_range(0, 3)]
 
 func to_dictionary() -> Dictionary:
 	return {
@@ -104,7 +112,8 @@ func to_dictionary() -> Dictionary:
 		"eye": eye.to_html(false),
 		"blush": blush.to_html(false),
 		"accessory": accessory.to_html(false),
-		"show_cap": show_cap
+		"show_cap": show_cap,
+		"equipment": equipment.to_dictionary()
 	}
 
 static func from_dictionary(data: Dictionary) -> AvatarProfile:
@@ -129,6 +138,7 @@ static func from_dictionary(data: Dictionary) -> AvatarProfile:
 	p.blush = Color.from_string(str(data.get("blush", p.blush.to_html(false))), p.blush)
 	p.accessory = Color.from_string(str(data.get("accessory", p.accessory.to_html(false))), p.accessory)
 	p.show_cap = bool(data.get("show_cap", p.show_cap))
+	p.equipment = AvatarEquipment.from_dictionary(data.get("equipment", {}))
 	return p
 
 func clone_profile() -> AvatarProfile:
