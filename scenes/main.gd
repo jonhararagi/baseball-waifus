@@ -178,7 +178,8 @@ func _swing() -> void:
 		current_result["bases"] = int(fielding_result.get("bases", 1))
 		current_result["fielding"] = fielding_result
 
-		if bool(fielding_result.get("double_play", {}).get("success", false)):
+		var double_play: Dictionary = fielding_result.get("double_play", {})
+		if bool(double_play.get("success", false)):
 			fielding_play = FieldingPlayEvent.from_resolution(ball_event, fielding_result)
 		elif not bool(fielding_result.get("success", false)):
 			fielding_play = FieldingPlayEvent.from_resolution(ball_event, fielding_result)
