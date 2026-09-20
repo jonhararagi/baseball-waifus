@@ -2,24 +2,26 @@ extends Node2D
 
 const BALL_START := Vector2(610, 350)
 const BATTER_POS := Vector2(1040, 430)
-const PITCHER_POS := Vector2(640, 370)
 const CATCHER_POS := Vector2(1035, 485)
 
 var simulator := BaseballSimulator.new()
 var state := BaseballGameState.new()
 var ai := OpponentAI.new()
 var runner_system := RunnerSystem.new()
+var fielding_resolver := FieldingResolver.new()
+var throw_resolver := ThrowResolver.new()
 var rng := RandomNumberGenerator.new()
+
 var avatar_presenter: AvatarMatchPresenter
 var field_avatar_presenter: BaseballFieldAvatarPresenter
 var ball_controller: BaseballBallController
-var fielding_resolver := FieldingResolver.new()
-var avatar_game_over_handled := false
 
 var player_team: BaseballTeamData
 var rival_team: BaseballTeamData
 var batter: PlayerData
 var pitcher: PlayerData
+var defensive_roster: Dictionary
+
 var current_pitch: Pitch
 var pitch_elapsed := 0.0
 var timing_value := 0.0
@@ -28,6 +30,7 @@ var phase := "PITCH_SELECT"
 var result_timer := 0.0
 var current_result := {}
 var message := ""
+var active_role_signature := ""
 
 func _ready() -> void:
 	rng.randomize()
@@ -35,12 +38,9 @@ func _ready() -> void:
 
 	avatar_presenter = AvatarMatchPresenter.new()
 	add_child(avatar_presenter)
-	avatar_presenter.setup(batter, pitcher)
 
 	field_avatar_presenter = BaseballFieldAvatarPresenter.new()
 	add_child(field_avatar_presenter)
-	field_avatar_presenter.setup(_build_demo_defensive_roster())
-	field_avatar_presenter.sync_runners(state.bases)
 
 	ball_controller = BaseballBallController.new()
 	add_child(ball_controller)
@@ -50,22 +50,57 @@ func _ready() -> void:
 	add_child(hud)
 	hud.setup()
 	$HUDRef.set_meta("hud", hud)
+
+	_sync_match_roles()
 	queue_redraw()
 
 func _build_demo_roster() -> void:
 	player_team = DemoTeamFactory.create_player_team()
 	rival_team = DemoTeamFactory.create_rival_team()
-	batter = player_team.batting_player(8)
-	pitcher = rival_team.pitcher()
 
-func _build_demo_defensive_roster() -> Dictionary:
-	return rival_team.defensive_roster()
+func _team_for_batting() -> BaseballTeamData:
+	return player_team if state.team_batting() == 0 else rival_team
+
+func _team_for_fielding() -> BaseballTeamData:
+	return rival_team if state.team_batting() == 0 else player_team
+
+func _sync_match_roles(force := false) -> void:
+	var batting_team := _team_for_batting()
+	var fielding_team := _team_for_fielding()
+	if batting_team == null or fielding_team == null:
+		return
+
+	batter = batting_team.batting_player(state.current_batter_index())
+	pitcher = fielding_team.pitcher()
+	defensive_roster = fielding_team.defensive_roster()
+
+	if batter == null or pitcher == null:
+		return
+
+	var signature := "%d:%s:%s" % [state.half, batter.id, pitcher.id]
+	if not force and signature == active_role_signature:
+		return
+	active_role_signature = signature
+
+	avatar_presenter.setup(batter, pitcher)
+	field_avatar_presenter.setup(defensive_roster)
+	field_avatar_presenter.set_runner_players(_build_runner_player_lookup())
+	field_avatar_presenter.sync_runners(state.base_runners)
+
+func _build_runner_player_lookup() -> Dictionary:
+	var lookup := {}
+	for team in [player_team, rival_team]:
+		if team == null:
+			continue
+		for player in team.players:
+			if player != null:
+				lookup[player.id] = player
+	return lookup
 
 func _process(delta: float) -> void:
 	if state.game_over:
-		if not avatar_game_over_handled and avatar_presenter != null:
+		if avatar_presenter != null:
 			avatar_presenter.on_game_over(state.winner)
-			avatar_game_over_handled = true
 		_update_hud()
 		queue_redraw()
 		return
@@ -89,16 +124,14 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 func _start_pitch() -> void:
+	_sync_match_roles()
 	current_pitch = Pitch.create(ai.choose_pitch(pitcher, state.strikes, state.balls))
 	pitch_elapsed = 0.0
 	phase = "PITCHING"
 	_get_hud().clear_result()
-	if avatar_presenter != null:
-		avatar_presenter.on_pitch_selected()
-	if field_avatar_presenter != null:
-		field_avatar_presenter.on_pitch()
-	if ball_controller != null:
-		ball_controller.play_pitch(BALL_START, BATTER_POS, 1.55 / current_pitch.speed, current_pitch.break_amount)
+	avatar_presenter.on_pitch_selected()
+	field_avatar_presenter.on_pitch()
+	ball_controller.play_pitch(BALL_START, BATTER_POS, 1.55 / current_pitch.speed, current_pitch.break_amount)
 
 func _update_pitch(delta: float) -> void:
 	pitch_elapsed += delta
@@ -106,10 +139,8 @@ func _update_pitch(delta: float) -> void:
 		phase = "TIMING"
 		timing_value = 0.0
 		timing_direction = 1.0
-		if ball_controller != null:
-			ball_controller.stop()
-		if avatar_presenter != null:
-			avatar_presenter.on_timing_started()
+		ball_controller.stop()
+		avatar_presenter.on_timing_started()
 
 func _update_timing(delta: float) -> void:
 	timing_value += delta * timing_direction * 1.25
@@ -136,8 +167,10 @@ func _swing() -> void:
 	if str(preliminary_result.get("result", "")) == "FIELDING_CANDIDATE":
 		fielding_result = fielding_resolver.resolve(
 			ball_event,
-			_build_demo_defensive_roster(),
+			defensive_roster,
 			timing_value,
+			state.base_runners,
+			state.outs,
 			rng
 		)
 		current_result = preliminary_result.duplicate()
@@ -145,97 +178,107 @@ func _swing() -> void:
 		current_result["bases"] = int(fielding_result.get("bases", 1))
 		current_result["fielding"] = fielding_result
 
-		if not bool(fielding_result.get("success", false)):
+		if bool(fielding_result.get("double_play", {}).get("success", false)):
 			fielding_play = FieldingPlayEvent.from_resolution(ball_event, fielding_result)
-			current_result["fielding_play"] = {
-				"rebound_count": fielding_play.rebound_points.size(),
-				"receiver": fielding_play.receiver_position,
-				"throw_duration": fielding_play.throw_duration
-			}
-	else:
-		current_result = preliminary_result
+		elif not bool(fielding_result.get("success", false)):
+			fielding_play = FieldingPlayEvent.from_resolution(ball_event, fielding_result)
+			var defender: PlayerData = defensive_roster.get(str(fielding_result.get("defender_position", "")))
+			var receiver: PlayerData = defensive_roster.get(fielding_play.receiver_position)
+			var throw_result := throw_resolver.resolve(fielding_play, defender, receiver, rng)
+			current_result["fielding"]["throwing_error"] = throw_result
+			if bool(throw_result.get("error", false)):
+				current_result["result"] = "FIELDING ERROR"
+				current_result["bases"] = min(int(current_result["bases"]) + 1, 4)
+		current_result["fielding_play"] = fielding_play
 
 	_apply_batting_result(current_result)
 
-	if ball_controller != null:
-		if str(current_result.get("result", "")) == "STRIKE":
-			ball_controller.play_miss_to_catcher(BATTER_POS, CATCHER_POS)
-		elif fielding_play != null:
-			ball_controller.play_fielding_play(ball_event, fielding_play)
-		else:
-			ball_controller.play_batted_event(ball_event)
+	if str(current_result.get("result", "")) == "STRIKE":
+		ball_controller.play_miss_to_catcher(BATTER_POS, CATCHER_POS)
+	elif fielding_play != null:
+		ball_controller.play_fielding_play(ball_event, fielding_play)
+	else:
+		ball_controller.play_batted_event(ball_event)
 
-	if avatar_presenter != null:
-		avatar_presenter.on_batting_result(current_result)
+	avatar_presenter.on_batting_result(current_result)
+	field_avatar_presenter.on_batted_ball_event(ball_event)
 
-	if field_avatar_presenter != null:
-		field_avatar_presenter.on_batted_ball_event(ball_event)
-		if fielding_result.is_empty():
-			field_avatar_presenter.sync_runners(state.bases)
-		else:
-			field_avatar_presenter.on_fielding_resolution(ball_event, fielding_result)
-			if fielding_play != null:
-				field_avatar_presenter.on_fielding_play(ball_event, fielding_play)
-			field_avatar_presenter.sync_runners(state.bases)
+	if not fielding_result.is_empty():
+		field_avatar_presenter.on_fielding_resolution(ball_event, fielding_result)
+		if fielding_play != null:
+			field_avatar_presenter.on_fielding_play(ball_event, fielding_play)
+
+	if current_result.has("hit_plan"):
+		var hit_data: Dictionary = current_result["hit_plan"]
+		field_avatar_presenter.animate_hit(hit_data["plan"], hit_data["after_runners"])
+	else:
+		field_avatar_presenter.sync_runners(state.base_runners)
 
 	_get_hud().show_result(current_result)
 	phase = "RESULT"
 	result_timer = 2.0 if fielding_play != null else 1.2
 
 func _apply_batting_result(result: Dictionary) -> void:
-	match result.result:
+	var result_name := str(result.get("result", ""))
+	match result_name:
 		"STRIKE":
 			state.strikes += 1
 			if state.strikes >= 3:
 				state.add_out()
+				state.advance_lineup()
 		"FOUL":
 			if state.strikes < 2:
 				state.strikes += 1
 		"OUT":
 			state.add_out()
-		"SINGLE", "DOUBLE", "TRIPLE", "HOME RUN":
-			var runs := state.advance_bases(int(result.bases))
-			state.score[state.team_batting()] += runs
+			state.advance_lineup()
+		"DOUBLE PLAY":
+			var double_play: Dictionary = result.get("fielding", {}).get("double_play", {})
+			if bool(double_play.get("success", false)):
+				state.remove_base_runner(0)
+			state.add_outs(2)
+			state.advance_lineup()
+		"SINGLE", "DOUBLE", "TRIPLE", "HOME RUN", "FIELDING ERROR":
+			var hit_data := state.apply_hit(batter, _team_for_batting().team_id, int(result.get("bases", 1)))
+			result["hit_plan"] = hit_data
+			result["runs_scored"] = hit_data["runs"]
+			state.score[state.team_batting()] += int(hit_data["runs"])
 			state.reset_count()
+			state.advance_lineup()
 
 func _attempt_steal() -> void:
-	if not state.bases.has(true):
+	var from_index := 2
+	while from_index >= 0 and state.base_runners[from_index] == null:
+		from_index -= 1
+
+	if from_index < 0:
 		message = "No runner available."
 		phase = "RESULT"
 		result_timer = 0.8
 		return
 
-	if avatar_presenter != null:
-		avatar_presenter.on_steal_started()
+	avatar_presenter.on_steal_started()
+	field_avatar_presenter.on_steal_started(from_index)
 
-	var from_index := 2
-	while from_index >= 0 and not state.bases[from_index]:
-		from_index -= 1
-	if field_avatar_presenter != null:
-		field_avatar_presenter.on_steal_started(from_index)
-	var result := runner_system.attempt_steal(batter.speed, pitcher.defense)
+	var source_runner: RunnerToken = state.base_runners[from_index]
+	var result := runner_system.attempt_steal(source_runner.speed, pitcher.effective_stat("defense"))
 	message = result.result
+	var movement := state.move_runner_on_steal(from_index, result.success)
 
-	if result.success:
-		state.bases[from_index] = false
-		if from_index == 2:
-			state.score[state.team_batting()] += 1
-		else:
-			state.bases[from_index + 1] = true
-	else:
+	if not result.success:
 		state.add_out()
 
-	if avatar_presenter != null:
-		avatar_presenter.on_steal_result(result.success)
-	if field_avatar_presenter != null:
-		var destination_base := from_index + 1 if result.success else -1
-		if destination_base > 2:
-			destination_base = -1
-		field_avatar_presenter.on_steal_result(from_index, result.success, destination_base)
-		field_avatar_presenter.sync_runners(state.bases, false)
+	avatar_presenter.on_steal_result(result.success)
+	var destination_base := int(movement.get("to", -1))
+	field_avatar_presenter.on_steal_result(from_index, result.success, destination_base)
+	field_avatar_presenter.sync_runners(state.base_runners, false)
 
 	phase = "RESULT"
-	current_result = {"result": result.result, "timing": "%d%%" % int(result.chance * 100.0)}
+	current_result = {
+		"result": result.result,
+		"timing": "%d%%" % int(result.chance * 100.0),
+		"runner": source_runner.display_name
+	}
 	result_timer = 1.2
 	_get_hud().show_result(current_result)
 
@@ -246,16 +289,21 @@ func _update_hud() -> void:
 	var hud := _get_hud()
 	if not hud:
 		return
+	var half_label := "TOP" if state.half == 0 else "BOTTOM"
+	var batting_team := _team_for_batting()
+	var batter_name := batter.display_name if batter else "-"
 	var phase_text := "Preparando lanzamiento..."
 	if phase == "PITCHING":
 		phase_text = "La pelota viene..."
 	elif phase == "TIMING":
-		phase_text = "¡TIMING! ESPACIO o CLICK para batear."
+		phase_text = "¡TIMING! ESPACIO o CLICK para batear. Bateadora: " + batter_name
 	elif phase == "RESULT":
 		phase_text = "Resultado: " + str(current_result.get("result", message))
 	elif state.game_over:
 		phase_text = "FIN DEL PARTIDO. " + ("GANASTE" if state.winner == 0 else "PERDISTE" if state.winner == 1 else "EMPATE")
 	hud.update_state(state, phase_text, current_pitch)
+	if batting_team != null:
+		hud.show_match_roles(batting_team.team_name, batter_name, pitcher.display_name if pitcher else "-")
 
 func _draw() -> void:
 	draw_rect(Rect2(0, 0, 1280, 720), Color("17251b"))
