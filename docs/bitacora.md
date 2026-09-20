@@ -2698,3 +2698,78 @@ El pipeline vigente queda:
 **Capture → Tracker → Protocol → Recorder/Replay/UDP → Godot Receiver → Avatar Renderer**
 
 No crear otra cadena de transporte para pruebas. Las pruebas nuevas deben apoyarse en este contrato o registrar explícitamente una revisión de protocolo.
+
+
+# 31. Revisión 22: tracking sintético y ejecución finita del bridge
+
+**Fecha:** 2026-09-20  
+**Tipo:** Streaming / QA offline / automatización.
+
+### Motivo
+
+El pipeline ya podía probarse mediante JSONL + replay, pero el proceso principal todavía exigía webcam y MediaPipe para ejecutar el bridge completo. Eso dejaba un hueco entre las pruebas unitarias y el proceso real.
+
+### Implementado
+
+- `tools/streaming_bridge/synthetic_tracker.py`
+  - generador sintético de yaw, pitch, roll, blink y mouth;
+  - smoothing compatible con el tracker real;
+  - sequence de frames sintéticos;
+  - salida con el mismo contrato de tracking.
+
+- `tools/streaming_bridge/main.py`
+  - `--synthetic-tracking`;
+  - `--max-packets N`;
+  - soporte de `enable_synthetic_tracking`;
+  - el modo sintético evita abrir webcam y no importa MediaPipe como fuente de datos;
+  - el UDP, recorder, control server y protocolo siguen siendo los mismos.
+
+- `tools/streaming_bridge/test_synthetic_tracker.py`
+  - valida forma y rangos del tracking;
+  - valida incremento de frame index.
+
+- `tools/streaming_bridge/config.json`
+  - `enable_synthetic_tracking=false` por defecto.
+
+- `tools/streaming_bridge/README.md`
+  - documenta el modo de QA y ejecución finita.
+
+### Decisión
+
+El modo sintético es exclusivamente una herramienta de validación. No modifica el camino de producción:
+
+**Webcam → OpenCV → MediaPipe → Tracker**
+
+Sigue siendo el camino real.
+
+El modo alternativo es:
+
+**SyntheticTracker → Protocol → Recorder/UDP → Godot**
+
+### Pruebas
+
+Se validó el módulo sintético de forma aislada con dos casos:
+- shape/rangos de tracking: PASS;
+- secuencia de frames: PASS.
+
+Resultado: **2/2 PASS**.
+
+La ejecución finita del proceso principal queda disponible para automatización posterior mediante `--max-packets`.
+
+### Error / limitación detectada
+
+Durante la revisión no se detectó un fallo funcional nuevo. La limitación de runtime real permanece: este entorno no dispone de cámara, MediaPipe ejecutable, Godot ni OBS físico.
+
+El modo sintético no debe confundirse con una validación de la precisión facial de MediaPipe.
+
+### Porcentaje
+
+El avance global **permanece en ≈64%**. Se mejora considerablemente la verificabilidad del 64% existente sin completar una nueva gran sección del producto.
+
+### Regla de continuidad
+
+No crear otro simulador facial para pruebas. `synthetic_tracker.py` queda como fuente sintética oficial del Streaming Bridge.
+
+El renderer y el sistema de personajes siguen sin cambios:
+
+**AvatarProfile → AnimeAvatar2D / AnimeBodyRig2D / ExternalRigAvatar2D**
