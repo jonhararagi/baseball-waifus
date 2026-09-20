@@ -148,7 +148,7 @@ func _make_slider(parent: Control, title: String, min_value: float, max_value: f
 	sliders[key] = slider
 	slider.value_changed.connect(func(value: float): profile.set(key, value))
 
-func _option_changed(key: String, value: String) -> void:
+func _make_color_picker(parent: Control, title: String, key: String) -> void:\n\tvar row := HBoxContainer.new()\n\trow.custom_minimum_size.y = 38\n\tparent.add_child(row)\n\tvar label := Label.new()\n\tlabel.text = title\n\tlabel.custom_minimum_size.x = 120\n\trow.add_child(label)\n\tvar picker := ColorPickerButton.new()\n\tpicker.color = profile.get(key)\n\tpicker.size_flags_horizontal = Control.SIZE_EXPAND_FILL\n\trow.add_child(picker)\n\tcolors[key] = picker\n\tpicker.color_changed.connect(func(value: Color): profile.set(key, value))\n\nfunc _option_changed(key: String, value: String) -> void:
 	match key:
 		"preset":
 			profile.apply_body_preset(value)
