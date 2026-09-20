@@ -102,7 +102,8 @@ func _build_demo_defensive_roster() -> Dictionary:
 		player.defense = 64
 		player.stamina = 72
 		result[position] = player
-	result["C"].defense = 70
+	var catcher: PlayerData = result["C"]
+	catcher.defense = 70
 	return result
 
 func _process(delta: float) -> void:
@@ -228,6 +229,12 @@ func _attempt_steal() -> void:
 
 	if avatar_presenter != null:
 		avatar_presenter.on_steal_result(result.success)
+	if field_avatar_presenter != null:
+		var destination_base := from_index + 1 if result.success else -1
+		if destination_base > 2:
+			destination_base = -1
+		field_avatar_presenter.on_steal_result(from_index, result.success, destination_base)
+		field_avatar_presenter.sync_runners(state.bases)
 
 	phase = "RESULT"
 	current_result = {"result": result.result, "timing": "%d%%" % int(result.chance * 100.0)}
