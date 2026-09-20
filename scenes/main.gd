@@ -271,7 +271,7 @@ func _attempt_steal() -> void:
 
 	avatar_presenter.on_steal_result(result.success)
 	var destination_base := int(movement.get("to", -1))
-	field_avatar_presenter.on_steal_result(from_index, result.success, destination_base)
+	field_avatar_presenter.on_steal_result(from_index, result.success, destination_base, state.base_runners)
 
 	phase = "RESULT"
 	current_result = {
