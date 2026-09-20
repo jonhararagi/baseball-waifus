@@ -2,101 +2,91 @@
 
 ## Objetivo
 
-Probar personajes de Baseball Waifus como avatares anime, reutilizar exactamente el mismo perfil visual dentro del juego y permitir una futura salida por OBS Studio sin acoplar OBS al núcleo del gameplay.
+Probar personajes de Baseball Waifus como avatares anime, reutilizar exactamente el mismo perfil visual dentro del juego y permitir salida por OBS Studio sin acoplar OBS al núcleo del gameplay.
 
 ## Capas
 
-1. **Captura**
-   - `OpenCV` para webcam.
-   - `sounddevice` para nivel de micrófono.
-   - `mss` para captura de pantalla opcional de diagnóstico.
-   - OBS continúa siendo el compositor, grabador y emisor principal.
+1. Captura
+   - OpenCV para webcam.
+   - sounddevice para nivel de micrófono.
+   - mss para captura de pantalla opcional de diagnóstico.
+   - OBS sigue siendo compositor, grabador y emisor principal.
 
-2. **Tracking**
-   - `MediaPipe Face Mesh`.
-   - Salida normalizada: `yaw`, `pitch`, `roll`, `blink`, `mouth`.
-   - Suavizado EMA configurable para reducir jitter.
+2. Tracking
+   - MediaPipe Face Mesh.
+   - yaw, pitch, roll, blink y mouth normalizados.
+   - suavizado configurable para reducir jitter.
 
-3. **Protocolo**
+3. Protocolo
    - UDP localhost.
    - JSON pequeño por frame.
-   - Contrato versionado `baseball-waifus-tracking`, versión 1.
-   - Se separan `tracking`, `audio` y `capture`.
-   - El receptor Godot invalida el tracking cuando el stream queda obsoleto.
+   - contrato versionado baseball-waifus-tracking, versión 1.
+   - tracking, audio y capture viajan separados.
+   - Godot invalida tracking obsoleto.
 
-4. **Avatar**
-   - `AvatarProfile` contiene los datos del personaje.
-   - `AnimeAvatar2D` dibuja el cuerpo procedural.
-   - Las poses son reutilizables: Idle, Walk, Run, Bat, Pitch, Catch, Celebrate, Hit Reaction.
-   - El renderizador puede reemplazarse por sprites, rig 2D, Live2D, VRM/Three.js o un modelo 3D sin cambiar el perfil.
+4. Avatar
+   - AvatarProfile contiene los datos del personaje.
+   - AnimeAvatar2D dibuja el cuerpo procedural.
+   - AvatarMotionController controla poses.
+   - AvatarTrajectoryController mueve jugadoras con trayectorias continuas.
+   - el renderer puede reemplazarse por sprites, rig 2D, Live2D, VRM/Three.js o 3D sin cambiar el contrato de perfil.
 
-5. **Character Creator**
-   - `scenes/character_creator.tscn`.
-   - Presets de cuerpo: slim, balanced, athletic, curvy, power.
-   - Cabello: long, short, bob, ponytail, twin_tail.
-   - Uniforme: standard, sporty, jacket, sleeveless.
-   - Rostro: soft, sharp, round.
-   - Sliders de proporciones.
-   - Selectores de color de piel, cabello, acento y ojos.
-   - Gorra activable.
-   - Generación aleatoria mediante seed.
-   - Guardado/carga de perfiles JSON en `user://baseball_waifus/characters/`.
+5. Character Creator
+   - scenes/character_creator.tscn.
+   - presets de cuerpo y proporciones.
+   - cabello, rostro, uniforme y colores.
+   - seed para generación repetible.
+   - guardado/carga JSON en user://baseball_waifus/characters/.
 
-## Flujo
+## Flujo completo
 
-**Webcam → OpenCV → MediaPipe → tracker.py → protocol.py → UDP → TrackingReceiver → AnimeAvatar2D**
+Webcam → OpenCV → MediaPipe → tracker.py → protocol.py → UDP → TrackingReceiver → AnimeAvatar2D
 
-**Micrófono → sounddevice → AudioMeter → protocol.py → UDP → Godot**
+Micrófono → sounddevice → AudioMeter → protocol.py → UDP → Godot
 
-**Pantalla opcional → mss → diagnóstico de resolución/captura**
+Pantalla opcional → mss → diagnóstico
 
-**OBS Studio ↔ obsws-python ↔ Streaming Bridge**
+OBS Studio ↔ obsws-python ↔ Streaming Bridge
 
-OBS no recibe ni depende del protocolo de avatar para renderizar el juego. El bridge aporta tracking/telemetría y control opcional de escena.
+## Estructura del bridge
+
+tools/streaming_bridge/main.py es el punto de ejecución.
+
+capture.py contiene webcam, pantalla y audio.
+tracker.py contiene MediaPipe y normalización facial.
+protocol.py define el contrato de transporte.
+obs_client.py encapsula OBS WebSocket.
+config.json centraliza dispositivos, puertos, FPS y smoothing.
+requirements.txt declara las dependencias abiertas utilizadas.
+
+Godot recibe el stream mediante game/streaming/tracking_receiver.gd y no necesita conocer OpenCV, MediaPipe ni OBS.
 
 ## Sistema de diseño anime implementado
 
-El creador actual es deliberadamente procedural. No intenta competir todavía con un pipeline artístico profesional de Live2D o VRM.
+El creador actual es procedural y deliberadamente independiente de un checkpoint de IA. Ya permite fabricar jugadoras de prueba y verificar:
 
-La finalidad de esta etapa es poder fabricar rápidamente "jugadoras de prueba" y comprobar:
-
-- proporciones;
-- siluetas;
-- posiciones;
+- proporciones y siluetas;
 - poses de béisbol;
-- reacción al tracking;
-- lectura visual de uniformes;
-- intercambio de cabello y colores;
-- persistencia de datos.
+- movimiento de pitcher, bateadora, catcher, defensa y runners;
+- reacción al tracking facial;
+- cabello, colores y capas de uniforme;
+- persistencia del perfil.
 
-El perfil está desacoplado del renderer para que una misma jugadora pueda pasar después a arte 2D definitivo, rigging o 3D.
+El preset shonen_soft mantiene anatomía adulta, deportiva y redondeada, con torso, caderas y muslos algo más llenos.
 
-## Investigación externa
+El módulo tools/character_ai añade concept art local mediante ComfyUI. La IA genera referencias, no decide estadísticas ni lógica.
 
-Se revisaron patrones públicos de OpenSeeFace e Inochi2D como referencias de arquitectura. No se copió código ni assets de esos proyectos.
+## Rigging futuro
 
-La ruta 3D futura puede apoyarse en VRM/Three.js cuando el juego necesite modelos 3D. La ruta 2D puede evolucionar a un rig artístico o Live2D si las licencias y necesidades de producción lo justifican.
+El perfil permanece estable mientras cambia el renderer.
 
-## Estado
+Ruta 2D candidata: Inochi Creator + Inochi2D o Live2D según necesidades y licencias.
+Ruta 3D candidata: VRM + Three.js.
 
-**Implementado:** bridge local, tracking facial, audio, captura de pantalla opcional, protocolo versionado, receptor UDP y creador anime procedural.
+## Estado de validación
 
-**Pendiente:** validación hardware end-to-end, rig artístico definitivo, Live2D/VRM, físicas secundarias, lip-sync avanzado, expresiones completas, compositor propio, grabación y conexión final con el roster.
+Implementado: bridge local, tracking facial, audio, captura de pantalla opcional, protocolo versionado, receptor UDP, Character Creator, avatar procedural, movimiento y referencia de concept art.
 
+Pendiente: validación hardware end-to-end con Godot + webcam + OBS, rig artístico de producción, Live2D/Inochi2D/VRM final, lip-sync avanzado y compositor propio.
 
-## Generación de referencias anime
-
-Se añadió `tools/character_ai` como módulo opcional de concept art. Usa una instalación local de ComfyUI mediante su API, con workflows JSON y checkpoints externos. El juego no redistribuye modelos.
-
-Componentes:
-- `prompt_builder.py`: convierte `AvatarProfile` en prompt y negative prompt.
-- `comfy_client.py`: cola workflows y recupera imágenes mediante la API local.
-- `generate_service.py`: aplica seed, resolución y parámetros del workflow.
-- `art_server.py`: API local para el Character Creator.
-- `style_presets.json`: lenguaje visual propio del proyecto.
-- `model_profiles.json`: familias de checkpoints candidatas, sin fijar una dependencia.
-- `workflow_sdxl.json`: workflow base de text-to-image.
-
-El estilo objetivo usa anatomía adulta, proporciones shonen redondeadas y cuerpos atléticos algo más llenos, cel shading limpio y fanservice adulto moderado. No se imita la identidad visual de una franquicia concreta.
-
-El renderer procedural continúa siendo la fuente estable para probar movimiento. La IA solo produce referencias de diseño.
+Nota: en el entorno actual no se ejecutó Godot con cámara/micrófono/OBS, por lo que ese tramo sigue marcado como no validado en runtime.
