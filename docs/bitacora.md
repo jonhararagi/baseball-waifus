@@ -1237,3 +1237,67 @@ El avance global estimado pasa de **≈27% a ≈29%**. El aumento refleja una he
 ### Regla de continuidad
 
 ComfyUI queda como proveedor opcional y reemplazable. El juego no depende de un modelo de generación concreto.
+
+# 17. Revisión 8: Avatar por capas + banco de movimiento + benchmark de modelos
+
+**Fecha:** 2026-09-20  
+**Tipo:** Arquitectura visual / animación / herramientas de producción.
+
+### Motivo
+
+La Revisión 7 ya permitía generar referencias anime y ejecutar varias poses, pero ropa, equipamiento y acciones todavía estaban demasiado acoplados al renderer. También faltaba una prueba automática de la secuencia de movimientos.
+
+### Implementado
+
+Se añade:
+
+- `game/avatar/avatar_equipment.gd`: ranuras visuales de bate, guantes, gorra, chaleco, falda y calzado.
+- `game/avatar/avatar_visual_catalog.gd`: catálogo de colores y variantes visuales.
+- `game/avatar/avatar_motion_controller.gd`: acciones temporales que regresan automáticamente a Idle.
+- `scenes/avatar_motion_test.tscn` + `avatar_motion_test.gd`: recorrido automático de acciones de béisbol.
+- `docs/avatar-visual-system.md`: contrato visual por capas.
+
+`AvatarProfile` ahora guarda el equipamiento junto con el perfil y admite el preset corporal `shonen_soft`.
+
+El Character Creator expone las piezas visuales y el estilo de arte `soft`, `ecchi` o `rig`.
+
+`PlayerAvatarAdapter` asigna visualmente la silueta, acentos y equipo inicial según la especialización, posición y elemento de `PlayerData`.
+
+### Pipeline de modelos
+
+Se añadió un benchmark determinista para checkpoints locales de ComfyUI:
+
+- `benchmark_models.json`
+- `benchmark_models.py`
+
+El benchmark utiliza el mismo personaje, seed, resolución, prompt y negative prompt para cada checkpoint configurado.
+
+Familias preparadas:
+- Animagine XL
+- Illustrious XL
+- NoobAI-XL
+- Pony/SDXL
+
+No se declara una ganadora global ni se distribuyen checkpoints. La comparación real se hará con las versiones exactas instaladas y sus licencias.
+
+### Estilo visual actualizado
+
+El preset corporal `shonen_soft` busca precisamente la característica solicitada para Baseball Waifus: proporciones anime heroicas, redondeadas, atléticas y algo más llenas, sin usar una copia directa de Fairy Tail ni de otra franquicia.
+
+El preset de arte por defecto del generador pasó a `baseball_waifus_ecchi`, manteniendo controles negativos para evitar anatomía infantil, chibi y contenido sexual explícito.
+
+### Estado
+
+**Implementado en código:** sistema visual por capas, persistencia, equipamiento, controlador de acciones, escena de prueba automática, benchmark de checkpoints y selección de estilo desde el editor.
+
+**Pendiente:** validación real en Godot, ejecución real de ComfyUI con los checkpoints locales, selección final mediante benchmark, arte de producción, rig 2D definitivo y conexión completa de equipamiento con el sistema de estadísticas.
+
+### Porcentaje global revisado
+
+El avance global estimado pasa de **≈29% a ≈31%**.
+
+Este valor representa el alcance técnico ponderado. El juego completo sigue lejos de estar terminado porque economía, gacha, crianza, campaña completa, roster final, contenido, PvP, backend y arte de producción todavía representan una parte grande del trabajo.
+
+### Regla de continuidad
+
+El avatar por capas es ahora la base visual vigente. No se debe volver al renderer monolítico anterior salvo para comparar una regresión o reemplazar una capa concreta.
