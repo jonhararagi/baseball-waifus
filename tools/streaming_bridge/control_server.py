@@ -17,12 +17,16 @@ class BridgeControl:
         status_provider: Callable[[], dict],
         start_recording: Callable[[], dict],
         stop_recording: Callable[[], dict],
+        start_qa: Callable[[], dict],
+        qa_status: Callable[[], dict],
     ):
         self.host = host
         self.port = port
         self.status_provider = status_provider
         self.start_recording = start_recording
         self.stop_recording = stop_recording
+        self.start_qa = start_qa
+        self.qa_status = qa_status
         self.server = None
         self.thread = None
         if host not in {"127.0.0.1", "localhost"}:
@@ -78,6 +82,10 @@ class BridgeControl:
                         self._json(500, {"ok": False, "error": f"healthcheck_failed: {exc}"})
                     return
 
+                if self.path == "/api/qa/status":
+                    self._json(200, {"ok": True, **provider.qa_status()})
+                    return
+
                 self._json(404, {"ok": False, "error": "not_found"})
 
             def do_POST(self) -> None:
@@ -87,6 +95,10 @@ class BridgeControl:
 
                 if self.path == "/api/record/stop":
                     self._json(200, provider.stop_recording())
+                    return
+
+                if self.path == "/api/qa/run":
+                    self._json(200, provider.start_qa())
                     return
 
                 self._json(404, {"ok": False, "error": "not_found"})
