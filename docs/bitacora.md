@@ -2773,3 +2773,80 @@ No crear otro simulador facial para pruebas. `synthetic_tracker.py` queda como f
 El renderer y el sistema de personajes siguen sin cambios:
 
 **AvatarProfile → AnimeAvatar2D / AnimeBodyRig2D / ExternalRigAvatar2D**
+
+
+# 32. Revisión 23: QA operativo desde el dashboard
+
+**Fecha:** 2026-09-20  
+**Tipo:** Streaming / tooling / observabilidad / QA.
+
+### Motivo
+
+La Revisión 22 permitió ejecutar el bridge con tracking sintético y la Revisión 21 añadió una regresión integrada offline. Faltaba una forma de ejecutar esa suite desde la misma superficie operativa que ya controla la grabación.
+
+### Implementado
+
+- `tools/streaming_bridge/qa_runner.py`
+  - ejecuta `python -m unittest discover -p "test_*.py"`;
+  - trabajo en segundo plano;
+  - límite de tiempo configurable;
+  - conserva código de salida y últimas líneas de salida;
+  - evita ejecuciones simultáneas.
+
+- `tools/streaming_bridge/control_server.py`
+  - `POST /api/qa/run`;
+  - `GET /api/qa/status`.
+
+- `tools/streaming_bridge/dashboard.html`
+  - botón Ejecutar QA;
+  - estado PASS/FAIL;
+  - salida de la última ejecución.
+
+- `tools/streaming_bridge/main.py`
+  - integra QARunner sin modificar captura, tracking ni transporte.
+
+- `tools/streaming_bridge/test_control_server.py`
+  - regression de status/run del QA.
+
+- `tools/streaming_bridge/test_qa_runner.py`
+  - verifica ejecución exitosa y bloqueo de una segunda ejecución concurrente.
+
+- `tools/streaming_bridge/config.json`
+  - `qa_timeout_seconds=120`.
+
+### Seguridad
+
+El QA se controla exclusivamente por el servidor localhost existente. No se crea otro servidor y no se expone a Internet.
+
+### Pruebas
+
+Se añadió cobertura para:
+- ejecución exitosa del runner;
+- prevención de ejecución simultánea;
+- endpoint status;
+- endpoint run.
+
+La prueba de integración de QA puede ejecutarse en el mismo entorno Python del bridge. La validación física de Godot, webcam, MediaPipe y OBS sigue separada y pendiente.
+
+### Error/riesgo
+
+Ejecutar comandos del sistema desde una interfaz HTTP sería inseguro si el panel aceptara conexiones externas o parámetros arbitrarios. Por eso el endpoint no recibe comandos ni argumentos del usuario: ejecuta exclusivamente la suite fija del proyecto y solo escucha localhost.
+
+### Estado
+
+**Implementado:** superficie única de observabilidad + grabación + QA.
+
+**Pendiente:** runtime físico y exportaciones.
+
+### Porcentaje
+
+El avance global **permanece en ≈64%**. Esta revisión consolida el tooling ya existente y no suma una gran fracción del producto final.
+
+### Regla de continuidad
+
+No crear un segundo ejecutor de pruebas ni otra interfaz de QA. El pipeline operativo vigente es:
+
+**Dashboard → Control Server → QARunner → unittest suite**
+
+El sistema de personajes permanece sin cambios:
+**AvatarProfile → AnimeAvatar2D / AnimeBodyRig2D / ExternalRigAvatar2D**
