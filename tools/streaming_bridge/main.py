@@ -12,6 +12,7 @@ from recorder import TrackingRecorder
 from tracker import FaceTracker
 from synthetic_tracker import SyntheticFaceTracker
 from control_server import BridgeControl
+from qa_runner import QARunner
 
 
 ROOT = Path(__file__).resolve().parent
@@ -107,6 +108,7 @@ def main():
     last_tracking_active = False
     obs_connected_cached = False
     control = None
+    qa = QARunner(ROOT / ".", config.get("qa_timeout_seconds", 120.0))
 
     def start_recording():
         nonlocal recorder
@@ -160,6 +162,8 @@ def main():
             status_provider,
             start_recording,
             stop_recording,
+            qa.start,
+            qa.status,
         )
         control.start()
 
@@ -255,6 +259,7 @@ def main():
                 recorder.close()
         if control is not None:
             control.close()
+        qa.close()
         sock.close()
 
 
