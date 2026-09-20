@@ -8,6 +8,8 @@
   "enable_audio": true,
   "enable_screen_capture": false,
   "enable_obs": false,
+  "enable_recording": false,
+  "record_path": "recordings/session.jsonl",
   "screen_monitor": 1,
   "screen_diagnostics_interval": 2.0,
   "godot_host": "127.0.0.1",
