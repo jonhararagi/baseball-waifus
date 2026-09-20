@@ -12,6 +12,7 @@ var save_name := "designer_last.json"
 var ai_request: HTTPRequest
 var ai_status: Label
 var ai_preview: TextureRect
+var motion := AvatarMotionController.new()
 
 func _ready() -> void:
 	profile.display_name = "Prototype Player"
@@ -21,6 +22,7 @@ func _ready() -> void:
 	avatar.position = Vector2(365, 430)
 	avatar.setup(profile)
 	add_child(avatar)
+	motion.setup(avatar)
 
 	receiver = TrackingReceiver.new()
 	receiver.stale_timeout = 0.75
@@ -86,6 +88,12 @@ func _build_ui() -> void:
 	_add_option(root, "Cabello", ["long", "short", "bob", "ponytail", "twin_tail"], "hair")
 	_add_option(root, "Uniforme", ["standard", "sporty", "jacket", "sleeveless"], "uniform")
 	_add_option(root, "Rostro", ["soft", "sharp", "round"], "face")
+	_add_equipment_option(root, "Bate", ["bat_basic", "bat_power", "bat_precision", "bat_shadow"], "bat_style")
+	_add_equipment_option(root, "Guantes", ["glove_basic", "glove_gold", "glove_precision", "glove_guardian"], "gloves_style")
+	_add_equipment_option(root, "Gorra", ["cap_none", "cap_classic", "cap_visored", "cap_special"], "cap_style")
+	_add_equipment_option(root, "Chaleco", ["vest_basic", "vest_power", "vest_guardian", "vest_light"], "vest_style")
+	_add_equipment_option(root, "Falda", ["skirt_basic", "skirt_pleated", "skirt_sport", "skirt_special"], "skirt_style")
+	_add_equipment_option(root, "Calzado", ["shoes_basic", "shoes_runner", "shoes_power", "shoes_ace"], "shoes_style")
 	_make_slider(root, "Altura", 0.75, 1.25, 0.01, "height")
 	_make_slider(root, "Hombros", 0.75, 1.30, 0.01, "shoulder_width")
 	_make_slider(root, "Cintura", 0.70, 1.35, 0.01, "waist_width")
@@ -197,6 +205,25 @@ func _add_option(parent: Control, title: String, values: Array, key: String) -> 
 	selectors[key] = option
 	option.item_selected.connect(func(index: int): _option_changed(key, str(values[index])))
 
+func _add_equipment_option(parent: Control, title: String, values: Array, key: String) -> void:
+	var row := HBoxContainer.new()
+	row.custom_minimum_size.y = 38
+	parent.add_child(row)
+	var label := Label.new()
+	label.text = title
+	label.custom_minimum_size.x = 120
+	row.add_child(label)
+	var option := OptionButton.new()
+	option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	for value in values:
+		option.add_item(str(value))
+	row.add_child(option)
+	selectors["equipment." + key] = option
+	option.item_selected.connect(func(index: int):
+		profile.equipment.set(key, str(values[index]))
+		_sync_controls()
+	)
+
 func _make_slider(parent: Control, title: String, min_value: float, max_value: float, step: float, key: String) -> void:
 	var row := VBoxContainer.new()
 	parent.add_child(row)
@@ -270,8 +297,21 @@ func _sync_controls() -> void:
 		var picker: ColorPickerButton = colors[key]
 		picker.color = profile.get(key)
 
+	_sync_equipment_selectors()
 	avatar.setup(profile)
 	_update_info()
+
+func _sync_equipment_selectors() -> void:
+	for key in ["bat_style", "gloves_style", "cap_style", "vest_style", "skirt_style", "shoes_style"]:
+		var selector_key := "equipment." + key
+		if not selectors.has(selector_key):
+			continue
+		var option: OptionButton = selectors[selector_key]
+		var current := str(profile.equipment.get(key))
+		for i in range(option.item_count):
+			if option.get_item_text(i) == current:
+				option.select(i)
+				break
 
 func _update_info() -> void:
 	if info == null or receiver == null:
@@ -378,9 +418,10 @@ func _process(_delta: float) -> void:
 	if Input.is_key_pressed(KEY_6):
 		avatar.set_pose(AnimeAvatar2D.Pose.CATCH)
 	if Input.is_key_pressed(KEY_7):
-		avatar.set_pose(AnimeAvatar2D.Pose.CELEBRATE)
+		motion.play(AnimeAvatar2D.Pose.CELEBRATE, 1.0)
 	if Input.is_key_pressed(KEY_8):
-		avatar.set_pose(AnimeAvatar2D.Pose.DEFEAT)
+		motion.play(AnimeAvatar2D.Pose.DEFEAT, 1.2)
 	if Input.is_key_pressed(KEY_9):
-		avatar.set_pose(AnimeAvatar2D.Pose.STEAL)
+		motion.play(AnimeAvatar2D.Pose.STEAL, 0.7)
+	motion.update(_delta)
 	_update_info()
