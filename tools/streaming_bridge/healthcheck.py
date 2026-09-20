@@ -51,6 +51,13 @@ def main() -> int:
 	print(f"[{'OK' if available else 'FAIL'}] UDP {host}:{port} ({detail})")
 	ok = ok and available
 
+	control_enabled = bool(config.get("enable_control_server", True))
+	if control_enabled:
+		control_host = config.get("control_host", "127.0.0.1")
+		control_port = int(config.get("control_port", 8787))
+		control_available, control_detail = check_udp(control_host, control_port)
+		print(f"[{'OK' if control_available else 'WARN'}] Control panel {control_host}:{control_port} ({control_detail})")
+
 	obs_enabled = bool(config.get("enable_obs", False))
 	if obs_enabled:
 		obs_host = config.get("obs_host", "127.0.0.1")
