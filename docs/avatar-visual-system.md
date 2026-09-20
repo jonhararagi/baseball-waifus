@@ -109,3 +109,39 @@ El presenter también mantiene tres avatares temporales para los runners de prim
 Los runners del laboratorio son temporales y no se escriben en la persistencia del roster.
 
 La capa sigue siendo puramente visual: no resuelve la jugada, no calcula probabilidades y no modifica BaseballGameState.
+
+## Trayectorias de movimiento
+
+AvatarTrajectoryController añade movimiento temporal a las acciones del campo.
+
+Funciones actuales:
+
+- `move_to`: desplaza un avatar a una posición destino;
+- `dash_to`: desplazamiento rápido;
+- `move_and_return`: carrera hacia una zona y regreso a la posición defensiva;
+- trayectoria curva opcional mediante una interpolación cuadrática.
+
+Se utiliza especialmente para:
+
+- runners durante un robo;
+- outfielders persiguiendo un batazo;
+- infielders entrando a la línea de la pelota.
+
+El movimiento es presentación pura. El resultado de la jugada ya fue calculado por el motor de béisbol.
+
+## Datos de equipo
+
+`BaseballTeamData` separa el concepto de equipo del `main.gd`.
+
+Cada equipo puede almacenar:
+
+- identificación y nombre;
+- lista de `PlayerData`;
+- orden de bateo;
+- pitcher;
+- consulta por posición;
+- roster defensivo.
+
+`DemoTeamFactory` crea equipos de demostración reproducibles para las pruebas.
+
+La finalidad es que el Character Creator pueda pasar posteriormente de personajes de laboratorio a equipos completos sin reescribir el presenter visual.
