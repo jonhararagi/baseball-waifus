@@ -1166,3 +1166,74 @@ Esto permite cambiar el sistema visual por un rig 2D, Live2D, VRM/Three.js o un 
 ### Porcentaje
 
 El avance global se mantiene en **≈27%**. La integración mejora la reutilización del prototipo, pero no representa una gran fracción del alcance total del juego.
+
+
+# 16. Revisión 7: Pipeline de concept art anime + poses de béisbol
+
+**Fecha:** 2026-09-20  
+**Tipo:** Herramientas de arte / integración local / animación.
+
+### Motivo
+
+El prototipo ya podía dibujar un cuerpo, pero necesitaba una forma rápida de comparar diseños anime antes de crear arte final. Además, las poses disponibles no cubrían todas las acciones que el juego necesitará.
+
+### Investigación
+
+Se revisaron ComfyUI como backend de generación y la familia Inochi2D como opción de rigging 2D. ComfyUI expone una API local y workflows reutilizables; Inochi2D dispone de runtime 2D y binding para Godot.
+
+También se documentaron familias de checkpoints anime candidatas, incluyendo Animagine XL, Illustrious XL, NoobAI-XL y Pony/SDXL. No se incorporaron checkpoints al repositorio y no se fijó un ranking permanente porque versiones y licencias cambian.
+
+### Implementado
+
+Nuevo módulo `tools/character_ai`:
+
+- `config.json`
+- `style_presets.json`
+- `model_profiles.json`
+- `workflow_sdxl.json`
+- `prompt_builder.py`
+- `comfy_client.py`
+- `generate_service.py`
+- `art_server.py`
+- `README.md`
+
+El Character Creator ahora tiene botón `AI ref`. Envía `AvatarProfile` al bridge local, genera una referencia mediante ComfyUI y muestra la imagen resultante dentro del editor.
+
+También se creó `tools/run_local_tools.py`, que supervisa el Streaming Bridge y el Character AI Bridge como un conjunto.
+
+### Lenguaje visual fijado para pruebas
+
+El preset de Baseball Waifus busca anatomía adulta, proporciones shonen heroicas, cuerpos atléticos con formas suaves y algo más llenas, ojos expresivos, cel shading limpio, colores vivos, silueta clara y fanservice adulto moderado.
+
+Se excluyen de forma explícita chibi, anatomía infantil y la imitación directa de la identidad visual de franquicias concretas.
+
+### Movimiento añadido
+
+`AnimeAvatar2D` amplía sus poses:
+
+- Throw
+- Steal
+- Slide
+- Out
+- Defeat
+- Menu Idle
+
+Además se añade movimiento secundario procedural sencillo en cabello y nuevas señales visuales de acción.
+
+### Regla arquitectónica
+
+La IA de imágenes solo produce **referencias de arte**. Nunca decide stats, probabilidades, drops, gacha, crianza ni resultados del partido.
+
+### Estado
+
+**Implementado en código:** pipeline local de referencia anime, integración con Character Creator, nuevo conjunto de poses y launcher de herramientas.
+
+**Pendiente:** probar ComfyUI realmente con un checkpoint local, seleccionar el checkpoint final del proyecto mediante comparación visual, crear arte de producción, rig profesional Inochi2D/Live2D y conectar piezas de ropa/equipamiento como capas independientes.
+
+### Porcentaje global revisado
+
+El avance global estimado pasa de **≈27% a ≈29%**. El aumento refleja una herramienta de producción más completa y una mayor parte del pipeline visual ya prototipada, pero el núcleo de economía, roster completo, campaña, gacha, crianza, contenido y backend sigue pendiente.
+
+### Regla de continuidad
+
+ComfyUI queda como proveedor opcional y reemplazable. El juego no depende de un modelo de generación concreto.
