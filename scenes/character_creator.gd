@@ -164,8 +164,13 @@ func _build_ui() -> void:
 		["Run", AnimeAvatar2D.Pose.RUN],
 		["Bat", AnimeAvatar2D.Pose.BAT],
 		["Pitch", AnimeAvatar2D.Pose.PITCH],
+		["Throw", AnimeAvatar2D.Pose.THROW],
 		["Catch", AnimeAvatar2D.Pose.CATCH],
-		["Win", AnimeAvatar2D.Pose.CELEBRATE]
+		["Steal", AnimeAvatar2D.Pose.STEAL],
+		["Slide", AnimeAvatar2D.Pose.SLIDE],
+		["Out", AnimeAvatar2D.Pose.OUT],
+		["Win", AnimeAvatar2D.Pose.CELEBRATE],
+		["Defeat", AnimeAvatar2D.Pose.DEFEAT]
 	]
 	for pair in pose_data:
 		var button := Button.new()
@@ -374,4 +379,8 @@ func _process(_delta: float) -> void:
 		avatar.set_pose(AnimeAvatar2D.Pose.CATCH)
 	if Input.is_key_pressed(KEY_7):
 		avatar.set_pose(AnimeAvatar2D.Pose.CELEBRATE)
+	if Input.is_key_pressed(KEY_8):
+		avatar.set_pose(AnimeAvatar2D.Pose.DEFEAT)
+	if Input.is_key_pressed(KEY_9):
+		avatar.set_pose(AnimeAvatar2D.Pose.STEAL)
 	_update_info()
