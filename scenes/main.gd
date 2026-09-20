@@ -82,7 +82,7 @@ func _build_demo_defensive_roster() -> Dictionary:
 		"3B": ["demo_third_base", "Third Base", "power", "fire"],
 		"SS": ["demo_shortstop", "Shortstop", "contact", "lightning"],
 		"LF": ["demo_left_field", "Left Field", "defender", "ice"],
-		"CF": ["demo_center_field", "Center Field", "runner", "wind"],
+		"CF": ["demo_center_field", "Center Field", "runner", "nature"],
 		"RF": ["demo_right_field", "Right Field", "power", "darkness"]
 	}
 	for position in definitions.keys():
