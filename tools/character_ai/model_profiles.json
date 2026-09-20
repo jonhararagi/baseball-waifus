@@ -1,12 +1,35 @@
 {
   "anime_xl_candidates": {
     "families": ["Animagine XL", "Illustrious XL", "NoobAI-XL", "Pony/SDXL"],
-    "fit": "anime game characters, strong anatomy control, wide LoRA ecosystem",
+    "fit": "anime game characters, strong anatomy control, large LoRA ecosystem",
     "license_note": "verify the license of the exact checkpoint and attached LoRAs before commercial use"
   },
+  "candidate_checkpoints": {
+    "animagine_xl": {
+      "family": "Animagine XL",
+      "target": "clean anime game character sheets, colorful full-body designs"
+    },
+    "illustrious_xl": {
+      "family": "Illustrious XL",
+      "target": "detailed modern anime character rendering, hair and costume variation"
+    },
+    "noobai_xl": {
+      "family": "NoobAI-XL",
+      "target": "anime illustration with broad prompt and LoRA ecosystem"
+    },
+    "pony_sdxl": {
+      "family": "Pony/SDXL",
+      "target": "highly stylized character concepts and adult ecchi references"
+    }
+  },
   "recommended_game_profile": {
-    "default_style": "baseball_waifus_soft",
+    "default_style": "baseball_waifus_ecchi",
     "use_case": "adult anime baseball roster concepts, turnaround references and action poses",
-    "avoid": ["childlike anatomy", "chibi", "franchise style imitation", "photorealism"]
+    "avoid": ["childlike anatomy", "chibi", "franchise style imitation", "photorealism", "explicit sexual content"]
+  },
+  "selection_method": {
+    "not_a_global_ranking": true,
+    "reason": "checkpoint versions, licenses, LoRAs and local hardware change over time",
+    "compare_with": "same seed, same prompt, same resolution and same negative prompt"
   }
 }
