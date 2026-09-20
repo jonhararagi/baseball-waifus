@@ -79,3 +79,33 @@ El presenter es una capa de presentación. No calcula probabilidades, no cambia 
 ## Estado de producción
 
 El cuerpo procedural ya funciona como banco de pruebas para jugadores reales del roster y sus acciones. El siguiente reemplazo natural sigue siendo el renderer artístico, no otro rediseño de la arquitectura de datos.
+
+## Presentación completa del campo
+
+BaseballFieldAvatarPresenter amplía el uso del cuerpo procedural desde el duelo pitcher/batter a la representación visual del campo.
+
+La distribución prototipada es:
+
+- C: catcher
+- 1B: primera base
+- 2B: segunda base
+- 3B: tercera base
+- SS: shortstop
+- LF: left field
+- CF: center field
+- RF: right field
+- P: continúa gestionado por AvatarMatchPresenter
+
+El presenter también mantiene tres avatares temporales para los runners de primera, segunda y tercera base.
+
+### Eventos visuales
+
+- lanzamiento: catcher adopta Catch;
+- hit: los fielders reaccionan según la magnitud del batazo;
+- out/strike: batería defensiva celebra;
+- robo: runner ejecuta Steal/Run o Out;
+- fin de partido: la formación defensiva celebra o entra en estado de derrota.
+
+Los runners del laboratorio son temporales y no se escriben en la persistencia del roster.
+
+La capa sigue siendo puramente visual: no resuelve la jugada, no calcula probabilidades y no modifica BaseballGameState.
