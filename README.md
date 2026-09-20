@@ -210,3 +210,36 @@ Por defecto se utiliza AnimeAvatar2D. Un AvatarProfile con art_style=rig y rig_s
 Esto prepara el camino para conectar Inochi2D, Live2D o VRM/Three.js sin tocar el gameplay.
 
 Detalles: docs/avatar-rig-integration.md
+## Mobile-first y plataformas embebidas
+
+El control principal del partido está preparado para móvil.
+
+- HIT es el botón principal y aparece como control táctil grande.
+- STEAL aparece solamente cuando existe corredora.
+- la entrada de teclado y mouse sigue funcionando en desktop;
+- MobileInputRouter unifica todas las entradas;
+- la vibración corta es opcional;
+- existe una pequeña ventana pre-pitch para decidir robo antes del lanzamiento.
+
+El juego puede exportarse como aplicación móvil nativa y también como build Web.
+
+### Host Web
+
+tools/web_host añade una carcasa para ejecutar el build Web de Godot en:
+
+- navegador local;
+- Telegram Mini Apps;
+- Discord Activities.
+
+Telegram y Discord no entran en el gameplay. El host los inicializa y el juego recibe únicamente acciones de host mediante postMessage.
+
+Archivos principales:
+
+- game/input/mobile_input_router.gd
+- game/ui/mobile_controls.gd
+- game/platform/platform_bridge.gd
+- tools/web_host/src/main.ts
+- docs/mobile-platform.md
+
+Prueba visual:
+scenes/mobile_controls_test.tscn
