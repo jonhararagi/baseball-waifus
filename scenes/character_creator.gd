@@ -121,6 +121,11 @@ func _build_ui() -> void:
 	reset_button.pressed.connect(_reset_profile)
 	actions.add_child(reset_button)
 
+	var demo_button := Button.new()
+	demo_button.text = "Demo roster"
+	demo_button.pressed.connect(_load_demo_player)
+	actions.add_child(demo_button)
+
 	var pose_row := HBoxContainer.new()
 	pose_row.position = Vector2(40, 640)
 	pose_row.size = Vector2(630, 40)
@@ -273,6 +278,20 @@ func _reset_profile() -> void:
 	profile = AvatarProfile.new()
 	profile.display_name = "Prototype Player"
 	profile.apply_body_preset("balanced")
+	avatar.setup(profile)
+	_sync_controls()
+
+func _load_demo_player() -> void:
+	var player := PlayerData.new()
+	player.id = "demo_ssr_fire_cf"
+	player.display_name = "Demo Fire Batter"
+	player.rarity = "SSR"
+	player.element = "fire"
+	player.position = "CF"
+	player.specialization = "power"
+	player.level = 25
+	player.potential = 5
+	profile = PlayerAvatarAdapter.from_player(player)
 	avatar.setup(profile)
 	_sync_controls()
 
