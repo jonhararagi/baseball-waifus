@@ -10,6 +10,7 @@ from obs_client import OBSController
 from protocol import encode_payload, make_payload
 from recorder import TrackingRecorder
 from tracker import FaceTracker
+from synthetic_tracker import SyntheticFaceTracker
 from control_server import BridgeControl
 
 
@@ -31,6 +32,8 @@ def parse_args():
     parser.add_argument("--no-obs", action="store_true", help="Desactiva conexión OBS")
     parser.add_argument("--record", action="store_true", help="Graba paquetes JSONL además de enviarlos")
     parser.add_argument("--no-control", action="store_true", help="Desactiva el panel local de control")
+    parser.add_argument("--synthetic-tracking", action="store_true", help="Usa tracking facial sintético y evita webcam/MediaPipe")
+    parser.add_argument("--max-packets", type=int, default=0, help="Finaliza tras N paquetes; 0 mantiene ejecución continua")
     return parser.parse_args()
 
 
@@ -42,16 +45,21 @@ def main():
     args = parse_args()
     config = load_config(args.config)
 
-    camera = WebcamCapture(
-        config.get("camera_index", 0),
-        config.get("camera_width", 1280),
-        config.get("camera_height", 720),
-    )
-    if not camera.opened:
-        camera.close()
-        raise RuntimeError("No se pudo abrir la webcam configurada.")
-
-    tracker = FaceTracker(config.get("tracking_smoothing", 0.45))
+    synthetic_tracking = bool(config.get("enable_synthetic_tracking", False)) or args.synthetic_tracking
+    camera = None
+    tracker = None
+    if synthetic_tracking:
+        tracker = SyntheticFaceTracker(config.get("tracking_smoothing", 0.45))
+    else:
+        camera = WebcamCapture(
+            config.get("camera_index", 0),
+            config.get("camera_width", 1280),
+            config.get("camera_height", 720),
+        )
+        if not camera.opened:
+            camera.close()
+            raise RuntimeError("No se pudo abrir la webcam configurada.")
+        tracker = FaceTracker(config.get("tracking_smoothing", 0.45))
 
     audio = AudioMeter(
         device=config.get("audio_device"),
@@ -157,7 +165,10 @@ def main():
 
     print("Baseball Waifus Streaming Bridge")
     print(f"Tracking UDP -> {target[0]}:{target[1]}")
-    print(f"Camera -> {camera.index} ({config.get('camera_width', 1280)}x{config.get('camera_height', 720)})")
+    if synthetic_tracking:
+        print("Tracking source -> SYNTHETIC")
+    else:
+        print(f"Camera -> {camera.index} ({config.get('camera_width', 1280)}x{config.get('camera_height', 720)})")
     print(f"Audio -> {'ON' if audio.enabled else 'OFF'}")
     print(f"Screen diagnostics -> {'ON' if screen else 'OFF'}")
     print(f"Recording -> {'ON' if recorder else 'OFF'}")
@@ -175,10 +186,13 @@ def main():
         next_tick = time.perf_counter()
         next_obs_check = 0.0
         while True:
-            frame = camera.read()
-            if frame is None:
-                time.sleep(0.05)
-                continue
+            if synthetic_tracking:
+                frame = None
+            else:
+                frame = camera.read()
+                if frame is None:
+                    time.sleep(0.05)
+                    continue
 
             now_tick = time.perf_counter()
             if obs is not None and now_tick >= next_obs_check:
@@ -190,7 +204,8 @@ def main():
             if last_tracking_active:
                 last_tracking_ms = int(time.time() * 1000)
             capture_status = {
-                "camera": True,
+                "camera": not synthetic_tracking,
+                "synthetic_tracking": synthetic_tracking,
                 "screen": screen is not None,
             }
 
@@ -209,6 +224,9 @@ def main():
             sequence += 1
             sent_packets += 1
             fps_window_frames += 1
+
+            if args.max_packets > 0 and sent_packets >= args.max_packets:
+                break
             fps_now = time.perf_counter()
             elapsed = fps_now - fps_window_start
             if elapsed >= 1.0:
@@ -225,8 +243,10 @@ def main():
     except KeyboardInterrupt:
         pass
     finally:
-        camera.close()
-        tracker.close()
+        if camera is not None:
+            camera.close()
+        if tracker is not None:
+            tracker.close()
         audio.close()
         if screen is not None:
             screen.close()
