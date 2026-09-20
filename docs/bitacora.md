@@ -2315,6 +2315,10 @@ Prueba 4, runtime Godot: no ejecutada porque Godot no está instalado en el ento
 
 Prueba 5, runtime físico: no ejecutada porque no hay webcam, micrófono ni instancia OBS accesibles desde este entorno.
 
+Prueba 6, regresión de protocolo: test_protocol.py ejecutó 2 pruebas y ambas pasaron (2/2). Se validaron versión, claves tracking/audio/capture y valores por defecto seguros.
+
+Prueba 7, healthcheck en este entorno: el bind UDP local pasó, OpenCV y NumPy están disponibles, MediaPipe falta y por eso el proceso devuelve código 2; mss, sounddevice y obsws-python aparecen como opcionales ausentes. Este resultado es esperado y confirma que el diagnóstico identifica la dependencia real que falta.
+
 ### Errores detectados y corregidos
 
 1. capture.py podía fallar en el import global si mss o sounddevice no estaban instalados aunque esas funciones estuvieran apagadas. Corrección: imports opcionales y errores locales.
