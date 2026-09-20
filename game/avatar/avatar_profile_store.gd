@@ -59,3 +59,38 @@ func list_profiles() -> Array[String]:
 	dir.list_dir_end()
 	result.sort()
 	return result
+
+func _player_filename(player_id: String) -> String:
+	var safe := _safe_name(player_id)
+	if safe.is_empty():
+		safe = "player"
+	return "player_" + safe + ".json"
+
+func save_player_profile(player_id: String, profile: AvatarProfile) -> bool:
+	return save_profile(profile, _player_filename(player_id))
+
+func load_player_profile(player_id: String) -> AvatarProfile:
+	return load_profile(_player_filename(player_id))
+
+func delete_player_profile(player_id: String) -> bool:
+	var path := BASE_DIR.path_join(_player_filename(player_id))
+	if not FileAccess.file_exists(path):
+		return false
+	return DirAccess.remove_absolute(ProjectSettings.globalize_path(path)) == OK
+
+func list_player_profiles() -> Array[String]:
+	_ensure_directory()
+	var result: Array[String] = []
+	var dir := DirAccess.open(BASE_DIR)
+	if dir == null:
+		return result
+	dir.list_dir_begin()
+	while true:
+		var item := dir.get_next()
+		if item.is_empty():
+			break
+		if not dir.current_is_dir() and item.begins_with("player_") and item.to_lower().ends_with(".json"):
+			result.append(item)
+	dir.list_dir_end()
+	result.sort()
+	return result
