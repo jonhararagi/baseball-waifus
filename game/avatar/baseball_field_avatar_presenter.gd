@@ -26,6 +26,7 @@ var field_motions: Dictionary = {}
 var runner_avatars: Array[AnimeAvatar2D] = []
 var runner_motions: Array[AvatarMotionController] = []
 var runner_players: Dictionary = {}
+var current_runners: Array = [null, null, null]
 var trajectory := AvatarTrajectoryController.new()
 
 func setup(defensive_roster: Dictionary) -> void:
@@ -231,6 +232,7 @@ func animate_hit(plan: Array, after_runners: Array, batter_player: PlayerData = 
 	)
 
 func sync_runners(runners: Array, snap_to_base := true) -> void:
+	current_runners = runners.duplicate()
 	for i in range(3):
 		var token: RunnerToken = runners[i] if i < runners.size() else null
 		var active := token != null
@@ -262,17 +264,13 @@ func on_steal_result(from_base: int, success: bool, destination_base: int) -> vo
 		var target := HOME_POSITION if destination_base < 0 else BASE_POSITIONS[destination_base]
 		trajectory.move_to(runner_avatars[from_base], target, 0.65, 14.0)
 		get_tree().create_timer(0.72).timeout.connect(func():
-			sync_runners(runner_players_to_tokens_placeholder(), true)
+			sync_runners(current_runners, true)
 		)
 	else:
 		runner_motions[from_base].play(AnimeAvatar2D.Pose.OUT, 0.8, AnimeAvatar2D.Pose.IDLE)
 		get_tree().create_timer(0.65).timeout.connect(func():
 			runner_avatars[from_base].visible = false
 		)
-
-func runner_players_to_tokens_placeholder() -> Array:
-	var tokens: Array = [null, null, null]
-	return tokens
 
 func on_game_over(winner: int) -> void:
 	for position in field_avatars.keys():
