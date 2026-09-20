@@ -1751,3 +1751,130 @@ La dirección artística permanece en anime deportivo adulto, redondeado, atlét
 ### Regla de continuidad
 
 `BattedBallEvent` pasa a ser el contrato oficial para la trayectoria visual de una pelota bateada. No se debe volver a dibujar la pelota directamente desde `main.gd` salvo una herramienta de depuración.
+# 22. Revisión 13: Defensa real antes de cerrar un OUT
+
+**Fecha:** 2026-09-20
+**Tipo:** Gameplay defensivo / resolución determinista / integración avatar.
+
+### Motivo
+
+La Revisión 12 tenía una pelota compartida y trayectorias coherentes, pero `BaseballSimulator` todavía podía decidir `OUT` antes de que una defensora interviniera.
+
+Eso se corrige en esta revisión.
+
+### Cambio de arquitectura
+
+Antes:
+
+```text
+Timing → Simulator → OUT
+```
+
+Ahora:
+
+```text
+Timing + batting stats
+        ↓
+BaseballSimulator
+        ↓
+FIELDING_CANDIDATE
+        ↓
+BattedBallEvent
+        ↓
+FieldingResolver
+        ↓
+CAUGHT → OUT
+MISS   → SINGLE
+```
+
+### Implementado
+
+- `game/baseball/fielding_resolver.gd`
+  - regla `fielding_v1`;
+  - defensa efectiva;
+  - distancia al punto de caída;
+  - timing;
+  - calidad de contacto;
+  - bonus pequeño de infield;
+  - RNG reproducible mediante `RandomNumberGenerator`;
+  - resultado `CAUGHT` o `FIELDING MISS`;
+  - trazabilidad mediante chance, roll y versión de regla.
+
+- `game/baseball/baseball_simulator.gd`
+  - sustituye los `OUT` automáticos por `FIELDING_CANDIDATE` cuando la pelota sigue siendo capturable;
+  - conserva la información de calidad del contacto.
+
+- `game/baseball/batted_ball_event.gd`
+  - transporta `contact_quality` al sistema defensivo.
+
+- `scenes/main.gd`
+  - resuelve el fielding antes de llamar a `_apply_batting_result`;
+  - solo después se modifica `BaseballGameState`;
+  - el mismo evento de pelota sigue alimentando la presentación.
+
+- `game/avatar/baseball_field_avatar_presenter.gd`
+  - muestra la carrera hacia el punto de captura;
+  - diferencia captura y error defensivo;
+  - conecta la resolución con Catch, Celebrate, Hit Reaction y Throw.
+
+- `game/ui/hud.gd`
+  - muestra defensora, motivo y chance de captura.
+
+- `docs/fielding-system.md`
+  - documenta la fórmula `fielding_v1` y sus límites.
+
+- `scenes/fielding_test.tscn` + `fielding_test.gd`
+  - herramienta aislada para probar capturas sin depender del partido completo.
+
+### Fórmula actual
+
+```text
+chance =
+    0.05
+  + defense_score * 0.48
+  + positioning_score * 0.16
+  + timing_score * 0.16
+  + ball_handling_score * 0.08
+  + zone_bonus
+```
+
+`chance` se limita entre 8% y 92%.
+
+### Regla
+
+El renderer jamás decide una captura.
+
+El resultado defensivo pertenece al sistema de gameplay y utiliza datos explícitos y auditables.
+
+### Estado
+
+**Implementado:**
+- candidato de batazo en juego;
+- cálculo defensivo antes del OUT;
+- captura o miss;
+- integración visual con el mismo punto de caída;
+- HUD de depuración;
+- prueba aislada del resolver.
+
+**Pendiente:**
+- atrapadas de line drive y fly ball con categorías propias;
+- rebotes;
+- errores de lanzamiento;
+- doble play;
+- asistencias;
+- trayectoria captura → lanzamiento → base siguiente;
+- movimiento completo de runners tras todos los tipos de hit;
+- lineup completo;
+- arte/rig definitivo;
+- runtime Godot + webcam + OBS.
+
+### Porcentaje global revisado
+
+El avance global estimado pasa de **≈39% a ≈41%**.
+
+El incremento corresponde a una parte real del núcleo de béisbol, porque la defensa ahora participa en la resolución en lugar de ser únicamente una animación posterior.
+
+### Regla de continuidad
+
+`FieldingResolver` pasa a ser la única puerta válida para cerrar los `FIELDING_CANDIDATE`.
+No se debe volver a introducir un `OUT` automático para este tipo de batazo en el renderer ni en `main.gd`.
