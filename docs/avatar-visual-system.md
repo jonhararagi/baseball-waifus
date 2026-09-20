@@ -36,3 +36,11 @@ Cada acción puede volver automáticamente a Idle, lo que facilita conectarlas a
 ## Regla
 
 El equipamiento visual no debe modificar directamente estadísticas desde el renderer. El gameplay seguirá calculando sus bonificaciones en los sistemas de equipo/probabilidad. El avatar solo representa el resultado visual.
+
+## Integración con Character Creator
+
+El editor de personajes expone actualmente las seis ranuras visuales de `AvatarEquipment` y el preset corporal `shonen_soft` para probar siluetas redondeadas de anime deportivo sin depender de un asset definitivo.
+
+## Verificación de modelos
+
+La selección del checkpoint no se considera cerrada hasta ejecutar `benchmark_models.py` con las opciones locales. La comparación debe usar el mismo seed, prompt, resolución y negative prompt.
