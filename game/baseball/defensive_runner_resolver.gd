@@ -96,7 +96,7 @@ func _effective_runner_speed(runner: RunnerToken, roster: RefCounted) -> float:
 	if roster != null and not runner.player_id.is_empty():
 		var player := roster.get_player(runner.player_id)
 		if player != null:
-			return float(equipment_stat_adapter.get_stat(player.id, "speed", {"speed": int(player.speed)}, roster))
+			return float(equipment_stat_adapter.get_stat(player.id, "speed", {"speed": int(player.effective_stat("speed"))}, roster))
 	return float(runner.speed)
 
 func _slide_result(runner: RunnerToken, force_play: bool, rng: RandomNumberGenerator) -> Dictionary:
