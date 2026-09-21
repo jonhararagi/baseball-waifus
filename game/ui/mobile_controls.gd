@@ -17,12 +17,19 @@ func _ready() -> void:
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(root)
 
-	hit_button = _make_button("HIT", Vector2(0.72, 0.73), Vector2(0.97, 0.94), 30)
-	steal_button = _make_button("STEAL", Vector2(0.55, 0.82), Vector2(0.70, 0.94), 18)
+	hit_button = _make_button("BATEAR", Vector2(0.72, 0.70), Vector2(0.97, 0.94), 25)
+	hit_button.icon = load("res://assets/ui/baseball_waifus_icon.svg")
+	hit_button.expand_icon = true
+	steal_button = _make_button("ROBAR", Vector2(0.54, 0.80), Vector2(0.70, 0.94), 18)
+
 	hint_label = Label.new()
 	hint_label.position = Vector2(24, 565)
 	hint_label.add_theme_font_size_override("font_size", 16)
-	hint_label.text = "TOCA HIT cuando la pelota entre en la zona."
+	hint_label.add_theme_color_override("font_color", Color(0.94, 0.97, 1.0, 0.92))
+	hint_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.65))
+	hint_label.add_theme_constant_override("shadow_offset_x", 2)
+	hint_label.add_theme_constant_override("shadow_offset_y", 2)
+	hint_label.text = "TOCA BATEAR cuando la pelota entre en la zona."
 	hint_label.visible = false
 	root.add_child(hint_label)
 
@@ -36,6 +43,20 @@ func _ready() -> void:
 	)
 	steal_button.visible = false
 
+func _apply_button_theme(button: Button, accent: Color) -> void:
+	var normal := BaseballUITheme.panel_style(Color(0.06, 0.08, 0.14, 0.96), Color(accent, 0.70), 20, 2)
+	var hover := BaseballUITheme.panel_style(Color(0.10, 0.13, 0.22, 0.98), Color(accent, 0.92), 20, 2)
+	var pressed := BaseballUITheme.panel_style(Color(0.16, 0.19, 0.30, 1.0), Color.WHITE, 20, 3)
+	var disabled := BaseballUITheme.panel_style(Color(0.04, 0.05, 0.08, 0.72), Color(0.4, 0.45, 0.55, 0.35), 20, 1)
+	button.add_theme_stylebox_override("normal", normal)
+	button.add_theme_stylebox_override("hover", hover)
+	button.add_theme_stylebox_override("pressed", pressed)
+	button.add_theme_stylebox_override("disabled", disabled)
+	button.add_theme_color_override("font_color", Color(0.98, 0.99, 1.0))
+	button.add_theme_color_override("font_hover_color", Color.WHITE)
+	button.add_theme_color_override("font_pressed_color", Color.WHITE)
+	button.add_theme_color_override("font_disabled_color", Color(0.55, 0.60, 0.68))
+
 func _make_button(text_value: String, min_anchor: Vector2, max_anchor: Vector2, font_size: int) -> Button:
 	var button := Button.new()
 	button.text = text_value
@@ -48,8 +69,10 @@ func _make_button(text_value: String, min_anchor: Vector2, max_anchor: Vector2, 
 	button.offset_right = 0
 	button.offset_bottom = 0
 	button.add_theme_font_size_override("font_size", font_size)
-	button.custom_minimum_size = Vector2(100, 64)
+	button.custom_minimum_size = Vector2(110, 70)
 	button.visible = false
+	button.focus_mode = Control.FOCUS_NONE
+	_apply_button_theme(button, Color(1.0, 0.46, 0.58))
 	root.add_child(button)
 	return button
 
@@ -62,6 +85,10 @@ func set_swing_enabled(enabled: bool) -> void:
 	if not mobile_active:
 		return
 	hit_button.disabled = not enabled
+	if enabled:
+		hit_button.tooltip_text = "Batear ahora"
+	else:
+		hit_button.tooltip_text = "Espera el lanzamiento"
 
 func set_steal_visible(visible_value: bool) -> void:
 	if not mobile_active:
