@@ -1,6 +1,8 @@
 class_name CharmStateStore
 extends RefCounted
 
+const RosterClass = preload("res://game/characters/character_roster_store.gd")
+
 const SAVE_PATH := "user://baseball_waifus/charm_state.json"
 
 var state: Dictionary = {
@@ -72,16 +74,24 @@ func material_count(item_id: String) -> int:
 func load_player(player: PlayerData) -> void:
     if player == null:
         return
+    var roster := RosterClass.new()
+    var ensured := roster.ensure_character(player)
+    if bool(ensured.get("ok", false)):
+        var persisted: PlayerData = ensured.get("player")
+        if persisted != null:
+            player.charm = persisted.charm
+            player.mood = persisted.mood
+            player.equipment_ids = persisted.equipment_ids.duplicate(true)
+            CharmSystem.configure_player(player)
+            return
     CharmSystem.configure_player(player)
-    player.charm = CharmSystem.clamp_charm(int(state.get("player_charm", {}).get(player.id, 0)))
 
 func save_player(player: PlayerData) -> void:
     if player == null:
         return
-    var charms: Dictionary = state.get("player_charm", {})
-    charms[player.id] = CharmSystem.clamp_charm(player.charm)
-    state["player_charm"] = charms
-    save_state()
+    var roster := RosterClass.new()
+    roster.set_charm(player.id, CharmSystem.clamp_charm(player.charm))
+    roster.set_mood(player.id, player.mood)
 
 func give_gift(player: PlayerData, item_id: String) -> Dictionary:
     var amount := CharmSystem.gift_amount(item_id)
