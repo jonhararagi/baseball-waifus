@@ -7346,3 +7346,70 @@ El workflow ejecutará Godot 4.5.1-stable en headless, lanzará `bw009_character
 
 **≈96% estructural del prototipo.** Este porcentaje no representa porcentaje de arte final, balance definitivo, validación Android local ni contenido completo.
 
+
+
+## Revisión 62: Unidad visual bw010 (Mei Kanzaki)
+
+**Fecha:** 2026-09-21  
+**Tipo:** Pipeline artístico 2D / presentación de colección / Visual QA.
+
+### Motivo
+
+Continuar el pipeline artístico de una personaje por vez después del cierre consolidado de bw009. La unidad se mantiene aislada para detectar errores de identidad, expresión, assets, escena o CI antes de propagarlos al resto del roster.
+
+### Identidad canónica bloqueada
+
+La unidad reutiliza exclusivamente el registro existente de `bw010` en `game/characters/character_archetypes.json`:
+
+- **Nombre:** Mei Kanzaki
+- **Rareza:** SSR
+- **Posición:** DH
+- **Elemento:** Lightning
+- **Especialización:** Pitcher
+- **Potencial:** 5
+- **Stats:** Power 49, Contact 56, Speed 61, Pitch 79, Control 84, Defense 65, Critical 14, Stamina 82.
+- **Identidad:** `lightning_precision_pitcher`
+- **Play identity:** `count_trap`
+- **Acción de firma:** `count_trap`
+- **Skill roles:** `power_down`, `combination`
+- **Paleta canónica:** cabello `#60406e`, acento `#f6d447`, ojos `#473153`, piel `#efc2a0`, uniforme `#f5efff`.
+
+No se crea una segunda fuente de verdad y no se modifican los atributos del catálogo.
+
+### Implementado
+
+- `assets/characters/expressions/bw010_neutral.svg`
+- `assets/characters/expressions/bw010_happy.svg`
+- `assets/characters/expressions/bw010_focused.svg`
+- `assets/characters/expressions/bw010_surprised.svg`
+- `assets/characters/expressions/bw010_disappointed.svg`
+- `scenes/bw010_character_presentation_test.gd`
+- `scenes/bw010_character_presentation_test.tscn`
+- `docs/characters/bw010-presentation-v1.md`
+- job `bw010-visual-qa` en `.github/workflows/visual_qa.yml`.
+
+### Decisiones de producción visual
+
+1. La cadena permanece estrictamente `CharacterArchetypeCatalog -> CharacterExpressionController -> BaseballCharacterCard`.
+2. Los cinco SVG son independientes, vectoriales, autónomos y no contienen `<text>`, fuentes embebidas ni referencias externas.
+3. Las cinco expresiones modifican geometría facial de forma explícita y el test exige que sus contenidos sean distintos.
+4. La dirección visual presenta a Mei como pitcher técnica adulta, con silueta delgada, rasgos definidos y contraste violeta/dorado coherente con Lightning.
+5. La expresión es presentation-only y nunca modifica PlayerData, progresión, equipamiento, RNG, IA ni resultados deportivos.
+6. Los assets se mantienen ligeros y reemplazables por arte final posterior sin cambiar contratos de gameplay.
+7. Todo el desarrollo de bw010 queda agrupado en un único commit consolidado.
+
+### QA y CI
+
+La escena valida identidad, estadísticas, skill roles, acción de firma, paleta, existencia, autonomía y diferenciación de los cinco SVG, además de la resolución de paths mediante `CharacterExpressionController`.
+
+El workflow ejecuta Godot 4.5.1-stable en headless, lanza `bw010_character_presentation_test.tscn` con `--run-qa-capture`, comprueba que `qa_captures/bw010_character_presentation.png` sea no vacío y publica la captura como artifact.
+
+**Runtime local:** no disponible en este entorno debido a la ausencia de Godot instalado y a que la máquina de trabajo no tiene resolución DNS para descargar el binario. No se marca como prueba runtime local. La validación runtime real queda delegada al job de GitHub Actions.
+
+### Estado
+
+**Implementado a nivel estructural, assets, escena, documentación y CI. Pendiente de la ejecución runtime headless de GitHub Actions.**
+
+### Avance aproximado
+
+**≈96% estructural del prototipo.** Este porcentaje no representa porcentaje de arte final, balance definitivo, validación Android local ni contenido completo.
