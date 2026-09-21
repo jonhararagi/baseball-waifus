@@ -6098,3 +6098,93 @@ El cálculo situacional es pequeño y acotado. No se ejecuta una búsqueda de es
 ### Avance aproximado
 
 **≈95%.**
+
+## Revisión 57: coordinador temporal por eventos y preparación sin IA pesada
+
+**Fecha:** 2026-09-21
+**Motivo:** formalizar el modelo operativo solicitado para el partido: el programa debe utilizar conocimiento explícito del béisbol y cálculos pequeños por evento, mientras las ventanas de presentación muestran campo, entorno, personajes y preparación. No se utilizará una IA gráfica pesada ni evaluación continua por segundo.
+
+### Sistemas afectados
+
+- flujo principal del partido;
+- BaseballDecisionPlanner;
+- OpponentAI;
+- presentación temporal de plate appearances;
+- RNG determinista por canal;
+- timing del jugador.
+
+### Implementación
+
+Creado:
+- game/baseball/match_event_scheduler.gd
+- scenes/match_event_scheduler_test.gd
+
+Modificado:
+- scenes/main.gd
+- docs/game-design.md
+- docs/bitacora.md
+
+BaseballMatchEventScheduler introduce eventos discretos para:
+- MATCH_INTRO: presentación inicial del campo;
+- PLATE_PREP: presentación y preparación de la jugada;
+- ACTION_WINDOW: ventana interactiva disponible para futuras decisiones;
+- RESOLUTION: transición lógica sin simulación continua;
+- RESULT: presentación del resultado.
+
+El flujo principal utiliza MATCH_INTRO al iniciar el partido y PLATE_PREP antes de cada lanzamiento. La ventana natural de presentación se convierte así en un punto de preparación de contexto, no en un bucle de IA.
+
+### Decisiones arquitectónicas
+
+1. La IA continúa siendo heurística y local.
+2. No se añade inferencia visual, red neuronal, LLM, Monte Carlo ni búsqueda profunda.
+3. No se realizan cálculos tácticos por frame. El cálculo ocurre al comenzar un evento.
+4. BaseballDecisionPlanner prepara semillas separadas para pitch, contacto, defensa y robo.
+5. El timing del jugador sigue siendo una entrada real y no se reemplaza por un resultado precalculado.
+6. Conocer la semilla no significa conocer el resultado: el timing, las estadísticas y el estado de la jugada siguen entrando en el resolver.
+7. Los resolvers conservan la autoridad sobre resultados deportivos.
+8. El scheduler coordina tiempo/presentación y no modifica probabilidades ni estadísticas.
+9. La ventana visual puede utilizarse para ocultar pequeñas cargas de datos y dar ritmo al partido, pero no se necesita esperar segundos para que la matemática termine.
+
+### Corrección técnica adicional
+
+El resultado de pitch ahora consume el canal RNG preparado por BaseballDecisionPlanner en lugar de usar directamente el RNG global del nodo principal. Esto mantiene el aislamiento determinista entre pitch, contacto, defensa y robo.
+
+### Pruebas
+
+Se creó una prueba estructural de BaseballMatchEventScheduler para:
+- avance parcial de MATCH_INTRO;
+- finalización de eventos;
+- transición PLATE_PREP;
+- ventana ACTION_WINDOW personalizada;
+- snapshot/restore;
+- señales de inicio y finalización.
+
+También se conserva la prueba estructural existente de DecisionPlanner para comprobar semillas deterministas.
+
+**Runtime Godot:** no ejecutado. El entorno actual no dispone de ejecución real de Godot, por lo que estas pruebas se registran como escritas/revisadas estructuralmente y no como ejecución runtime.
+
+### Problemas encontrados y correcciones
+
+- El flujo anterior ya tenía un retardo de PITCH_SELECT, pero estaba representado como un contador específico de escena. Se convirtió en una fase coordinada por eventos sin cambiar la autoridad de gameplay.
+- El RNG de pitch estaba utilizando todavía el RNG global aunque el planner ya preparaba un canal específico. Se corrigió para utilizar el canal preparado.
+- Se evitó hacer que el scheduler predecida resultados. Su función se limita a coordinar ventanas.
+
+### Estado
+
+**Implementado y conectado a nivel de código.**
+
+Pendiente:
+- balance de heurísticas;
+- cobertura defensiva multi-jugadora avanzada;
+- pickoff situacional;
+- activación manual de habilidades del jugador;
+- tablas definitivas de gacha/drop/equipamiento con rolls;
+- simulaciones masivas de balance;
+- ejecución runtime Godot;
+- validación Android.
+
+### Avance aproximado
+
+**≈95%.**
+
+El porcentaje representa avance estructural del prototipo y no contenido final ni validación runtime.
