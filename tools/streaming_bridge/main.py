@@ -142,6 +142,7 @@ def main():
             "service": "streaming_bridge",
             "tracking_active": last_tracking_active,
             "tracking_age_ms": tracking_age_ms,
+            "tracking_provider": tracker.name,
             "fps": current_fps,
             "sequence": max(sequence - 1, 0),
             "sent_packets": sent_packets,
