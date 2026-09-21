@@ -6,7 +6,7 @@ const EquipmentStatAdapterClass = preload("res://game/baseball/equipment_stat_ad
 
 var equipment_stat_adapter := EquipmentStatAdapterClass.new()
 
-func resolve(fielding_resolution: Dictionary, base_runners: Array, outs: int, rng: RandomNumberGenerator, roster: RefCounted = null) -> Dictionary:
+func resolve(fielding_resolution: Dictionary, base_runners: Array, outs: int, rng: RandomNumberGenerator, roster: RefCounted = null, skill_state: BaseballSkillState = null) -> Dictionary:
 	if fielding_resolution.is_empty() or not bool(fielding_resolution.get("success", false)):
 		return {"applied": false, "rule_version": RULE_VERSION}
 
@@ -36,6 +36,8 @@ func resolve(fielding_resolution: Dictionary, base_runners: Array, outs: int, rn
 			0.22,
 			0.84
 		)
+		if skill_state != null:
+			force_chance = clamp(force_chance + skill_state.get_action_modifier(runner.player_id, "defensive_cover"), 0.22, 0.90)
 		var force_roll := rng.randf()
 		var force_success := force_roll < force_chance
 		result["force_out"] = force_success
