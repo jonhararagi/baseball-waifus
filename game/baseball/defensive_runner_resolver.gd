@@ -28,6 +28,8 @@ func resolve(fielding_resolution: Dictionary, base_runners: Array, outs: int, rn
 	if base_runners.size() > 0 and base_runners[0] != null and defender_position in ["P", "1B", "2B", "3B", "SS", "C"]:
 		var runner: RunnerToken = base_runners[0]
 		var runner_speed := _effective_runner_speed(runner, roster)
+		if skill_state != null:
+			runner_speed *= skill_state.get_stat_multiplier(runner.player_id, "speed")
 		var force_chance := clamp(
 			0.30
 			+ defense_score * 0.34
