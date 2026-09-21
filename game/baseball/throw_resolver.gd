@@ -6,14 +6,17 @@ const EquipmentStatAdapterClass = preload("res://game/baseball/equipment_stat_ad
 
 var equipment_stat_adapter := EquipmentStatAdapterClass.new()
 
-func resolve(play: FieldingPlayEvent, defender: PlayerData, receiver: PlayerData, rng: RandomNumberGenerator, roster: RefCounted = null) -> Dictionary:
+func resolve(play: FieldingPlayEvent, defender: PlayerData, receiver: PlayerData, rng: RandomNumberGenerator, roster: RefCounted = null, skill_state: BaseballSkillState = null) -> Dictionary:
 	if play == null or defender == null or receiver == null:
 		return {"error": true, "chance": 0.20, "roll": 0.0, "rule_version": RULE_VERSION, "reason": "MISSING_THROW_ACTOR"}
 
 	var defender_base := {"defense": int(defender.effective_stat("defense"))}
 	var receiver_base := {"defense": int(receiver.effective_stat("defense"))}
-	var defender_defense := equipment_stat_adapter.get_stat(defender.id, "defense", defender_base, roster)
-	var receiver_defense := equipment_stat_adapter.get_stat(receiver.id, "defense", receiver_base, roster)
+	var defender_defense := float(equipment_stat_adapter.get_stat(defender.id, "defense", defender_base, roster))
+	var receiver_defense := float(equipment_stat_adapter.get_stat(receiver.id, "defense", receiver_base, roster))
+	if skill_state != null:
+		defender_defense *= skill_state.get_stat_multiplier(defender.id, "defense")
+		receiver_defense *= skill_state.get_stat_multiplier(receiver.id, "defense")
 	var defense_score := clamp(defender_defense / 120.0, 0.0, 1.0)
 	var receiver_score := clamp(receiver_defense / 120.0, 0.0, 1.0)
 	var distance := play.pickup_point.distance_to(play.throw_target)
