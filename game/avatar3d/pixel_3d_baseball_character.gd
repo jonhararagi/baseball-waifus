@@ -21,44 +21,42 @@ func _build_model() -> void:
     body_root = Node3D.new()
     add_child(body_root)
 
-    torso = _box("Torso", Vector3(0.62, 0.9, 0.38))
+    torso = _box("Torso", Vector3(0.62, 0.9, 0.38), body_root)
     torso.position = Vector3(0, 1.15, 0)
-    head = _box("Head", Vector3(0.48, 0.48, 0.48))
+    head = _box("Head", Vector3(0.48, 0.48, 0.48), body_root)
     head.position = Vector3(0, 1.85, 0)
     bat_pivot = Node3D.new()
     bat_pivot.name = "BatPivot"
     bat_pivot.position = Vector3(0.34, 1.22, 0)
     body_root.add_child(bat_pivot)
 
-    lead_arm = _box("LeadArm", Vector3(0.16, 0.62, 0.16))
-    trail_arm = _box("TrailArm", Vector3(0.16, 0.62, 0.16))
+    lead_arm = _box("LeadArm", Vector3(0.16, 0.62, 0.16), bat_pivot)
+    trail_arm = _box("TrailArm", Vector3(0.16, 0.62, 0.16), bat_pivot)
     lead_arm.position = Vector3(0.28, 0.25, 0)
     trail_arm.position = Vector3(0.16, 0.28, 0.05)
-    bat_pivot.add_child(lead_arm)
-    bat_pivot.add_child(trail_arm)
 
-    front_leg = _box("FrontLeg", Vector3(0.18, 0.72, 0.18))
-    rear_leg = _box("RearLeg", Vector3(0.18, 0.72, 0.18))
+    front_leg = _box("FrontLeg", Vector3(0.18, 0.72, 0.18), body_root)
+    rear_leg = _box("RearLeg", Vector3(0.18, 0.72, 0.18), body_root)
     front_leg.position = Vector3(-0.18, 0.55, 0)
     rear_leg.position = Vector3(0.18, 0.55, 0)
     body_root.add_child(front_leg)
     body_root.add_child(rear_leg)
 
-    var bat := _box("Bat", Vector3(0.10, 1.0, 0.10))
+    var bat := _box("Bat", Vector3(0.10, 1.0, 0.10), bat_pivot)
     bat.position = Vector3(0.0, 0.58, 0)
     bat.rotation_degrees = Vector3(0, 0, 55)
     bat_pivot.add_child(bat)
 
     _apply_materials()
 
-func _box(part_name: String, size: Vector3) -> MeshInstance3D:
+func _box(part_name: String, size: Vector3, parent: Node3D) -> MeshInstance3D:
     var node := MeshInstance3D.new()
     node.name = part_name
     var mesh := BoxMesh.new()
     mesh.size = size
     node.mesh = mesh
     node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
-    body_root.add_child(node)
+    parent.add_child(node)
     return node
 
 func _apply_materials() -> void:
