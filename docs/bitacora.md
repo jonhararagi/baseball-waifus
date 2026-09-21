@@ -5042,11 +5042,12 @@ La prioridad de esta revisión es evitar que cada sistema cree su propio inventa
   - no crea todavía drops SSR/UR ni tasas de gacha.
 
 - `game/progression/reward_transaction_service.gd`
-  - autoridad única para aplicar un lote de rewards ya resuelto;
+  - autoridad única para aplicar un lote de rewards ya resuelto mediante transacción compensatoria;
   - valida antes de mutar;
   - toma snapshot de PlayerProgressStore y CharacterRosterStore;
   - aplica en orden;
   - revierte ambas autoridades si una recompensa falla;
+  - no afirma atomicidad de sistema de archivos ante un cierre exactamente entre dos escrituras;
   - soporta coins, player_energy, materials, equipment, character_energy, charm y character;
   - no decide probabilidades, pity, drops ni resultados de IA.
 
