@@ -2,8 +2,11 @@ class_name DefensiveRunnerResolver
 extends RefCounted
 
 const RULE_VERSION := "defensive_runner_v1"
+const EquipmentStatAdapterClass = preload("res://game/baseball/equipment_stat_adapter.gd")
 
-func resolve(fielding_resolution: Dictionary, base_runners: Array, outs: int, rng: RandomNumberGenerator) -> Dictionary:
+var equipment_stat_adapter := EquipmentStatAdapterClass.new()
+
+func resolve(fielding_resolution: Dictionary, base_runners: Array, outs: int, rng: RandomNumberGenerator, roster: RefCounted = null) -> Dictionary:
 	if fielding_resolution.is_empty() or not bool(fielding_resolution.get("success", false)):
 		return {"applied": false, "rule_version": RULE_VERSION}
 
@@ -24,10 +27,11 @@ func resolve(fielding_resolution: Dictionary, base_runners: Array, outs: int, rn
 	# already on first. The batter then reaches first safely if the force succeeds.
 	if base_runners.size() > 0 and base_runners[0] != null and defender_position in ["P", "1B", "2B", "3B", "SS", "C"]:
 		var runner: RunnerToken = base_runners[0]
+		var runner_speed := _effective_runner_speed(runner, roster)
 		var force_chance := clamp(
 			0.30
 			+ defense_score * 0.34
-			- runner.speed / 500.0
+			- runner_speed / 500.0
 			+ (0.05 if defender_position in ["2B", "SS", "1B", "3B"] else 0.0),
 			0.22,
 			0.84
@@ -53,8 +57,9 @@ func resolve(fielding_resolution: Dictionary, base_runners: Array, outs: int, rn
 	var candidate_index := _rundown_candidate(base_runners)
 	if candidate_index >= 0 and outs < 2:
 		var rundown_runner: RunnerToken = base_runners[candidate_index]
+		var rundown_speed := _effective_runner_speed(rundown_runner, roster)
 		var rundown_chance := clamp(
-			0.07 + defense_score * 0.10 + max(0.0, 1.0 - rundown_runner.speed / 110.0) * 0.05,
+			0.07 + defense_score * 0.10 + max(0.0, 1.0 - rundown_speed / 110.0) * 0.05,
 			0.05,
 			0.22
 		)
@@ -85,6 +90,15 @@ func _rundown_candidate(base_runners: Array) -> int:
 			return index
 	return -1
 
+func _effective_runner_speed(runner: RunnerToken, roster: RefCounted) -> float:
+	if runner == null:
+		return 0.0
+	if roster != null and not runner.player_id.is_empty():
+		var player := roster.get_player(runner.player_id)
+		if player != null:
+			return float(equipment_stat_adapter.get_stat(player.id, "speed", {"speed": int(player.speed)}, roster))
+	return float(runner.speed)
+
 func _slide_result(runner: RunnerToken, force_play: bool, rng: RandomNumberGenerator) -> Dictionary:
 	var headfirst := runner.speed >= 78.0
 	var save_chance := clamp(0.20 + runner.speed / 320.0, 0.20, 0.48)
@@ -99,3 +113,4 @@ func _slide_result(runner: RunnerToken, force_play: bool, rng: RandomNumberGener
 		"roll": roll,
 		"rule_version": RULE_VERSION
 	}
+}
