@@ -96,16 +96,18 @@ func get_equipped_modifiers(character_id: String, roster: RefCounted = null) -> 
 		var id := str(item_id)
 		if id.is_empty():
 			continue
-		for stat in EquipmentCatalogClass.modifiers_for(id).keys():
-			result[stat] = int(result.get(stat, 0)) + int(EquipmentCatalogClass.modifiers_for(id).get(stat, 0))
+		var modifiers := EquipmentCatalogClass.modifiers_for(id)
+		for stat in modifiers.keys():
+			result[stat] = int(result.get(stat, 0)) + int(modifiers.get(stat, 0))
 	return result
 
 func get_effective_stats(character_id: String, base_stats: Dictionary, roster: RefCounted = null) -> Dictionary:
 	var result := {}
 	for key in base_stats.keys():
 		result[str(key)] = int(base_stats[key])
-	for key in get_equipped_modifiers(character_id, roster).keys():
-		result[key] = int(result.get(key, 0)) + int(get_equipped_modifiers(character_id, roster).get(key, 0))
+	var modifiers := get_equipped_modifiers(character_id, roster)
+	for key in modifiers.keys():
+		result[key] = int(result.get(key, 0)) + int(modifiers.get(key, 0))
 	return result
 
 func _stores(progress_store: RefCounted, roster: RefCounted) -> Dictionary:
