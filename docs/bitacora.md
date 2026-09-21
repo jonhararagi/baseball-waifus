@@ -6942,3 +6942,53 @@ Durante la segunda pasada de QA se detectó que los cinco SVG de bw005 habían h
 
 **Runtime Godot:** no se ejecutó localmente. La validación visual headless queda delegada al workflow CI configurado para bw005.
 
+
+
+## Revisión 70: watchdog de cierre para VisualQAExporter
+
+**Fecha:** 2026-09-21  
+**Motivo:** corregir el bloqueo de GitHub Actions causado por procesos Godot headless que no terminaban después de generar la captura visual.
+
+### Alcance
+
+Se modifica exclusivamente el ciclo de vida del exportador visual y su CI. No se toca gameplay, presentación de personajes, estadísticas, resolvers, IA, economía ni persistencia.
+
+### Cambios
+
+- `game/ui/visual_qa_exporter.gd`
+  - conserva la salida explícita `get_tree().quit(0)` después de guardar correctamente el PNG;
+  - añade watchdog de **5 segundos** mediante `get_tree().create_timer(SAFETY_TIMEOUT_SECONDS)`;
+  - el watchdog registra `[QA_VISUAL] Timeout alcanzado. Forzando cierre.` y termina con `get_tree().quit(1)`;
+  - se añaden rutas de fallo explícitas para viewport, textura, imagen, directorio y `save_png()`;
+  - se utiliza un estado `_finished` para impedir doble cierre o procesamiento posterior.
+- `scenes/visual_qa_exporter_test.gd`
+  - valida estructuralmente el contrato de terminación 0/1, el timeout de 5 s y la conexión del timer.
+- `scenes/visual_qa_exporter_test.tscn`
+  - escena dedicada para ejecutar el contrato de QA con Godot headless.
+- `.github/workflows/visual_qa.yml`
+  - añade el test de contrato del exportador;
+  - limita los procesos Godot headless de CI a 15 s como segunda barrera si el motor no llega a ejecutar el watchdog;
+  - conserva Godot 4.5.1-stable y las capturas de bw004/bw005.
+
+### Decisiones arquitectónicas
+
+1. El éxito de captura siempre termina con código 0 inmediatamente después de `save_png()`.
+2. Cualquier fallo del exportador termina con código 1 de forma explícita.
+3. El watchdog de 5 s empieza únicamente cuando se solicita `--run-qa-capture`.
+4. La protección de 15 s en shell es una barrera CI adicional para fallos anteriores al arranque efectivo del nodo exportador.
+5. VisualQAExporter continúa siendo una herramienta de validación y no adquiere autoridad sobre gameplay.
+
+### Pruebas
+
+- Inspección estructural de `VisualQAExporter` y del workflow existente.
+- Se añadió un test de contrato para verificar timeout, código de salida exitoso y código de salida de error.
+- Se añadió límite de proceso de 15 s en ambos jobs de captura.
+- **Runtime Godot:** no se ejecutó localmente en este entorno. La verificación runtime final queda delegada a GitHub Actions.
+
+### Estado
+
+**Corrección implementada a nivel de código y CI.** El exportador ya posee una ruta normal de cierre y un watchdog explícito para evitar jobs atascados indefinidamente.
+
+### Avance aproximado
+
+**≈96% estructural del prototipo.** Este porcentaje no representa porcentaje de arte final, balance definitivo, validación Android ni contenido completo.
