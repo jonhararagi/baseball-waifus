@@ -288,7 +288,7 @@ func _swing() -> void:
 		var double_play: Dictionary = fielding_result.get("double_play", {})
 		if bool(double_play.get("success", false)):
 			fielding_play = FieldingPlayEvent.from_resolution(ball_event, fielding_result)
-		elif not bool(fielding_result.get("success", false)):
+		elif not bool(fielding_result.get("success", false)) and str(fielding_result.get("reason", "")) == "FIELDING MISS":
 			fielding_play = FieldingPlayEvent.from_resolution(ball_event, fielding_result)
 			var defender: PlayerData = defensive_roster.get(str(fielding_result.get("defender_position", "")))
 			var receiver: PlayerData = defensive_roster.get(fielding_play.receiver_position)
