@@ -3568,3 +3568,95 @@ A partir de esta revisión, cualquier trabajo artístico debe comenzar leyendo:
 y utilizar `character_archetypes.json` como autoridad de identidad.
 
 Las revisiones históricas no se borran.
+
+
+# Revisión 31: Amor o Encanto + separación 2D/3D de arte
+
+**Fecha:** 2026-09-21
+**Tipo:** Sistema de progresión social / contenido / arquitectura visual / prototipo 3D.
+
+### Motivo
+
+El núcleo defensivo y la consolidación del canon artístico ya estaban implementados. El siguiente bloque añadido es una capa de interacción de colección que no debe alterar la resolución del béisbol, junto con la primera implementación del modelo 3D de gameplay para que el arte 2D de cartas no termine funcionando como sustituto del personaje en el campo.
+
+### Qué se implementa
+
+Sistema Amor o Encanto:
+- Encanto 0-100.
+- Bonus primario determinista de +1 por cada punto de Encanto.
+- Cada 10 puntos: +1 a tres estadísticas secundarias deterministas por posición.
+- Límite de estadísticas de gameplay en 100 tras aplicar el bonus.
+- Cinco tipos de regalos con cantidades finitas.
+- Persistencia local del estado.
+- Máximo de 3 personajes conversados por día.
+- Una charla diaria por personaje.
+- 10 conversaciones por cada uno de los 30 personajes.
+- Tres respuestas por conversación.
+- Respuesta correcta: +20 Encanto.
+- Respuesta incorrecta: +3 Encanto.
+- Catálogo generado desde la identidad existente del roster, sin inventar personajes ni estadísticas.
+
+Archivos principales:
+- game/progression/charm_system.gd
+- game/progression/charm_state_store.gd
+- game/progression/charm_dialogue_catalog.gd
+- game/progression/charm_dialogues.json
+- game/progression/charm_rules_test.gd
+- scenes/charm_rules_test.tscn
+- docs/canon/charm-and-affection-canon-v1.md
+
+Modelo 3D de gameplay:
+- game/avatar3d/pixel_3d_baseball_character.gd
+- game/avatar3d/pixel_3d_batting_controller.gd
+- game/avatar3d/pixel_3d_ball_presenter.gd
+- game/avatar3d/pixel_3d_match_stage.gd
+- game/avatar3d/player_3d_avatar_adapter.gd
+- scenes/pixel_3d_match_test.tscn
+- scenes/pixel_3d_gameplay_test.tscn
+
+El modelo es procedural low-poly/pixel-friendly, sin assets externos. El controlador representa READY, LOAD, SWING, FOLLOW_THROUGH, RUN, SLIDE, CATCH, THROW, CELEBRATE y DEFEAT. La pelota utiliza una trayectoria de presentación independiente.
+
+### Decisiones arquitectónicas
+
+1. PlayerData sigue siendo la fuente de gameplay.
+2. CharmSystem calcula bonus de afinidad, nunca el renderer.
+3. CharmStateStore conserva límites diarios y materiales.
+4. CharmDialogueCatalog conserva el contenido de preguntas y respuestas.
+5. La UI futura solo presentará opciones y resultados.
+6. El arte 2D plano queda reservado para fichas/cartas/colección.
+7. El modelo 3D pixel/low-poly se reserva para gameplay y animación.
+8. Ambos renderers consumen AvatarProfile y no pueden modificar resultados de béisbol.
+9. No se incorpora streaming, webcam, OBS ni tracking al flujo de este bloque.
+
+### Pruebas
+
+**Pruebas estructurales implementadas:**
+- Encanto no supera 100.
+- Bonus primario y secundarios son deterministas.
+- Bonus secundario aparece al alcanzar cada múltiplo de 10.
+- Límite diario de 3 charlas.
+- Un personaje no puede recibir dos charlas el mismo día.
+- Stock de regalos se consume y no puede quedar negativo.
+- El catálogo contiene 10 conversaciones y exactamente una respuesta correcta por conversación.
+
+**Runtime:** no se ejecutó Godot en este entorno. Las escenas de test están preparadas, pero no se declara una validación runtime.
+
+### Problemas/correcciones
+
+La primera generación del catálogo de diálogos podía producir respuestas duplicadas en preguntas de posición/rareza. El catálogo fue regenerado para garantizar exactamente una respuesta correcta por pregunta.
+
+El controlador 3D podía conservar desplazamientos de una pose anterior. Se añadió reinicio explícito de transformaciones antes de cada frame de acción.
+
+### Estado
+
+**Implementado:** sistema de Encanto funcional a nivel de lógica y persistencia local, contenido inicial para las 30 personajes, integración con PlayerData, pruebas estructurales, pipeline 3D procedural y animaciones principales.
+
+**Pendiente:** menú/UI de Encanto, integración con inventario/economía futura, fuentes de materiales, guardado global de PlayerData, integración completa del renderer 3D con el partido principal, modelos 3D finales por personaje, rig/sprites de producción, animaciones de producción, audio/VFX finales y validación runtime en Godot.
+
+### Porcentaje global revisado
+
+El avance ponderado pasa de **≈70% a ≈74%**. El incremento refleja un bloque funcional nuevo de progresión social y el primer renderer 3D de gameplay, sin considerar como terminados los sistemas económicos, gacha, crianza, campaña completa ni el arte de producción final.
+
+### Regla de continuidad
+
+No se vuelve a usar el arte 2D de carta como modelo de campo. Las futuras mejoras visuales deben extender la bifurcación Card Renderer / Pixel 3D Gameplay Renderer y conservar PlayerData/AvatarProfile como fuente común.
