@@ -5775,3 +5775,18 @@ No se ejecutó Godot runtime en este entorno. Por tanto, se registra como prueba
 **≈92%.**
 
 El incremento representa integración del sistema de habilidades con más resolvers del núcleo. No significa que el juego esté terminado ni que exista validación runtime.
+
+
+### Addendum de Revisión 52: consumo de buffs estadísticos defensivos
+
+Se ajustó la integración para que los buffs estadísticos no queden solo almacenados:
+
+- FieldingResolver ahora aplica multiplicadores de Defense del SkillState antes de su fórmula de fielding.
+- DefensiveRunnerResolver aplica multiplicadores de Speed del SkillState antes de force-out/rundown.
+- ThrowResolver aplica multiplicadores de Defense del SkillState tanto a lanzadora como receptora.
+- scenes/main.gd suministra SkillState también a ThrowResolver.
+- skill_system_test.gd incorpora comprobaciones de Pitch Down y Catch Boost sobre las probabilidades de los resolvers reales.
+
+La fórmula base de cada resolver no fue reemplazada. Los modificadores se aplican en la entrada de la fórmula y el resolver conserva sus límites.
+
+**Runtime Godot:** no ejecutado.
