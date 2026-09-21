@@ -4749,3 +4749,112 @@ Se mantiene el test estructural de cola y reclamación de la Revisión 42.
 ## Regla de continuidad
 
 La cola de entrenamiento almacena intención y timestamps. Las ganancias siempre proceden de `EconomyRules`; ningún valor de ganancia se acepta directamente desde el archivo de guardado.
+
+
+# Revisión 44: secondary motion corporal 3D
+
+**Fecha:** 2026-09-21
+
+## Motivo
+
+El renderer 3D procedural ya disponía de cuerpo modular y estados de animación, pero las piezas corporales se comportaban como geometría rígida. Para que las jugadoras adultas tengan una presentación anime deportiva más convincente, se añade movimiento secundario amortiguado en torso/espalda, pecho, cadera/falda y muslos.
+
+La intención es conseguir una lectura corporal dinámica, especialmente durante carrera, swing, slide y vistas de espalda o tres cuartos, sin copiar modelos o animaciones de terceros.
+
+## Sistemas afectados
+
+- Renderer 3D procedural.
+- Animación de personajes.
+- Presentación de partido.
+- Pipeline visual.
+- QA visual estructural.
+
+## Cambios implementados
+
+Se creó:
+
+- `game/avatar3d/secondary_motion_3d.gd`
+- `docs/secondary-motion-v1.md`
+- `scenes/secondary_motion_test.gd`
+- `scenes/secondary_motion_test.tscn`
+
+Se modificó:
+
+- `game/avatar3d/pixel_3d_baseball_character.gd`
+- `game/avatar3d/pixel_3d_batting_controller.gd`
+
+### Arquitectura
+
+`Pixel3DBaseballCharacter` crea anclajes visuales independientes para:
+
+- pecho izquierdo/derecho;
+- torso;
+- cadera/falda;
+- muslo/pierna frontal;
+- muslo/pierna trasera.
+
+`SecondaryMotion3D` calcula una respuesta cinemática de resorte amortiguado.
+
+El `Pixel3DBattingController` transforma cada acción en una intención de movimiento visual:
+
+- READY;
+- LOAD;
+- SWING;
+- FOLLOW_THROUGH;
+- RUN;
+- SLIDE;
+- CATCH;
+- THROW;
+- CELEBRATE;
+- DEFEAT.
+
+El resultado se limita a presentación. No existe ninguna dependencia con `BaseballGameState`, probabilidades, estadísticas, IA o recompensas.
+
+## Decisiones técnicas
+
+1. Se usa spring-damping en lugar de cuerpos físicos y joints para mantener bajo el coste por personaje.
+2. El movimiento secundario tiene límites de desplazamiento y rotación.
+3. La capa corporal recibe intención de animación, no información de resultado.
+4. Las masas de pecho usan el material del uniforme para conservar una lectura estilizada y no introducir assets adicionales.
+5. La cadera se representa principalmente mediante el volumen/falda y su sway, evitando crear una segunda física de gameplay.
+6. El sistema está preparado para que posteriormente un modelo de producción sustituya la geometría procedural sin cambiar el contrato de gameplay.
+
+## Pruebas
+
+Se añadió un test estructural que verifica:
+
+- perfil bw001;
+- creación del personaje 3D;
+- existencia del componente SecondaryMotion3D;
+- anclajes de pecho;
+- anclaje de cadera/falda;
+- anclajes de muslos;
+- recepción de intención y nudge.
+
+**Runtime Godot:** no ejecutado. El entorno disponible no contiene el binario Godot. Por tanto, esta revisión no declara validación visual runtime ni rendimiento en dispositivo.
+
+## Problemas y correcciones
+
+**Problema:** torso, falda y piernas eran piezas rígidas durante las acciones.
+
+**Corrección:** se añadió una capa de movimiento secundario desacoplada del gameplay.
+
+**Problema potencial:** usar física real por cada pieza elevaría el coste y podría producir resultados inestables entre muchos personajes.
+
+**Corrección:** spring-damping cinemático con límites explícitos.
+
+## Estado
+
+**Implementado:** movimiento secundario corporal 3D y prueba estructural.
+
+**Pendiente:** calibración visual runtime, clips de animación finales, modelos 3D de producción, materiales definitivos y prueba de rendimiento móvil.
+
+## Avance global aproximado
+
+**≈84%.**
+
+El porcentaje sigue representando alcance técnico ponderado, no porcentaje de arte final.
+
+## Regla de continuidad
+
+Toda futura física visual corporal debe permanecer en la capa de presentación. Ningún movimiento secundario puede alterar el resultado del béisbol, hitboxes, estadísticas, probabilidades, recompensas o estado de partido.
