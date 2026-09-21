@@ -5364,3 +5364,41 @@ De esta forma, la ruta efectiva ya no queda únicamente disponible en los resolv
 Los personajes del equipo rival que no pertenezcan al roster persistente conservan sus estadísticas base, por lo que no se crea propiedad accidental de personajes rivales.\n\nLa lectura de la estadística previa al equipamiento conserva PlayerData.effective_stat(), por lo que Charm/Potential existentes no se pierden al añadir modificadores de equipamiento.
 
 **Runtime Godot:** sigue pendiente. Esta integración fue verificada por inspección estructural del código, no mediante ejecución de Godot.
+
+
+### Revisión 49 — Diversidad de personajes adultos
+
+**Fecha:** 2026-09-21
+
+**Motivo:** establecer explícitamente que Baseball Waifus debe representar múltiples tipos de mujeres adultas, evitando que el roster termine siendo una misma silueta/arquetipo repetida con cambios de color.
+
+**Sistemas afectados:**
+- diseño de personajes;
+- pipeline visual;
+- roster;
+- documentación de personalidad;
+- separación gameplay/visual.
+
+**Decisiones:**
+- se mantienen y amplían los arquetipos corporales existentes;
+- se contemplan personajes femeninos, curvilíneos/voluptuosos, atléticos, musculosos/tomboy, altos, bajos, delgados y robustos;
+- se contemplan estilos desde idols muy arregladas hasta personajes deportivos, elegantes, callejeros o desarreglados;
+- se incorporan como posibilidades de diseño detalles como pecas, ojeras, maquillaje, cabello cuidado/desordenado y distintos calzados;
+- se permiten personalidades y hábitos muy diferentes, incluyendo personajes introvertidos o con estilo de vida hikikomori;
+- ninguna característica corporal, estética o personalidad modifica estadísticas o probabilidades por sí misma.
+
+**Archivos creados/modificados:**
+- `docs/characters/character-diversity-v1.md`
+- `docs/game-design.md`
+
+**Pruebas/revisión:**
+- se inspeccionó el catálogo actual de 30 personajes;
+- actualmente existen los presets corporales `power`, `athletic`, `balanced`, `slim` y `curvy`;
+- se decidió conservarlos en lugar de reemplazarlos;
+- no se modificaron las 30 fichas individuales porque la nueva regla no debe alterar el canon visual existente sin una revisión personaje por personaje.
+
+**Estado:** adoptado como principio de diseño del roster. La expansión de arquetipos y asignación de variantes queda para el pipeline/personajes cuando corresponda.
+
+**Runtime Godot:** no aplica a esta revisión documental.
+
+**Avance aproximado:** ≈89%.
