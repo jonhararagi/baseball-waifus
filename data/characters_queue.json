@@ -1,76 +1,90 @@
 {
   "schema_version": 1,
-  "character_id": "bw014",
+  "character_id": "bw015",
   "canonical": {
-    "display_name": "Rin Asakura",
+    "display_name": "Momo Hoshino",
     "adult": true,
-    "rarity": "SR",
-    "position": "CF",
-    "element": "ice",
-    "specialization": "runner",
-    "potential": 4,
+    "rarity": "SSR",
+    "position": "DH",
+    "element": "fire",
+    "specialization": "power",
+    "potential": 5,
     "stats": {
-      "power": 53,
-      "contact": 68,
-      "speed": 94,
-      "pitch": 46,
-      "control": 56,
-      "defense": 74,
-      "critical": 10,
-      "stamina": 77
+      "power": 71,
+      "contact": 70,
+      "speed": 54,
+      "pitch": 66,
+      "control": 78,
+      "defense": 68,
+      "critical": 15,
+      "stamina": 83
     },
     "identity": {
-      "archetype": "ice_speed_specialist",
+      "archetype": "warm_curvy_power_hitter",
       "style_tags": [
-        "slim",
-        "athletic",
-        "quiet",
-        "runner"
+        "warm",
+        "curvy",
+        "cheerful",
+        "power"
       ],
-      "play_identity": "hit_for_speed",
+      "play_identity": "clutch_contact",
       "story_status": "story_seed",
-      "story_hook": "Su obsesión por la velocidad la llevó a practicar el toque hasta convertirlo en amenaza.",
+      "story_hook": "Descubre que su mejor turno no siempre termina en Home Run, sino en la carrera que abre el partido.",
       "signature_action_ids": [
-        "drag_bunt"
+        "sacrifice_fly_focus"
       ],
-      "contrast": "La corredora más rápida no siempre roba: a veces obliga a la defensa a perseguir una pelota corta.",
       "skill_roles": [
         "attack",
-        "statistic"
+        "support"
       ]
     },
     "visual": {
-      "body_preset": "slim",
-      "height": 0.92,
-      "face_style": "soft",
-      "skin": "#f3ceb5",
-      "hair_color": "#7fa0b8",
-      "hair_style": "long",
-      "uniform_style": "sporty",
-      "uniform_color": "#edf8ff",
-      "accent": "#8ad9ff",
-      "eye": "#334957"
+      "body_preset": "curvy_power",
+      "height": 0.98,
+      "face_style": "warm",
+      "skin": "#e8b18f",
+      "hair_color": "#b85a3f",
+      "hair_style": "medium_wavy",
+      "uniform_style": "classic_baseball",
+      "uniform_color": "#fff0dd",
+      "accent": "#e4572e",
+      "eye": "#633022"
     }
   },
   "pollinations": {
-    "base_prompt": "adult anime female baseball player, Rin Asakura, SR rarity, center fielder, ice-element speed specialist, slim athletic adult woman, quiet composed personality, long cool blue-gray hair, soft facial features, focused sports expression, modern anime baseball uniform with sporty styling, pale icy blue and white palette, cyan accents, deep blue-gray eyes, premium anime mobile game character art, polished production-quality key visual, clean silhouette, full upper-body three-quarter portrait, card-ready composition, refined cel shading, crisp linework, detailed hair strands, expressive eyes, subtle fabric folds, controlled rim lighting, elegant color harmony, high visual clarity, no text, no logo, no watermark",
+    "base_prompt": "adult anime female baseball player, Momo Hoshino, SSR rarity, designated hitter, warm fire-element power hitter, curvy athletic adult woman, medium wavy terracotta-red hair, warm dark brown eyes, confident cheerful smile, classic anime baseball uniform, warm cream and vibrant orange-red palette, fiery accent details, polished anime mobile game character art, clean silhouette, centered three-quarter portrait, soft studio lighting, crisp linework, detailed eyes and hair, no text, no logo, no watermark",
     "negative_prompt": "child, teenager, loli, underage, young-looking, male, chibi, mascot proportions, duplicate character, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, blurry face, low detail, muddy colors, oversaturated neon, photorealistic, western comic style, 3d render, text, logo, watermark, cropped head, cropped face, broken anatomy, exaggerated body proportions",
     "expressions": {
-      "neutral": "calm neutral expression, composed gaze, relaxed mouth, quiet confidence, balanced posture",
-      "happy": "gentle genuine smile, slightly brighter eyes, subtle cheerful warmth, relaxed shoulders, restrained celebration",
-      "focused": "intense runner focus, narrowed eyes, firm mouth, forward-leaning posture, concentrated competitive energy",
-      "surprised": "clear sudden surprise, widened eyes, raised eyebrows, slightly parted lips, brief loss of composure",
-      "disappointed": "quiet disappointment, softened gaze, small frown, controlled frustration, shoulders slightly lowered"
-    },
-    "generation_notes": {
-      "output_role": "character_expression_source",
-      "expression_count": 5,
-      "preserve_identity_across_variants": true,
-      "preserve_palette_across_variants": true,
-      "preserve_silhouette_across_variants": true,
-      "preserve_hair_style_across_variants": true,
-      "preserve_uniform_style_across_variants": true,
-      "no_embedded_text": true
+      "neutral": "calm warm expression, relaxed posture, friendly approachable gaze, gentle smile",
+      "happy": "bright joyful smile, beaming eyes, enthusiastic posture, celebratory energy",
+      "focused": "intense batting concentration, determined fiery gaze, firm posture, narrowed eyes",
+      "surprised": "surprised expression, wide brown eyes, raised eyebrows, mouth slightly open, expressive reaction",
+      "disappointed": "disappointed posture, subtle frown, softened eyes, quiet frustration, dignified composure"
     }
+  },
+  "pixel_art_generator": {
+    "sprite_resolution": "128x128",
+    "style": "16-bit anime game sprite, clean pixel grid, sharp outlines, vibrant shading, transparent background",
+    "prompt_sprite": "pixel art 128x128 sprite, anime baseball player Momo Hoshino, side view batting stance, terracotta hair, cream and orange uniform, clean pixel outline, 16-bit retro arcade game style, no background"
+  },
+  "animation_layers": {
+    "type": "2D_cutout_node_system",
+    "root_node": "MomoHoshino_Rig",
+    "parts": [
+      "head_neutral",
+      "hair_wavy_back",
+      "hair_wavy_front",
+      "torso_curvy",
+      "arm_left_bat_grip",
+      "arm_right_bat_grip",
+      "legs_power_stance",
+      "baseball_bat_fire"
+    ],
+    "preset_animations": [
+      "idle_breathing",
+      "batting_ready_loop",
+      "power_swing_execution",
+      "base_run_sprint"
+    ]
   }
 }
