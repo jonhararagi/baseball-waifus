@@ -137,3 +137,10 @@ La tarjeta admite un estado expresivo independiente del PlayerData. El primer pe
 El estado se resuelve mediante CharacterExpressionController y puede cambiarse sin reconstruir la tarjeta ni tocar gameplay. Los assets faltantes hacen fallback al retrato base.
 
 La producción se realiza personaje por personaje. No se generan automáticamente las expresiones de las otras 29 personajes hasta validar el primer flujo en runtime.
+
+
+## Iconografía del Hub
+
+La navegación del Hub utiliza iconografía vectorial propia mediante `BaseballHubMenuIcon`. No se utilizan emojis ni glifos dependientes de fuentes de plataforma para representar funciones. El texto de cada botón permanece visible para conservar claridad y accesibilidad.
+
+Los iconos se identifican por contratos estables (`history`, `team`, `training`, `equipment`, `gacha`, `inventory`, `story`, `events`, `options`).
