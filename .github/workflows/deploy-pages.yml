@@ -1,0 +1,102 @@
+name: Baseball Waifus Telegram Mini App
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-22.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate required frontend structure
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s webapp/index.html
+          test -s webapp/css/style.css
+          test -s webapp/js/app.js
+          test -s webapp/js/combat.js
+          test -s webapp/js/api.js
+          test -d assets/production/sprites
+          test -d assets/production/cards
+
+      - name: Validate JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --version
+          node --experimental-default-type=module --check webapp/js/api.js
+          node --experimental-default-type=module --check webapp/js/combat.js
+          node --experimental-default-type=module --check webapp/js/app.js
+
+      - name: Prepare static site
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf site
+          mkdir -p site
+          cp -R webapp/. site/
+          mkdir -p site/assets/production/sprites site/assets/production/cards
+          cp -R assets/production/sprites/. site/assets/production/sprites/ || true
+          cp -R assets/production/cards/. site/assets/production/cards/ || true
+
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path("site/assets/production")
+          allowed = {".png", ".jpg", ".jpeg", ".webp", ".avif", ".svg"}
+
+          def collect(folder):
+              items = []
+              base = root / folder
+              for path in sorted(base.rglob("*")):
+                  if path.is_file() and path.suffix.lower() in allowed:
+                      items.append({
+                          "id": path.stem,
+                          "path": "./assets/production/%s" % path.relative_to(root).as_posix()
+                      })
+              return items
+
+          manifest = {
+              "version": 1,
+              "sprites": collect("sprites"),
+              "cards": collect("cards")
+          }
+
+          (root / "manifest.json").write_text(
+              json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8"
+          )
+          print(json.dumps(manifest, ensure_ascii=False, indent=2))
+          PY
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
