@@ -315,7 +315,7 @@ func _swing() -> void:
 			fielding_play = FieldingPlayEvent.from_resolution(ball_event, fielding_result)
 			var defender: PlayerData = defensive_roster.get(str(fielding_result.get("defender_position", "")))
 			var receiver: PlayerData = defensive_roster.get(fielding_play.receiver_position)
-			var throw_result := throw_resolver.resolve(fielding_play, defender, receiver, rng, character_roster)
+			var throw_result := throw_resolver.resolve(fielding_play, defender, receiver, rng, character_roster, skill_state)
 			current_result["fielding"]["throwing_error"] = throw_result
 			if bool(throw_result.get("error", false)):
 				current_result["result"] = "FIELDING ERROR"
