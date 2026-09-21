@@ -32,7 +32,9 @@ func resolve(event: BattedBallEvent, defensive_roster: Dictionary, timing_value:
 		return _miss_result("missing_defender")
 
 	var defense_base := {"defense": int(defender.effective_stat("defense"))}
-	var effective_defense := equipment_stat_adapter.get_stat(defender.id, "defense", defense_base, roster)
+	var effective_defense := float(equipment_stat_adapter.get_stat(defender.id, "defense", defense_base, roster))
+	if skill_state != null:
+		effective_defense *= skill_state.get_stat_multiplier(defender.id, "defense")
 	var defense_score := clamp(effective_defense / 120.0, 0.0, 1.0)
 	var target_position: Vector2 = FIELD_POSITIONS.get(defender_position, event.target)
 	var distance_score := clamp(target_position.distance_to(event.target) / 420.0, 0.0, 1.0)
