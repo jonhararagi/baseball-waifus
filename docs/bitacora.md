@@ -3360,7 +3360,8 @@ Cubre:
 - límites de probabilidad de zona;
 - walk con bases llenas;
 - walk con primera libre;
-- avance del lineup del equipo original después del tercer out.
+- avance del lineup del equipo original después del tercer out;
+- cierre del partido cuando el equipo local ya lidera tras la parte alta del último inning.
 
 **No se declara ejecución runtime de Godot en esta revisión:** el entorno utilizado para la revisión no tiene el binario de Godot disponible.
 
