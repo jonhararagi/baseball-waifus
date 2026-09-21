@@ -188,14 +188,21 @@ func _start_pitch() -> void:
 			state.base_runners[0] != null,
 			state.base_runners[1] != null,
 			state.base_runners[2] != null
-		]
+		],
+		"max_innings": state.max_innings,
+		"batter": batter,
+		"pitcher": pitcher,
+		"defensive_roster": defensive_roster
 	})
 	if state.team_batting() == 1:
-		var ai_skill := ai.maybe_use_offensive_skill(batter, pitcher, {"phase": "pitch"}, skill_state)
+		var ai_plan := ai.choose_situational_action(batter, pitcher, {"phase": "pitch", "situation": decision_planner.current_plan().get("situation", {})}, skill_state)
+		if str(ai_plan.get("action", "BAT")) == "STEAL":
+			message = "AI tactical action: STEAL"
+		var ai_skill: Dictionary = ai_plan.get("skill", {})
 		if bool(ai_skill.get("used", false)):
 			message = "AI skill: " + str(ai_skill.get("skill_id", ""))
 	var pitch_rng := decision_planner.rng_for("pitch")
-	current_pitch = Pitch.create(ai.choose_pitch(pitcher, state.strikes, state.balls, pitch_rng))
+	current_pitch = Pitch.create(ai.choose_pitch(pitcher, state.strikes, state.balls, pitch_rng, decision_planner.current_plan().get("situation", {})))
 	pitch_elapsed = 0.0
 	phase = "PITCHING"
 	_get_hud().clear_result()
