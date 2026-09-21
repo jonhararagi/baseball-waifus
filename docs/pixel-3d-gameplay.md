@@ -72,3 +72,12 @@ Pending:
 - camera choreography;
 - final materials, textures, lighting and VFX;
 - runtime validation in Godot.
+
+
+## Actualización visual v2
+
+El prototipo 3D dejó de utilizar exclusivamente cajas primitivas. `Pixel3DBaseballCharacter` conserva el mismo contrato, pero construye una figura anime deportiva modular con cabeza, cabello, ojos, uniforme, falda, brazos, piernas, calzado, bate y gorra. El cambio es exclusivamente de presentación.
+
+El stage añade iluminación de prueba y acepta payloads de trayectoria para que la pelota siga siendo una representación de eventos ya resueltos.
+
+El objetivo final continúa siendo sustituir la geometría procedural por modelos 3D de producción sin tocar PlayerData, AvatarProfile, resolvers ni GameState.
