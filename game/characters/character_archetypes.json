@@ -933,7 +933,7 @@
         "hip_width": 1.18,
         "bust": 1.16,
         "head_scale": 1,
-        "face_style": "round",
+        "face_style": "warm",
         "skin": "#e8b18f",
         "hair_color": "#b85a3f",
         "uniform_color": "#fff0dd",
@@ -954,9 +954,9 @@
       "character_identity": {
         "archetype": "warm_curvy_power_hitter",
         "style_tags": [
+          "warm",
           "curvy",
-          "friendly",
-          "glamorous",
+          "cheerful",
           "power"
         ],
         "play_identity": "clutch_contact",
@@ -965,10 +965,10 @@
         "signature_action_ids": [
           "sacrifice_fly_focus"
         ],
-        "contrast": "Una bateadora asociada al poder acepta buscar una pelota profunda aunque el resultado oficial sea un out.",
+        "contrast": "Una bateadora asociada al poder acepta buscar profundidad para fabricar una carrera, aunque la jugada no termine en un hit.",
         "skill_roles": [
           "attack",
-          "power_up"
+          "support"
         ]
       }
     },
