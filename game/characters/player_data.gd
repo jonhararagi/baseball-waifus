@@ -18,8 +18,21 @@ extends Resource
 @export var critical := 10
 @export var stamina := 70
 
+@export_category("Charm")
+@export_range(0, 100, 1) var charm := 0
+@export var charm_primary_stat := "contact"
+@export var charm_bonus_stats: Array = ["speed", "defense", "stamina"]
+
 func effective_stat(stat: String) -> float:
-	return float(get(stat)) * (0.85 + 0.03 * potential)
+    if charm_primary_stat.is_empty():
+        CharmSystem.configure_player(self)
+    var charm_adjusted := CharmSystem.stat_after_charm(self, stat)
+    return float(charm_adjusted) * (0.85 + 0.03 * potential)
+
+func charm_stat_bonus(stat: String) -> int:
+    if charm_primary_stat.is_empty():
+        CharmSystem.configure_player(self)
+    return CharmSystem.stat_bonus(self, stat)
 
 func is_pitcher() -> bool:
-	return position == "P"
+    return position == "P"
