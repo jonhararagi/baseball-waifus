@@ -7613,3 +7613,89 @@ Mantener el pipeline visual de una personaje por vez, trasladando la definición
 ### Avance aproximado
 
 **≈96% estructural del prototipo.**
+
+
+## Revisión 66: Unidad de generación visual bw015 (Momo Hoshino)
+
+**Fecha:** 2026-09-21  
+**Tipo:** Pipeline artístico data-first / preparación de generación / QA estructural.
+
+### Motivo
+
+Integrar de forma controlada la siguiente unidad del pipeline, una sola personaje por vez, utilizando la estructura completa proporcionada para bw015 sin alterar resolvers de béisbol ni crear una segunda autoridad de gameplay.
+
+### Identidad canónica
+
+- Nombre: Momo Hoshino.
+- Adult: true.
+- Rareza: SSR.
+- Posición: DH.
+- Elemento: Fire.
+- Especialización: Power.
+- Potencial: 5.
+- Stats: Power 71, Contact 70, Speed 54, Pitch 66, Control 78, Defense 68, Critical 15, Stamina 83.
+- Arquetipo: warm_curvy_power_hitter.
+- Play identity: clutch_contact.
+- Acción de firma: sacrifice_fly_focus.
+- Skill roles: attack, support.
+
+support se registra como rol de identidad para bw015, no como categoría ejecutable nueva de SkillResolver. La implementación futura de cualquier efecto de soporte deberá introducir un contrato y balance propios.
+
+### Archivos creados o modificados
+
+- data/characters_queue.json
+- game/characters/character_archetypes.json
+- scenes/bw015_generation_queue_test.gd
+- scenes/bw015_generation_queue_test.tscn
+- docs/characters/bw015-generation-queue-v1.md
+
+### Estructura artística integrada
+
+La cola contiene:
+
+- prompt base y negative prompt para generación del retrato;
+- cinco expresiones;
+- sprite de referencia 128x128;
+- sistema 2D por capas MomoHoshino_Rig;
+- cuatro animaciones previstas.
+
+La capa de generación utiliza los descriptors curvy_power, medium_wavy y classic_baseball sin convertirlos automáticamente en nuevos presets del renderer runtime.
+
+### Decisiones arquitectónicas
+
+1. data/characters_queue.json continúa siendo cola de generación y no autoridad de gameplay.
+2. CharacterArchetypeCatalog sigue siendo la fuente canónica de atributos jugables.
+3. La cadena de presentación no cambia: CharacterArchetypeCatalog -> CharacterExpressionController -> BaseballCharacterCard.
+4. No se agregan SVG ni arte final en esta revisión porque la estructura recibida define datos de generación, sprite y rig, no assets finales.
+5. No se modifica la lógica de béisbol, RNG, IA, economía, progreso ni recompensas.
+6. La unidad sigue siendo aislada para detectar errores antes de multiplicarlos por el resto del roster.
+
+### Pruebas
+
+Se creó una prueba headless estructural para validar:
+
+- esquema de cola;
+- identidad y estadísticas;
+- paleta;
+- cinco prompts de expresión;
+- estructura del generador de sprite;
+- partes del rig;
+- animaciones;
+- ausencia de URLs externas;
+- sincronización entre cola y catálogo.
+
+Runtime local: no ejecutado en este entorno. La prueba queda preparada para Godot 4.x headless/CI.
+
+### Problemas encontrados y correcciones
+
+- El catálogo previo de bw015 ya contenía la identidad y estadísticas principales, pero usaba etiquetas de estilo y roles de skill anteriores. Se alineó con la nueva definición.
+- El renderer existente utiliza parámetros geométricos ya consolidados. Para evitar una regresión, curvy_power, medium_wavy y classic_baseball quedan como descriptores de generación en la cola, mientras los campos runtime conservan presets compatibles.
+- No se introdujo una categoría support en el SkillResolver sin una mecánica concreta, evitando ampliar el sistema únicamente por una etiqueta.
+
+### Estado
+
+**Implementación de estructura completa completada; generación de assets finales y animación runtime de bw015 quedan como etapas posteriores del pipeline.**
+
+### Avance aproximado
+
+**≈97% estructural del prototipo.** Este porcentaje no representa porcentaje de arte final, balance definitivo, validación Android local ni contenido completo.
