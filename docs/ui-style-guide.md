@@ -115,3 +115,16 @@ El retrato se carga desde el ID de personaje y puede sustituirse posteriormente 
 La entrada de la tarjeta utiliza una microanimación de opacidad y escala. Es presentación pura y no modifica PlayerData, probabilidades ni estado de partido.
 
 Regla de producción: primero se valida la tarjeta y su jerarquía visual con un personaje; después se escala al resto del roster. No se crean 30 variantes de UI manualmente.
+
+
+## Tarjetas de personaje v1.0
+
+La tarjeta de personaje es un componente reutilizable (game/ui/character_card.gd) y no una composición específica del Hub.
+
+La rareza tiene una identidad visual explícita: R gris/plata, SR azul claro, SSR violeta y UR dorado. La rareza cambia presentación, no estadísticas ni resultados de béisbol.
+
+Cada tarjeta presenta retrato reemplazable, rareza, posición, elemento, especialización, identidad de juego, estadísticas resumidas y espacio opcional para comentario contextual.
+
+El retrato se carga desde el ID de personaje y puede sustituirse por arte final sin cambiar el contrato del componente. La entrada utiliza una microanimación de opacidad y escala, exclusivamente visual.
+
+Regla de producción: primero se valida la tarjeta con un personaje; después se escala al roster. No se crean 30 variantes manuales.
