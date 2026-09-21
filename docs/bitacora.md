@@ -6357,6 +6357,7 @@ El porcentaje representa avance estructural del prototipo, no contenido artísti
 - game/ui/character_card.gd
 - game/ui/character_card.tscn
 - scenes/character_card_presentation_test.gd
+- scenes/character_card_presentation_test.tscn
 
 ### Archivos modificados
 - scenes/hub.gd
@@ -6380,6 +6381,8 @@ Se añadieron comprobaciones estructurales para existencia del componente, escen
 **Runtime Godot:** no ejecutado. Las pruebas son estructurales/escritas.
 
 ### Problemas encontrados y correcciones
+- La primera integración podía construir dos veces el árbol visual al combinar _ready() con setup(). Se añadió una guardia para construirlo una sola vez.
+- Se detectó y corrigió la declaración ausente del slot de comentario.
 - La tarjeta anterior estaba construida directamente en hub.gd. Se extrajo a un componente reutilizable.
 - El comentario quedó inicialmente fuera de la tarjeta durante la integración y se corrigió con un slot interno.
 - Se mantuvo fuera de esta revisión la iconografía global, el arte de las 30 personajes y las animaciones avanzadas para conservar control incremental.
