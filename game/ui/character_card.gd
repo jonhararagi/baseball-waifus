@@ -44,11 +44,13 @@ var stats_label: Label
 var identity_label: Label
 var comment_label: Label
 var accent_color := Color.WHITE
+var expression_id := "neutral"
 
-func setup(player: PlayerData, portrait_path: String = "") -> void:
+func setup(player: PlayerData, portrait_path: String = "", expression: String = "neutral") -> void:
 	if player == null:
 		return
 	character_id = player.id
+	expression_id = expression
 	if not has_node("CardRoot"):
 		_build()
 	_apply_player(player, portrait_path)
@@ -159,9 +161,7 @@ func _apply_player(player: PlayerData, portrait_path: String) -> void:
 	]
 	stats_label.add_theme_color_override("font_color", Color("#aebbd3"))
 
-	var path := portrait_path
-	if path.is_empty():
-		path = "res://assets/characters/generated/%s.svg" % player.id
+	var path := CharacterExpressionController.resolve_portrait_path(player.id, expression_id, portrait_path)
 	if ResourceLoader.exists(path):
 		portrait.texture = load(path)
 	_play_entry_animation()
@@ -173,6 +173,17 @@ func _play_entry_animation() -> void:
 	tween.set_parallel(true)
 	tween.tween_property(self, "modulate", Color.WHITE, 0.22)
 	tween.tween_property(self, "scale", Vector2.ONE, 0.28).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+func set_expression(expression: String) -> void:
+	if not CharacterExpressionController.is_valid(expression):
+		expression_id = CharacterExpressionController.NEUTRAL
+	else:
+		expression_id = expression
+	if character_id.is_empty() or not has_node("CardRoot"):
+		return
+	var path := CharacterExpressionController.resolve_portrait_path(character_id, expression_id)
+	if not path.is_empty() and portrait != null:
+		portrait.texture = load(path)
 
 func set_comment(text_value: String) -> void:
 	if comment_label != null:
