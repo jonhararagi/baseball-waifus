@@ -1,11 +1,14 @@
 class_name RewardedAdTransaction
 extends RefCounted
 
-## Single authority that converts an accepted rewarded-ad completion into
-## a local progression mutation. RewardedAdPolicy defines the reward amount.
+## Compatibility adapter for rewarded ads.
+## Actual resource mutation is delegated to RewardTransactionService so ads,
+## maps, gacha and future reward sources share the same transaction authority.
 
 const RewardedAdPolicyClass = preload("res://game/monetization/rewarded_ad_policy.gd")
+const RewardTransactionClass = preload("res://game/progression/reward_transaction_service.gd")
 const PlayerProgressStoreClass = preload("res://game/progression/player_progress_store.gd")
+const CharacterRosterStoreClass = preload("res://game/characters/character_roster_store.gd")
 
 func grant(policy_category: int, character_id: String = "", usage_state: Dictionary = {}, progress_store: RefCounted = null) -> Dictionary:
 	var policy = RewardedAdPolicyClass.new()
@@ -21,7 +24,22 @@ func grant(policy_category: int, character_id: String = "", usage_state: Diction
 		progress_store = PlayerProgressStoreClass.new()
 		progress_store.load_state()
 
-	var mutation := _apply_reward(progress_store, category, reward, character_id)
+	var roster := CharacterRosterStoreClass.new()
+	roster.load_state()
+
+	if category == "character_energy" and character_id.is_empty():
+		return {"ok": false, "reason": "character_required"}
+
+	var transaction := RewardTransactionClass.new()
+	var payload := [{
+		"category": category,
+		"amount": int(reward.get("amount", 0)),
+		"character_id": character_id
+	}]
+	if category == "materials":
+		payload[0]["item_id"] = "material_bundle"
+
+	var mutation: Dictionary = transaction.grant(payload, progress_store, roster)
 	if not bool(mutation.get("ok", false)):
 		return mutation
 
@@ -29,18 +47,10 @@ func grant(policy_category: int, character_id: String = "", usage_state: Diction
 	if not bool(usage.get("accepted", false)):
 		return {"ok": false, "reason": "daily_limit", "rollback_required": true}
 
-	return {"ok": true, "category": category, "reward": reward, "usage": usage, "mutation": mutation}
-
-func _apply_reward(store: RefCounted, category: String, reward: Dictionary, character_id: String) -> Dictionary:
-	var amount := int(reward.get("amount", 0))
-	match category:
-		"player_energy":
-			return store.add_player_energy(amount)
-		"materials":
-			return store.add_material("material_bundle", amount)
-		"character_energy":
-			if character_id.is_empty():
-				return {"ok": false, "reason": "character_required"}
-			return store.add_character_energy(character_id, amount)
-		_:
-			return {"ok": false, "reason": "unknown_category"}
+	return {
+		"ok": true,
+		"category": category,
+		"reward": reward,
+		"usage": usage,
+		"mutation": mutation
+	}
