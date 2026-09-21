@@ -388,8 +388,8 @@ func _apply_batting_result(result: Dictionary) -> void:
 			var hit_data := state.apply_hit(batter, _team_for_batting().team_id, int(result.get("bases", 1)))
 			result["hit_plan"] = hit_data
 			result["runs_scored"] = hit_data["runs"]
-			# BaseballGameState.apply_hit already owns the score mutation and count reset.
-			# Do not duplicate the run here or a hit would score twice.
+			# BaseballGameState.apply_hit owns the score mutation. The main flow still clears the count.
+			state.reset_count()
 
 			state.advance_lineup(batting_team_index)
 
