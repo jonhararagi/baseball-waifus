@@ -90,7 +90,9 @@ func add_character_energy(character_id: String, amount: int) -> Dictionary:
 	var after := clampi(before + amount, 0, MAX_CHARACTER_ENERGY)
 	energies[character_id] = after
 	state["character_energy"] = energies
-	state["character_energy_last_regen_unix"][character_id] = int(Time.get_unix_time_from_system())
+	var regen_times: Dictionary = state.get("character_energy_last_regen_unix", {})
+	regen_times[character_id] = int(Time.get_unix_time_from_system())
+	state["character_energy_last_regen_unix"] = regen_times
 	return _commit_change("character_energy:" + character_id, before, after)
 
 func consume_player_energy(amount: int) -> Dictionary:
