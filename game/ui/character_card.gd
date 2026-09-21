@@ -80,6 +80,7 @@ var element_label: Label
 var stat_bars: Dictionary = {}
 var accent_color := Color.WHITE
 var expression_id := "neutral"
+var portrait_tween: Tween
 var _hovered := false
 
 class CardElementIcon:
@@ -203,6 +204,8 @@ func _build() -> void:
 	portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	portrait.pivot_offset = Vector2(154, 154)
+	portrait.modulate = Color.WHITE
 	portrait_frame.add_child(portrait)
 
 	var frame := Panel.new()
@@ -342,8 +345,7 @@ func _apply_player(player: PlayerData, portrait_path: String) -> void:
 		bar.add_theme_stylebox_override("background", background)
 
 	var path := CharacterExpressionController.resolve_portrait_path(player.id, expression_id, portrait_path)
-	if not path.is_empty() and ResourceLoader.exists(path):
-		portrait.texture = load(path)
+	_apply_portrait_texture(path)
 	_play_entry_animation()
 
 func _play_entry_animation() -> void:
@@ -355,13 +357,39 @@ func _play_entry_animation() -> void:
 	tween.tween_property(self, "scale", Vector2.ONE, 0.30).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 func set_expression(expression: String) -> void:
-	expression_id = expression if CharacterExpressionController.is_valid(expression) else CharacterExpressionController.NEUTRAL
+	var next_expression := expression if CharacterExpressionController.is_valid(expression) else CharacterExpressionController.NEUTRAL
 	if character_id.is_empty() or portrait == null:
+		expression_id = next_expression
 		return
+	if next_expression == expression_id and portrait.texture != null:
+		return
+
+	expression_id = next_expression
 	var path := CharacterExpressionController.resolve_portrait_path(character_id, expression_id)
-	if not path.is_empty() and ResourceLoader.exists(path):
-		portrait.texture = load(path)
-	_play_entry_animation()
+	if path.is_empty() or not ResourceLoader.exists(path):
+		return
+
+	if portrait_tween != null and portrait_tween.is_valid():
+		portrait_tween.kill()
+	portrait.modulate = Color.WHITE
+	portrait.scale = Vector2.ONE
+
+	portrait_tween = create_tween()
+	portrait_tween.tween_property(portrait, "modulate", Color(1, 1, 1, 0.12), 0.08).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	portrait_tween.parallel().tween_property(portrait, "scale", Vector2(0.975, 0.975), 0.08).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	portrait_tween.tween_callback(func() -> void: _apply_portrait_texture(path))
+	portrait_tween.tween_property(portrait, "modulate", Color.WHITE, 0.13).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	portrait_tween.parallel().tween_property(portrait, "scale", Vector2.ONE, 0.13).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+func current_expression() -> String:
+	return expression_id
+
+func _apply_portrait_texture(path: String) -> void:
+	if portrait == null or path.is_empty() or not ResourceLoader.exists(path):
+		return
+	var texture = load(path)
+	if texture is Texture2D:
+		portrait.texture = texture
 
 func set_comment(text_value: String) -> void:
 	if comment_label != null:
