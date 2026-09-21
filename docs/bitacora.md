@@ -7015,3 +7015,155 @@ No se reescribe el historial anterior para evitar alterar commits ya publicados.
 ### Estado
 
 **bw005 cerrado. Próxima unidad: bw006.**
+
+
+## Revisión 72: sexta unidad visual consolidada, bw006 Akari Shimizu
+
+**Fecha:** 2026-09-21
+**Motivo:** continuar el pipeline artístico una personaje por vez, después del cierre formal de bw005, utilizando un único commit consolidado para la unidad.
+
+### Alcance
+
+Se trabajó exclusivamente sobre bw006 / Akari Shimizu:
+- rareza SR;
+- elemento Lightning;
+- posición 1B;
+- especialidad Defender;
+- identidad visual muscular/tomboy y primera base;
+- cinco estados expresivos independientes.
+
+No se modifican estadísticas canónicas, resolvers de béisbol, IA rival, economía, gacha, recompensas ni personajes anteriores.
+
+### Archivos creados
+
+- assets/characters/expressions/bw006_neutral.svg
+- assets/characters/expressions/bw006_happy.svg
+- assets/characters/expressions/bw006_focused.svg
+- assets/characters/expressions/bw006_surprised.svg
+- assets/characters/expressions/bw006_disappointed.svg
+- scenes/bw006_character_presentation_test.gd
+- scenes/bw006_character_presentation_test.tscn
+- docs/characters/bw006-presentation-v1.md
+
+### Archivo modificado
+
+- .github/workflows/visual_qa.yml
+- docs/bitacora.md
+
+### Decisiones arquitectónicas
+
+1. `CharacterArchetypeCatalog` continúa como fuente canónica de identidad.
+2. `CharacterExpressionController` mantiene la resolución única de las cinco expresiones.
+3. `BaseballCharacterCard` continúa siendo la tarjeta de colección única.
+4. No se crea ningún controlador o tarjeta específica de bw006.
+5. Los cinco SVG son originales, autónomos, ligeros y no contienen `<text>` ni dependencias de fuentes externas.
+6. La paleta sigue la identidad canónica del catálogo: cabello `#2f313f`, piel `#c88b68`, acento Lightning `#f6d447` y ojos `#302b38`.
+7. La escena de QA usa la misma tarjeta de producción y el mismo `VisualQAExporter` existente.
+8. CI genera `qa_captures/bw006_character_presentation.png` con Godot 4.5.1-stable y límite externo de 15 s.
+9. Los estados expresivos son exclusivamente de presentación y nunca modifican gameplay.
+10. La unidad bw006 se entrega en un único commit consolidado, agrupando arte vectorial, escena, documentación y CI.
+
+### Validación
+
+El test estructural verifica identidad, stats clave, existencia y autonomía de los cinco SVG, ausencia de `<text>`, continuidad de paleta, diferenciación de contenido, rutas deterministas y compatibilidad con la API de `BaseballCharacterCard`.
+
+El workflow de CI añade el job específico de bw006 y mantiene la barrera de 15 s, delegando la captura PNG al `VisualQAExporter` compartido.
+
+**Runtime local:** no ejecutado en este entorno. La ejecución headless se realizará mediante GitHub Actions al detectar el nuevo commit.
+
+### Estado
+
+**bw006 implementado a nivel estructural y listo para validación headless en CI.**
+
+### Avance aproximado
+
+**≈96% estructural del prototipo.** Este porcentaje no representa porcentaje de arte final, balance definitivo, validación Android ni contenido completo.
+
+
+### Corrección QA de Revisión 72
+
+La primera ejecución headless de CI detectó dos problemas de tipado/inspección en `scenes/bw006_character_presentation_test.gd`: la escena dependía de que `BaseballCharacterCard` estuviera registrado como tipo global durante el parseo y consultaba `has_method()` sobre el recurso Script en lugar de una instancia.
+
+Se corrigió el test para:
+- tipar la referencia como `Control` y conservar la instancia real de `BaseballCharacterCard` mediante preload;
+- invocar `setup()` y `set_expression()` mediante `call()` después de validar que la instancia expone la API esperada;
+- mantener la arquitectura `CharacterArchetypeCatalog -> CharacterExpressionController -> BaseballCharacterCard` sin crear una segunda implementación.
+
+El fallo fue detectado por GitHub Actions antes de declarar bw006 terminado. Esta corrección forma parte del mismo cierre lógico de bw006; no se modifica el gameplay.
+
+
+### Segunda corrección QA de bw006
+
+La siguiente ejecución CI mostró que el parser headless tampoco resolvía llamadas estáticas a `CharacterArchetypeCatalog` a través del alias `Catalog`. El contrato de producción no está en duda; el problema pertenece exclusivamente a la escena de prueba.
+
+Se reemplazaron esas llamadas por `Catalog.call(...)`, manteniendo el test dependiente de la misma `CharacterArchetypeCatalog` y evitando crear wrappers o lógica paralela. La escena conserva la validación de identidad, PlayerData y tarjeta de presentación.
+
+Este ajuste se integra en el mismo commit consolidado de bw006 antes del cierre de la unidad.
+
+
+### Tercera corrección QA de bw006
+
+La siguiente ejecución confirmó que el alias preloaded tampoco debía invocarse dinámicamente desde la escena de prueba. La escena ahora utiliza directamente la clase global existente `CharacterArchetypeCatalog`, igual que el resto de los stores y sistemas del proyecto.
+
+Con esto el test vuelve a depender de la autoridad canónica real y mantiene la cadena de presentación sin duplicaciones.
+
+
+### Cuarta corrección QA de bw006
+
+La validación headless mostró que el ejecutor de la escena aislada no registra `CharacterArchetypeCatalog` como clase global durante el parseo de este test, aunque el catálogo funciona como autoridad del proyecto. Para no modificar el catálogo existente ni crear una implementación paralela, la escena ahora tipa su preload como `Script` y accede únicamente a sus métodos estáticos mediante `CatalogScript.call(...)`.
+
+Esto conserva la dependencia real del catálogo y elimina la dependencia del registro global del parser de la escena QA.
+
+
+### Corrección final de compilación y precarga CI de bw006
+
+Las ejecuciones headless posteriores permitieron aislar el problema restante en la infraestructura compartida de presentación. Godot 4.5.1 no podía inferir dos variables de `BaseballCharacterCard` durante la carga aislada y el runner no calentaba la caché de `class_name` antes de abrir las escenas de presentación.
+
+Se corrigió dentro del mismo commit consolidado de bw006:
+- `game/ui/character_card.gd`: `radius` queda tipado como `float` y el panel como `StyleBoxFlat`.
+- `.github/workflows/visual_qa.yml`: cada job de personaje realiza una importación headless del proyecto mediante el editor antes de ejecutar la escena de QA.
+
+No se modifican estadísticas, catálogo canónico, expresiones, gameplay ni la arquitectura de presentación.
+
+
+### Correcciones de compilación compartida detectadas por CI en bw006
+
+La validación headless encontró tres puntos previos al arte final de la unidad:
+- `scenes/hub.gd`: tipado explícito de la lectura del bloque visual del personaje inicial para evitar que Godot 4.5.1 trate la inferencia desde Variant como error.
+- `scenes/bw005_character_presentation_test.gd`: eliminación de llamadas estáticas inválidas a `has_method()` y validación sobre la instancia real de la tarjeta.
+- `game/characters/character_archetype_catalog.gd`: conversión explícita de los roles de habilidad provenientes de JSON hacia `Array[String]` de `PlayerData`.
+
+Son correcciones de robustez del pipeline existente. No modifican estadísticas ni reglas de béisbol, y se integran en el mismo commit consolidado de bw006.
+
+
+### QA de regresión compartida para cerrar bw006
+
+CI detectó errores preexistentes en sistemas compartidos que impedían que las unidades visuales anteriores llegaran a su captura: persistencia con firmas incoherentes, inferencias Variant en UI de campaña/Hub y tests bw004/bw005 que inspeccionaban `has_method()` sobre el Script en lugar de una instancia.
+
+Se corrigieron de forma conservadora:
+- `PlayerProgressStore`: `restore_snapshot` utiliza el escritor interno ya existente.
+- `CharacterRosterStore`: se separa el escritor interno de `save_state` para permitir snapshots candidatos sin romper la autoridad de persistencia.
+- `BaseballCampaignMapView` y `BaseballHubMenuIcon`: tipado explícito de valores inferidos desde Variant.
+- Tests de presentación bw004/bw005: validación de API sobre la instancia de tarjeta.
+
+Las correcciones no cambian reglas deportivas, economía ni identidad de personajes; permiten que el pipeline visual realmente pueda validar bw006 como unidad aislada y mantener regresión de las unidades anteriores.
+
+
+### Corrección de persistencia detectada durante QA de regresión
+
+CI confirmó que `CharacterRosterStore` ya había migrado sus mutaciones a snapshots candidatos, pero el helper `_write_state` no había quedado materializado en la versión consolidada. Se añadió explícitamente como escritor interno y `save_state()` conserva su función pública sin argumentos.
+
+Esto corrige el contrato existente sin cambiar la autoridad del roster ni su formato de guardado.
+
+
+### Corrección final del cierre de captura headless
+
+GitHub Actions mostró que las escenas bw004/bw005/bw006 podían completar toda la validación estructural pero quedar hasta el timeout cuando `RenderingServer.frame_post_draw` no emitía en el contexto headless.
+
+Se amplía `VisualQAExporter` sin eliminar su contrato anterior:
+- espera de asentamiento + dos frames de proceso;
+- intento directo de captura desde el viewport;
+- fallback a `RenderingServer.frame_post_draw` cuando la textura todavía no está disponible;
+- watchdog de 5 s y códigos de salida 0/1 intactos.
+
+La captura continúa siendo una herramienta de presentación y nunca toca gameplay.

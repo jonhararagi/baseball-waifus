@@ -121,7 +121,7 @@ func _style(fill: String, border: String, width: int, radius: int) -> StyleBoxFl
 
 func _draw() -> void:
 	for i in range(NODE_POSITIONS.size() - 1):
-		var a := NODE_POSITIONS[i] + Vector2(37, 26)
-		var b := NODE_POSITIONS[i + 1] + Vector2(37, 26)
+		var a: Vector2 = NODE_POSITIONS[i] + Vector2(37, 26)
+		var b: Vector2 = NODE_POSITIONS[i + 1] + Vector2(37, 26)
 		draw_line(a, b, Color("#f0d58a", 0.42), 5)
 		draw_line(a, b, Color("#ffffff", 0.12), 1)

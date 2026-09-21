@@ -9,6 +9,7 @@ on:
       - "game/ui/visual_qa_exporter.gd"
       - "scenes/bw004_character_presentation_test.*"
       - "scenes/bw005_character_presentation_test.*"
+      - "scenes/bw006_character_presentation_test.*"
       - "scenes/visual_qa_exporter_test.*"
       - ".github/workflows/visual_qa.yml"
 
@@ -63,6 +64,12 @@ jobs:
           chmod +x "godot/Godot_v${GODOT_VERSION}_linux.x86_64"
           "godot/Godot_v${GODOT_VERSION}_linux.x86_64" --version
 
+      - name: Import project and build Godot script class cache
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout --signal=TERM 30s "godot/Godot_v${GODOT_VERSION}_linux.x86_64" --headless --editor --path . --quit
+
       - name: Run bw004 structural and visual QA
         shell: bash
         run: |
@@ -103,6 +110,12 @@ jobs:
           chmod +x "godot/Godot_v${GODOT_VERSION}_linux.x86_64"
           "godot/Godot_v${GODOT_VERSION}_linux.x86_64" --version
 
+      - name: Import project and build Godot script class cache
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout --signal=TERM 30s "godot/Godot_v${GODOT_VERSION}_linux.x86_64" --headless --editor --path . --quit
+
       - name: Run bw005 structural and visual QA
         shell: bash
         run: |
@@ -119,4 +132,50 @@ jobs:
         with:
           name: bw005-character-presentation
           path: qa_captures/bw005_character_presentation.png
+          if-no-files-found: error
+
+  bw006-visual-qa:
+    runs-on: ubuntu-22.04
+    env:
+      GODOT_VERSION: "4.5.1-stable"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl unzip libfontconfig1
+
+      - name: Install pinned Godot
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip" -o godot.zip
+          unzip -q godot.zip -d godot
+          chmod +x "godot/Godot_v${GODOT_VERSION}_linux.x86_64"
+          "godot/Godot_v${GODOT_VERSION}_linux.x86_64" --version
+
+      - name: Import project and build Godot script class cache
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout --signal=TERM 30s "godot/Godot_v${GODOT_VERSION}_linux.x86_64" --headless --editor --path . --quit
+
+      - name: Run bw006 structural and visual QA
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p qa_captures
+          timeout --signal=TERM 15s             "godot/Godot_v${GODOT_VERSION}_linux.x86_64"             --headless             --path .             --resolution 1280x720             res://scenes/bw006_character_presentation_test.tscn             --             --run-qa-capture
+
+      - name: Verify capture
+        run: |
+          test -s qa_captures/bw006_character_presentation.png
+
+      - name: Upload bw006 visual QA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bw006-character-presentation
+          path: qa_captures/bw006_character_presentation.png
           if-no-files-found: error

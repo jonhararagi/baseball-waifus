@@ -14,7 +14,7 @@ func setup(new_icon_id: String, new_accent: Color = Color("#ffd76a")) -> void:
 func _draw() -> void:
 	var c := accent
 	var center := size * 0.5
-	var s := min(size.x, size.y)
+	var s: float = min(size.x, size.y)
 	draw_circle(center, s * 0.46, Color(0.02, 0.04, 0.10, 0.55))
 	draw_circle(center, s * 0.42, Color(c, 0.10))
 	draw_arc(center, s * 0.42, 0.0, TAU, 32, Color(c, 0.78), 2.0, true)

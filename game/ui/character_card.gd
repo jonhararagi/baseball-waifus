@@ -108,7 +108,7 @@ class CardElementIcon:
 	func _draw() -> void:
 		var c := accent
 		var center := size * 0.5
-		var radius := min(size.x, size.y) * 0.38
+		var radius: float = min(size.x, size.y) * 0.38
 		draw_circle(center, radius + 2.0, Color(0, 0, 0, 0.35))
 		draw_circle(center, radius, Color(c, 0.18))
 		draw_arc(center, radius, 0.0, TAU, 24, c, 2.0, true)
@@ -414,7 +414,7 @@ func _notification(what: int) -> void:
 
 func _apply_panel_style(rarity: String) -> void:
 	var style: Dictionary = RARITY_STYLES.get(rarity, RARITY_STYLES["R"])
-	var panel := BaseballUITheme.panel_style(
+	var panel: StyleBoxFlat = BaseballUITheme.panel_style(
 		Color(str(style["panel"])),
 		Color(str(style["accent"])),
 		22,

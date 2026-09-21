@@ -63,8 +63,6 @@ func _validate_canonical_data() -> void:
 	assert(Controller.resolve_portrait_path(CHARACTER_ID, Controller.DISAPPOINTED).ends_with("bw005_disappointed.svg"))
 	assert(Controller.expression_for_comment(0) == Controller.NEUTRAL)
 	assert(Controller.expression_for_comment(8) == Controller.DISAPPOINTED)
-	assert(CardScript.has_method("set_expression"))
-	assert(CardScript.has_method("current_expression"))
 	print("bw005 structural and visual asset checks passed.")
 
 func _build_visual_test() -> void:
@@ -101,7 +99,10 @@ func _build_visual_test() -> void:
 	card.position = Vector2(52, 112)
 	card.scale = Vector2(0.82, 0.82)
 	add_child(card)
-	card.setup(Catalog.create_player(CHARACTER_ID))
+	assert(card.has_method("setup"), "BaseballCharacterCard must expose setup().")
+	assert(card.has_method("set_expression"), "BaseballCharacterCard must expose set_expression().")
+	assert(card.has_method("current_expression"), "BaseballCharacterCard must expose current_expression().")
+	card.call("setup", Catalog.create_player(CHARACTER_ID))
 
 	var panel := Panel.new()
 	panel.position = Vector2(548, 120)
@@ -160,7 +161,7 @@ func _build_visual_test() -> void:
 
 func _set_focus_state() -> void:
 	if card != null:
-		card.set_expression(Controller.FOCUSED)
+		card.call("set_expression", Controller.FOCUSED)
 
 func _panel_style() -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()

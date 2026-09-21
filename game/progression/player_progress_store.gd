@@ -176,7 +176,7 @@ func restore_snapshot(snapshot_state: Dictionary) -> bool:
 	if typeof(snapshot_state) != TYPE_DICTIONARY or int(snapshot_state.get("version", -1)) < 1:
 		return false
 	var clean := _sanitize(snapshot_state)
-	if not save_state(clean):
+	if not _write_state(clean):
 		return false
 	state = clean
 	return true

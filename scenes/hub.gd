@@ -391,7 +391,7 @@ func _close_panel() -> void:
 func _draw_starter_portrait(view: Control) -> void:
 	var size := view.size
 	var center := Vector2(size.x * 0.5, size.y * 0.52)
-	var visual := CharacterArchetypeCatalog.find(STARTER_ID).get("visual", {})
+	var visual: Dictionary = CharacterArchetypeCatalog.find(STARTER_ID).get("visual", {})
 	var skin := Color(str(visual.get("skin", "#d99a78")))
 	var hair := Color(str(visual.get("hair_color", "#5a3327")))
 	var uniform := Color(str(visual.get("uniform_color", "#fff3dc")))

@@ -46,11 +46,14 @@ func load_state() -> Dictionary:
 func save_state() -> bool:
 	if state.is_empty():
 		state = _defaults()
+	return _write_state(_sanitize(state))
+
+func _write_state(clean: Dictionary) -> bool:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("user://baseball_waifus"))
 	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if file == null:
 		return false
-	file.store_string(JSON.stringify(_sanitize(state), "\t"))
+	file.store_string(JSON.stringify(_sanitize(clean), "	"))
 	return true
 
 func has_character(character_id: String) -> bool:
@@ -124,7 +127,7 @@ func apply_training(character_id: String, gains: Dictionary) -> Dictionary:
 		applied[key] = after - before
 	target["level"] = clampi(int(target.get("level", 1)), LEVEL_MIN, LEVEL_MAX)
 	candidate["characters"][character_id] = target
-	if not save_state(candidate):
+	if not _write_state(candidate):
 		return {"ok": false, "reason": "save_failed"}
 	state = _sanitize(candidate)
 	return {"ok": true, "character_id": character_id, "stat_gains": applied}
@@ -198,7 +201,7 @@ func restore_snapshot(snapshot_state: Dictionary) -> bool:
 	if typeof(snapshot_state) != TYPE_DICTIONARY:
 		return false
 	var clean := _sanitize(snapshot_state)
-	if not save_state(clean):
+	if not _write_state(clean):
 		return false
 	state = clean
 	return true
