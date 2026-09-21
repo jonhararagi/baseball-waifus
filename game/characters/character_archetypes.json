@@ -1,0 +1,1358 @@
+{
+  "version": 1,
+  "roster_size": 30,
+  "adult_only": true,
+  "source": "Baseball Waifus",
+  "characters": [
+    {
+      "id": "bw001",
+      "display_name": "Aiko Hanamori",
+      "rarity": "R",
+      "element": "fire",
+      "position": "3B",
+      "specialization": "power",
+      "potential": 4,
+      "stats": {
+        "power": 72,
+        "contact": 64,
+        "speed": 51,
+        "pitch": 51,
+        "control": 60,
+        "defense": 66,
+        "critical": 9,
+        "stamina": 76
+      },
+      "visual": {
+        "body_preset": "power",
+        "height": 1,
+        "shoulder_width": 1.18,
+        "waist_width": 1.02,
+        "hip_width": 1.1,
+        "bust": 1.08,
+        "head_scale": 1,
+        "face_style": "round",
+        "skin": "#d99a78",
+        "hair_color": "#5a3327",
+        "uniform_color": "#fff3dc",
+        "accent": "#e4572e",
+        "eye": "#4a2b24",
+        "hair_style": "long",
+        "uniform_style": "jacket"
+      },
+      "variant_rules": {
+        "allowed": [
+          "hair_color",
+          "hair_style",
+          "body_scale"
+        ],
+        "body_scale_min": 0.94,
+        "body_scale_max": 1.06
+      }
+    },
+    {
+      "id": "bw002",
+      "display_name": "Reina Kurose",
+      "rarity": "SSR",
+      "element": "ice",
+      "position": "P",
+      "specialization": "pitcher",
+      "potential": 5,
+      "stats": {
+        "power": 52,
+        "contact": 58,
+        "speed": 49,
+        "pitch": 82,
+        "control": 79,
+        "defense": 70,
+        "critical": 13,
+        "stamina": 86
+      },
+      "visual": {
+        "body_preset": "athletic",
+        "height": 1.02,
+        "shoulder_width": 1.1,
+        "waist_width": 0.95,
+        "hip_width": 1.04,
+        "bust": 0.94,
+        "head_scale": 1,
+        "face_style": "sharp",
+        "skin": "#f0c5a5",
+        "hair_color": "#1d2738",
+        "uniform_color": "#f3f4ff",
+        "accent": "#8ad9ff",
+        "eye": "#27455f",
+        "hair_style": "long",
+        "uniform_style": "standard"
+      },
+      "variant_rules": {
+        "allowed": [
+          "hair_color",
+          "hair_style",
+          "body_scale"
+        ],
+        "body_scale_min": 0.94,
+        "body_scale_max": 1.06
+      }
+    },
+    {
+      "id": "bw003",
+      "display_name": "Miu Tachibana",
+      "rarity": "SR",
+      "element": "lightning",
+      "position": "SS",
+      "specialization": "contact",
+      "potential": 4,
+      "stats": {
+        "power": 60,
+        "contact": 84,
+        "speed": 71,
+        "pitch": 54,
+        "control": 65,
+        "defense": 74,
+        "critical": 12,
+        "stamina": 72
+      },
+      "visual": {
+        "body_preset": "balanced",
+        "height": 1,
+        "shoulder_width": 1,
+        "waist_width": 0.9,
+        "hip_width": 1,
+        "bust": 1,
+        "head_scale": 1,
+        "face_style": "soft",
+        "skin": "#f0c4a4",
+        "hair_color": "#7b4a2f",
+        "uniform_color": "#fff2df",
+        "accent": "#f6d447",
+        "eye": "#3d2b22",
+        "hair_style": "long",
+        "uniform_style": "standard"
+      },
+      "variant_rules": {
+        "allowed": [
+          "hair_color",
+          "hair_style",
+          "body_scale"
+        ],
+        "body_scale_min": 0.94,
+        "body_scale_max": 1.06
+      }
+    },
+    {
+      "id": "bw004",
+      "display_name": "Yuna Minase",
+      "rarity": "SSR",
+      "element": "nature",
+      "position": "CF",
+      "specialization": "runner",
+      "potential": 5,
+      "stats": {
+        "power": 55,
+        "contact": 72,
+        "speed": 92,
+        "pitch": 49,
+        "control": 58,
+        "defense": 75,
+        "critical": 11,
+        "stamina": 78
+      },
+      "visual": {
+        "body_preset": "athletic",
+        "height": 1.02,
+        "shoulder_width": 1.1,
+        "waist_width": 0.95,
+        "hip_width": 1.04,
+        "bust": 0.94,
+        "head_scale": 1,
+        "face_style": "soft",
+        "skin": "#d9a17c",
+        "hair_color": "#3d6a4a",
+        "uniform_color": "#ecf7df",
+        "accent": "#4cae5f",
+        "eye": "#263c2c",
+        "hair_style": "long",
+        "uniform_style": "sporty"
+      },
+      "variant_rules": {
+        "allowed": [
+          "hair_color",
+          "hair_style",
+          "body_scale"
+        ],
+        "body_scale_min": 0.94,
+        "body_scale_max": 1.06
+      }
+    },
+    {
+      "id": "bw005",
+      "display_name": "Sora Amamiya",
+      "rarity": "SR",
+      "element": "water",
+      "position": "C",
+      "specialization": "catcher",
+      "potential": 4,
+      "stats": {
+        "power": 66,
+        "contact": 62,
+        "speed": 50,
+        "pitch": 61,
+        "control": 63,
+        "defense": 86,
+        "critical": 10,
+        "stamina": 82
+      },
+      "visual": {
+        "body_preset": "power",
+        "height": 1,
+        "shoulder_width": 1.18,
+        "waist_width": 1.02,
+        "hip_width": 1.1,
+        "bust": 1.08,
+        "head_scale": 1,
+        "face_style": "round",
+        "skin": "#e7b28e",
+        "hair_color": "#263f78",
+        "uniform_color": "#eff8ff",
+        "accent": "#3b82f6",
+        "eye": "#243457",
+        "hair_style": "long",
+        "uniform_style": "standard"
+      },
+      "variant_rules": {
+        "allowed": [
+          "hair_color",
+          "hair_style",
+          "body_scale"
+        ],
+        "body_scale_min": 0.94,
+        "body_scale_max": 1.06
+      }
+    },
+    {
+      "id": "bw006",
+      "display_name": "Akari Shimizu",
+      "rarity": "SR",
+      "element": "lightning",
+      "position": "1B",
+      "specialization": "defender",
+      "potential": 3,
+      "stats": {
+        "power": 68,
+        "contact": 60,
+        "speed": 52,
+        "pitch": 55,
+        "control": 59,
+        "defense": 88,
+        "critical": 10,
+        "stamina": 79
+      },
+      "visual": {
+        "body_preset": "athletic",
+        "height": 1.02,
+        "shoulder_width": 1.1,
+        "waist_width": 0.95,
+        "hip_width": 1.04,
+        "bust": 0.94,
+        "head_scale": 1,
+        "face_style": "sharp",
+        "skin": "#c88b68",
+        "hair_color": "#2f313f",
+        "uniform_color": "#f4f0df",
+        "accent": "#f6d447",
+        "eye": "#302b38",
+        "hair_style": "long",
+        "uniform_style": "sleeveless"
+      },
+      "variant_rules": {
+        "allowed": [
+          "hair_color",
+          "hair_style",
+          "body_scale"
+        ],
+        "body_scale_min": 0.94,
+        "body_scale_max": 1.06
+      }
+    },
+    {
+      "id": "bw007",
+      "display_name": "Kira Kurosawa",
+      "rarity": "SSR",
+      "element": "darkness",
+      "position": "RF",
+      "specialization": "power",
+      "potential": 5,
+      "stats": {
+        "power": 76,
+        "contact": 69,
+        "speed": 57,
+        "pitch": 54,
+        "control": 67,
+        "defense": 61,
+        "critical": 16,
+        "stamina": 74
+      },
+      "visual": {
+        "body_preset": "power",
+        "height": 1,
+        "shoulder_width": 1.18,
+        "waist_width": 1.02,
+        "hip_width": 1.1,
+        "bust": 1.08,
+        "head_scale": 1,
+        "face_style": "sharp",
+        "skin": "#e1aa8d",
+        "hair_color": "#3b1e49",
+        "uniform_color": "#f1e8ff",
+        "accent": "#8b5cf6",
+        "eye": "#3c2148",
+        "hair_style": "long",
+        "uniform_style": "jacket"
+      },
+      "variant_rules": {
+        "allowed": [
+          "hair_color",
+          "hair_style",
+          "body_scale"
+        ],
+        "body_scale_min": 0.94,
+        "body_scale_max": 1.06
+      }
+    },
+    {
+      "id": "bw008",
+      "display_name": "Nao Fujimoto",
+      "rarity": "SR",
+      "element": "water",
+      "position": "2B",
+      "specialization": "contact",
+      "potential": 3,
+      "stats": {
+        "power": 57,
+        "contact": 82,
+        "speed": 74,
+        "pitch": 48,
+        "control": 57,
+        "defense": 70,
+        "critical": 12,
+        "stamina": 68
+      },
+      "visual": {
+        "body_preset": "slim",
+        "height": 0.92,
+        "shoulder_width": 0.9,
+        "waist_width": 0.8,
+        "hip_width": 0.92,
+        "bust": 0.84,
+        "head_scale": 1,
+        "face_style": "soft",
+        "skin": "#f1c6aa",
+        "hair_color": "#4b79a6",
+        "uniform_color": "#eef7ff",
+        "accent": "#3b82f6",
+        "eye": "#284761",
+        "hair_style": "long",
+        "uniform_style": "standard"
+      },
+      "variant_rules": {
+        "allowed": [
+          "hair_color",
+          "hair_style",
+          "body_scale"
+        ],
+        "body_scale_min": 0.94,
+        "body_scale_max": 1.06
+      }
+    },
+    {
+      "id": "bw009",
+      "display_name": "Rika Moriyama",
+      "rarity": "SR",
+      "element": "nature",
+      "position": "LF",
+      "specialization": "runner",
+      "potential": 4,
+      "stats": {
+        "power": 59,
+        "contact": 70,
+        "speed": 90,
+        "pitch": 50,
+        "control": 60,
+        "defense": 77,
+        "critical": 9,
+        "stamina": 75
+      },
+      "visual": {
+        "body_preset": "athletic",
+        "height": 1.02,
+        "shoulder_width": 1.1,
+        "waist_width": 0.95,
+        "hip_width": 1.04,
+        "bust": 0.94,
+        "head_scale": 1,
+        "face_style": "round",
+        "skin": "#c98c68",
+        "hair_color": "#5a7044",
+        "uniform_color": "#f4f1da",
+        "accent": "#4cae5f",
+        "eye": "#344124",
+        "hair_style": "long",
+        "uniform_style": "sporty"
+      },
+      "variant_rules": {
+        "allowed": [
+          "hair_color",
+          "hair_style",
+          "body_scale"
+        ],
+        "body_scale_min": 0.94,
+        "body_scale_max": 1.06
+      }
+    },
+    {
+      "id": "bw010",
+      "display_name": "Mei Kanzaki",
+      "rarity": "SSR",
+      "element": "lightning",
+      "position": "P",
+      "specialization": "pitcher",
+      "potential": 5,
+      "stats": {
+        "power": 49,
+        "contact": 56,
+        "speed": 61,
+        "pitch": 79,
+        "control": 84,
+        "defense": 65,
+        "critical": 14,
+        "stamina": 82
+      },
+      "visual": {
+        "body_preset": "slim",
+        "height": 0.92,
+        "shoulder_width": 0.9,
+        "waist_width": 0.8,
+        "hip_width": 0.92,
+        "bust": 0.84,
+        "head_scale": 1,
+        "face_style": "sharp",
+        "skin": "#efc2a0",
+        "hair_color": "#60406e",
+        "uniform_color": "#f5efff",
+        "accent": "#f6d447",
+        "eye": "#473153",
+        "hair_style": "long",
+        "uniform_style": "standard"
+      },
+      "variant_rules": {
+        "allowed": [
+          "hair_color",
+          "hair_style",
+          "body_scale"
+        ],
+        "body_scale_min": 0.94,
+        "body_scale_max": 1.06
+      }
+    },
+    {
+      "id": "bw011",
+      "display_name": "Hina Sakuragi",
+      "rarity": "R",
+      "element": "light",
+      "position": "C",
+      "specialization": "catcher",
+      "potential": 3,
+      "stats": {
+        "power": 61,
+        "contact": 60,
+        "speed": 52,
+        "pitch": 59,
+        "control": 62,
+        "defense": 82,
+        "critical": 8,
+        "stamina": 78
+      },
+      "visual": {
+        "body_preset": "balanced",
+        "height": 1,
+        "shoulder_width": 1,
+        "waist_width": 0.9,
+        "hip_width": 1,
+        "bust": 1,
+        "head_scale": 1,
+        "face_style": "soft",
+        "skin": "#f6d1b2",
+        "hair_color": "#8a5a76",
+        "uniform_color": "#fff5ed",
+        "accent": "#f4ed9b",
+        "eye": "#5b3b4e",
+        "hair_style": "long",
+        "uniform_style": "standard"
+      },
+      "variant_rules": {
+        "allowed": [
+          "hair_color",
+          "hair_style",
+          "body_scale"
+        ],
+        "body_scale_min": 0.94,
+        "body_scale_max": 1.06
+      }
+    },
+    {
+      "id": "bw012",
+      "display_name": "Sayu Kisaragi",
+      "rarity": "SR",
+      "element": "nature",
+      "position": "SS",
+      "specialization": "defender",
+      "potential": 4,
+      "stats": {
+        "power": 58,
+        "contact": 67,
+        "speed": 70,
+        "pitch": 52,
+        "control": 59,
+        "defense": 84,
+        "critical": 11,
+        "stamina": 80
+      },
+      "visual": {
+        "body_preset": "balanced",
+        "height": 1,
+        "shoulder_width": 1,
+        "waist_width": 0.9,
+        "hip_width": 1,
+        "bust": 1,
+        "head_scale": 1,
+        "face_style": "soft",
+        "skin": "#d59a78",
+        "hair_color": "#31513f",
+        "uniform_color": "#eef7e4",
+        "accent": "#4cae5f",
+        "eye": "#22392a",
+        "hair_style": "long",
+        "uniform_style": "sleeveless"
+      },
+      "variant_rules": {
+        "allowed": [
+          "hair_color",
+          "hair_style",
+          "body_scale"
+        ],
+        "body_scale_min": 0.94,
+        "body_scale_max": 1.06
+      }
+    },
+    {
+      "id": "bw013",
+      "display_name": "Kaede Arakawa",
+      "rarity": "SSR",
+      "element": "darkness",
+      "position": "3B",
+      "specialization": "power",
+      "potential": 5,
+      "stats": {
+        "power": 74,
+        "contact": 67,
+        "speed": 55,
+        "pitch": 58,
+        "control": 66,
+        "defense": 70,
+        "critical": 14,
+        "stamina": 81
+      },
+      "visual": {
+        "body_preset": "power",
+        "height": 1,
+        "shoulder_width": 1.18,
+        "waist_width": 1.02,
+        "hip_width": 1.1,
+        "bust": 1.08,
+        "head_scale": 1,
+        "face_style": "sharp",
+        "skin": "#e4b08d",
+        "hair_color": "#241c2a",
+        "uniform_color": "#eee8f4",
+        "accent": "#8b5cf6",
+        "eye": "#2c2034",
+        "hair_style": "long",
+        "uniform_style": "jacket"
+      },
+      "variant_rules": {
+        "allowed": [
+          "hair_color",
+          "hair_style",
+          "body_scale"
+        ],
+        "body_scale_min": 0.94,
+        "body_scale_max": 1.06
+      }
+    },
+    {
+      "id": "bw014",
+      "display_name": "Rin Asakura",
+      "rarity": "SR",
+      "element": "ice",
+      "position": "CF",
+      "specialization": "runner",
+      "potential": 4,
+      "stats": {
+        "power": 53,
+        "contact": 68,
+        "speed": 94,
+        "pitch": 46,
+        "control": 56,
+        "defense": 74,
+        "critical": 10,
+        "stamina": 77
+      },
+      "visual": {
+        "body_preset": "slim",
+        "height": 0.92,
+        "shoulder_width": 0.9,
+        "waist_width": 0.8,
+        "hip_width": 0.92,
+        "bust": 0.84,
+        "head_scale": 1,
+        "face_style": "soft",
+        "skin": "#f3ceb5",
+        "hair_color": "#7fa0b8",
+        "uniform_color": "#edf8ff",
+        "accent": "#8ad9ff",
+        "eye": "#334957",
+        "hair_style": "long",
+        "uniform_style": "sporty"
+      },
+      "variant_rules": {
+        "allowed": [
+          "hair_color",
+          "hair_style",
+          "body_scale"
+        ],
+        "body_scale_min": 0.94,
+        "body_scale_max": 1.06
+      }
+    },
+    {
+      "id": "bw015",
+      "display_name": "Momo Hoshino",
+      "rarity": "SSR",
+      "element": "fire",
+      "position": "1B",
+      "specialization": "power",
+      "potential": 5,
+      "stats": {
+        "power": 71,
+        "contact": 70,
+        "speed": 54,
+        "pitch": 66,
+        "control": 78,
+        "defense": 68,
+        "critical": 15,
+        "stamina": 83
+      },
+      "visual": {
+        "body_preset": "curvy",
+        "height": 0.98,
+        "shoulder_width": 0.98,
+        "waist_width": 0.82,
+        "hip_width": 1.18,
+        "bust": 1.16,
+        "head_scale": 1,
+        "face_style": "round",
+        "skin": "#e8b18f",
+        "hair_color": "#b85a3f",
+        "uniform_color": "#fff0dd",
+        "accent": "#e4572e",
+        "eye": "#633022",
+        "hair_style": "long",
+        "uniform_style": "jacket"
+      },
+      "variant_rules": {
+        "allowed": [
+          "hair_color",
+          "hair_style",
+          "body_scale"
+        ],
+        "body_scale_min": 0.94,
+        "body_scale_max": 1.06
+      }
+    },
+    {
+      "id": "bw016",
+      "display_name": "Fuyuki Aono",
+      "rarity": "SR",
+      "element": "ice",
+      "position": "P",
+      "specialization": "pitcher",
+      "potential": 4,
+      "stats": {
+        "power": 50,
+        "contact": 59,
+        "speed": 64,
+        "pitch": 76,
+        "control": 81,
+        "defense": 63,
+        "critical": 12,
+        "stamina": 80
+      },
+      "visual": {
+        "body_preset": "slim",
+        "height": 0.92,
+        "shoulder_width": 0.9,
+        "waist_width": 0.8,
+        "hip_width": 0.92,
+        "bust": 0.84,
+        "head_scale": 1,
+        "face_style": "sharp",
+        "skin": "#e9c1a4",
+        "hair_color": "#546fa4",
+        "uniform_color": "#f1f6ff",
+        "accent": "#8ad9ff",
+        "eye": "#304769",
+        "hair_style": "long",
+        "uniform_style": "standard"
+      },
+      "variant_rules": {
+        "allowed": [
+          "hair_color",
+          "hair_style",
+          "body_scale"
+        ],
+        "body_scale_min": 0.94,
+        "body_scale_max": 1.06
+      }
+    },
+    {
+      "id": "bw017",
+      "display_name": "Yuzu Takahashi",
+      "rarity": "R",
+      "element": "light",
+      "position": "2B",
+      "specialization": "contact",
+      "potential": 3,
+      "stats": {
+        "power": 56,
+        "contact": 79,
+        "speed": 69,
+        "pitch": 49,
+        "control": 61,
+        "defense": 71,
+        "critical": 10,
+        "stamina": 70
+      },
+      "visual": {
+        "body_preset": "balanced",
+        "height": 1,
+        "shoulder_width": 1,
+        "waist_width": 0.9,
+        "hip_width": 1,
+        "bust": 1,
+        "head_scale": 1,
+        "face_style": "soft",
+        "skin": "#f0c09e",
+        "hair_color": "#d29b31",
+        "uniform_color": "#fff4da",
+        "accent": "#f4ed9b",
+        "eye": "#554018",
+        "hair_style": "long",
+        "uniform_style": "standard"
+      },
+      "variant_rules": {
+        "allowed": [
+          "hair_color",
+          "hair_style",
+          "body_scale"
+        ],
+        "body_scale_min": 0.94,
+        "body_scale_max": 1.06
+      }
+    },
+    {
+      "id": "bw018",
+      "display_name": "Koharu Nishiki",
+      "rarity": "SR",
+      "element": "nature",
+      "position": "LF",
+      "specialization": "defender",
+      "potential": 4,
+      "stats": {
+        "power": 58,
+        "contact": 65,
+        "speed": 67,
+        "pitch": 53,
+        "control": 61,
+        "defense": 86,
+        "critical": 9,
+        "stamina": 82
+      },
+      "visual": {
+        "body_preset": "balanced",
+        "height": 1,
+        "shoulder_width": 1,
+        "waist_width": 0.9,
+        "hip_width": 1,
+        "bust": 1,
+        "head_scale": 1,
+        "face_style": "round",
+        "skin": "#d99f7a",
+        "hair_color": "#54713a",
+        "uniform_color": "#eff5e3",
+        "accent": "#4cae5f",
+        "eye": "#304024",
+        "hair_style": "long",
+        "uniform_style": "sleeveless"
+      },
+      "variant_rules": {
+        "allowed": [
+          "hair_color",
+          "hair_style",
+          "body_scale"
+        ],
+        "body_scale_min": 0.94,
+        "body_scale_max": 1.06
+      }
+    },
+    {
+      "id": "bw019",
+      "display_name": "Chika Raikou",
+      "rarity": "SSR",
+      "element": "lightning",
+      "position": "RF",
+      "specialization": "power",
+      "potential": 5,
+      "stats": {
+        "power": 69,
+        "contact": 68,
+        "speed": 65,
+        "pitch": 57,
+        "control": 62,
+        "defense": 75,
+        "critical": 17,
+        "stamina": 79
+      },
+      "visual": {
+        "body_preset": "athletic",
+        "height": 1.02,
+        "shoulder_width": 1.1,
+        "waist_width": 0.95,
+        "hip_width": 1.04,
+        "bust": 0.94,
+        "head_scale": 1,
+        "face_style": "sharp",
+        "skin": "#c88765",
+        "hair_color": "#38343d",
+        "uniform_color": "#f1f0ed",
+        "accent": "#f6d447",
+        "eye": "#2d2a31",
+        "hair_style": "long",
+        "uniform_style": "jacket"
+      },
+      "variant_rules": {
+        "allowed": [
+          "hair_color",
+          "hair_style",
+          "body_scale"
+        ],
+        "body_scale_min": 0.94,
+        "body_scale_max": 1.06
+      }
+    },
+    {
+      "id": "bw020",
+      "display_name": "Shiori Amane",
+      "rarity": "SR",
+      "element": "darkness",
+      "position": "SS",
+      "specialization": "contact",
+      "potential": 4,
+      "stats": {
+        "power": 54,
+        "contact": 83,
+        "speed": 68,
+        "pitch": 47,
+        "control": 58,
+        "defense": 79,
+        "critical": 13,
+        "stamina": 73
+      },
+      "visual": {
+        "body_preset": "slim",
+        "height": 0.92,
+        "shoulder_width": 0.9,
+        "waist_width": 0.8,
+        "hip_width": 0.92,
+        "bust": 0.84,
+        "head_scale": 1,
+        "face_style": "sharp",
+        "skin": "#f1c5aa",
+        "hair_color": "#2d253d",
+        "uniform_color": "#f2eafd",
+        "accent": "#8b5cf6",
+        "eye": "#342a4b",
+        "hair_style": "long",
+        "uniform_style": "standard"
+      },
+      "variant_rules": {
+        "allowed": [
+          "hair_color",
+          "hair_style",
+          "body_scale"
+        ],
+        "body_scale_min": 0.94,
+        "body_scale_max": 1.06
+      }
+    },
+    {
+      "id": "bw021",
+      "display_name": "Noa Mizuno",
+      "rarity": "R",
+      "element": "water",
+      "position": "C",
+      "specialization": "catcher",
+      "potential": 3,
+      "stats": {
+        "power": 62,
+        "contact": 61,
+        "speed": 51,
+        "pitch": 58,
+        "control": 65,
+        "defense": 84,
+        "critical": 8,
+        "stamina": 79
+      },
+      "visual": {
+        "body_preset": "balanced",
+        "height": 1,
+        "shoulder_width": 1,
+        "waist_width": 0.9,
+        "hip_width": 1,
+        "bust": 1,
+        "head_scale": 1,
+        "face_style": "round",
+        "skin": "#e4ae88",
+        "hair_color": "#2b6b78",
+        "uniform_color": "#eefcff",
+        "accent": "#3b82f6",
+        "eye": "#244b57",
+        "hair_style": "long",
+        "uniform_style": "standard"
+      },
+      "variant_rules": {
+        "allowed": [
+          "hair_color",
+          "hair_style",
+          "body_scale"
+        ],
+        "body_scale_min": 0.94,
+        "body_scale_max": 1.06
+      }
+    },
+    {
+      "id": "bw022",
+      "display_name": "Ayame Tsukino",
+      "rarity": "SSR",
+      "element": "darkness",
+      "position": "1B",
+      "specialization": "defender",
+      "potential": 5,
+      "stats": {
+        "power": 67,
+        "contact": 63,
+        "speed": 56,
+        "pitch": 54,
+        "control": 65,
+        "defense": 89,
+        "critical": 12,
+        "stamina": 84
+      },
+      "visual": {
+        "body_preset": "power",
+        "height": 1,
+        "shoulder_width": 1.18,
+        "waist_width": 1.02,
+        "hip_width": 1.1,
+        "bust": 1.08,
+        "head_scale": 1,
+        "face_style": "sharp",
+        "skin": "#c98d69",
+        "hair_color": "#3e2f58",
+        "uniform_color": "#eeeaff",
+        "accent": "#8b5cf6",
+        "eye": "#44355e",
+        "hair_style": "long",
+        "uniform_style": "sleeveless"
+      },
+      "variant_rules": {
+        "allowed": [
+          "hair_color",
+          "hair_style",
+          "body_scale"
+        ],
+        "body_scale_min": 0.94,
+        "body_scale_max": 1.06
+      }
+    },
+    {
+      "id": "bw023",
+      "display_name": "Towa Amami",
+      "rarity": "SR",
+      "element": "light",
+      "position": "CF",
+      "specialization": "runner",
+      "potential": 4,
+      "stats": {
+        "power": 57,
+        "contact": 73,
+        "speed": 91,
+        "pitch": 50,
+        "control": 59,
+        "defense": 80,
+        "critical": 10,
+        "stamina": 78
+      },
+      "visual": {
+        "body_preset": "athletic",
+        "height": 1.02,
+        "shoulder_width": 1.1,
+        "waist_width": 0.95,
+        "hip_width": 1.04,
+        "bust": 0.94,
+        "head_scale": 1,
+        "face_style": "soft",
+        "skin": "#f0c8ac",
+        "hair_color": "#5b7bb1",
+        "uniform_color": "#eef6ff",
+        "accent": "#f4ed9b",
+        "eye": "#30486e",
+        "hair_style": "long",
+        "uniform_style": "sporty"
+      },
+      "variant_rules": {
+        "allowed": [
+          "hair_color",
+          "hair_style",
+          "body_scale"
+        ],
+        "body_scale_min": 0.94,
+        "body_scale_max": 1.06
+      }
+    },
+    {
+      "id": "bw024",
+      "display_name": "Nene Kagetsu",
+      "rarity": "UR",
+      "element": "fire",
+      "position": "P",
+      "specialization": "pitcher",
+      "potential": 5,
+      "stats": {
+        "power": 61,
+        "contact": 60,
+        "speed": 55,
+        "pitch": 86,
+        "control": 88,
+        "defense": 72,
+        "critical": 19,
+        "stamina": 90
+      },
+      "visual": {
+        "body_preset": "power",
+        "height": 1,
+        "shoulder_width": 1.18,
+        "waist_width": 1.02,
+        "hip_width": 1.1,
+        "bust": 1.08,
+        "head_scale": 1,
+        "face_style": "sharp",
+        "skin": "#e6ab83",
+        "hair_color": "#922f24",
+        "uniform_color": "#fff0e6",
+        "accent": "#e4572e",
+        "eye": "#64251f",
+        "hair_style": "long",
+        "uniform_style": "standard"
+      },
+      "variant_rules": {
+        "allowed": [
+          "hair_color",
+          "hair_style",
+          "body_scale"
+        ],
+        "body_scale_min": 0.94,
+        "body_scale_max": 1.06
+      }
+    },
+    {
+      "id": "bw025",
+      "display_name": "Itsuki Kogane",
+      "rarity": "SR",
+      "element": "ice",
+      "position": "2B",
+      "specialization": "defender",
+      "potential": 4,
+      "stats": {
+        "power": 60,
+        "contact": 67,
+        "speed": 73,
+        "pitch": 50,
+        "control": 60,
+        "defense": 87,
+        "critical": 10,
+        "stamina": 81
+      },
+      "visual": {
+        "body_preset": "athletic",
+        "height": 1.02,
+        "shoulder_width": 1.1,
+        "waist_width": 0.95,
+        "hip_width": 1.04,
+        "bust": 0.94,
+        "head_scale": 1,
+        "face_style": "soft",
+        "skin": "#d9b093",
+        "hair_color": "#8b7f59",
+        "uniform_color": "#f1f0df",
+        "accent": "#8ad9ff",
+        "eye": "#514a35",
+        "hair_style": "long",
+        "uniform_style": "sleeveless"
+      },
+      "variant_rules": {
+        "allowed": [
+          "hair_color",
+          "hair_style",
+          "body_scale"
+        ],
+        "body_scale_min": 0.94,
+        "body_scale_max": 1.06
+      }
+    },
+    {
+      "id": "bw026",
+      "display_name": "Ema Kuroyuri",
+      "rarity": "SSR",
+      "element": "nature",
+      "position": "3B",
+      "specialization": "contact",
+      "potential": 5,
+      "stats": {
+        "power": 64,
+        "contact": 81,
+        "speed": 67,
+        "pitch": 56,
+        "control": 71,
+        "defense": 78,
+        "critical": 15,
+        "stamina": 80
+      },
+      "visual": {
+        "body_preset": "curvy",
+        "height": 0.98,
+        "shoulder_width": 0.98,
+        "waist_width": 0.82,
+        "hip_width": 1.18,
+        "bust": 1.16,
+        "head_scale": 1,
+        "face_style": "round",
+        "skin": "#e8b59a",
+        "hair_color": "#526b3e",
+        "uniform_color": "#eff5df",
+        "accent": "#4cae5f",
+        "eye": "#344327",
+        "hair_style": "long",
+        "uniform_style": "standard"
+      },
+      "variant_rules": {
+        "allowed": [
+          "hair_color",
+          "hair_style",
+          "body_scale"
+        ],
+        "body_scale_min": 0.94,
+        "body_scale_max": 1.06
+      }
+    },
+    {
+      "id": "bw027",
+      "display_name": "Hotaru Kazehaya",
+      "rarity": "SR",
+      "element": "lightning",
+      "position": "LF",
+      "specialization": "contact",
+      "potential": 4,
+      "stats": {
+        "power": 57,
+        "contact": 78,
+        "speed": 76,
+        "pitch": 51,
+        "control": 63,
+        "defense": 76,
+        "critical": 18,
+        "stamina": 74
+      },
+      "visual": {
+        "body_preset": "balanced",
+        "height": 1,
+        "shoulder_width": 1,
+        "waist_width": 0.9,
+        "hip_width": 1,
+        "bust": 1,
+        "head_scale": 1,
+        "face_style": "soft",
+        "skin": "#e9bb9e",
+        "hair_color": "#2b6d6f",
+        "uniform_color": "#eef8f7",
+        "accent": "#f6d447",
+        "eye": "#23464a",
+        "hair_style": "long",
+        "uniform_style": "standard"
+      },
+      "variant_rules": {
+        "allowed": [
+          "hair_color",
+          "hair_style",
+          "body_scale"
+        ],
+        "body_scale_min": 0.94,
+        "body_scale_max": 1.06
+      }
+    },
+    {
+      "id": "bw028",
+      "display_name": "Aria Solis",
+      "rarity": "SSR",
+      "element": "light",
+      "position": "RF",
+      "specialization": "power",
+      "potential": 5,
+      "stats": {
+        "power": 73,
+        "contact": 68,
+        "speed": 59,
+        "pitch": 61,
+        "control": 75,
+        "defense": 69,
+        "critical": 16,
+        "stamina": 82
+      },
+      "visual": {
+        "body_preset": "curvy",
+        "height": 0.98,
+        "shoulder_width": 0.98,
+        "waist_width": 0.82,
+        "hip_width": 1.18,
+        "bust": 1.16,
+        "head_scale": 1,
+        "face_style": "soft",
+        "skin": "#f0c7aa",
+        "hair_color": "#d9a35b",
+        "uniform_color": "#fff7e8",
+        "accent": "#f4ed9b",
+        "eye": "#674b22",
+        "hair_style": "long",
+        "uniform_style": "jacket"
+      },
+      "variant_rules": {
+        "allowed": [
+          "hair_color",
+          "hair_style",
+          "body_scale"
+        ],
+        "body_scale_min": 0.94,
+        "body_scale_max": 1.06
+      }
+    },
+    {
+      "id": "bw029",
+      "display_name": "Sena Yoru",
+      "rarity": "SR",
+      "element": "darkness",
+      "position": "SS",
+      "specialization": "runner",
+      "potential": 4,
+      "stats": {
+        "power": 58,
+        "contact": 72,
+        "speed": 89,
+        "pitch": 48,
+        "control": 59,
+        "defense": 81,
+        "critical": 12,
+        "stamina": 77
+      },
+      "visual": {
+        "body_preset": "athletic",
+        "height": 1.02,
+        "shoulder_width": 1.1,
+        "waist_width": 0.95,
+        "hip_width": 1.04,
+        "bust": 0.94,
+        "head_scale": 1,
+        "face_style": "sharp",
+        "skin": "#c58a6c",
+        "hair_color": "#202638",
+        "uniform_color": "#e9ebf5",
+        "accent": "#8b5cf6",
+        "eye": "#282d49",
+        "hair_style": "long",
+        "uniform_style": "sporty"
+      },
+      "variant_rules": {
+        "allowed": [
+          "hair_color",
+          "hair_style",
+          "body_scale"
+        ],
+        "body_scale_min": 0.94,
+        "body_scale_max": 1.06
+      }
+    },
+    {
+      "id": "bw030",
+      "display_name": "Kagari Homura",
+      "rarity": "UR",
+      "element": "fire",
+      "position": "C",
+      "specialization": "catcher",
+      "potential": 5,
+      "stats": {
+        "power": 68,
+        "contact": 65,
+        "speed": 55,
+        "pitch": 69,
+        "control": 74,
+        "defense": 91,
+        "critical": 19,
+        "stamina": 88
+      },
+      "visual": {
+        "body_preset": "power",
+        "height": 1,
+        "shoulder_width": 1.18,
+        "waist_width": 1.02,
+        "hip_width": 1.1,
+        "bust": 1.08,
+        "head_scale": 1,
+        "face_style": "round",
+        "skin": "#d89a70",
+        "hair_color": "#8f3a26",
+        "uniform_color": "#fff0df",
+        "accent": "#e4572e",
+        "eye": "#62281f",
+        "hair_style": "long",
+        "uniform_style": "standard"
+      },
+      "variant_rules": {
+        "allowed": [
+          "hair_color",
+          "hair_style",
+          "body_scale"
+        ],
+        "body_scale_min": 0.94,
+        "body_scale_max": 1.06
+      }
+    }
+  ]
+}
