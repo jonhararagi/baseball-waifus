@@ -3386,3 +3386,104 @@ El flujo vigente queda:
 **Pitch → zona → Ball o Timing → contacto → FieldingResolver si corresponde → GameState → eventos/presentación**
 
 No crear otro sistema paralelo de conteo. `BaseballGameState` es la autoridad del conteo, bases, carreras, lineup e innings.
+
+
+# 29. Revisión 29: force outs, rundowns, recepción y sliding
+
+**Fecha:** 2026-09-21  
+**Tipo:** Núcleo de béisbol / defensa avanzada / corredores / presentación.
+
+### Motivo
+
+La Revisión 28 dejó pendientes explícitos del núcleo defensivo: force outs/rundowns, errores de recepción y sliding. Este bloque se implementa antes de avanzar a economía, gacha o crianza.
+
+### Implementado
+
+- `game/baseball/defensive_runner_resolver.gd`
+  - resolución independiente de force out;
+  - rundown ocasional y reproducible;
+  - resolución de sliding;
+  - metadatos de chance, roll, corredora y versión de regla.
+
+- `game/baseball/fielding_resolver.gd`
+  - añade `reception_v1`;
+  - una captura exitosa puede fallar durante la recepción;
+  - una recepción fallida produce `FIELDING ERROR`;
+  - una recepción fallida no genera automáticamente un lanzamiento posterior.
+
+- `game/baseball/game_state.gd`
+  - `apply_force_out`;
+  - `apply_rundown_out`;
+  - actualización coherente de RunnerToken, bases y conteo.
+
+- `scenes/main.gd`
+  - integra DefensiveRunnerResolver después de FieldingResolver;
+  - separa double play, force out, rundown y recepción;
+  - aplica primero el resultado lógico y después lo presenta.
+
+- `game/avatar/baseball_field_avatar_presenter.gd`
+  - presenta force out;
+  - presenta rundown;
+  - utiliza la pose SLIDE existente;
+  - sincroniza las bases desde el estado final.
+
+- `docs/defensive-rules-v1.md`
+  - fórmulas y contratos documentados.
+
+- `scenes/defensive_rules_test.gd` + `defensive_rules_test.tscn`
+  - regresión para force out;
+  - sliding;
+  - rundown mediante seeds;
+  - recepción como error defensivo.
+
+### Decisiones arquitectónicas
+
+1. No se agrega una estadística nueva. Speed y Defense cubren las funciones necesarias.
+2. DoublePlayResolver conserva prioridad sobre la resolución individual de corredores.
+3. ReceptionError es una fase separada de la captura y del lanzamiento.
+4. El renderer no decide si una corredora llega safe o queda out.
+5. Sliding reutiliza la pose SLIDE ya existente, evitando duplicar el sistema de animación.
+
+### Problemas encontrados y correcciones
+
+- La recepción fallida inicialmente podía caer en la ruta de lanzamiento posterior. Se separó por `reason == "FIELDING MISS"`.
+- La resolución de force out necesita conservar el equipo bateador original incluso cuando un out cambia de mitad. `main.gd` ya captura `batting_team_index` antes de mutar el estado.
+- El estado visual de runners se sincroniza después de la jugada para evitar que una corredora eliminada permanezca en una base visualmente ocupada.
+
+### Pruebas
+
+Pruebas estructurales añadidas:
+- límites de force out;
+- tipo de slide;
+- rundown encontrado con seeds deterministas;
+- recepción error encontrado con seeds deterministas.
+
+**Runtime Godot:** pendiente. Este entorno no dispone del binario Godot, por lo que no se declara ejecución runtime.
+
+### Estado
+
+**Implementado:** bloque lógico de force outs, rundown, recepción independiente y sliding integrado a presentación.
+
+**Pendiente:** rundown físico paso a paso, tag plays más detalladas, force chains completos en todas las configuraciones, integración avanzada de errores de lanzamiento y validación runtime.
+
+### Arte de personajes
+
+La biblioteca de 30 personajes continúa usando `character_archetypes.json` como fuente de verdad. Se mantiene el pipeline:
+
+`CharacterArchetypeCatalog → AvatarProfile → prompt → arte → renderer`
+
+Se prepara además una salida vectorial procedural por personaje como arte de prototipo intercambiable, sin alterar gameplay ni estadísticas.
+
+### Porcentaje global revisado
+
+El avance global estimado pasa de **≈67% a ≈70%**.
+
+El aumento representa completar una capa pendiente del núcleo defensivo. No se cuentan como terminados runtime Godot, arte de producción, economía, gacha, crianza, backend ni PvP.
+
+### Regla de continuidad
+
+El núcleo defensivo vigente queda:
+
+**FieldingResolver → Reception → DoublePlayResolver / DefensiveRunnerResolver → GameState → Presentation**
+
+No duplicar estas decisiones en `main.gd`, renderer, UI o animaciones.
