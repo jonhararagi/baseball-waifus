@@ -4710,3 +4710,42 @@ El test estructural cubre duraciones, ganancias deterministas, inicio, rechazo d
 ## Regla de continuidad
 
 El entrenamiento no debe crear una segunda fuente de verdad para estadísticas. Hasta que exista el almacenamiento persistente del roster, TrainingService entrega un payload determinista y la futura autoridad de personajes deberá aplicarlo de forma atómica.
+
+
+# Revisión 43: validación de persistencia del entrenamiento
+
+**Fecha:** 2026-09-21
+
+## Motivo
+
+Endurecer la cola de entrenamiento contra datos persistidos incompatibles o manipulados localmente.
+
+## Cambio
+
+`TrainingQueueStore` ahora valida al cargar cada registro:
+
+- tipo de entrenamiento válido;
+- duración válida;
+- timestamp de inicio válido;
+- timestamp de finalización no anterior al inicio;
+- duración persistida exactamente igual a la duración de `EconomyRules`.
+
+Antes de borrar una entrada completada durante `claim()`, también se valida que el payload de ganancias pueda resolverse desde las reglas actuales.
+
+Un registro corrupto no se convierte en una recompensa ni en una reclamación parcial.
+
+## Pruebas
+
+Se mantiene el test estructural de cola y reclamación de la Revisión 42.
+
+**Runtime Godot:** no ejecutado.
+
+## Estado
+
+**Implementado:** validación de persistencia y payload de entrenamiento.
+
+**Avance global aproximado:** **≈84%**.
+
+## Regla de continuidad
+
+La cola de entrenamiento almacena intención y timestamps. Las ganancias siempre proceden de `EconomyRules`; ningún valor de ganancia se acepta directamente desde el archivo de guardado.
