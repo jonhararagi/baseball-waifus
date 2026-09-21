@@ -40,3 +40,8 @@ Antes de usar la referencia como arte final redistribuible, se revisarán las co
 ## Evolución
 
 Esta lámina se considera el **primer ancla visual del estilo Baseball Waifus**. Las futuras hojas de roster y retratos individuales deben conservar su lenguaje general, pero pueden mejorar anatomía, poses, uniformes y consistencia sin quedar atados a personajes accidentales que aparezcan en la referencia.
+
+
+## Canon de continuidad
+
+La dirección visual de esta guía queda consolidada junto con el roster y los assets generados en [`docs/canon/character-art-canon-v1.md`](canon/character-art-canon-v1.md). La guía sigue siendo referencia de estilo y no reemplaza el catálogo JSON.
