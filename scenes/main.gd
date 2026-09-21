@@ -313,6 +313,12 @@ func _swing() -> void:
 
 	if not fielding_result.is_empty():
 		field_avatar_presenter.on_fielding_resolution(ball_event, fielding_result)
+		var runner_play_for_presentation: Dictionary = fielding_result.get("runner_play", {})
+		if not runner_play_for_presentation.is_empty():
+			field_avatar_presenter.on_defensive_runner_play(
+				runner_play_for_presentation,
+				state.base_runners
+			)
 		if fielding_play != null:
 			field_avatar_presenter.on_fielding_play(ball_event, fielding_play)
 
