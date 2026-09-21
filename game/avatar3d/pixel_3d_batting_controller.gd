@@ -73,3 +73,32 @@ func _action_from_name(name: String) -> int:
     var normalized := name.to_upper().replace("-", "_").replace(" ", "_")
     var keys := Action.keys()
     return keys.find(normalized)
+
+func _update_secondary_motion() -> void:
+	if character == null or character.secondary_motion == null:
+		return
+	var intent := Vector3.ZERO
+	match action:
+		Action.READY:
+			intent = Vector3(0.0, 0.05, 0.0)
+		Action.LOAD:
+			intent = Vector3(-0.20, -0.05, 0.12)
+		Action.SWING:
+			intent = Vector3(0.80, 0.05, 0.55)
+		Action.FOLLOW_THROUGH:
+			intent = Vector3(0.65, 0.0, 0.35)
+		Action.RUN:
+			intent = Vector3(sin(elapsed * 13.0), 0.0, cos(elapsed * 13.0) * 0.55)
+		Action.SLIDE:
+			intent = Vector3(0.75, -0.70, 0.20)
+		Action.CATCH:
+			intent = Vector3(0.0, -0.35, 0.0)
+		Action.THROW:
+			intent = Vector3(-0.65, 0.10, 0.15)
+		Action.CELEBRATE:
+			intent = Vector3(sin(elapsed * 7.0) * 0.25, 0.18, 0.0)
+		Action.DEFEAT:
+			intent = Vector3(0.0, -0.20, 0.10)
+		Action.IDLE:
+			intent = Vector3.ZERO
+	character.secondary_motion.set_activity(intent)
