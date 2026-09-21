@@ -72,3 +72,17 @@ Las futuras imágenes provenientes de terceros deben conservarse fuera del runti
 ## Regla de continuidad
 
 Las nuevas pantallas deben reutilizar el lenguaje visual existente antes de crear un estilo independiente. Los sistemas funcionales y contratos de gameplay no deben depender del aspecto visual.
+
+## Presentación del Hub v1.1
+
+El Hub incorpora una composición por capas:
+- fondo vectorial original de estadio;
+- barra superior de identidad;
+- tarjeta principal de personaje;
+- marco de rareza/identidad reutilizable;
+- accesos de navegación como tarjetas táctiles;
+- paneles internos con entrada/salida animada.
+
+El mapa de campaña incorpora fondo vectorial original, ruta de progreso, nodos de actividad, estados bloqueados y tarjeta de Demon King. Las microanimaciones de hover son únicamente presentación y no modifican estado de gameplay.
+
+La dirección artística busca cuidado perceptible antes que volumen artificial: cada asset puede reemplazarse posteriormente por ilustración final manteniendo los mismos contratos de datos.
