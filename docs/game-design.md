@@ -1615,3 +1615,36 @@ La IA no puede modificar directamente:
 - resultados ya resueltos.
 
 Los cooldowns de la IA son estado de decisión, no una estadística del personaje.
+
+
+## Planificación ligera previa a la jugada
+
+La IA rival **no es una IA gráfica pesada** ni ejecuta un modelo por segundo. El juego utiliza conocimiento explícito del béisbol, reglas, heurísticas y datos del estado para preparar la jugada.
+
+Durante las ventanas que ya existen para mostrar el campo, personajes, entorno, entrada del pitcher y trayectoria de la pelota, `BaseballDecisionPlanner` prepara un contexto compacto:
+
+- bateadora y pitcher;
+- inning y mitad;
+- outs;
+- balls y strikes;
+- marcador;
+- corredores en bases;
+- semillas deterministas independientes para pitch, contacto, defensa y robo.
+
+Esto permite que el juego tenga preparados los posibles caminos de la jugada sin ejecutar cálculos visuales costosos. El resultado final sigue dependiendo de la acción real del jugador.
+
+### Timing como decisión del jugador
+
+La planificación no decide anticipadamente que habrá hit o strike. En bateo se prepara la semilla y el contexto, pero el jugador todavía determina el timing:
+
+`posición del toque → calidad de timing → resolver de contacto → resultado`
+
+El centro del indicador puede producir un timing superior, una zona intermedia produce un timing menor y dejar pasar la ventana puede producir el strike correspondiente. Las estadísticas, circunstancias, skills y RNG preparado completan la resolución.
+
+### Principio de rendimiento
+
+No se utiliza un contador de acciones por segundo para la IA. Los cálculos se realizan **por evento de jugada**, no por frame:
+
+`inicio de plate appearance → preparar datos → mostrar presentación → acción del jugador → resolver → evento → animar resultado`
+
+La presentación gana tiempo de forma natural porque el cálculo ligero ocurre durante las fases existentes del partido. Si una animación cambia de duración, la autoridad sigue siendo el gameplay y no la animación.
