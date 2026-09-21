@@ -6339,3 +6339,53 @@ Se amplió `scenes/hub_navigation_test.gd` para comprobar la existencia de los a
 **≈96% estructural del prototipo.**
 
 El porcentaje representa avance estructural del prototipo, no contenido artístico final ni validación runtime.
+
+
+## Revisión 61: componente profesional de tarjeta de personaje y diferenciación por rareza
+
+**Fecha:** 2026-09-21  
+**Motivo:** iniciar de forma controlada la segunda fase artística solicitada: las tarjetas dejan de ser composiciones ad-hoc y pasan a un componente reutilizable con identidad visual por rareza. Se valida primero con bw001 antes de escalar al roster.
+
+### Sistemas afectados
+- presentación de colección;
+- Hub;
+- identidad visual de rarezas;
+- microanimación de entrada;
+- pruebas estructurales de UI.
+
+### Archivos creados
+- game/ui/character_card.gd
+- game/ui/character_card.tscn
+- scenes/character_card_presentation_test.gd
+
+### Archivos modificados
+- scenes/hub.gd
+- scenes/hub_navigation_test.gd
+- docs/ui-style-guide.md
+- docs/bitacora.md
+
+### Decisiones arquitectónicas
+1. La tarjeta recibe PlayerData y no muta progresión ni gameplay.
+2. R, SR, SSR y UR tienen estilos explícitos y visualmente diferenciables.
+3. El retrato se obtiene por ID y puede reemplazarse por arte final sin cambiar el componente.
+4. La tarjeta muestra identidad deportiva además de rareza, posición y estadísticas resumidas.
+5. Incluye un espacio opcional para comentario contextual.
+6. La entrada usa únicamente escala/opacidad y no altera estado de juego.
+7. Se valida primero con bw001 y no se genera todavía una implementación masiva de 30 tarjetas.
+8. No se incorporan assets externos ni emojis al componente.
+
+### Pruebas
+Se añadieron comprobaciones estructurales para existencia del componente, escena, cuatro estilos de rareza, diferenciación visual y retrato de bw001.
+
+**Runtime Godot:** no ejecutado. Las pruebas son estructurales/escritas.
+
+### Problemas encontrados y correcciones
+- La tarjeta anterior estaba construida directamente en hub.gd. Se extrajo a un componente reutilizable.
+- El comentario quedó inicialmente fuera de la tarjeta durante la integración y se corrigió con un slot interno.
+- Se mantuvo fuera de esta revisión la iconografía global, el arte de las 30 personajes y las animaciones avanzadas para conservar control incremental.
+
+### Estado
+**Implementado a nivel de código y conectado al Hub.** Pendiente de validación runtime Godot y revisión visual en pantalla real.
+
+### Avance aproximado
+**≈96% estructural del prototipo.**
