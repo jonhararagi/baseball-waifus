@@ -4347,3 +4347,212 @@ Runtime Godot: no ejecutado. El entorno no dispone del binario Godot ni Android 
 ## Regla de continuidad
 
 Toda futura fuente de energía, materiales o energía de personaje debe mutar PlayerProgressStore. No crear balances paralelos en UI, anuncios, campaña o entrenamiento.
+
+
+# Revisión 40: economía local, regeneración y endurecimiento del estado de béisbol
+
+**Fecha:** 2026-09-21
+
+## Motivo
+
+El sistema ya tenía una autoridad local de energía/materiales y una política de anuncios, pero todavía existían fronteras abiertas que podían producir errores de estado:
+
+- energía sin regeneración persistente;
+- límites de campaña todavía separados de la entrada real a un partido;
+- posibilidad de consumir energía sin una transacción de entrada completa;
+- recompensas publicitarias sin una capa final que persistiera de forma atómica el uso diario;
+- una debilidad en la conservación de corredores durante un force-out en segunda/tercera.
+
+El objetivo de esta revisión es convertir estos puntos en contratos explícitos y resistentes a fallos, sin introducir IA, backend ni APIs externas.
+
+## Sistemas afectados
+
+- Progresión.
+- Energía.
+- Campaña.
+- Persistencia.
+- Publicidad recompensada.
+- Corredores.
+- Defensa.
+- QA.
+
+## Cambios implementados
+
+### Economía
+
+Se crearon:
+
+- game/progression/economy_rules.gd
+- game/progression/campaign_attempt_store.gd
+- game/progression/campaign_entry_service.gd
+- docs/progression/economy-v1.md
+- scenes/progression_rules_test.gd
+
+Costes actuales:
+
+- Normal: 10 energía.
+- Hard: 15.
+- Hell: 15.
+- Demon King: 25.
+
+Límites actuales:
+
+- Normal/Hard/Hell: 10 intentos por mapa y ciclo.
+- Demon King: 3 intentos por jefe y ciclo.
+
+La entrada al partido ahora tiene una autoridad separada de las recompensas:
+
+actividad → validación de intento → consumo de energía → persistencia del intento → partido
+
+Si la persistencia del intento falla, la energía se restaura desde snapshot.
+
+Los límites de campaña no se mezclan con las tablas de recompensas.
+
+### Regeneración
+
+PlayerProgressStore pasó a SAVE_VERSION 2.
+
+Player Energy y Character Energy regeneran +1 cada 6 minutos mientras están por debajo de 100.
+
+La regeneración utiliza timestamps locales, por lo que cerrar el juego no elimina el tiempo de recuperación.
+
+No existe overflow por encima de 100.
+
+Se añadieron snapshots/restauración para transacciones locales.
+
+### Publicidad recompensada
+
+Se creó:
+
+- game/monetization/rewarded_ad_claim_service.gd
+- scenes/rewarded_ad_claim_service_test.gd
+
+La cadena queda:
+
+proveedor de plataforma → RewardedAdService → RewardedAdClaimService → RewardedAdTransaction → PlayerProgressStore
+
+RewardedAdClaimService carga el contador diario persistente, verifica el límite, aplica la recompensa y guarda el uso. Si guardar el contador falla, restaura el snapshot de progresión.
+
+La publicidad sigue limitada a:
+
+- Player Energy;
+- Materials;
+- Character Energy.
+
+No entrega directamente personajes SSR/UR, equipamiento SSR/UR ni moneda premium.
+
+### Corrección defensiva
+
+Se corrigió BaseballGameState.apply_force_out().
+
+El código anterior podía eliminar o reemplazar corredores que debían conservarse cuando el force-out ocurría en segunda o tercera.
+
+Ahora el resultado conserva correctamente la cadena de fuerza.
+
+Se añadió una prueba con bases cargadas:
+
+- corredor A en primera;
+- corredor B en segunda;
+- corredor C en tercera;
+- C es puesto out en tercera;
+- A avanza a segunda;
+- B avanza a tercera;
+- la bateadora ocupa primera.
+
+También se valida el estado mediante validate_invariants().
+
+## Errores potenciales analizados
+
+### Error 1: recompensa duplicada
+
+Controlado mediante contador diario persistente y una única autoridad de claim.
+
+### Error 2: energía negativa
+
+Controlado por consume_player_energy() y los límites de PlayerProgressStore.
+
+### Error 3: energía que supera 100
+
+Controlado por clamp y regeneración sin overflow.
+
+### Error 4: perder regeneración al cerrar el juego
+
+Resuelto mediante timestamps.
+
+### Error 5: gastar energía y no poder entrar al mapa
+
+La entrada ahora comprueba el límite antes de consumir y restaura energía si la persistencia del intento falla.
+
+### Error 6: anuncio visto pero recompensa no persistida
+
+El adaptador no decide el premio. El claim service persiste el uso y la mutación. Un fallo de persistencia invalida la confirmación.
+
+### Error 7: anuncios reiniciando el progreso de campaña
+
+Los anuncios no tienen autoridad sobre CampaignAttemptStore.
+
+### Error 8: force-out que destruye corredores legítimos
+
+Corregido mediante conservación explícita de la cadena de fuerza.
+
+### Error 9: mezcla entre resultado y presentación
+
+No se introdujo ninguna nueva autoridad visual. La economía y la defensa permanecen fuera del renderer.
+
+## Pruebas
+
+Se añadieron pruebas estructurales para:
+
+- costes de partido;
+- límites de campaña;
+- consumo de energía;
+- límite de Demon King;
+- persistencia del claim publicitario;
+- límite 10/10;
+- conservación de la cadena de fuerza.
+
+Runtime Godot: no ejecutado. El entorno disponible no contiene el binario de Godot ni el stack Android necesario.
+
+No se afirma validación hardware ni ejecución de APK.
+
+## Estado
+
+**Implementado:**
+
+- autoridad económica local;
+- regeneración offline;
+- entrada de campaña transaccional;
+- contador de intentos;
+- claim publicitario persistente;
+- corrección de force-out;
+- pruebas estructurales correspondientes.
+
+**Pendiente:**
+
+- entrenamiento persistente;
+- inventario completo;
+- monedas/Materials definitivos;
+- gacha;
+- pity/garantías;
+- fusión;
+- crianza;
+- simulación estadística de balance;
+- IA rival completa;
+- runtime Godot;
+- exportación Android real.
+
+## Avance global aproximado
+
+**≈83%.**
+
+El porcentaje sigue representando alcance técnico ponderado, no porcentaje de código final.
+
+## Regla de continuidad
+
+Ningún sistema nuevo debe crear contadores paralelos para energía o intentos de campaña.
+
+Toda entrada a contenido que consuma energía debe pasar por PlayerProgressStore/CampaignEntryService.
+
+Toda recompensa publicitaria debe pasar por RewardedAdClaimService.
+
+Toda resolución de force-out debe conservar la cadena de corredores y terminar validando invariantes cuando sea posible.
