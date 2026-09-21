@@ -7580,3 +7580,36 @@ El job `bw012-visual-qa` instala Godot `4.5.1-stable`, realiza import headless, 
 ### Avance aproximado
 
 **≈96% estructural del prototipo.** Este porcentaje no representa porcentaje de arte final, balance definitivo, validación Android local ni contenido completo.
+
+
+## Revisión 65: Cola de generación visual bw013 (Kaede Arakawa)
+
+**Fecha:** 2026-09-21  
+**Tipo:** Pipeline artístico data-first / preparación de generación remota.
+
+### Motivo
+
+Mantener el pipeline visual de una personaje por vez, trasladando la definición de generación a una estructura JSON ligera para que el workflow remoto pueda producir assets sin duplicar lógica de Godot ni crear una segunda fuente de verdad.
+
+### Implementado
+
+- `data/characters_queue.json`
+- Registro único de `bw013` con identidad canónica, estadísticas, paleta, dirección visual y prompts para Pollinations.ai.
+- Cinco variantes de expresión: neutral, happy, focused, surprised y disappointed.
+- Negative prompt y restricciones de consistencia para preservar identidad, paleta y silueta.
+
+### Decisiones
+
+1. La fuente canónica continúa siendo `game/characters/character_archetypes.json`.
+2. `data/characters_queue.json` funciona únicamente como cola de generación, no como autoridad de gameplay.
+3. No se añadió GDScript específico para bw013 porque los controladores y tarjetas existentes cubren la unidad.
+4. La generación remota debe conservar identidad adulta, paleta, silueta y ausencia de texto/branding incrustado.
+5. No se ejecutó generación ni runtime de Godot en este entorno.
+
+### Estado
+
+**Preparación de datos completada; generación visual remota pendiente de ejecución por el workflow correspondiente.**
+
+### Avance aproximado
+
+**≈96% estructural del prototipo.**
