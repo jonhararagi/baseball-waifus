@@ -7220,3 +7220,62 @@ La escena comprueba identidad, stats, roles, paleta, existencia y unicidad de lo
 ### Avance aproximado
 
 **≈95% estructural del prototipo.**
+
+## Revisión 60: Unidad visual bw008 (Nao Fujimoto)
+
+**Fecha:** 2026-09-21  
+**Tipo:** Pipeline artístico 2D / presentación de colección / Visual QA.
+
+### Motivo
+
+Completar bw008 como la siguiente unidad controlada después de bw007, trabajando una personaje a la vez para evitar propagar errores de arte, catálogo, expresión o CI a todo el roster.
+
+### Identidad canónica bloqueada
+
+La unidad utiliza exclusivamente el registro existente de `bw008` en `game/characters/character_archetypes.json`:
+
+- **Nombre:** Nao Fujimoto
+- **Rareza:** SR
+- **Posición:** 2B
+- **Elemento:** Water
+- **Especialización:** Contact
+- **Potencial:** 3
+- **Stats:** Power 57, Contact 82, Speed 74, Pitch 48, Control 57, Defense 70, Critical 12, Stamina 68.
+- **Identidad:** `quiet_blue_contact_analyst`
+- **Play identity:** `contact_manipulator`
+- **Acción de firma:** `count_probe`
+- **Paleta canónica:** cabello `#4b79a6`, acento `#3b82f6`, ojos `#284761`, piel `#f1c6aa`, uniforme `#eef7ff`.
+
+No se crea una segunda fuente de verdad y no se modifican los atributos canónicos existentes.
+
+### Implementado
+
+- cinco SVG autónomos: `bw008_neutral.svg`, `bw008_happy.svg`, `bw008_focused.svg`, `bw008_surprised.svg`, `bw008_disappointed.svg`;
+- `scenes/bw008_character_presentation_test.gd`;
+- `scenes/bw008_character_presentation_test.tscn`;
+- job `bw008-visual-qa` en `.github/workflows/visual_qa.yml`.
+
+### Decisiones de producción visual
+
+1. El flujo permanece estrictamente `CharacterArchetypeCatalog -> CharacterExpressionController -> BaseballCharacterCard`.
+2. Cada SVG es vectorial, autónomo, sin `<text>`, sin fuentes embebidas y sin referencias externas.
+3. Los cinco estados comparten identidad visual pero contienen cambios faciales explícitos para evitar retratos duplicados.
+4. La dirección visual de Nao prioriza una presentación adulta, sobria y analítica, coherente con su arquetipo de contacto y perfil académico.
+5. La expresión es presentation-only. No escribe en PlayerData, progresión, RNG, equipamiento ni resolvers de béisbol.
+6. Los assets están dimensionados para reutilizarse en Android/PC y pueden sustituirse por arte final sin cambiar contratos de gameplay.
+
+### QA y CI
+
+La escena valida identidad, estadísticas, skill roles, acción de firma, paleta, existencia y unicidad de los cinco assets, ausencia de `<text>` y resolución de los cinco paths de `CharacterExpressionController`.
+
+El workflow ejecutará Godot 4.5.1-stable en headless, lanzará la escena con `--run-qa-capture`, comprobará que `qa_captures/bw008_character_presentation.png` sea no vacío y publicará la captura como artifact.
+
+**Runtime local:** no disponible en este entorno. La captura runtime real queda delegada a GitHub Actions; no se marca como prueba local.
+
+### Estado
+
+**Implementado y conectado a nivel de código, assets y CI.** La unidad bw008 queda cerrada bajo el commit consolidado de esta revisión.
+
+### Avance aproximado
+
+**≈95% estructural del prototipo.**
