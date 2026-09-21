@@ -5210,3 +5210,20 @@ El porcentaje representa avance estructural del prototipo, no un estado de juego
 ### Regla de continuidad
 
 No crear otro almacén para equipamiento. No aplicar modificadores directamente al stat base persistente. Los resolvers deben consultar estadísticas efectivas mediante el adapter.
+
+
+### Corrección posterior de Revisión 47: integración del simulador
+
+**Fecha:** 2026-09-21
+
+Se conectó `BaseballSimulator` al `EquipmentStatAdapter` para que las fórmulas existentes de pitch y contacto utilicen estadísticas efectivas de equipamiento sin modificar los stats base persistentes.
+
+Puntos integrados:
+- control efectivo del pitcher;
+- contacto efectivo de la bateadora;
+- power efectivo;
+- critical efectivo.
+
+No se modificaron las fórmulas de contacto, timing, elementos ni resultados. Solamente se cambió la fuente de lectura de la estadística.
+
+No se ejecutó Godot runtime, por lo que la integración queda registrada como código preparado para validación runtime.
