@@ -149,7 +149,7 @@ func _test_equipment_effective_stats_in_defense_and_runner() -> void:
 	var runner_rng := RandomNumberGenerator.new()
 	runner_rng.seed = 11
 	var runner_result := defensive_runner.resolve({"success": true, "defender_position": "SS", "defense_score": 0.90, "double_play": {}}, [runner, null, null], 0, runner_rng, roster)
-	var expected_speed := float(equipped_player.speed + 2)
+	var expected_speed := float(int(equipped_player.effective_stat("speed")) + 2)
 	var expected_chance := clamp(0.30 + 0.90 * 0.34 - expected_speed / 500.0 + 0.05, 0.22, 0.84)
 	assert(abs(float(runner_result.get("force_out_chance", 0.0)) - expected_chance) < 0.0001)
 	assert(progress.restore_snapshot(progress_snapshot))
