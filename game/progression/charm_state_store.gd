@@ -75,6 +75,10 @@ func load_player(player: PlayerData) -> void:
     if player == null:
         return
     var roster := RosterClass.new()
+    if not roster.has_character(player.id):
+        var legacy_charms: Dictionary = state.get("player_charm", {})
+        if legacy_charms.has(player.id):
+            player.charm = CharmSystem.clamp_charm(int(legacy_charms.get(player.id, 0)))
     var ensured := roster.ensure_character(player)
     if bool(ensured.get("ok", false)):
         var persisted: PlayerData = ensured.get("player")
