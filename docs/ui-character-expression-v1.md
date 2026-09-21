@@ -24,7 +24,9 @@ La firma de setup() mantiene compatibilidad con llamadas existentes porque la ex
 
 ## Primera personaje validada
 
-bw001 dispone de cinco SVG propios en assets/characters/expressions/. Los assets son una primera pasada vectorial de prototipo, no arte final. El pipeline permite sustituirlos por ilustraciones finales manteniendo el mismo contrato de IDs.
+bw001 dispone de cinco SVG vectoriales propios en assets/characters/expressions/. Cada estado tiene rasgos faciales propios y comparte una misma silueta, paleta y dirección visual. El formato vectorial evita dependencia de plataforma y mantiene el asset ligero en PC y Android.
+
+Estos assets constituyen el primer paquete visual controlado de personaje. Pueden sustituirse por ilustraciones raster/painted posteriores sin modificar PlayerData, CharacterRosterStore, la tarjeta ni los resolvers.
 
 ## Uso en el Hub
 
@@ -39,3 +41,10 @@ No se generan expresiones para las otras 29 personajes en esta revisión. Primer
 scenes/character_expression_test.gd comprueba el vocabulario, existencia de los cinco assets de bw001, mapeo determinista y presencia del método de integración en la tarjeta.
 
 Runtime Godot: no ejecutado. Las pruebas son estructurales/escritas.
+
+
+## Transición de expresión
+
+El cambio de estado ya no reconstruye ni reaparece toda la tarjeta. BaseballCharacterCard.set_expression() realiza un microcrossfade del retrato con una compresión mínima de escala y aplica el nuevo asset en el punto medio de la transición. El resto de la tarjeta permanece estable.
+
+La expresión sigue siendo presentación pura: no se guarda en el roster, no consume recursos y no altera ningún resultado deportivo.
