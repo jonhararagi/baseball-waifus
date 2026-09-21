@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "description": "Data-driven baseball skills. Percent modifiers are bounded and never guarantee an outcome.",
+  "categories": ["attack", "defense", "power_up", "power_down", "statistic", "combination"],
+  "skills": [
+    {
+      "skill_id": "power_signal",
+      "name": "Power Signal",
+      "category": "power_up",
+      "phase": "batting",
+      "context_requirements": {"same_team": true},
+      "effects": [{"kind": "stat_buff", "target": "target", "stat": "power", "amount": 0.03, "duration_actions": 1}],
+      "notes": "Buffs the next selected teammate batter by 3%. It does not add a guaranteed hit."
+    },
+    {
+      "skill_id": "pitch_pressure",
+      "name": "Pitch Pressure",
+      "category": "power_down",
+      "phase": "pitch",
+      "context_requirements": {"same_team": false},
+      "effects": [{"kind": "stat_debuff", "target": "target", "stat": "control", "amount": 0.03, "duration_actions": 4}],
+      "notes": "Reduces the opposing pitcher's Control by 3% for four pitch actions."
+    },
+    {
+      "skill_id": "flame_strike",
+      "name": "Flame Strike",
+      "category": "attack",
+      "phase": "batting",
+      "context_requirements": {"same_team": true},
+      "effects": [
+        {"kind": "stat_buff", "target": "self", "stat": "power", "amount": 0.05, "duration_actions": 1},
+        {"kind": "outcome_bonus", "target": "self", "condition_id": "home_run", "amount": 0.05}
+      ],
+      "notes": "Adds 5% Power and a 5 percentage-point Home Run modifier to the eligible outcome roll. It remains probabilistic."
+    },
+    {
+      "skill_id": "guard_wall",
+      "name": "Guard Wall",
+      "category": "defense",
+      "phase": "defense",
+      "context_requirements": {"same_team": true},
+      "effects": [{"kind": "stat_buff", "target": "target", "stat": "defense", "amount": 0.03, "duration_actions": 2}],
+      "notes": "Improves a teammate's defensive stat for two defensive actions."
+    },
+    {
+      "skill_id": "runner_boost",
+      "name": "Breakaway",
+      "category": "statistic",
+      "phase": "baserunning",
+      "context_requirements": {"same_team": true},
+      "effects": [{"kind": "stat_buff", "target": "target", "stat": "speed", "amount": 0.04, "duration_actions": 1}],
+      "notes": "Improves one runner's Speed by 4% for the next baserunning resolution."
+    },
+    {
+      "skill_id": "flame_combo_prime",
+      "name": "Flame Combo",
+      "category": "combination",
+      "phase": "batting",
+      "context_requirements": {"same_team": true},
+      "effects": [{"kind": "combo_prime", "condition_id": "home_run_chain"}],
+      "notes": "Primes a combination condition. It does not itself change a result."
+    }
+  ]
+}
