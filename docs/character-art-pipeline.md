@@ -53,3 +53,8 @@ A partir de la Revisión 29 se generan automáticamente 30 retratos SVG ligeros 
 Estos SVG son arte de prototipo intercambiable, no sustituyen todavía los retratos anime de producción. Su función es que cada entrada del roster tenga un asset visual real desde ahora y que el renderer pueda probar una biblioteca completa sin introducir dependencias externas ni pesos de modelos dentro del repositorio.
 
 Regla: el catálogo JSON sigue siendo la fuente de verdad. El asset puede reemplazarse por PNG/WebP, sprite sheet o rig 2D con licencia compatible sin modificar PlayerData ni gameplay.
+
+
+## Documento canónico consolidado
+
+Las decisiones históricas de las revisiones 26, 27 y 29 quedan consolidadas en [`docs/canon/character-art-canon-v1.md`](canon/character-art-canon-v1.md). Ese documento es la referencia canónica para continuidad artística; esta página conserva el detalle operativo del pipeline.
