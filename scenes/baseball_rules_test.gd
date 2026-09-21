@@ -8,6 +8,7 @@ func _ready() -> void:
 	_test_lineup_advances_for_original_batting_team()
 	_test_final_inning_lead_ends_game()
 	_test_hit_scores_once()
+	_test_steal_does_not_overwrite_occupied_base()
 	print("BASEBALL RULES TEST OK")
 	get_tree().quit()
 
@@ -109,3 +110,15 @@ func _test_hit_scores_once() -> void:
 	assert(state.base_runners[2] == null)
 	assert(state.balls == 0)
 	assert(state.strikes == 0)
+
+func _test_steal_does_not_overwrite_occupied_base() -> void:
+	var state := BaseballGameState.new()
+	var runner := _make_player("runner")
+	var target := _make_player("target")
+	state.base_runners = [RunnerToken.from_player(runner, "team"), RunnerToken.from_player(target, "team"), null]
+	state._refresh_base_flags()
+	var result := state.move_runner_on_steal(0, true)
+	assert(not bool(result.get("success", false)))
+	assert(bool(result.get("blocked", false)))
+	assert(state.base_runners[0].player_id == "runner")
+	assert(state.base_runners[1].player_id == "target")
