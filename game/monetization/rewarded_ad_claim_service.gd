@@ -9,6 +9,7 @@ const PolicyClass = preload("res://game/monetization/rewarded_ad_policy.gd")
 const UsageStoreClass = preload("res://game/monetization/rewarded_ad_usage_store.gd")
 const TransactionClass = preload("res://game/monetization/rewarded_ad_transaction.gd")
 const ProgressStoreClass = preload("res://game/progression/player_progress_store.gd")
+const RosterClass = preload("res://game/characters/character_roster_store.gd")
 
 func claim(category: int, character_id: String = "", progress_store: RefCounted = null) -> Dictionary:
 	var policy = PolicyClass.new()
@@ -24,6 +25,9 @@ func claim(category: int, character_id: String = "", progress_store: RefCounted 
 		progress_store.load_state()
 
 	var snapshot: Dictionary = progress_store.snapshot()
+	var roster = RosterClass.new()
+	roster.load_state()
+	var roster_snapshot: Dictionary = roster.snapshot()
 	var tx = TransactionClass.new()
 	var usage_counts: Dictionary = usage_state.get("uses", {}).duplicate(true)
 	var result: Dictionary = tx.grant(category, character_id, usage_counts, progress_store)
@@ -32,8 +36,9 @@ func claim(category: int, character_id: String = "", progress_store: RefCounted 
 
 	usage_state["uses"] = usage_counts
 	if not usage_store.save_state(usage_state):
-		progress_store.restore_snapshot(snapshot)
-		return {"ok": false, "reason": "usage_save_failed", "rolled_back": true}
+		var progress_restored := progress_store.restore_snapshot(snapshot)
+		var roster_restored := roster.restore_snapshot(roster_snapshot)
+		return {"ok": false, "reason": "usage_save_failed", "rolled_back": progress_restored and roster_restored, "progress_restored": progress_restored, "roster_restored": roster_restored}
 
 	result["usage_persisted"] = true
 	return result
