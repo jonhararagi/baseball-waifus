@@ -211,7 +211,7 @@ func _finish_ball(pitch_result: Dictionary) -> void:
 	var ball_plan := state.apply_ball(current_batter, _team_for_batting().team_id)
 	current_result = pitch_result.duplicate()
 	current_result["result"] = "WALK" if bool(ball_plan.get("walk", false)) else "BALL"
-	current_result["balls"] = state.balls
+	current_result["balls"] = 4 if bool(ball_plan.get("walk", false)) else state.balls
 	current_result["runs_scored"] = int(ball_plan.get("runs", 0))
 	current_result["hit_plan"] = ball_plan
 	current_result["batting_team"] = batting_team_index
@@ -388,8 +388,9 @@ func _apply_batting_result(result: Dictionary) -> void:
 			var hit_data := state.apply_hit(batter, _team_for_batting().team_id, int(result.get("bases", 1)))
 			result["hit_plan"] = hit_data
 			result["runs_scored"] = hit_data["runs"]
-			state.score[batting_team_index] += int(hit_data["runs"])
-			state.reset_count()
+			# BaseballGameState.apply_hit already owns the score mutation and count reset.
+			# Do not duplicate the run here or a hit would score twice.
+
 			state.advance_lineup(batting_team_index)
 
 func _attempt_steal() -> void:
