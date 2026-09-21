@@ -28,12 +28,15 @@ func load_state() -> Dictionary:
 				continue
 			var started := int(record.get("started_unix", 0))
 			var complete := int(record.get("complete_unix", 0))
-			if started <= 0 or complete < started:
+			var training_type := str(record.get("training_type", ""))
+			var duration_key := str(record.get("duration_key", ""))
+			var duration := EconomyRules.training_duration_seconds(duration_key)
+			if started <= 0 or complete < started or duration <= 0 or complete != started + duration or not EconomyRules.is_valid_training_type(training_type):
 				continue
 			clean["trainings"][character_id] = {
 				"character_id": character_id,
-				"training_type": str(record.get("training_type", "")),
-				"duration_key": str(record.get("duration_key", "")),
+				"training_type": training_type,
+				"duration_key": duration_key,
 				"started_unix": started,
 				"complete_unix": complete
 			}
@@ -113,6 +116,9 @@ func claim(character_id: String, now_unix: int = -1) -> Dictionary:
 		return {"ok": false, "reason": "clock_rollback"}
 	if now < int(record["complete_unix"]):
 		return {"ok": false, "reason": "not_ready", "remaining_seconds": int(record["complete_unix"]) - now}
+	var gains := EconomyRules.training_gains(str(record["duration_key"]), str(record["training_type"]))
+	if gains.is_empty():
+		return {"ok": false, "reason": "invalid_training_payload"}
 	var candidate := state.duplicate(true)
 	candidate["trainings"].erase(character_id)
 	if not save_state(candidate):
