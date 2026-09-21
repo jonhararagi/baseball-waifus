@@ -48,3 +48,20 @@ Runtime Godot: no ejecutado. Las pruebas son estructurales/escritas.
 El cambio de estado ya no reconstruye ni reaparece toda la tarjeta. BaseballCharacterCard.set_expression() realiza un microcrossfade del retrato con una compresión mínima de escala y aplica el nuevo asset en el punto medio de la transición. El resto de la tarjeta permanece estable.
 
 La expresión sigue siendo presentación pura: no se guarda en el roster, no consume recursos y no altera ningún resultado deportivo.
+
+
+## Segunda personaje: bw002
+
+La segunda unidad visual validada es bw002, Reina Kurose. Conserva el mismo contrato de cinco estados y utiliza cinco assets propios adicionales:
+
+- assets/characters/expressions/bw002_neutral.svg
+- assets/characters/expressions/bw002_happy.svg
+- assets/characters/expressions/bw002_focused.svg
+- assets/characters/expressions/bw002_surprised.svg
+- assets/characters/expressions/bw002_disappointed.svg
+
+La identidad visual de bw002 se diferencia de bw001 mediante una paleta fría, cabello azul petróleo, silueta de pitcher refinada y tratamiento facial más controlado. La diferencia visual no introduce ninguna estadística ni regla nueva.
+
+QA específico: scenes/bw002_character_presentation_test.gd.
+
+La estrategia de producción continúa siendo personaje por personaje. El controlador permanece genérico y no se crean tablas especiales por personaje.
