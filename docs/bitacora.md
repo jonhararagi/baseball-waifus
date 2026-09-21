@@ -6501,3 +6501,53 @@ Pendiente: runtime Godot, retratos anime finales, expresiones finales y reutiliz
 
 ## Regla de continuidad
 No multiplicar todavía esta implementación por las 30 personajes. Primero validar esta pieza en runtime y después construir el sistema de expresiones/retratos sobre el mismo contrato.
+
+## Revisión 63: iconografía vectorial propia para navegación del Hub
+
+**Fecha:** 2026-09-21  
+**Motivo:** sustituir la dependencia de emojis y glifos de plataforma en la navegación principal por una capa de iconografía vectorial propia, manteniendo el Hub como presentación y sin tocar gameplay.
+
+### Sistemas afectados
+- navegación principal del Hub;
+- UI compartida;
+- iconografía;
+- accesibilidad/legibilidad;
+- pruebas estructurales.
+
+### Archivos creados
+- `game/ui/hub_menu_icon.gd`
+- `game/ui/hub_menu_button.gd`
+- `scenes/hub_iconography_test.gd`
+- `scenes/hub_iconography_test.tscn`
+- `docs/ui-hub-iconography-v1.md`
+
+### Archivos modificados
+- `scenes/hub.gd`
+- `scenes/hub_navigation_test.gd`
+- `docs/ui-style-guide.md`
+- `docs/bitacora.md`
+
+### Limpieza realizada
+Durante la revisión se detectó un intento paralelo de crear un controlador de retrato que duplicaba la responsabilidad de `CharacterExpressionController`, ya existente y conectado a `BaseballCharacterCard`. Se eliminó ese componente y sus assets no referenciados para conservar una única autoridad de presentación de expresiones.
+
+### Decisiones arquitectónicas
+1. El Hub utiliza nueve identificadores de icono estables: history, team, training, equipment, gacha, inventory, story, events y options.
+2. `BaseballHubMenuIcon` dibuja los símbolos mediante geometría 2D, sin emojis ni fuentes externas.
+3. `BaseballHubMenuButton` encapsula icono, título, subtítulo, hover, focus y pressed, y emite solamente una señal de presentación/navegación.
+4. El texto permanece visible en cada botón para no depender exclusivamente del icono.
+5. La iconografía no tiene autoridad sobre campañas, recompensas, estadísticas, probabilidades o estados del partido.
+6. Energy y Coins del encabezado pasan a texto explícito, eliminando glifos dependientes de fuente.
+7. Se mantiene la estrategia incremental: esta revisión modifica solamente el Hub. No se aplica todavía el componente al resto de pantallas.
+8. No se incorporan assets externos.
+
+### Pruebas
+- Se añadió prueba estructural específica para los nueve identificadores y componentes de iconografía.
+- Se amplió la prueba de navegación del Hub para verificar los componentes y el asset expresivo de la personaje inicial.
+- Se corrigió la prueba nueva para evitar dependencias innecesarias de métodos funcionales de Array.
+- **Runtime Godot:** no ejecutado en este entorno. Las pruebas se consideran escritas/revisadas estructuralmente.
+
+### Estado
+**Implementado a nivel de código y conectado al Hub.** Pendiente de validación runtime Godot, revisión visual en pantalla real y adopción gradual en roster, historia, gacha e inventario.
+
+### Avance aproximado
+**≈96% estructural del prototipo.** El porcentaje no representa porcentaje de arte final ni de contenido terminado.
