@@ -21,7 +21,7 @@
 **Rama principal:** `main`  
 **Estado actual:** Prototipo técnico en Godot 4.x + núcleo de béisbol defensivo + laboratorio/canon de personajes + pipeline visual 2D/3D + puente de streaming auxiliar. Godot 4.x queda adoptado como motor del prototipo y del juego actual; los adapters externos siguen siendo una capa visual opcional.
 
-**Avance global revisado:** ≈89%.
+**Avance global revisado:** ≈93%.
 
 ### Cómo vamos
 
