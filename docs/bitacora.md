@@ -21,7 +21,7 @@
 **Rama principal:** `main`  
 **Estado actual:** Prototipo técnico en Godot 4.x + laboratorio de personajes + puente de streaming + rig procedural interno. Godot 4.x queda adoptado como motor del prototipo y del juego actual; los adapters externos siguen siendo una capa visual opcional.
 
-**Avance global revisado:** ≈64%.
+**Avance global revisado:** ≈67%.
 
 ### Cómo vamos
 
@@ -3288,3 +3288,100 @@ El avance global permanece en **≈64%**. La revisión fija una referencia artí
 
 No crear una segunda identidad visual independiente para el juego. Las futuras ilustraciones deben tomar esta guía como punto de partida y seguir reutilizando el pipeline de arte y el catálogo existente.
 
+
+
+# 28. Revisión 28: conteo completo del turno, balls, walks e innings del prototipo
+
+**Fecha:** 2026-09-21
+**Tipo:** Núcleo de béisbol / reglas de partido / QA Godot.
+
+### Motivo
+
+Las revisiones anteriores ya tenían pitcher, timing, contacto, bases, corredores, defensa, doble play y lineup, pero el flujo de lanzamiento no producía `BALL`, no existía resolución de cuatro bolas y el cambio de entrada podía avanzar accidentalmente la alineación del equipo contrario después del tercer out.
+
+Este bloque completa el siguiente paso funcional del núcleo sin reemplazar los resolvers existentes.
+
+### Implementado
+
+- `game/baseball/pitch.gd`
+  - conserva Fastball, Curve y Special;
+  - añade `zone_bias` auditable por tipo de lanzamiento.
+
+- `game/baseball/baseball_simulator.gd`
+  - añade `resolve_pitch()`;
+  - añade `pitch_in_zone_probability()`;
+  - versiona la regla como `pitch_v1`;
+  - conserva la fórmula de contacto existente y la etiqueta como `contact_v1`.
+
+- `game/baseball/game_state.gd`
+  - añade conteo de balls;
+  - añade resolución de walk;
+  - fuerza correctamente las corredoras con cadena desde primera;
+  - conserva RunnerToken y el plan de movimiento;
+  - devuelve `after_runners` para que la presentación utilice el estado real;
+  - permite avanzar la alineación de un equipo específico;
+  - corrige el caso del tercer out para que avance la alineación del equipo que estaba bateando;
+  - en el último inning evita iniciar la mitad inferior si el equipo local ya está arriba.
+
+- `scenes/main.gd`
+  - resuelve si el pitch está dentro/fuera de zona antes del timing;
+  - registra `BALL`;
+  - registra walk al cuarto ball;
+  - añade strike llamado si termina la ventana de timing;
+  - mantiene foul con dos strikes sin sumar un tercer strike;
+  - usa el índice del equipo bateador original cuando un out cambia `half`;
+  - no envía un ball normal al flujo de animación de walk.
+
+- `docs/baseball-rules-v1.md`
+  - documenta las reglas concretas de esta revisión.
+
+- `scenes/baseball_rules_test.gd`
+- `scenes/baseball_rules_test.tscn`
+  - pruebas de timing;
+  - límites de zona;
+  - walk con bases llenas;
+  - walk con primera libre;
+  - continuidad de lineup después del tercer out.
+
+### Problemas encontrados
+
+1. El simulador trataba todo lanzamiento fallido de contacto como `STRIKE`, por lo que `balls` nunca podía crecer.
+2. El tercer out podía cambiar `half` antes de ejecutar `advance_lineup()`, haciendo que el índice avanzado perteneciera al equipo equivocado.
+3. `main.gd` ya esperaba un campo `after_runners` para animar el movimiento posterior al batazo, pero `BaseballGameState.apply_hit()` no lo exponía. El contrato fue completado en el estado, sin duplicar lógica en el renderer.
+4. El nuevo flujo de ball no debe invocar `animate_hit()` como si fuera un walk cuando todavía no hay cuatro bolas.
+
+### Pruebas
+
+La nueva prueba de Godot queda preparada para ejecución con:
+`scenes/baseball_rules_test.tscn`
+
+Cubre:
+- etiquetas Perfect/Great/Good/Normal/Bad;
+- límites de probabilidad de zona;
+- walk con bases llenas;
+- walk con primera libre;
+- avance del lineup del equipo original después del tercer out.
+
+**No se declara ejecución runtime de Godot en esta revisión:** el entorno utilizado para la revisión no tiene el binario de Godot disponible.
+
+Sí se realizó validación estructural mediante lectura de las versiones finales del repositorio después de cada escritura. La prueba runtime queda pendiente para un entorno con Godot 4.x.
+
+### Estado
+
+**Implementado:** conteo base, balls, walks, strikes, fouls, timing con timeout, pitch-zone resolver, transición de innings y protección del índice de lineup.
+
+**Pendiente:** force outs detallados, rundowns, errores de recepción separados, sliding integrado al cálculo, stamina efectiva durante el partido, fórmula defensiva final de producción, runtime Godot, balance estadístico automatizado y modos de 5/9 innings.
+
+### Porcentaje global revisado
+
+El avance global estimado pasa de **≈64% a ≈67%**.
+
+El aumento corresponde a completar una pieza real del bucle principal de béisbol. No se contabilizan como terminados los sistemas secundarios que todavía están únicamente diseñados.
+
+### Regla de continuidad
+
+El flujo vigente queda:
+
+**Pitch → zona → Ball o Timing → contacto → FieldingResolver si corresponde → GameState → eventos/presentación**
+
+No crear otro sistema paralelo de conteo. `BaseballGameState` es la autoridad del conteo, bases, carreras, lineup e innings.
