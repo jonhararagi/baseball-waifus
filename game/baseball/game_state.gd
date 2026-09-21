@@ -21,12 +21,73 @@ func reset_count() -> void:
 func current_batter_index() -> int:
 	return int(batting_indices[half])
 
-func advance_lineup() -> void:
-	batting_indices[half] = int(batting_indices[half]) + 1
+func advance_lineup(team_index: int = -1) -> void:
+	var target_team := half if team_index < 0 else team_index
+	if target_team < 0 or target_team > 1:
+		return
+	batting_indices[target_team] = int(batting_indices[target_team]) + 1
 
 func clear_bases() -> void:
 	bases = [false, false, false]
 	base_runners = [null, null, null]
+
+func apply_ball(batter: PlayerData, team_id: String) -> Dictionary:
+	balls += 1
+	if balls < 4:
+		return {"walk": false, "balls": balls, "forced": [], "runs": 0}
+	var plan := apply_walk(batter, team_id)
+	plan["walk"] = true
+	plan["balls"] = 4
+	return plan
+
+func apply_walk(batter: PlayerData, team_id: String) -> Dictionary:
+	var before_ids := _runner_id_snapshot()
+	var plan: Array = []
+	var runs := 0
+	var after: Array = base_runners.duplicate()
+	var batter_token := RunnerToken.from_player(batter, team_id)
+
+	if after[0] == null:
+		after[0] = batter_token
+		plan.append({"kind": "batter", "runner": batter_token, "from": -1, "to": 0, "scored": false})
+	else:
+		if after[1] == null:
+			var forced_to_second: RunnerToken = after[0]
+			after[1] = forced_to_second
+			after[0] = batter_token
+			plan.append({"kind": "runner", "runner": forced_to_second, "from": 0, "to": 1, "scored": false})
+			plan.append({"kind": "batter", "runner": batter_token, "from": -1, "to": 0, "scored": false})
+		else:
+			if after[2] == null:
+				var forced_to_third: RunnerToken = after[1]
+				after[2] = forced_to_third
+				after[1] = after[0]
+				after[0] = batter_token
+				plan.append({"kind": "runner", "runner": forced_to_third, "from": 1, "to": 2, "scored": false})
+				plan.append({"kind": "runner", "runner": after[1], "from": 0, "to": 1, "scored": false})
+				plan.append({"kind": "batter", "runner": batter_token, "from": -1, "to": 0, "scored": false})
+			else:
+				var scoring_runner: RunnerToken = after[2]
+				runs += 1
+				plan.append({"kind": "runner", "runner": scoring_runner, "from": 2, "to": -1, "scored": true})
+				after[2] = after[1]
+				plan.append({"kind": "runner", "runner": after[1], "from": 1, "to": 2, "scored": false})
+				after[1] = after[0]
+				plan.append({"kind": "runner", "runner": after[0], "from": 0, "to": 1, "scored": false})
+				after[0] = batter_token
+				plan.append({"kind": "batter", "runner": batter_token, "from": -1, "to": 0, "scored": false})
+
+	base_runners = after
+	_refresh_base_flags()
+	score[team_batting()] += runs
+	reset_count()
+	return {
+		"runs": runs,
+		"before_ids": before_ids,
+		"after_ids": _runner_id_snapshot(),
+		"after_runners": base_runners.duplicate(),
+		"plan": plan
+	}
 
 func apply_hit(batter: PlayerData, team_id: String, hit_bases: int) -> Dictionary:
 	var safe_bases := clamp(hit_bases, 1, 4)
@@ -85,8 +146,10 @@ func apply_hit(batter: PlayerData, team_id: String, hit_bases: int) -> Dictionar
 
 	return {
 		"runs": runs,
+		"runs": runs,
 		"before_ids": before_ids,
 		"after_ids": _runner_id_snapshot(),
+		"after_runners": base_runners.duplicate(),
 		"plan": plan
 	}
 
