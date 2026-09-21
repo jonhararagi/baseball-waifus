@@ -5361,6 +5361,6 @@ Se completó la conexión desde scenes/main.gd:
 
 De esta forma, la ruta efectiva ya no queda únicamente disponible en los resolvers: el flujo principal del partido puede utilizarla.
 
-Los personajes del equipo rival que no pertenezcan al roster persistente conservan sus estadísticas base, por lo que no se crea propiedad accidental de personajes rivales.
+Los personajes del equipo rival que no pertenezcan al roster persistente conservan sus estadísticas base, por lo que no se crea propiedad accidental de personajes rivales.\n\nLa lectura de la estadística previa al equipamiento conserva PlayerData.effective_stat(), por lo que Charm/Potential existentes no se pierden al añadir modificadores de equipamiento.
 
 **Runtime Godot:** sigue pendiente. Esta integración fue verificada por inspección estructural del código, no mediante ejecución de Godot.
