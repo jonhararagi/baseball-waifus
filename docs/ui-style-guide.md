@@ -128,3 +128,12 @@ Cada tarjeta presenta retrato reemplazable, rareza, posición, elemento, especia
 El retrato se carga desde el ID de personaje y puede sustituirse por arte final sin cambiar el contrato del componente. La entrada utiliza una microanimación de opacidad y escala, exclusivamente visual.
 
 Regla de producción: primero se valida la tarjeta con un personaje; después se escala al roster. No se crean 30 variantes manuales.
+
+
+## Expresiones de personaje v1
+
+La tarjeta admite un estado expresivo independiente del PlayerData. El primer personaje validado es bw001, con cinco estados propios de prototipo: neutral, happy, focused, surprised y disappointed.
+
+El estado se resuelve mediante CharacterExpressionController y puede cambiarse sin reconstruir la tarjeta ni tocar gameplay. Los assets faltantes hacen fallback al retrato base.
+
+La producción se realiza personaje por personaje. No se generan automáticamente las expresiones de las otras 29 personajes hasta validar el primer flujo en runtime.
