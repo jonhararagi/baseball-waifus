@@ -8,16 +8,22 @@ const ENERGY_REGEN_SECONDS := 360
 
 const MATCH_COSTS := {
 	"normal": 10,
-	"hard": 15,
+	"hard": 10,
 	"hell": 15,
-	"demon_king": 25
+	"demon_king": 20,
+	"character_materials": 10,
+	"equipment": 10,
+	"r_cards_charm": 10
 }
 
 const CAMPAIGN_ATTEMPTS := {
 	"normal": 10,
 	"hard": 10,
 	"hell": 10,
-	"demon_king": 3
+	"demon_king": 3,
+	"character_materials": 10,
+	"equipment": 10,
+	"r_cards_charm": 10
 }
 
 const TRAINING_DURATIONS_SECONDS := {
