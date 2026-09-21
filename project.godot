@@ -1,6 +1,6 @@
 [application]
 config/name="Baseball Waifus"
-run/main_scene="res://scenes/main.tscn"
+run/main_scene="res://scenes/hub.tscn"
 
 [display]
 window/size/viewport_width=1280
