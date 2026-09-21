@@ -1580,3 +1580,18 @@ El objetivo es que dos personajes con el mismo color de pelo, cuerpo o especiali
 El catálogo `game/characters/character_archetypes.json` incorpora ahora `character_identity_v1`, sin modificar las estadísticas existentes.
 
 Referencia detallada: `docs/characters/character-action-design-v1.md`.
+
+
+## Habilidades integradas al núcleo de béisbol
+
+Las habilidades no forman un sistema de daño RPG separado. Se expresan como modificadores temporales que los resolvers deportivos consumen.
+
+Familias conectadas al núcleo:
+- Pitch Down / Pitch Pressure → Control del pitcher y resolución de zona.
+- Catch Boost / Guard Wall → Defense y fielding.
+- Steal Up / Pickoff Counter → probabilidad de robo.
+- Double Play Setup → oportunidad de doble play cuando la jugada es elegible.
+- Defensive Cover → resolución defensiva de corredores.
+- Runner to Batter → enlace temporal entre una acción de corredor exitosa y la siguiente resolución ofensiva.
+
+La rareza, apariencia o animación no decide estos efectos. Las habilidades tampoco garantizan hits, outs, robos ni Home Runs.
