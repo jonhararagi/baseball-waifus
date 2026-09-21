@@ -6686,3 +6686,74 @@ CharacterArchetypeCatalog -> CharacterExpressionController -> BaseballCharacterC
 Durante una revisión estructural final se detectó una aserción de character_card_test.gd con indentación incorrecta. Se corrigió antes de considerar el paquete de QA listo.
 
 **Runtime Godot:** sigue sin ejecutarse en este entorno.
+
+
+## Revisión 66: segunda unidad visual cerrada, bw002 Reina Kurose
+
+**Fecha:** 2026-09-21  
+**Motivo:** continuar el pipeline de producción visual una personaje por vez. bw001 ya está cerrado estructuralmente; la siguiente unidad se construye sobre el mismo contrato sin duplicar controladores, tarjetas ni lógica de presentación.
+
+### Alcance
+
+Se trabajó exclusivamente sobre bw002:
+- Reina Kurose;
+- SSR;
+- elemento Ice;
+- posición P;
+- especialidad Pitcher.
+
+No se modificaron estadísticas, resolvers de béisbol, IA, economía, gacha, recompensas ni datos de otras personajes.
+
+### Archivos creados
+
+- assets/characters/expressions/bw002_neutral.svg
+- assets/characters/expressions/bw002_happy.svg
+- assets/characters/expressions/bw002_focused.svg
+- assets/characters/expressions/bw002_surprised.svg
+- assets/characters/expressions/bw002_disappointed.svg
+- scenes/bw002_character_presentation_test.gd
+- scenes/bw002_character_presentation_test.tscn
+- docs/characters/bw002-presentation-v1.md
+
+### Archivos modificados
+
+- docs/ui-character-expression-v1.md
+
+### Decisiones arquitectónicas
+
+1. Se reutiliza CharacterExpressionController existente. No se crea un controlador paralelo para bw002.
+2. BaseballCharacterCard continúa siendo el componente único de presentación de colección.
+3. Los cinco estados faciales utilizan el mismo vocabulario cerrado: neutral, happy, focused, surprised y disappointed.
+4. La identidad de bw002 se expresa mediante paleta fría, cabello azul petróleo, uniformidad visual de pitcher refinada y cambios faciales diferenciados.
+5. La expresión sigue fuera de PlayerData y CharacterRosterStore.
+6. Los SVG no incorporan etiquetas <text> ni dependencias de fuentes de plataforma.
+7. Los cinco assets quedan separados para poder reemplazarse posteriormente por arte final raster/painted sin modificar gameplay ni el contrato de la tarjeta.
+8. No se crea producción artística masiva del roster.
+
+### QA estructural
+
+scenes/bw002_character_presentation_test.gd verifica:
+- presencia de bw002 en el catálogo;
+- nombre, rareza, elemento, posición y especialidad;
+- construcción de PlayerData;
+- existencia de los cinco assets;
+- tamaño mínimo de cada asset;
+- ausencia de <text>;
+- continuidad de paleta;
+- diferencia entre estados;
+- resolución determinista de rutas;
+- compatibilidad con la API de BaseballCharacterCard.
+
+Se verificó además mediante inspección de los cinco archivos que cada SVG supera 5 KB y conserva la paleta de identidad de bw002.
+
+**Runtime Godot:** no ejecutado. El entorno actual no dispone del binario de Godot, por lo que no se registra validación visual o runtime.
+
+### Estado
+
+**bw002 queda cerrado a nivel de implementación estructural y paquete de assets.**
+
+La siguiente unidad correcta es bw003, pero solamente después de tratar la validación runtime del Hub como un requisito de control cuando exista un entorno Godot ejecutable.
+
+### Avance aproximado
+
+**≈96% estructural del prototipo.** Este porcentaje no representa porcentaje de arte final, contenido, balance definitivo, QA runtime ni publicación Android.
