@@ -55,6 +55,22 @@ func apply_skill(skill: Dictionary, user: PlayerData, target: PlayerData, contex
 				if not state.add_modifier(recipient.id, stat, amount, duration, str(skill.get("skill_id", ""))):
 					return {"applied": false, "reason": "invalid_modifier", "applied_effects": applied}
 				applied.append({"kind": kind, "target_id": recipient.id, "stat": stat, "amount": amount, "duration_actions": duration})
+			"action_buff", "action_debuff":
+				var recipient_action := user
+				if str(effect.get("target", "self")) == "target":
+					recipient_action = target
+				if recipient_action == null:
+					return {"applied": false, "reason": "target_missing", "applied_effects": applied}
+				var action_amount := float(effect.get("amount", 0.0))
+				if kind == "action_debuff":
+					action_amount = -abs(action_amount)
+				else:
+					action_amount = abs(action_amount)
+				var action_duration := int(effect.get("duration_actions", 1))
+				var action_id := str(effect.get("action_id", ""))
+				if not state.add_action_modifier(recipient_action.id, action_id, action_amount, action_duration, str(skill.get("skill_id", ""))):
+					return {"applied": false, "reason": "invalid_action_modifier", "applied_effects": applied}
+				applied.append({"kind": kind, "target_id": recipient_action.id, "action_id": action_id, "amount": action_amount, "duration_actions": action_duration})
 			"outcome_bonus":
 				var recipient_id := user.id if str(effect.get("target", "self")) == "self" else (target.id if target != null else "")
 				state.add_combo_condition(str(effect.get("condition_id", "")), recipient_id, "outcome_bonus", float(effect.get("amount", 0.0)))
