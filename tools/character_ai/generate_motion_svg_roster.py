@@ -39,8 +39,7 @@ def frame(character: dict, index: int, x: int) -> str:
         3: {"lean": -8, "arm": -30, "leg": 34, "bat": 12},
     }
     p = poses[index]
-    cx = x + 256
-    transform = f"translate({cx} 40) rotate({p['lean']} 0 360) scale({scale:.3f})"
+    transform = f"translate({x} 40) rotate({p['lean']} 256 360) scale({scale:.3f})"
 
     if hair_style == "short":
         hair_path = f'<path d="M184 150 Q256 68 328 150 L320 245 Q292 220 256 226 Q220 220 192 245 Z" fill="{hair}"/>'
@@ -67,16 +66,16 @@ def frame(character: dict, index: int, x: int) -> str:
     return f"""
 <g transform="{transform}">
   <ellipse cx="0" cy="714" rx="92" ry="12" fill="#000" opacity="0.10"/>
-  <path d="M{-bw:.1f} 430 Q256 392 {bw:.1f} 430 L{hip:.1f} 592 Q256 632 {-hip:.1f} 592 Z"
-        transform="translate(-256 0)" fill="{uniform}" stroke="{accent}" stroke-width="6"/>
-  <path d="M{-bw:.1f} 430 Q{256-bust:.1f} 374 256 400 Q{256+bust:.1f} 374 {bw:.1f} 430"
-        transform="translate(-256 0)" fill="{uniform}" stroke="{accent}" stroke-width="5"/>
-  <path d="M{leg_a:.1f} 582 L{leg_a-10:.1f} 716" stroke="{uniform}" stroke-width="44" stroke-linecap="round"/>
-  <path d="M{leg_b:.1f} 582 L{leg_b+10:.1f} 716" stroke="{uniform}" stroke-width="44" stroke-linecap="round"/>
-  <path d="M{leg_a-10:.1f} 716 L{leg_a-42:.1f} 716" stroke="{accent}" stroke-width="24" stroke-linecap="round"/>
-  <path d="M{leg_b+10:.1f} 716 L{leg_b+42:.1f} 716" stroke="{accent}" stroke-width="24" stroke-linecap="round"/>
-  <path d="M{-bw-32-arm_a:.1f} 468 Q{arm_a:.1f} 520 {-bw-18:.1f} 566" fill="none" stroke="{skin}" stroke-width="25" stroke-linecap="round"/>
-  <path d="M{bw+32+arm_b:.1f} 468 Q{arm_b:.1f} 520 {bw+18:.1f} 566" fill="none" stroke="{skin}" stroke-width="25" stroke-linecap="round"/>
+  <path d="M{256-bw:.1f} 430 Q256 392 {256+bw:.1f} 430 L{256+hip:.1f} 592 Q256 632 {256-hip:.1f} 592 Z"
+        fill="{uniform}" stroke="{accent}" stroke-width="6"/>
+  <path d="M{256-bw:.1f} 430 Q{256-bust:.1f} 374 256 400 Q{256+bust:.1f} 374 {256+bw:.1f} 430"
+        fill="{uniform}" stroke="{accent}" stroke-width="5"/>
+  <path d="M{256+leg_a:.1f} 582 L{246+leg_a:.1f} 716" stroke="{uniform}" stroke-width="44" stroke-linecap="round"/>
+  <path d="M{256+leg_b:.1f} 582 L{266+leg_b:.1f} 716" stroke="{uniform}" stroke-width="44" stroke-linecap="round"/>
+  <path d="M{246+leg_a:.1f} 716 L{214+leg_a:.1f} 716" stroke="{accent}" stroke-width="24" stroke-linecap="round"/>
+  <path d="M{266+leg_b:.1f} 716 L{298+leg_b:.1f} 716" stroke="{accent}" stroke-width="24" stroke-linecap="round"/>
+  <path d="M{256-bw-32-arm_a:.1f} 468 Q{256+arm_a:.1f} 520 {256-bw-18:.1f} 566" fill="none" stroke="{skin}" stroke-width="25" stroke-linecap="round"/>
+  <path d="M{256+bw+32+arm_b:.1f} 468 Q{256+arm_b:.1f} 520 {256+bw+18:.1f} 566" fill="none" stroke="{skin}" stroke-width="25" stroke-linecap="round"/>
   <ellipse cx="256" cy="188" rx="66" ry="76" fill="{skin}"/>
   {hair_path}
   <ellipse cx="226" cy="184" rx="9" ry="14" fill="{eye}"/>
@@ -84,11 +83,11 @@ def frame(character: dict, index: int, x: int) -> str:
   <circle cx="229" cy="181" r="3" fill="#fff"/>
   <circle cx="289" cy="181" r="3" fill="#fff"/>
   <path d="M244 220 Q256 226 268 220" fill="none" stroke="#7a4b43" stroke-width="5" stroke-linecap="round"/>
-  <path d="M{bw-4:.1f} 492 L{bw+76:.1f} 406" stroke="#9a633d" stroke-width="12" stroke-linecap="round"
-        transform="rotate({bat_angle} {bw:.1f} 492)"/>
+  <path d="M{256+bw-4:.1f} 492 L{256+bw+76:.1f} 406" stroke="#9a633d" stroke-width="12" stroke-linecap="round"
+        transform="rotate({bat_angle} {256+bw:.1f} 492)"/>
   <circle cx="256" cy="414" r="9" fill="{accent}"/>
 </g>
-""".replace("translate(-256 0)", "")
+""""
 
 
 def svg_for(character: dict) -> str:
