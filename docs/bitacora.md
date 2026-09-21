@@ -5323,7 +5323,6 @@ También se mantiene la regresión existente de force chain, rundown, sliding y 
 - documentación defensiva actualizada.
 
 **Pendiente inmediato:**
-- pasar CharacterRosterStore desde los entry points reales del partido a todos los resolvers que ya admiten el adapter;
 - revisar cualquier lectura directa de stats base restante en gameplay;
 - integrar RewardTransactionService con mapas/gacha/Demon Kings una vez revisadas las tablas de recompensas.
 
@@ -5346,3 +5345,22 @@ El incremento es pequeño y corresponde a integración de un sistema ya construi
 No volver a conectar equipamiento directamente desde escenas o UI. La ruta válida continúa siendo:
 
 CharacterRosterStore → EquipmentService/EquipmentCatalog → EquipmentStatAdapter → resolver de gameplay.
+
+
+### Addendum de integración de entry point
+
+**Fecha:** 2026-09-21
+
+Se completó la conexión desde scenes/main.gd:
+
+- CharacterRosterStore se carga al iniciar el partido;
+- el roster persistente de las jugadoras del equipo del jugador se sincroniza con los PlayerData demo;
+- FieldingResolver recibe CharacterRosterStore;
+- DefensiveRunnerResolver recibe CharacterRosterStore;
+- ThrowResolver recibe CharacterRosterStore.
+
+De esta forma, la ruta efectiva ya no queda únicamente disponible en los resolvers: el flujo principal del partido puede utilizarla.
+
+Los personajes del equipo rival que no pertenezcan al roster persistente conservan sus estadísticas base, por lo que no se crea propiedad accidental de personajes rivales.
+
+**Runtime Godot:** sigue pendiente. Esta integración fue verificada por inspección estructural del código, no mediante ejecución de Godot.
