@@ -8,6 +8,9 @@ const QueueClass = preload("res://game/progression/training_queue_store.gd")
 const RosterClass = preload("res://game/characters/character_roster_store.gd")
 
 func start(character_id: String, training_type: String, duration_key: String, now_unix: int = -1) -> Dictionary:
+	var roster := RosterClass.new()
+	if not roster.has_character(character_id):
+		return {"ok": false, "reason": "character_not_owned"}
 	var queue := QueueClass.new()
 	return queue.start(character_id, training_type, duration_key, now_unix)
 
