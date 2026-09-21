@@ -107,7 +107,6 @@ func _build_stage() -> void:
     assert(starter_avatar != null, "bw001 hub renderer must resolve to AnimeAvatar2D.")
     starter_avatar.set_pose(AnimeAvatar2D.Pose.MENU_IDLE)
     starter_avatar.scale = Vector2(1.28, 1.28)
-    starter_avatar.mouse_filter = Control.MOUSE_FILTER_IGNORE
     add_child(starter_avatar)
 
     var spotlight := Panel.new()
