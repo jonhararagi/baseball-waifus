@@ -5633,3 +5633,145 @@ Se añadió `skill_roles` a las 30 identidades del catálogo. Esto permite disti
 Los roles son una guía de construcción de kit, no modificadores estadísticos automáticos ni una ventaja por rareza. El test de catálogo fue actualizado para exigir al menos un rol por personaje.
 
 No se asignaron todavía valores matemáticos únicos a las 26 acciones de firma; esos efectos se implementarán contra los resolvers concretos de bateo, pitcheo, defensa y corredores para evitar habilidades que funcionen fuera de las reglas reales del béisbol.
+
+## Revisión 52: integración de habilidades con pitcheo, defensa y corredores
+
+**Fecha:** 2026-09-21  
+**Motivo:** llevar la infraestructura de habilidades de la Revisión 51 a los resolvers reales del béisbol, evitando crear fórmulas paralelas por habilidad.
+
+### Sistemas afectados
+
+- BaseballSkillState
+- SkillResolver
+- BaseballSimulator
+- FieldingResolver
+- DoublePlayResolver
+- DefensiveRunnerResolver
+- RunnerSystem
+- entry point scenes/main.gd
+- catálogo de habilidades
+- pruebas y documentación
+
+### Implementación
+
+Se amplió BaseballSkillState para almacenar dos familias de modificadores:
+
+1. modificadores estadísticos, ya existentes;
+2. modificadores de acción, destinados a resoluciones concretas como steal, fielding, double_play, defensive_cover y runner_batter_combo.
+
+SkillResolver ahora entiende action_buff y action_debuff, manteniendo el mismo contrato data-driven.
+
+### Pitcheo
+
+BaseballSimulator.pitch_in_zone_probability() y resolve_pitch() aceptan opcionalmente BaseballSkillState.
+
+Esto conecta habilidades como Pitch Down y Pitch Pressure con Control efectivo del pitcher sin modificar directamente el resultado.
+
+Los límites de probabilidad y el RNG siguen perteneciendo al simulador.
+
+### Defensa
+
+FieldingResolver recibe BaseballSkillState y puede consumir Defense modificada por habilidades y el modificador de acción fielding.
+
+DoublePlayResolver consume el modificador double_play cuando la jugada ya es elegible.
+
+Se conserva la autoridad del resolver: una habilidad solo cambia una probabilidad acotada y nunca crea un doble play automático.
+
+### Corredores
+
+RunnerSystem.attempt_steal() pasó a runner_v2 y acepta un RNG externo opcional.
+
+Ahora devuelve:
+- éxito;
+- probabilidad;
+- roll;
+- modificador aplicado;
+- versión de regla.
+
+Esto permite reproducibilidad mediante el RNG compartido del partido.
+
+Se conectaron:
+
+- Steal Up → acción steal;
+- Pickoff Counter → acción steal;
+- Defensive Cover → cobertura defensiva;
+- Runner to Batter → modificador temporal de contacto tras una acción de robo exitosa.
+
+### Entry point
+
+scenes/main.gd mantiene un BaseballSkillState por partido y lo suministra a:
+
+- resolución de pitch;
+- resolución de contacto;
+- fielding;
+- corredores defensivos;
+- robo.
+
+La presentación no recibe autoridad nueva.
+
+### Archivos modificados
+
+- game/baseball/skill_state.gd
+- game/baseball/skill_resolver.gd
+- game/baseball/baseball_simulator.gd
+- game/baseball/fielding_resolver.gd
+- game/baseball/double_play_resolver.gd
+- game/baseball/defensive_runner_resolver.gd
+- game/baseball/runner_system.gd
+- game/characters/skill_catalog.json
+- scenes/main.gd
+- scenes/skill_system_test.gd
+- docs/characters/skill-system-v1.md
+- docs/game-design.md
+- docs/bitacora.md
+
+### Decisiones arquitectónicas
+
+1. No se creó una fórmula de béisbol independiente para cada habilidad.
+2. Las habilidades solo aportan modificadores al resolver existente.
+3. Control continúa representando precisión del pitcher. No se añadió Dexterity.
+4. RunnerSystem conserva la autoridad del resultado del robo.
+5. FieldingResolver y DoublePlayResolver conservan la autoridad de defensa y doble play.
+6. El RNG del partido puede compartirse con el robo para reproducibilidad.
+7. Runner to Batter es un enlace temporal, no una garantía de hit.
+8. Los modificadores continúan limitados por BaseballSkillState.MAX_MODIFIER.
+
+### Pruebas preparadas
+
+Se amplió scenes/skill_system_test.gd para cubrir estructuralmente:
+
+- Pitch Down acumulado con Pitch Pressure;
+- Catch Boost;
+- Steal Up;
+- Double Play Setup;
+- Runner to Batter;
+- consumo temporal de modificadores;
+- robo con RNG determinista suministrado por el partido.
+
+No se ejecutó Godot runtime en este entorno. Por tanto, se registra como prueba escrita y revisión estática, no como ejecución real.
+
+### Problemas encontrados y correcciones
+
+- El sistema de habilidades original solo podía expresar buffs/debuffs estadísticos. Se añadió una segunda vía de modificadores de acción para no convertir cada habilidad en una fórmula independiente.
+- RunnerSystem usaba un RNG interno, lo que dificultaba reproducir una jugada desde el RNG del partido. Se añadió un RNG opcional y se mantuvo compatibilidad con llamadas antiguas.
+- DoublePlayResolver necesitaba acceso al estado temporal sin recibir autoridad de UI. Se añadió el estado como parámetro opcional.
+- FieldingResolver y DefensiveRunnerResolver se ampliaron de forma compatible, manteniendo sus fórmulas y parámetros anteriores.
+
+### Estado
+
+**Implementado a nivel de integración de código y catálogo.**
+
+**Pendiente:**
+- UI de selección/activación de habilidades;
+- costes y cooldowns;
+- asignación final de skills a las 30 personajes;
+- IA rival que decida cuándo usar habilidades;
+- simulaciones de balance extensas;
+- runtime Godot;
+- validación Android.
+
+### Avance aproximado
+
+**≈92%.**
+
+El incremento representa integración del sistema de habilidades con más resolvers del núcleo. No significa que el juego esté terminado ni que exista validación runtime.
