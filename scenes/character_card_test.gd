@@ -31,7 +31,7 @@ func _ready() -> void:
 	assert(card.name_label.text == "Test Player")
 	assert(card.level_label.text == "LV 12  •  POT 5")
 	assert(card.meta_label.text == "P  •  FIRE  •  PITCHER")
-assert(card.identity_label.text == "BIG SWING THREAT")
+	assert(card.identity_label.text == "BIG SWING THREAT")
 	assert(card.stat_bars.size() == 8)
 	for entry in card.stat_bars:
 		var bar: ProgressBar = card.stat_bars[entry]
