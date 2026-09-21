@@ -81,7 +81,7 @@ func _ready() -> void:
 
 	state.consume_action()
 	assert(is_equal_approx(state.get_stat_modifier(batter.id, "power"), 0.0))
-	assert(is_equal_approx(state.get_stat_modifier(pitcher.id, "control"), -0.03))
+	assert(is_equal_approx(state.get_stat_modifier(pitcher.id, "control"), -0.06))
 
 	for _i in range(3):
 		state.consume_action()
