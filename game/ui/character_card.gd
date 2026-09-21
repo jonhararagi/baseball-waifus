@@ -114,6 +114,12 @@ func _build() -> void:
 	stats_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	root.add_child(stats_label)
 
+	comment_label = _label("", 11, Color("#dce5f7"))
+	comment_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	comment_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	comment_label.custom_minimum_size = Vector2(0, 38)
+	root.add_child(comment_label)
+
 func _apply_player(player: PlayerData, portrait_path: String) -> void:
 	var rarity := str(player.rarity).to_upper()
 	var style: Dictionary = RARITY_STYLES.get(rarity, RARITY_STYLES["R"])
@@ -165,6 +171,10 @@ func _play_entry_animation() -> void:
 	tween.set_parallel(true)
 	tween.tween_property(self, "modulate", Color.WHITE, 0.22)
 	tween.tween_property(self, "scale", Vector2.ONE, 0.28).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+func set_comment(text_value: String) -> void:
+	if comment_label != null:
+		comment_label.text = text_value
 
 func _apply_panel_style(rarity: String) -> void:
 	var style: Dictionary = RARITY_STYLES.get(rarity, RARITY_STYLES["R"])
