@@ -1,0 +1,187 @@
+{
+  "version": 1,
+  "source": "game/characters/character_archetypes.json",
+  "generator": "tools/character_ai/generate_svg_roster.py",
+  "assets": [
+    {
+      "id": "bw001",
+      "name": "Aiko Hanamori",
+      "path": "assets/characters/generated/bw001.svg",
+      "status": "prototype-generated"
+    },
+    {
+      "id": "bw002",
+      "name": "Reina Kurose",
+      "path": "assets/characters/generated/bw002.svg",
+      "status": "prototype-generated"
+    },
+    {
+      "id": "bw003",
+      "name": "Miu Tachibana",
+      "path": "assets/characters/generated/bw003.svg",
+      "status": "prototype-generated"
+    },
+    {
+      "id": "bw004",
+      "name": "Yuna Minase",
+      "path": "assets/characters/generated/bw004.svg",
+      "status": "prototype-generated"
+    },
+    {
+      "id": "bw005",
+      "name": "Sora Amamiya",
+      "path": "assets/characters/generated/bw005.svg",
+      "status": "prototype-generated"
+    },
+    {
+      "id": "bw006",
+      "name": "Akari Shimizu",
+      "path": "assets/characters/generated/bw006.svg",
+      "status": "prototype-generated"
+    },
+    {
+      "id": "bw007",
+      "name": "Kira Kurosawa",
+      "path": "assets/characters/generated/bw007.svg",
+      "status": "prototype-generated"
+    },
+    {
+      "id": "bw008",
+      "name": "Nao Fujimoto",
+      "path": "assets/characters/generated/bw008.svg",
+      "status": "prototype-generated"
+    },
+    {
+      "id": "bw009",
+      "name": "Rika Moriyama",
+      "path": "assets/characters/generated/bw009.svg",
+      "status": "prototype-generated"
+    },
+    {
+      "id": "bw010",
+      "name": "Mei Kanzaki",
+      "path": "assets/characters/generated/bw010.svg",
+      "status": "prototype-generated"
+    },
+    {
+      "id": "bw011",
+      "name": "Hina Sakuragi",
+      "path": "assets/characters/generated/bw011.svg",
+      "status": "prototype-generated"
+    },
+    {
+      "id": "bw012",
+      "name": "Sayu Kisaragi",
+      "path": "assets/characters/generated/bw012.svg",
+      "status": "prototype-generated"
+    },
+    {
+      "id": "bw013",
+      "name": "Kaede Arakawa",
+      "path": "assets/characters/generated/bw013.svg",
+      "status": "prototype-generated"
+    },
+    {
+      "id": "bw014",
+      "name": "Rin Asakura",
+      "path": "assets/characters/generated/bw014.svg",
+      "status": "prototype-generated"
+    },
+    {
+      "id": "bw015",
+      "name": "Momo Hoshino",
+      "path": "assets/characters/generated/bw015.svg",
+      "status": "prototype-generated"
+    },
+    {
+      "id": "bw016",
+      "name": "Fuyuki Aono",
+      "path": "assets/characters/generated/bw016.svg",
+      "status": "prototype-generated"
+    },
+    {
+      "id": "bw017",
+      "name": "Yuzu Takahashi",
+      "path": "assets/characters/generated/bw017.svg",
+      "status": "prototype-generated"
+    },
+    {
+      "id": "bw018",
+      "name": "Koharu Nishiki",
+      "path": "assets/characters/generated/bw018.svg",
+      "status": "prototype-generated"
+    },
+    {
+      "id": "bw019",
+      "name": "Chika Raikou",
+      "path": "assets/characters/generated/bw019.svg",
+      "status": "prototype-generated"
+    },
+    {
+      "id": "bw020",
+      "name": "Shiori Amane",
+      "path": "assets/characters/generated/bw020.svg",
+      "status": "prototype-generated"
+    },
+    {
+      "id": "bw021",
+      "name": "Noa Mizuno",
+      "path": "assets/characters/generated/bw021.svg",
+      "status": "prototype-generated"
+    },
+    {
+      "id": "bw022",
+      "name": "Ayame Tsukino",
+      "path": "assets/characters/generated/bw022.svg",
+      "status": "prototype-generated"
+    },
+    {
+      "id": "bw023",
+      "name": "Towa Amami",
+      "path": "assets/characters/generated/bw023.svg",
+      "status": "prototype-generated"
+    },
+    {
+      "id": "bw024",
+      "name": "Nene Kagetsu",
+      "path": "assets/characters/generated/bw024.svg",
+      "status": "prototype-generated"
+    },
+    {
+      "id": "bw025",
+      "name": "Itsuki Kogane",
+      "path": "assets/characters/generated/bw025.svg",
+      "status": "prototype-generated"
+    },
+    {
+      "id": "bw026",
+      "name": "Ema Kuroyuri",
+      "path": "assets/characters/generated/bw026.svg",
+      "status": "prototype-generated"
+    },
+    {
+      "id": "bw027",
+      "name": "Hotaru Kazehaya",
+      "path": "assets/characters/generated/bw027.svg",
+      "status": "prototype-generated"
+    },
+    {
+      "id": "bw028",
+      "name": "Aria Solis",
+      "path": "assets/characters/generated/bw028.svg",
+      "status": "prototype-generated"
+    },
+    {
+      "id": "bw029",
+      "name": "Sena Yoru",
+      "path": "assets/characters/generated/bw029.svg",
+      "status": "prototype-generated"
+    },
+    {
+      "id": "bw030",
+      "name": "Kagari Homura",
+      "path": "assets/characters/generated/bw030.svg",
+      "status": "prototype-generated"
+    }
+  ]
+}
