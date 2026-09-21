@@ -9,6 +9,7 @@ func _ready() -> void:
 	_test_final_inning_lead_ends_game()
 	_test_hit_scores_once()
 	_test_steal_does_not_overwrite_occupied_base()
+	_test_state_invariants()
 	print("BASEBALL RULES TEST OK")
 	get_tree().quit()
 
@@ -122,3 +123,37 @@ func _test_steal_does_not_overwrite_occupied_base() -> void:
 	assert(bool(result.get("blocked", false)))
 	assert(state.base_runners[0].player_id == "runner")
 	assert(state.base_runners[1].player_id == "target")
+
+
+func _test_state_invariants() -> void:
+	var state := BaseballGameState.new()
+	var valid := state.validate_invariants("fresh")
+	assert(bool(valid.get("valid", false)))
+
+	var batter := _make_player("invariant_batter")
+	var runner := _make_player("invariant_runner")
+	state.base_runners[0] = RunnerToken.from_player(runner, "team")
+	state._refresh_base_flags()
+	valid = state.validate_invariants("occupied_first")
+	assert(bool(valid.get("valid", false)))
+
+	state.balls = 4
+	valid = state.validate_invariants("invalid_ball_count")
+	assert(not bool(valid.get("valid", false)))
+	assert(valid.get("errors", []).has("balls must remain in 0..3"))
+
+	state.balls = 0
+	state.base_runners[1] = RunnerToken.from_player(runner, "team")
+	state._refresh_base_flags()
+	valid = state.validate_invariants("duplicate_runner")
+	assert(not bool(valid.get("valid", false)))
+	assert(valid.get("errors", []).has("duplicate runner player_id: invariant_runner"))
+
+	state.base_runners[1] = null
+	state._refresh_base_flags()
+	valid = state.validate_invariants("restored")
+	assert(bool(valid.get("valid", false)))
+
+	state.apply_hit(batter, "team", 4)
+	valid = state.validate_invariants("after_home_run")
+	assert(bool(valid.get("valid", false)))
