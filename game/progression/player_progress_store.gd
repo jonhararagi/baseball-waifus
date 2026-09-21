@@ -110,7 +110,7 @@ func consume_player_energy(amount: int) -> Dictionary:
 	var after := before - amount
 	state["player_energy"] = after
 	state["player_energy_last_regen_unix"] = int(Time.get_unix_time_from_system())
-	return _commit_change("player_energy", before, after)
+	return _commit_change("player_energy", before, after, snapshot_state)
 
 func consume_character_energy(character_id: String, amount: int) -> Dictionary:
 	_ensure_loaded()
@@ -128,7 +128,7 @@ func consume_character_energy(character_id: String, amount: int) -> Dictionary:
 	var regen_times: Dictionary = state.get("character_energy_last_regen_unix", {})
 	regen_times[character_id] = int(Time.get_unix_time_from_system())
 	state["character_energy_last_regen_unix"] = regen_times
-	return _commit_change("character_energy:" + character_id, before, after)
+	return _commit_change("character_energy:" + character_id, before, after, snapshot_state)
 
 func snapshot() -> Dictionary:
 	_ensure_loaded()
