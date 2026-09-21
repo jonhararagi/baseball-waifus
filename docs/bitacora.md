@@ -4556,3 +4556,80 @@ Toda entrada a contenido que consuma energía debe pasar por PlayerProgressStore
 Toda recompensa publicitaria debe pasar por RewardedAdClaimService.
 
 Toda resolución de force-out debe conservar la cadena de corredores y terminar validando invariantes cuando sea posible.
+
+
+
+# Revisión 41: pacing de energía y mapas de grindeo
+
+**Fecha:** 2026-09-21
+
+## Motivo
+
+Revisar los costes de la Revisión 40 para que fortalecer al equipo no genere un muro de energía al pasar de Normal a Hard. También faltaba formalizar los mapas clásicos de farmeo de recursos como actividades separadas de la historia.
+
+## Sistemas afectados
+
+- Economía de energía.
+- Límites de repetición.
+- Campaña.
+- Mapas de grindeo.
+- Progresión de personajes.
+- Equipamiento.
+- Amor/Encanto.
+
+## Cambios realizados
+
+### Costes vigentes
+
+- Normal: **10 energía**, 10 intentos.
+- Hard: **10 energía**, 10 intentos.
+- Hell: **15 energía**, 10 intentos.
+- Demon King: **20 energía**, 3 intentos.
+
+La reducción de Hard de 15 → 10 es deliberada. Hard debe sentirse como el siguiente escalón de progreso y ofrecer mejores materiales/recompensas, no como una penalización de energía por haber avanzado.
+
+Demon King baja de 25 → 20. Su diferencia principal queda en la calidad/identidad de sus recompensas y en el límite de 3 ataques.
+
+### Mapas de grindeo
+
+Se incorporan a la misma autoridad de entrada:
+
+- `character_materials`: 10 energía, 10 intentos.
+- `equipment`: 10 energía, 10 intentos.
+- `r_cards_charm`: 10 energía, 10 intentos.
+
+Se creó `docs/progression/farming-maps-v1.md` para documentar su propósito y pacing.
+
+### Endurecimiento de intentos
+
+`CampaignAttemptStore.consume_attempt()` ahora trabaja sobre una copia profunda del estado, persiste esa copia y solamente actualiza el estado recibido después de un guardado exitoso.
+
+Esto evita que un `save_failed` deje el diccionario del caller con un intento consumido en memoria aunque el archivo no lo haya registrado.
+
+## Pruebas
+
+Se actualizaron las pruebas estructurales para verificar:
+
+- Normal = 10.
+- Hard = 10.
+- Hell = 15.
+- Demon King = 20.
+- 10 intentos para Normal/Hard/Hell.
+- 3 intentos para Demon King.
+- mapas `character_materials`, `equipment` y `r_cards_charm` con 10 energía y 10 intentos.
+- entrada Hard consume 10.
+- entrada de materiales consume 10.
+
+**Runtime Godot:** no ejecutado. El entorno actual no dispone del binario Godot, por lo que no se declara ejecución runtime.
+
+## Estado
+
+**Implementado:** nueva base de pacing económico y categorías de grindeo; persistencia de intentos endurecida.
+
+**Pendiente:** tablas definitivas de recompensas por mapa, inventario completo de equipamiento, gacha, entrenamiento persistente, balance estadístico mediante simulación e integración runtime Godot.
+
+**Avance global aproximado:** **≈83%**.
+
+## Regla de continuidad
+
+Los costes de entrada no deben modificarse desde la UI ni desde las tablas de recompensa. Toda actividad nueva debe registrarse en `EconomyRules` y utilizar `CampaignEntryService`.
