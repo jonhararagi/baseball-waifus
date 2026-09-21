@@ -3,7 +3,7 @@ extends RefCounted
 
 const RULE_VERSION := "double_play_v1"
 
-func resolve(event: BattedBallEvent, fielding_resolution: Dictionary, base_runners: Array, outs: int, rng: RandomNumberGenerator) -> Dictionary:
+func resolve(event: BattedBallEvent, fielding_resolution: Dictionary, base_runners: Array, outs: int, rng: RandomNumberGenerator, skill_state: BaseballSkillState = null, defender_id: String = "") -> Dictionary:
 	if event == null or fielding_resolution.is_empty():
 		return {"eligible": false, "success": false, "rule_version": RULE_VERSION}
 	if not bool(fielding_resolution.get("success", false)):
@@ -20,6 +20,8 @@ func resolve(event: BattedBallEvent, fielding_resolution: Dictionary, base_runne
 	var defense_score := float(fielding_resolution.get("defense_score", 0.5))
 	var contact_quality := float(fielding_resolution.get("contact_quality", 0.5))
 	var chance := clamp(0.10 + defense_score * 0.12 + (1.0 - contact_quality) * 0.08, 0.08, 0.34)
+	if skill_state != null and not defender_id.is_empty():
+		chance = clamp(chance + skill_state.get_action_modifier(defender_id, "double_play"), 0.08, 0.50)
 	var roll := rng.randf()
 	var success := roll < chance
 
