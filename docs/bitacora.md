@@ -21,7 +21,7 @@
 **Rama principal:** `main`  
 **Estado actual:** Prototipo técnico en Godot 4.x + núcleo de béisbol defensivo + laboratorio/canon de personajes + pipeline visual 2D/3D + puente de streaming auxiliar. Godot 4.x queda adoptado como motor del prototipo y del juego actual; los adapters externos siguen siendo una capa visual opcional.
 
-**Avance global revisado:** ≈77%.
+**Avance global revisado:** ≈79%.
 
 ### Cómo vamos
 
@@ -4012,3 +4012,62 @@ Se separó:
 Mejorada la resiliencia offline y corregida la semántica de acciones bloqueadas.
 
 **Avance global aproximado:** ≈79%.
+
+# Revisión 37: invariantes explícitos del estado del partido
+
+**Fecha:** 2026-09-21  
+**Motivo:** endurecer la base del núcleo de béisbol después de la auditoría de acciones bloqueadas. El siguiente riesgo estructural identificado era que BaseballGameState tenía reglas correctas en varios mutadores, pero no disponía de una validación central para detectar estados imposibles durante QA.
+
+### Sistemas afectados
+- BaseballGameState
+- QA estructural del núcleo de béisbol
+- pruebas de partido
+- documentación de arquitectura/invariantes
+
+### Cambios realizados
+- game/baseball/game_state.gd
+  - añade validate_invariants(context) como validador no mutante;
+  - comprueba tamaño de bases, runners, marcador y alineaciones;
+  - comprueba rangos de inning, half, outs, strikes y balls;
+  - comprueba que los flags de bases coincidan con base_runners;
+  - detecta player_id duplicados entre corredoras;
+  - rechaza puntuaciones negativas e índices de lineup negativos;
+  - comprueba coherencia básica de game_over y winner;
+  - devuelve un payload auditable con valid, errors y context.
+- scenes/baseball_rules_test.gd
+  - añade regresiones para estado inicial válido;
+  - primera base ocupada válida;
+  - conteo de balls inválido;
+  - corredora duplicada inválida;
+  - restauración a estado válido;
+  - Home Run posterior a la validación.
+
+### Decisión arquitectónica
+validate_invariants() no muta el partido y no sustituye a los resolvers ni a BaseballGameState. Es una herramienta de QA de la autoridad existente.
+
+La validación se mantiene separada de la presentación. No se añade una segunda fuente de verdad ni se trasladan reglas a la UI.
+
+### Problema que previene
+Sin un validador central, un error futuro en un resolver podría producir una combinación como:
+- flag de base distinto de su RunnerToken;
+- dos runners con la misma identidad;
+- conteo fuera de rango;
+- score negativo;
+- estado de partido terminado con runners todavía en bases.
+
+El objetivo es detectar estas corrupciones en tests antes de que lleguen al renderer o al guardado.
+
+### Pruebas
+- Se añadieron casos estructurales para estados válidos e inválidos.
+- Se revisó estáticamente la implementación final después de cada escritura.
+- Runtime Godot: no ejecutado. El entorno actual no dispone del binario Godot, por lo que no se declara ejecución de la suite.
+
+### Estado
+**Implementado:** primera capa central de invariantes para BaseballGameState y regresiones asociadas.
+
+**Pendiente:** ampliar la validación a contratos de RunnerToken, reglas de force chains y eventos de pelota; conectar el validador a una futura suite de runtime cuando exista Godot disponible; continuar con persistencia global, economía/gacha y balance del núcleo.
+
+**Avance global aproximado:** ≈79%.
+
+### Regla de continuidad
+Antes de ampliar una mutación importante de BaseballGameState, el caso debe tener una invariante explícita o una prueba que demuestre qué estado válido produce. No crear validadores paralelos para el mismo estado.
