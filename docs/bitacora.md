@@ -7493,3 +7493,90 @@ También se creó la escena de prueba con `VisualQAExporter` y el job headless d
 ### Avance aproximado
 
 **≈96% estructural del prototipo.** Este porcentaje no representa porcentaje de arte final, balance definitivo, validación Android local ni contenido completo.
+
+
+## Revisión 64: Unidad visual bw012 (Sayu Kisaragi)
+
+**Fecha:** 2026-09-21  
+**Tipo:** Pipeline artístico 2D / presentación de colección / Visual QA.
+
+### Motivo
+
+Continuar el pipeline artístico de una personaje por vez después del cierre consolidado de bw011. La unidad mantiene el control de alcance: identidad canónica, cinco expresiones vectoriales, escena de presentación, documentación y CI. No se modifica gameplay ni la fuente de verdad del roster.
+
+### Identidad canónica bloqueada
+
+La unidad reutiliza exclusivamente el registro existente de `bw012` en `game/characters/character_archetypes.json`:
+
+- **Nombre:** Sayu Kisaragi
+- **Rareza:** SR
+- **Posición:** SS
+- **Elemento:** Nature
+- **Especialización:** Defender
+- **Potencial:** 4
+- **Stats:** Power 58, Contact 67, Speed 70, Pitch 52, Control 59, Defense 84, Critical 11, Stamina 80.
+- **Identidad:** `quiet_nature_defender`
+- **Play identity:** `coverage_anchor`
+- **Acción de firma:** `coverage_switch`
+- **Skill roles:** `defense`, `combination`
+- **Paleta canónica:** cabello `#31513f`, acento `#4cae5f`, ojos `#22392a`, piel `#d59a78`, uniforme `#eef7e4`.
+
+No se crea una segunda fuente de verdad y no se modifican los atributos del catálogo.
+
+### Implementado
+
+- `assets/characters/expressions/bw012_neutral.svg`
+- `assets/characters/expressions/bw012_happy.svg`
+- `assets/characters/expressions/bw012_focused.svg`
+- `assets/characters/expressions/bw012_surprised.svg`
+- `assets/characters/expressions/bw012_disappointed.svg`
+- `scenes/bw012_character_presentation_test.gd`
+- `scenes/bw012_character_presentation_test.tscn`
+- `docs/characters/bw012-presentation-v1.md`
+- job `bw012-visual-qa` en `.github/workflows/visual_qa.yml`.
+
+### Decisiones de producción visual
+
+1. La cadena permanece estrictamente `CharacterArchetypeCatalog -> CharacterExpressionController -> BaseballCharacterCard`.
+2. Los cinco SVG son independientes, vectoriales, autónomos y no contienen nodos `<text>`, fuentes embebidas ni referencias externas.
+3. Las cinco expresiones modifican geometría facial explícita y el test exige que sus contenidos sean distintos.
+4. La dirección visual presenta a Sayu como defensora adulta reservada y práctica, con verdes de bosque y crema vegetal coherentes con Nature.
+5. La expresión es presentation-only y nunca modifica PlayerData, progresión, equipamiento, RNG, IA ni resultados deportivos.
+6. Los assets mantienen ViewBox 512x768, formas vectoriales simples y una estructura reemplazable por arte final sin cambiar contratos de gameplay.
+7. El job de Visual QA se dispara por cambios relevantes en `main` y permanece disponible mediante `workflow_dispatch`.
+8. Todo el desarrollo de bw012 se integrará mediante **squash** para que la unidad quede registrada en un único commit final de `main`.
+
+### Validación estructural
+
+Los cinco SVG se diseñaron con:
+- cabecera XML y raíz SVG válida;
+- ausencia de `<text>`;
+- ausencia de `href=`, `xlink:href` y recursos HTTP;
+- presencia completa de la paleta canónica;
+- cinco contenidos independientes y distintos;
+- tamaño aproximado de producción de varios KB, adecuado para vector art ligero.
+
+La escena verifica además identidad canónica, stats, rareza, posición, elemento, especialización, skill roles, acción de firma, resolución de los cinco paths de expresión y diferenciación del contenido.
+
+### Runtime y CI
+
+La escena queda preparada para `VisualQAExporter` con `--run-qa-capture`, produciendo:
+
+`qa_captures/bw012_character_presentation.png`
+
+El job `bw012-visual-qa` instala Godot `4.5.1-stable`, realiza import headless, ejecuta la escena con `--run-qa-capture`, verifica que la PNG no esté vacía y la publica como artifact.
+
+**Runtime local:** no disponible en este entorno. No se registra como ejecución local. La validación runtime real será la del workflow de GitHub Actions tras el squash merge en `main`.
+
+### Problemas y correcciones
+
+- No fue necesario modificar `CharacterArchetypeCatalog`, `CharacterExpressionController` ni `BaseballCharacterCard`: sus contratos existentes cubren bw012 sin crear duplicación.
+- Se mantiene el principio de una unidad por vez para que cualquier fallo quede contenido antes de propagarse a las siguientes personajes.
+
+### Estado
+
+**Implementado a nivel de assets, escena, documentación y CI; pendiente únicamente la ejecución runtime headless sobre `main`.**
+
+### Avance aproximado
+
+**≈96% estructural del prototipo.** Este porcentaje no representa porcentaje de arte final, balance definitivo, validación Android local ni contenido completo.
