@@ -44,8 +44,8 @@ func _ready() -> void:
 	steal_button.visible = false
 
 func _apply_button_theme(button: Button, accent: Color) -> void:
-	var normal := BaseballUITheme.panel_style(Color(0.06, 0.08, 0.14, 0.96), Color(accent, 0.70), 20, 2)
-	var hover := BaseballUITheme.panel_style(Color(0.10, 0.13, 0.22, 0.98), Color(accent, 0.92), 20, 2)
+	var normal := BaseballUITheme.panel_style(Color(0.06, 0.08, 0.14, 0.96), Color(accent.r, accent.g, accent.b, 0.70), 20, 2)
+	var hover := BaseballUITheme.panel_style(Color(0.10, 0.13, 0.22, 0.98), Color(accent.r, accent.g, accent.b, 0.92), 20, 2)
 	var pressed := BaseballUITheme.panel_style(Color(0.16, 0.19, 0.30, 1.0), Color.WHITE, 20, 3)
 	var disabled := BaseballUITheme.panel_style(Color(0.04, 0.05, 0.08, 0.72), Color(0.4, 0.45, 0.55, 0.35), 20, 1)
 	button.add_theme_stylebox_override("normal", normal)
