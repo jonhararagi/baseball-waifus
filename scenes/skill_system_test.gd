@@ -72,6 +72,30 @@ func _ready() -> void:
 	assert(resolver.apply_skill(combo, runner, batter, {"same_team": true}, state).applied)
 	assert(is_equal_approx(state.get_action_modifier(batter.id, "runner_batter_combo"), 0.03))
 
+	var simulator := BaseballSimulator.new()
+	var pitch := Pitch.create(Pitch.Type.FASTBALL)
+	var pitch_state := resolver.create_state()
+	var base_zone := simulator.pitch_in_zone_probability(pitcher, pitch)
+	assert(resolver.apply_skill(pitch_down, batter, pitcher, {"same_team": false}, pitch_state).applied)
+	var debuffed_zone := simulator.pitch_in_zone_probability(pitcher, pitch, pitch_state)
+	assert(debuffed_zone < base_zone)
+
+	var fielding_state := resolver.create_state()
+	var fielding := FieldingResolver.new()
+	var field_event := BattedBallEvent.new()
+	field_event.result = "FIELDING_CANDIDATE"
+	field_event.target = Vector2(620, 315)
+	field_event.origin = Vector2(1040, 430)
+	field_event.contact_quality = 0.55
+	var base_field_rng := RandomNumberGenerator.new()
+	base_field_rng.seed = 77
+	var base_field := fielding.resolve(field_event, {"SS": defender}, 0.90, [], 0, base_field_rng)
+	assert(resolver.apply_skill(catch_boost, batter, defender, {"same_team": true}, fielding_state).applied)
+	var boosted_field_rng := RandomNumberGenerator.new()
+	boosted_field_rng.seed = 77
+	var boosted_field := fielding.resolve(field_event, {"SS": defender}, 0.90, [], 0, boosted_field_rng, null, fielding_state)
+	assert(float(boosted_field.get("chance", 0.0)) > float(base_field.get("chance", 0.0)))
+
 	var runner_system := RunnerSystem.new()
 	var steal_rng := RandomNumberGenerator.new()
 	steal_rng.seed = 123
