@@ -91,11 +91,11 @@ Cada personaje nuevo puede recibir de 3 a 5 ejes:
 - confianza;
 - autocontrol.
 
-## Regla S/SR
+## Regla SR/SSR
 
-Las personajes S/SR pueden recibir personalidad más marcada y memorable, pero la rareza no determina personalidad.
+Las personajes SR/SSR pueden recibir personalidad más marcada y memorable, pero la rareza no determina personalidad.
 
-Una SR puede ser tranquila, caótica, protectora, sarcástica o tímida. Una S/SSR puede tener una personalidad cotidiana aparentemente sencilla y aun así ser interesante.
+Una SR puede ser tranquila, caótica, protectora, sarcástica o tímida. Una SSR puede tener una personalidad cotidiana aparentemente sencilla y aun así ser interesante.
 
 ## Guardia contra coincidencias
 
