@@ -412,18 +412,22 @@ func _attempt_steal() -> void:
 	message = result.result
 	var movement := state.move_runner_on_steal(from_index, result.success)
 
-	if not result.success:
+	var blocked := bool(movement.get("blocked", false))
+	if not result.success and not blocked:
 		state.add_out()
 
-	avatar_presenter.on_steal_result(result.success)
+	var presentation_success := result.success and not blocked
+	avatar_presenter.on_steal_result(presentation_success)
 	var destination_base := int(movement.get("to", -1))
-	field_avatar_presenter.on_steal_result(from_index, result.success, destination_base, state.base_runners)
+	field_avatar_presenter.on_steal_result(from_index, presentation_success, destination_base, state.base_runners)
 
 	phase = "RESULT"
 	current_result = {
-		"result": result.result,
+		"result": "STEAL BLOCKED" if blocked else result.result,
 		"timing": "%d%%" % int(result.chance * 100.0),
-		"runner": source_runner.display_name
+		"runner": source_runner.display_name,
+		"blocked": blocked,
+		"state_change": "NONE" if blocked else "OUT" if not result.success else "ADVANCE"
 	}
 	result_timer = 1.2
 	_get_hud().show_result(current_result)
