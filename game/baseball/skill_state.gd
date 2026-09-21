@@ -75,6 +75,13 @@ func has_combo_condition(target_id: String, condition: String) -> bool:
 			return true
 	return false
 
+func get_outcome_bonus(target_id: String, outcome_id: String) -> float:
+	var total := 0.0
+	for entry in _pending_combos:
+		if str(entry.get("target_id", "")) == target_id and str(entry.get("combo_id", "")) == outcome_id and str(entry.get("condition", "")) == "outcome_bonus":
+			total += float(entry.get("value", 0.0))
+	return clamp(total, -0.25, 0.25)
+
 func event_log() -> Array[Dictionary]:
 	return _event_log.duplicate(true)
 
