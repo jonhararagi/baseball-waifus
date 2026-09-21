@@ -4,6 +4,8 @@ extends Node3D
 var visual_profile: AvatarProfile
 var body_root: Node3D
 var torso: MeshInstance3D
+var chest_mass_left: MeshInstance3D
+var chest_mass_right: MeshInstance3D
 var head: MeshInstance3D
 var hair_mass: MeshInstance3D
 var ponytail: MeshInstance3D
@@ -18,6 +20,7 @@ var rear_leg: Node3D
 var front_shoe: MeshInstance3D
 var rear_shoe: MeshInstance3D
 var cap: MeshInstance3D
+var secondary_motion: SecondaryMotion3D
 
 func setup(profile: AvatarProfile) -> void:
 	visual_profile = profile
@@ -108,7 +111,40 @@ func _build_model() -> void:
 		var brim := _box("CapBrim", Vector3(0.30, 0.035, 0.20), cap)
 		brim.position = Vector3(0, -0.05, 0.34)
 
+	_create_secondary_motion()
 	_apply_materials()
+
+
+func _create_secondary_motion() -> void:
+	# Separate, uniform-colored chest masses keep the procedural body readable
+	# while allowing delayed motion without coupling presentation to gameplay.
+	chest_mass_left = _sphere("ChestMassLeft", 0.20, body_root)
+	chest_mass_left.position = Vector3(-0.145, 1.30, 0.255)
+	chest_mass_left.scale = Vector3(
+		0.95 * (visual_profile.bust if visual_profile != null else 1.0),
+		0.72 * (visual_profile.bust if visual_profile != null else 1.0),
+		0.42
+	)
+	chest_mass_right = _sphere("ChestMassRight", 0.20, body_root)
+	chest_mass_right.position = Vector3(0.145, 1.30, 0.255)
+	chest_mass_right.scale = Vector3(
+		0.95 * (visual_profile.bust if visual_profile != null else 1.0),
+		0.72 * (visual_profile.bust if visual_profile != null else 1.0),
+		0.42
+	)
+
+	secondary_motion = SecondaryMotion3D.new()
+	secondary_motion.name = "SecondaryMotion3D"
+	add_child(secondary_motion)
+	secondary_motion.setup(
+		torso,
+		skirt,
+		chest_mass_left,
+		chest_mass_right,
+		front_leg,
+		rear_leg
+	)
+
 
 func _sphere(part_name: String, radius: float, parent: Node3D) -> MeshInstance3D:
 	var node := MeshInstance3D.new()
@@ -176,6 +212,8 @@ func _apply_materials() -> void:
 		accent = visual_profile.accent
 
 	_material(torso, uniform)
+	_material(chest_mass_left, uniform)
+	_material(chest_mass_right, uniform)
 	_material(skirt, uniform.darkened(0.06))
 	_material(head, skin)
 	_material(hair_mass, hair)
