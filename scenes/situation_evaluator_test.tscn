@@ -1,0 +1,1 @@
+[gd_scene load_steps=2 format=3]\n\n[ext_resource path="res://scenes/situation_evaluator_test.gd" type="Script" id="1"]\n\n[node name="SituationEvaluatorTest" type="Node"]\nscript = ExtResource("1")\n
