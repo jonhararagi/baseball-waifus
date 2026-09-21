@@ -23,6 +23,7 @@ var rival_team: BaseballTeamData
 var batter: PlayerData
 var pitcher: PlayerData
 var defensive_roster: Dictionary
+var character_roster := CharacterRosterStore.new()
 
 var current_pitch: Pitch
 var pitch_elapsed := 0.0
@@ -43,6 +44,7 @@ var charm_panel: CharmPanel
 
 func _ready() -> void:
 	rng.randomize()
+	character_roster.load_state()
 	_build_demo_roster()
 
 	avatar_presenter = AvatarMatchPresenter.new()
@@ -89,6 +91,9 @@ func _ready() -> void:
 func _build_demo_roster() -> void:
 	player_team = DemoTeamFactory.create_player_team()
 	rival_team = DemoTeamFactory.create_rival_team()
+	for player in player_team.players:
+		if player != null:
+			character_roster.ensure_character(player)
 
 func _team_for_batting() -> BaseballTeamData:
 	return player_team if state.team_batting() == 0 else rival_team
@@ -280,7 +285,8 @@ func _swing() -> void:
 			timing_value,
 			state.base_runners,
 			state.outs,
-			rng
+			rng,
+			character_roster
 		)
 		current_result = preliminary_result.duplicate()
 		current_result["result"] = str(fielding_result.get("final_result", "SINGLE"))
@@ -292,7 +298,8 @@ func _swing() -> void:
 				fielding_result,
 				state.base_runners,
 				state.outs,
-				rng
+				rng,
+				character_roster
 			)
 			current_result["fielding"]["runner_play"] = runner_play
 			if str(runner_play.get("final_result", "")) == "FORCE OUT" or str(runner_play.get("final_result", "")) == "RUNDOWN OUT":
@@ -305,7 +312,7 @@ func _swing() -> void:
 			fielding_play = FieldingPlayEvent.from_resolution(ball_event, fielding_result)
 			var defender: PlayerData = defensive_roster.get(str(fielding_result.get("defender_position", "")))
 			var receiver: PlayerData = defensive_roster.get(fielding_play.receiver_position)
-			var throw_result := throw_resolver.resolve(fielding_play, defender, receiver, rng)
+			var throw_result := throw_resolver.resolve(fielding_play, defender, receiver, rng, character_roster)
 			current_result["fielding"]["throwing_error"] = throw_result
 			if bool(throw_result.get("error", false)):
 				current_result["result"] = "FIELDING ERROR"
