@@ -26,9 +26,9 @@ Esto permite producir múltiples personajes visuales sin crear una nueva estruct
 ## Distribución inicial
 
 - 2 UR
-- 8 SSR
-- 10 SR
-- 10 R
+- 10 SSR
+- 14 SR
+- 4 R
 
 ## Regla de diseño
 
