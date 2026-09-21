@@ -69,3 +69,27 @@ Los nuevos sistemas deben preferir nombres explícitos como:
 `CharmSystem`
 
 Evitar nombres genéricos como `Manager`, `Helper`, `Controller2` o `SystemFinal` cuando oculten responsabilidades distintas.
+
+
+## v1.1 · Términos añadidos por auditoría técnica
+
+| Término | Uso |
+|---|---|
+| Outcome / resultado | Resultado autoritativo de una acción de gameplay. Debe existir antes de la presentación. |
+| Invariant / invariante | Condición que nunca debe romperse en un estado válido. Ej.: una base no puede contener dos corredoras. |
+| State Transition | Cambio controlado de GameState producido por un resultado. |
+| Input | Decisión o dato que entra a un resolver. No es todavía un resultado. |
+| Modifier | Ajuste cuantificable aplicado a una probabilidad o valor antes de resolver. |
+| Audit Payload | Datos técnicos suficientes para explicar/reproducir una resolución: seed, roll, chance, modificadores y versión cuando corresponda. |
+| Blocked Action | Acción solicitada que no puede ejecutarse por el estado actual. No debe mutar el estado silenciosamente. |
+| Invalid State | Combinación de datos que viola un invariante del dominio. Debe detectarse en tests o límites de sistemas. |
+| Single Source of Truth | Única autoridad responsable de una determinada mutación o dato. |
+
+## Contratos técnicos aclarados
+
+- Un Resolver calcula. Una única autoridad de estado aplica la transición.
+- Un Presenter representa. No corrige ni inventa el resultado.
+- Una acción bloqueada debe devolver información explícita y no sobrescribir datos existentes.
+- Los contratos de pelota deben describir resultado lógico, no solo una animación.
+- PlayerData.effective_stat() actualmente incluye el factor de Potential: 0.85 + 0.03 * potential. Es una regla existente del prototipo y queda documentada para evitar doble aplicación.
+- La matriz elemental actual no define todavía relaciones específicas para Lightning. Es una decisión pendiente.
