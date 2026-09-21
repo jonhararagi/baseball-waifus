@@ -4236,3 +4236,114 @@ Se realizó revisión estática de los archivos creados.
 ## Regla de continuidad
 
 La publicidad nunca puede convertirse en requisito para jugar un partido, avanzar en campaña o mantener una colección funcional. Debe ser una fuente opcional de recursos que ayude a sostener el proyecto sin transformar el béisbol en una máquina de anuncios.
+
+
+# Revisión 39: autoridad local de progresión y transacciones de recompensas
+
+**Fecha:** 2026-09-21
+
+## Motivo
+
+La arquitectura de anuncios ya tenía política y contador diario, pero todavía faltaba cerrar la frontera entre una recompensa publicitaria aceptada y el inventario real del juego. Mantener esa frontera abierta permitiría crear contadores paralelos de energía/materiales y provocar inconsistencias.
+
+Además, el objetivo de diseño establece que los anuncios deben aportar ayuda pequeña y repetible, no entregar directamente personajes o equipamiento de alto valor.
+
+## Sistemas afectados
+
+- Progresión offline.
+- Energía global.
+- Energía individual de personajes.
+- Materiales.
+- Publicidad recompensada.
+- Persistencia local.
+- QA de transacciones.
+
+## Cambios realizados
+
+### PlayerProgressStore
+
+Se creó:
+
+- game/progression/player_progress_store.gd
+- docs/progression/player-progress-store-v1.md
+
+PlayerProgressStore se convierte en la autoridad local para:
+
+- Player Energy: 0–100.
+- Character Energy: 0–100 por personaje.
+- Materials: cantidades enteras no negativas.
+
+El estado se guarda en user://baseball_waifus/player_progress.json con formato versionado.
+
+Contingencias implementadas:
+
+- save inexistente → estado inicial válido;
+- JSON corrupto o versión incompatible → reconstrucción segura;
+- energía fuera de rango → clamp;
+- materiales negativos → normalización;
+- personaje sin entrada → energía inicial;
+- error de escritura → resultado save_failed.
+
+### RewardedAdTransaction
+
+Se creó:
+
+- game/monetization/rewarded_ad_transaction.gd
+- scenes/rewarded_ad_transaction_test.gd
+
+El flujo queda:
+
+RewardedAdService → RewardedAdPolicy → RewardedAdTransaction → PlayerProgressStore
+
+La transacción:
+
+1. comprueba el límite diario;
+2. obtiene la recompensa definida por la política;
+3. aplica la mutación al recurso correspondiente;
+4. registra el uso diario;
+5. devuelve un payload auditable.
+
+No entrega personajes, equipamiento SSR/UR ni moneda de gacha.
+
+Las recompensas publicitarias siguen siendo recursos pequeños de mantenimiento/grindeo. El progreso de alto valor requiere los sistemas de juego correspondientes.
+
+## Decisión de balance
+
+Se mantiene el principio de que mirar anuncios puede aliviar el gasto diario de energía/materiales, pero no debe saltarse la progresión. Los límites de 10 usos diarios por categoría continúan separados.
+
+La energía se limita a 100 por autoridad local, por lo que una recompensa no puede superar el máximo almacenado.
+
+## Pruebas
+
+Añadido test estructural para:
+
+- +20 Player Energy;
+- +1 material_bundle;
+- +20 Character Energy;
+- personaje requerido para Character Energy;
+- límite 10/10;
+- rechazo después del límite.
+
+Runtime Godot: no ejecutado. El entorno no dispone del binario Godot ni Android SDK/JDK, por lo que esta revisión no declara pruebas de ejecución.
+
+## Problemas encontrados y correcciones
+
+**Problema:** la política de anuncios definía recompensas, pero todavía no existía una autoridad común de inventario.
+
+**Corrección:** PlayerProgressStore centraliza los recursos y RewardedAdTransaction conecta la publicidad con esa autoridad.
+
+**Problema de diseño:** una recompensa publicitaria directa de personaje/equipamiento raro reduciría la importancia de colección, fusión y progreso.
+
+**Corrección:** las categorías publicitarias quedan restringidas a energía global, materiales y energía de personaje.
+
+## Estado
+
+**Implementado:** autoridad local de recursos, persistencia versionada y transacción de recompensas conectada a la política de anuncios.
+
+**Pendiente:** costes definitivos de partidos/entrenamiento, regeneración natural de energía, economía completa, inventario de equipamiento, gacha, campaña y validación runtime.
+
+**Avance global aproximado:** ≈81%.
+
+## Regla de continuidad
+
+Toda futura fuente de energía, materiales o energía de personaje debe mutar PlayerProgressStore. No crear balances paralelos en UI, anuncios, campaña o entrenamiento.
