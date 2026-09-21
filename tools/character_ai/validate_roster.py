@@ -29,7 +29,7 @@ def main() -> None:
         assert character["variant_rules"]["body_scale_min"] == 0.94
         assert character["variant_rules"]["body_scale_max"] == 1.06
 
-    assert rarity_counts == {"R": 5, "SR": 13, "SSR": 10, "UR": 2}
+    assert rarity_counts == {"R": 4, "SR": 14, "SSR": 10, "UR": 2}
     print("PASS: 30 character archetypes, unique IDs and variant constraints are valid.")
 
 
