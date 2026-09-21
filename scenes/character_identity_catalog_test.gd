@@ -25,6 +25,7 @@ func _ready() -> void:
 		assert(str(identity.get("archetype", "")) != "", "Missing archetype: " + id)
 		assert(identity.get("style_tags", []) is Array, "Style tags must be an array: " + id)
 		assert(str(identity.get("play_identity", "")) != "", "Missing play identity: " + id)
+		assert(identity.get("skill_roles", []) is Array and identity.get("skill_roles", []).size() >= 1, "Missing skill roles: " + id)
 
 		var rarity := str(character.get("rarity", "R"))
 		var story_status := str(identity.get("story_status", ""))
