@@ -3497,7 +3497,6 @@ No duplicar estas decisiones en `main.gd`, renderer, UI o animaciones.
 
 Las revisiones 26, 27 y 29 ya habían establecido el roster de 30 personajes, la guía visual y los assets SVG de prototipo, pero la información artística permanecía distribuida entre varias páginas. Se consolida ahora en un único documento canónico para evitar reinterpretaciones o duplicación futura.
 ### Implementado
-
 - `docs/canon/character-art-canon-v1.md`
   - consolida las decisiones artísticas de las revisiones 26, 27 y 29;
   - define autoridad de datos;
@@ -7849,4 +7848,12 @@ Runtime del frontend dentro de Telegram: no ejecutado localmente en este entorno
 ### Avance aproximado
 
 **≈96% estructural del prototipo.** El porcentaje continúa representando estructura implementada y no porcentaje de contenido final, runtime móvil, arte final completo, backend comercial ni publicación efectiva en Telegram.
+
+### Addendum de Revisión 73: contrato DTO en CI
+
+Se añadió webapp/js/contract_test.mjs y el workflow de GitHub Pages ahora ejecuta una prueba Node que acepta un CombatInitDTO válido, acepta un TurnResultDTO válido y rechaza estructuras inválidas.
+
+El frontend conserva la misma frontera de autoridad: el test valida solamente contratos de transporte y no modifica gameplay.
+
+**Runtime local:** no ejecutado. La validación queda preparada para GitHub Actions mediante Node en el job de despliegue.
 
