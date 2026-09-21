@@ -57,10 +57,10 @@ func apply_skill(skill: Dictionary, user: PlayerData, target: PlayerData, contex
 				applied.append({"kind": kind, "target_id": recipient.id, "stat": stat, "amount": amount, "duration_actions": duration})
 			"outcome_bonus":
 				var recipient_id := user.id if str(effect.get("target", "self")) == "self" else (target.id if target != null else "")
-				state.add_combo_condition(recipient_id, str(effect.get("condition_id", "")), "outcome_bonus", float(effect.get("amount", 0.0)))
+				state.add_combo_condition(str(effect.get("condition_id", "")), recipient_id, "outcome_bonus", float(effect.get("amount", 0.0)))
 				applied.append({"kind": kind, "target_id": recipient_id, "condition_id": str(effect.get("condition_id", "")), "amount": float(effect.get("amount", 0.0))})
 			"combo_prime":
-				state.add_combo_condition(user.id, str(effect.get("condition_id", "")), "combo_primed", true)
+				state.add_combo_condition(str(effect.get("condition_id", "")), user.id, "combo_primed", true)
 				applied.append({"kind": kind, "condition_id": str(effect.get("condition_id", ""))})
 			_:
 				return {"applied": false, "reason": "unsupported_effect_kind", "kind": kind, "applied_effects": applied}
