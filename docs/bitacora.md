@@ -6045,3 +6045,56 @@ También quedan pendientes las tablas definitivas de drops, pity y garantías.
 ### Avance aproximado
 
 **≈94%.**
+## Revisión 56: evaluación situacional ligera y decisiones por evento
+
+**Fecha:** 2026-09-21  
+**Motivo:** refinar la Revisión 54 para que la IA rival utilice el contexto completo del turno sin convertirse en una IA gráfica pesada ni recalcular decisiones continuamente.
+
+### Decisión arquitectónica
+
+El conocimiento de béisbol se representa mediante reglas y cálculos deterministas en GDScript. No se utiliza red neuronal, inferencia visual ni simulación por segundo.
+
+Cada plate appearance genera un snapshot durante una ventana natural de presentación. Ese snapshot incluye inning, mitad, marcador, balls/strikes, outs, bases, bateadora, pitcher y defensa. `BaseballSituationEvaluator` convierte esos datos en señales tácticas acotadas.
+
+Las señales actuales incluyen diferencia Contact/Control, diferencia Power/Pitch, valor de robo, presión por strikes, oportunidad de doble play, urgencia del marcador y prioridad de habilidad.
+
+`OpponentAI` utiliza esas señales para decidir entre BAT, STEAL y habilidades situacionales, y selecciona el pitch con el mismo RNG preparado por `BaseballDecisionPlanner`. La IA no recibe autoridad sobre probabilidades ni resultados.
+
+### Timing y preparación
+
+El programa no intenta predecir el resultado final antes de que el jugador actúe. Prepara contexto y canales RNG mientras se muestran campo, personajes y preparación del lanzamiento. Cuando el jugador toca el timing, el valor real entra al resolver existente.
+
+Así, centro, zona intermedia o error de timing producen diferentes calidades sin que la presentación ni la IA inventen resultados.
+
+### Implementación
+
+Creado:
+- `game/baseball/situation_evaluator.gd`
+- `scenes/situation_evaluator_test.gd`
+- `scenes/situation_evaluator_test.tscn`
+
+Modificado:
+- `game/baseball/decision_planner.gd`
+- `game/baseball/opponent_ai.gd`
+- `scenes/main.gd`
+- `scenes/decision_planner_test.gd`
+- `docs/game-design.md`
+- `docs/bitacora.md`
+
+### Pruebas
+
+Se añadieron pruebas estructurales para el evaluador y para el snapshot situacional del planner. No se ejecutó Godot runtime en este entorno.
+
+### Correcciones/consideraciones
+
+La decisión de STEAL de la IA ahora pasa por `_attempt_steal()` y reutiliza `RunnerSystem`, `BaseballGameState` y el canal RNG existente, en lugar de crear una ruta especial para la IA.
+
+El cálculo situacional es pequeño y acotado. No se ejecuta una búsqueda de estados, árbol de decisiones ni simulación Monte Carlo durante la presentación.
+
+### Estado
+
+**Implementado a nivel de código y conectado al flujo principal.** Pendiente: balance de heurísticas, cobertura defensiva multi-jugadora más avanzada, pickoff situacional, simulaciones masivas y ejecución runtime Godot.
+
+### Avance aproximado
+
+**≈95%.**
