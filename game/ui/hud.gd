@@ -32,11 +32,11 @@ func setup() -> void:
 	root.add_child(title_label)
 
 	status_label = _make_label("LIVE", 13, Color(0.55, 1.0, 0.75))
-	status_label.position = Vector2(44, 64)
+	status_label.position = Vector2(44, 78)
 	root.add_child(status_label)
 
 	score_label = _make_label("YOU 0  •  0 RIVAL", 24, Color(0.98, 0.99, 1.0))
-	score_label.position = Vector2(42, 55)
+	score_label.position = Vector2(42, 50)
 	root.add_child(score_label)
 
 	inning_label = _make_label("1 / 3  •  TOP", 21, Color(0.75, 0.9, 1.0))
@@ -122,6 +122,10 @@ func update_state(state: BaseballGameState, phase: String, pitch: Pitch) -> void
 	base_label.text = "BASES  ◇  ◇  ◇"
 	pitch_label.text = "PITCH  •  " + (pitch.name if pitch else "PREPARANDO")
 	phase_label.text = phase
+	if phase.to_upper().contains("TIMING"):
+		timing_label.text = "TIMING  •  PERFECT  |  GREAT  |  GOOD"
+	else:
+		timing_label.text = "ESPERANDO LA SIGUIENTE JUGADA"
 	status_label.text = "● LIVE MATCH"
 	status_label.add_theme_color_override("font_color", Color(0.46, 1.0, 0.72))
 
