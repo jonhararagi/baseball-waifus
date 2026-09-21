@@ -25,6 +25,10 @@ func equip(character_id: String, item_id: String, progress_store: RefCounted = n
 	var slot := str(item.get("slot", ""))
 	var current := roster.get_equipment(character_id)
 	var old_item_id := str(current.get(slot, ""))
+	if not old_item_id.is_empty():
+		var old_check := EquipmentCatalogClass.validate(old_item_id)
+		if not bool(old_check.get("ok", false)):
+			return {"ok": false, "reason": "invalid_equipped_item", "item_id": old_item_id}
 	if old_item_id == item_id:
 		return {"ok": true, "character_id": character_id, "item_id": item_id, "slot": slot, "changed": false}
 
