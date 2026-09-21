@@ -12,6 +12,7 @@ var runner_system := RunnerSystem.new()
 var fielding_resolver := FieldingResolver.new()
 var throw_resolver := ThrowResolver.new()
 var defensive_runner_resolver := DefensiveRunnerResolver.new()
+var skill_state := BaseballSkillState.new()
 var rng := RandomNumberGenerator.new()
 
 var avatar_presenter: AvatarMatchPresenter
@@ -184,7 +185,7 @@ func _update_pitch(delta: float) -> void:
 	if pitch_elapsed < 1.55 / current_pitch.speed:
 		return
 
-	var pitch_result := simulator.resolve_pitch(pitcher, current_pitch, rng)
+	var pitch_result := simulator.resolve_pitch(pitcher, current_pitch, rng, skill_state)
 	if str(pitch_result.get("result", "")) == "BALL":
 		_finish_ball(pitch_result)
 		return
@@ -273,7 +274,7 @@ func _input(event: InputEvent) -> void:
 func _swing() -> void:
 	if phase != "TIMING":
 		return
-	var preliminary_result := simulator.resolve_batted_ball(batter, pitcher, current_pitch, timing_value, rng)
+	var preliminary_result := simulator.resolve_batted_ball(batter, pitcher, current_pitch, timing_value, rng, skill_state)
 	var ball_event := BattedBallEvent.from_result(preliminary_result, BATTER_POS, rng.randi())
 	var fielding_result: Dictionary = {}
 	var fielding_play: FieldingPlayEvent = null
@@ -286,7 +287,8 @@ func _swing() -> void:
 			state.base_runners,
 			state.outs,
 			rng,
-			character_roster
+			character_roster,
+			skill_state
 		)
 		current_result = preliminary_result.duplicate()
 		current_result["result"] = str(fielding_result.get("final_result", "SINGLE"))
@@ -299,7 +301,8 @@ func _swing() -> void:
 				state.base_runners,
 				state.outs,
 				rng,
-				character_roster
+				character_roster,
+				skill_state
 			)
 			current_result["fielding"]["runner_play"] = runner_play
 			if str(runner_play.get("final_result", "")) == "FORCE OUT" or str(runner_play.get("final_result", "")) == "RUNDOWN OUT":
@@ -415,7 +418,8 @@ func _attempt_steal() -> void:
 	field_avatar_presenter.on_steal_started(from_index)
 
 	var source_runner: RunnerToken = state.base_runners[from_index]
-	var result := runner_system.attempt_steal(source_runner.speed, pitcher.effective_stat("defense"))
+	var steal_modifier := skill_state.get_action_modifier(source_runner.player_id, "steal")
+	var result := runner_system.attempt_steal(source_runner.speed, pitcher.effective_stat("defense"), steal_modifier, rng)
 	message = result.result
 	var movement := state.move_runner_on_steal(from_index, result.success)
 
@@ -424,6 +428,9 @@ func _attempt_steal() -> void:
 		state.add_out()
 
 	var presentation_success := result.success and not blocked
+	if presentation_success:
+		skill_state.add_action_modifier(batter.id, "runner_batter_combo", 0.03, 2, "runner_batter_link_runtime")
+	skill_state.consume_action()
 	avatar_presenter.on_steal_result(presentation_success)
 	var destination_base := int(movement.get("to", -1))
 	field_avatar_presenter.on_steal_result(from_index, presentation_success, destination_base, state.base_runners)
