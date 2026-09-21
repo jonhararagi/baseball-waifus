@@ -149,3 +149,28 @@ RewardedAdClaimService toma snapshots de cuenta y roster para que un fallo al gu
 ### Semántica de transacción
 
 La implementación utiliza una transacción compensatoria entre dos archivos de guardado. Se restaura el snapshot si una mutación falla. No se afirma atomicidad de sistema de archivos ante un cierre del proceso exactamente entre dos escrituras; esa protección requeriría un journal único o un contenedor de save futuro.
+
+
+## Equipar y desequipar v1
+
+`EquipmentService` es la única capa responsable de asignar copias del inventario a los slots del roster. Al equipar:
+
+1. valida personaje, pieza y cantidad disponible;
+2. consume una copia de la pieza nueva;
+3. devuelve al inventario la pieza anterior del mismo slot;
+4. actualiza la referencia del roster;
+5. revierte ambos snapshots si falla una escritura.
+
+Al desequipar, devuelve la copia al inventario y vacía el slot. El renderer solamente puede consultar el `visual_id` del catálogo a partir de la referencia persistida.
+
+## Modificadores en gameplay
+
+`EquipmentStatAdapter` expone estadísticas efectivas para los resolvers de béisbol:
+
+```
+base stats + equipment modifiers = effective gameplay stats
+```
+
+Los modificadores se limitan a las ocho estadísticas maestras. No cambian la rareza, no deciden resultados y no se aplican desde UI/renderer.
+
+La integración con cada resolver de pitch/contact/defense se hará usando este adapter cuando esos resolvers necesiten estadísticas efectivas, sin duplicar fórmulas de equipamiento.
