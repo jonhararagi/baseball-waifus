@@ -35,6 +35,7 @@ var comment_label: Label
 var energy_label: Label
 var coin_label: Label
 var level_label: Label
+var panel_tween: Tween
 
 func _ready() -> void:
 	progress_store = PlayerProgressStore.new()
@@ -55,8 +56,23 @@ func _build_ui() -> void:
 	content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(content)
 
+	var background := TextureRect.new()
+	background.texture = load("res://assets/ui/hub_background.svg")
+	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	background.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	background.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	content.add_child(background)
+	content.move_child(background, 0)
+
+	var vignette := ColorRect.new()
+	vignette.color = Color(0.04, 0.06, 0.14, 0.30)
+	vignette.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	vignette.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	content.add_child(vignette)
+
 	var top := ColorRect.new()
-	top.color = Color("#10162a")
+	top.color = Color(0.055, 0.075, 0.16, 0.94)
 	top.position = Vector2(0, 0)
 	top.size = Vector2(1280, 86)
 	content.add_child(top)
@@ -88,17 +104,31 @@ func _build_ui() -> void:
 	var character_card := PanelContainer.new()
 	character_card.position = Vector2(40, 116)
 	character_card.size = Vector2(430, 500)
-	character_card.add_theme_stylebox_override("panel", _panel_style("#171f38", "#f06d91", 3, 18))
+	character_card.add_theme_stylebox_override("panel", _panel_style("#141b33", "#f06d91", 3, 24))
 	content.add_child(character_card)
 
 	var char_box := VBoxContainer.new()
 	char_box.add_theme_constant_override("separation", 7)
 	character_card.add_child(char_box)
 
-	var portrait := Control.new()
-	portrait.custom_minimum_size = Vector2(400, 285)
-	portrait.draw.connect(_draw_starter_portrait.bind(portrait))
-	char_box.add_child(portrait)
+	var portrait_frame := Control.new()
+	portrait_frame.custom_minimum_size = Vector2(400, 300)
+	var portrait := TextureRect.new()
+	portrait.texture = load("res://assets/characters/generated/bw001.svg")
+	portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	portrait.position = Vector2(52, 4)
+	portrait.size = Vector2(296, 296)
+	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	portrait_frame.add_child(portrait)
+	var frame := TextureRect.new()
+	frame.texture = load("res://assets/ui/starter_card_frame.svg")
+	frame.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	frame.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	portrait_frame.add_child(frame)
+	char_box.add_child(portrait_frame)
 
 	var character_name := _label(starter.display_name, 25, Color("#fff5e5"))
 	character_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -108,7 +138,7 @@ func _build_ui() -> void:
 	char_box.add_child(character_meta)
 
 	comment_label = _label(COMMENTS[0], 15, Color("#e8efff"))
-	comment_label.custom_minimum_size = Vector2(390, 74)
+	comment_label.custom_minimum_size = Vector2(390, 82)
 	comment_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	comment_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	char_box.add_child(comment_label)
@@ -120,6 +150,10 @@ func _build_ui() -> void:
 	var stats := _label("POWER %d   CONTACT %d   SPEED %d   DEF %d" % [starter.power, starter.contact, starter.speed, starter.defense], 12, Color("#aab9d8"))
 	stats.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	char_box.add_child(stats)
+
+	var section_title := _label("CENTRAL", 14, Color("#9bb7e8"))
+	section_title.position = Vector2(500, 105)
+	content.add_child(section_title)
 
 	var menu := GridContainer.new()
 	menu.columns = 3
@@ -200,7 +234,15 @@ func _button(text_value: String, width: float, height: float) -> Button:
 	b.add_theme_stylebox_override("hover", _panel_style("#2d3a61", "#ffd76a", 2, 14))
 	b.add_theme_stylebox_override("pressed", _panel_style("#17213a", "#f06d91", 2, 14))
 	b.add_theme_color_override("font_color", Color("#eef4ff"))
+	b.mouse_entered.connect(func(): _button_hover(b, true))
+	b.mouse_exited.connect(func(): _button_hover(b, false))
 	return b
+
+func _button_hover(button: Button, hovered: bool) -> void:
+	var target := Vector2(1.025, 1.025) if hovered else Vector2.ONE
+	var tween := create_tween()
+	tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property(button, "scale", target, 0.12)
 
 func _label(text_value: String, size: int, color: Color) -> Label:
 	var l := Label.new()
@@ -347,6 +389,14 @@ func _show_panel(title: String, body: String, history: bool) -> void:
 		panel_actions.add_child(play)
 	overlay.visible = true
 	panel_host.visible = true
+	panel_host.modulate = Color(1, 1, 1, 0)
+	panel_host.scale = Vector2(0.96, 0.96)
+	if panel_tween != null and panel_tween.is_valid():
+		panel_tween.kill()
+	panel_tween = create_tween()
+	panel_tween.set_parallel(true)
+	panel_tween.tween_property(panel_host, "modulate", Color.WHITE, 0.18)
+	panel_tween.tween_property(panel_host, "scale", Vector2.ONE, 0.20).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 func _set_mode(mode: String) -> void:
 	current_mode = mode
@@ -361,8 +411,14 @@ func _play_match() -> void:
 	get_tree().change_scene_to_file(MATCH_SCENE)
 
 func _close_panel() -> void:
-	panel_host.visible = false
-	overlay.visible = false
+	if panel_tween != null and panel_tween.is_valid():
+		panel_tween.kill()
+	panel_tween = create_tween()
+	panel_tween.tween_property(panel_host, "modulate", Color(1, 1, 1, 0), 0.12)
+	panel_tween.tween_callback(func():
+		panel_host.visible = false
+		overlay.visible = false
+	)
 
 func _draw_starter_portrait(view: Control) -> void:
 	var size := view.size
