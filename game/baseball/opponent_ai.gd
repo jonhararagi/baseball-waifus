@@ -22,13 +22,19 @@ func _init() -> void:
 	_rng.seed = 90210
 	_catalog = _skill_resolver.load_catalog()
 
-func choose_pitch(pitcher: PlayerData, strikes: int, balls: int, rng: RandomNumberGenerator = null) -> Pitch.Type:
+func choose_pitch(pitcher: PlayerData, strikes: int, balls: int, rng: RandomNumberGenerator = null, situation: Dictionary = {}) -> Pitch.Type:
 	var random_source := rng if rng != null else _rng
 	var control := pitcher.effective_stat("control") if pitcher != null else 50.0
+	var pitch_aggression := float(situation.get("pitch_aggression", 0.5))
+	var two_strikes := bool(situation.get("two_strikes", strikes >= 2))
+	var full_count := bool(situation.get("full_count", balls >= 3 and strikes >= 2))
 	if balls >= 3:
 		return Pitch.Type.FASTBALL if random_source.randf() < 0.70 else Pitch.Type.CURVE
 	if strikes >= 2:
-		return Pitch.Type.CURVE if random_source.randf() < 0.55 else Pitch.Type.SPECIAL
+		var put_away_roll := random_source.randf()
+		if put_away_roll < clamp(0.45 + pitch_aggression * 0.20, 0.45, 0.75):
+			return Pitch.Type.CURVE
+		return Pitch.Type.SPECIAL
 	if control >= 75.0:
 		var roll := random_source.randf()
 		if roll < 0.50:
@@ -79,6 +85,24 @@ func maybe_use_runner_skill(runner: PlayerData, phase_context: Dictionary, state
 	if not runner.skill_roles.has("statistic"):
 		return {"used": false, "reason": "no_runner_skill"}
 	return _try_skill("steal_up", runner, runner, {"same_team": true, "phase": "baserunning"}, state)
+
+func choose_situational_action(batter: PlayerData, pitcher: PlayerData, context: Dictionary, state: BaseballSkillState) -> Dictionary:
+	if batter == null or pitcher == null or state == null:
+		return {"action": "BAT", "reason": "missing_context"}
+	var situation: Dictionary = context.get("situation", {})
+	var priority := str(situation.get("skill_priority", "NONE"))
+	if priority == "CONTACT" and batter.skill_roles.has("power_down"):
+		var pressure := _try_skill("pitch_pressure", batter, pitcher, {"same_team": false, "phase": "pitch"}, state)
+		if bool(pressure.get("used", false)):
+			return {"action": "BAT", "skill": pressure}
+	if priority == "POWER" and batter.skill_roles.has("power_up"):
+		var power := _try_skill("power_signal", batter, batter, {"same_team": true, "phase": "batting"}, state)
+		if bool(power.get("used", false)):
+			return {"action": "BAT", "skill": power}
+	if priority == "RUNNER" and batter.skill_roles.has("statistic") and bool(situation.get("offensive_steal_value", 0.0) > 0.25):
+		return {"action": "STEAL", "reason": "situational_runner_value"}
+	var legacy := maybe_use_offensive_skill(batter, pitcher, context, state)
+	return {"action": "BAT", "skill": legacy}
 
 func maybe_use_offensive_skill(batter: PlayerData, pitcher: PlayerData, phase_context: Dictionary, state: BaseballSkillState) -> Dictionary:
 	if batter == null or pitcher == null or state == null:
