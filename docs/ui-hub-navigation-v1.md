@@ -56,3 +56,16 @@ El viewport actual del prototipo es 1280×720 con stretch de canvas. La composic
 - Renderer no decide estadísticas.
 - Comentarios no alteran gameplay.
 - No se incorporan voces/arte externos sin licencia de redistribución.
+
+
+## Pasada visual v1.1
+
+La primera implementación artística utiliza:
+- `assets/ui/hub_background.svg` para el ambiente del Hub;
+- `assets/ui/starter_card_frame.svg` para separar el arte del personaje de su presentación;
+- `assets/ui/campaign_map_background.svg` para el mapa de Historia;
+- `assets/characters/generated/bw001.svg` como retrato vectorial inicial.
+
+Se añadieron microanimaciones de hover y entrada/salida de paneles. Estas animaciones no tienen autoridad sobre gameplay.
+
+El objetivo de esta pasada no es declarar arte final, sino establecer una base visual propia que pueda escalar hacia ilustraciones, expresiones, VFX y audio finales sin cambiar la arquitectura de personajes o campaña.
