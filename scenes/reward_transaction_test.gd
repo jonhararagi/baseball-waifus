@@ -1,4 +1,4 @@
-extends SceneTree
+extends Node
 
 const ProgressStoreClass = preload("res://game/progression/player_progress_store.gd")
 const RosterClass = preload("res://game/characters/character_roster_store.gd")
@@ -6,7 +6,7 @@ const RewardTransactionClass = preload("res://game/progression/reward_transactio
 const EquipmentCatalogClass = preload("res://game/progression/equipment_catalog.gd")
 const CharacterArchetypeCatalogClass = preload("res://game/characters/character_archetype_catalog.gd")
 
-func _initialize() -> void:
+func _ready() -> void:
 	var progress := ProgressStoreClass.new()
 	progress.load_state()
 	var roster := RosterClass.new()
@@ -50,4 +50,4 @@ func _initialize() -> void:
 	assert(not CharacterArchetypeCatalogClass.find(test_character_id).is_empty(), "test character must exist")
 
 	print("reward_transaction_test: structural checks passed")
-	quit()
+
