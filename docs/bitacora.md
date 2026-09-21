@@ -4858,3 +4858,150 @@ El porcentaje sigue representando alcance técnico ponderado, no porcentaje de a
 ## Regla de continuidad
 
 Toda futura física visual corporal debe permanecer en la capa de presentación. Ningún movimiento secundario puede alterar el resultado del béisbol, hitboxes, estadísticas, probabilidades, recompensas o estado de partido.
+
+
+# Revisión 45: autoridad persistente única del roster
+
+**Fecha:** 2026-09-21
+
+## Motivo
+
+El proyecto ya disponía de `PlayerData`, `PlayerProgressStore`, `CharmStateStore` y una cola persistente de entrenamiento, pero el estado de una personaje estaba repartido entre varias autoridades. Esto impedía conectar de forma segura entrenamiento, estadísticas, Encanto, energía y futuro equipamiento sobre la misma instancia persistente.
+
+## Sistemas afectados
+
+- Personajes.
+- Progresión.
+- Entrenamiento.
+- Encanto.
+- Energía.
+- Equipamiento.
+- Adaptación visual.
+- Persistencia local.
+
+## Implementación
+
+Se creó:
+
+- `game/characters/character_roster_store.gd`
+- `scenes/character_roster_test.gd`
+- `scenes/character_roster_test.tscn`
+- `docs/progression/character-roster-authority-v1.md`
+
+Se modificó:
+
+- `game/characters/player_data.gd`
+- `game/progression/player_progress_store.gd`
+- `game/progression/training_service.gd`
+- `game/progression/training_queue_store.gd`
+- `game/progression/charm_state_store.gd`
+
+## Decisión arquitectónica
+
+La separación vigente queda:
+
+```
+CharacterArchetypeCatalog
+        ↓
+CharacterRosterStore
+        ↓
+PlayerData runtime
+        ↓
+Gameplay / PlayerAvatarAdapter
+        ↓
+Presentation
+```
+
+El catálogo define el personaje base. El roster define la instancia que posee el jugador.
+
+El roster pasa a ser autoridad de:
+
+- nivel;
+- potential;
+- estadísticas;
+- Encanto;
+- ánimo;
+- energía de personaje;
+- regeneración de energía;
+- referencias de equipamiento.
+
+`PlayerProgressStore` conserva la energía de cuenta y materiales y mantiene sus métodos de energía de personaje como compatibilidad delegada al roster.
+
+## Entrenamiento
+
+El entrenamiento deja de ser solamente una cola que devuelve números.
+
+Ahora:
+
+1. se exige que la personaje pertenezca al roster;
+2. la cola conserva la tarea;
+3. al finalizar se calculan las ganancias mediante `EconomyRules`;
+4. `CharacterRosterStore.apply_training()` modifica y persiste las estadísticas;
+5. si la aplicación falla después de retirar la tarea, se intenta restaurar la tarea original.
+
+Se mantienen caps de estadísticas en 100 y niveles 1-100.
+
+## Encanto
+
+`CharmStateStore` mantiene compatibilidad con diálogos/regalos, pero el Encanto de la personaje se carga y guarda mediante el roster.
+
+Se añadió migración de valores existentes en `player_charm` cuando una personaje todavía no existe en el roster.
+
+## Energía
+
+La energía de personaje se mueve al registro persistente del roster, manteniendo el intervalo vigente de 360 segundos.
+
+La energía de cuenta continúa en `PlayerProgressStore`.
+
+Esto evita dos valores diferentes para la misma energía de personaje.
+
+## Equipamiento
+
+El roster ya tiene un diccionario de referencias por slot. No se mezclan todavía estadísticas de equipamiento con la resolución del béisbol. El siguiente paso será crear el catálogo/inventario de piezas y una autoridad de transacciones que aplique sus modificadores.
+
+## Pruebas
+
+Se añadió una prueba estructural para:
+
+- creación/reconstrucción de una personaje;
+- persistencia de estadísticas;
+- entrenamiento;
+- Encanto;
+- ánimo;
+- referencias de equipamiento;
+- consumo/restauración de energía;
+- restauración del snapshot del test.
+
+También se añadió una ruta de rollback para reclamaciones de entrenamiento.
+
+**Runtime Godot:** no ejecutado en este entorno. No se declara validación runtime.
+
+## Problemas encontrados
+
+**Problema:** el entrenamiento podía completar una cola sin tener todavía una autoridad persistente capaz de aplicar las estadísticas.
+
+**Corrección:** `TrainingService` ahora usa el roster.
+
+**Problema:** Encanto y energía de personaje podían existir fuera del futuro roster.
+
+**Corrección:** ambos se delegan al roster.
+
+**Problema:** un rollback de entrenamiento necesitaba conservar los timestamps originales de la tarea.
+
+**Corrección:** `TrainingQueueStore.claim()` devuelve el registro temporal necesario y dispone de `restore_claim()`.
+
+## Estado
+
+**Implementado:** autoridad persistente de instancia de personaje y conexión con entrenamiento, Encanto y energía.
+
+**Pendiente:** inventario/equipamiento completo, transacciones de rewards, gacha y migración de cualquier UI que todavía construya `PlayerData` aislado.
+
+## Avance global aproximado
+
+**≈85%.**
+
+El porcentaje representa alcance técnico ponderado y no porcentaje de contenido artístico final.
+
+## Regla de continuidad
+
+No crear otro store que persista nivel, estadísticas, energía, Encanto, ánimo o equipamiento de una personaje. Las futuras recompensas, gacha, fusión, crianza y entrenamiento deben escribir mediante `CharacterRosterStore` o mediante una capa transaccional que lo utilice.
