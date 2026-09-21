@@ -1503,3 +1503,14 @@ El objetivo inmediato es demostrar:
 
 Si la respuesta es sí, todo el ecosistema de personajes, gacha, crianza y progresión puede crecer encima de ese núcleo.
 
+
+
+## Implementación defensiva avanzada del prototipo (2026-09-21)
+
+La defensa ahora separa captura, recepción y acciones posteriores de corredoras. `FieldingResolver` puede producir un error de recepción independiente; `DoublePlayResolver` conserva prioridad para doble matanza; `DefensiveRunnerResolver` maneja force out, rundown y sliding; `BaseballGameState` aplica los cambios a RunnerToken y bases.
+
+El flujo es:
+
+`BattedBallEvent → FieldingResolver → Reception/DoublePlay/DefensiveRunnerResolver → BaseballGameState → Presenter`
+
+El renderer utiliza la pose `SLIDE` ya existente y nunca determina el resultado. Las fórmulas y límites están en `docs/defensive-rules-v1.md`.
