@@ -1712,3 +1712,23 @@ El planificador prepara posibilidades y semillas. El resolver utiliza el timing 
 ## 28.5 Regla de rendimiento
 
 No ejecutar búsquedas de estados, Monte Carlo, inferencia visual, árboles de decisión profundos ni evaluación de IA por segundo para el rival. La IA debe consumir snapshots pequeños y producir una acción discreta.
+
+
+## Presentación visual del Hub y campaña
+
+La presentación del juego prioriza una sensación de producto anime deportivo cuidado sin asumir el volumen de producción de un título comercial de gran escala. El Hub utiliza arte vectorial original, composición por capas, tarjetas de personaje, estados visuales y transiciones suaves.
+
+El mapa de campaña utiliza un único escenario visual por zona y conecta sus ubicaciones mediante una ruta visible. Los nodos bloqueados se diferencian visualmente de los disponibles. Normal, Hard y Hell reutilizan el mismo mapa y cambian únicamente el contexto de dificultad.
+
+Los assets de presentación son reemplazables: el gameplay no depende de las ilustraciones. El personaje inicial utiliza el asset vectorial generado del catálogo dentro de un marco de tarjeta propio, permitiendo sustituirlo posteriormente por arte final sin cambiar PlayerData, CharacterRosterStore ni los resolvers.
+
+La interfaz debe aumentar progresivamente su calidad mediante:
+- arte original de personajes;
+- fondos ilustrados;
+- tarjetas con jerarquía visual;
+- microanimaciones de hover/press;
+- transiciones entre paneles;
+- VFX y audio ligados a eventos reales;
+- adaptación móvil.
+
+No se incorporan assets de terceros sin verificar derechos de redistribución.
