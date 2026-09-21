@@ -30,6 +30,7 @@ var panel_host: PanelContainer
 var panel_title: Label
 var panel_body: Label
 var panel_actions: HBoxContainer
+var campaign_map: BaseballCampaignMapView
 var comment_label: Label
 var energy_label: Label
 var coin_label: Label
@@ -172,6 +173,10 @@ func _build_ui() -> void:
 	panel_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	panel_body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	panel_box.add_child(panel_body)
+	campaign_map = BaseballCampaignMapView.new()
+	campaign_map.visible = false
+	campaign_map.map_selected.connect(_on_map_selected)
+	panel_box.add_child(campaign_map)
 	panel_actions = HBoxContainer.new()
 	panel_actions.alignment = BoxContainer.ALIGNMENT_CENTER
 	panel_box.add_child(panel_actions)
@@ -321,10 +326,13 @@ El menú no tendrá autoridad sobre estadísticas, probabilidades ni resultados 
 func _show_panel(title: String, body: String, history: bool) -> void:
 	panel_title.text = title
 	panel_body.text = body
+	campaign_map.visible = history
+	panel_body.visible = not history
 	for child in panel_actions.get_children():
 		if child != null and child.text != "CERRAR":
 			child.queue_free()
 	if history:
+		campaign_map.set_mode(current_mode)
 		var normal := _button("NORMAL", 150, 44)
 		normal.pressed.connect(_set_mode.bind("normal"))
 		panel_actions.add_child(normal)
@@ -342,7 +350,12 @@ func _show_panel(title: String, body: String, history: bool) -> void:
 
 func _set_mode(mode: String) -> void:
 	current_mode = mode
+	campaign_map.set_mode(current_mode)
 	panel_body.text = _history_text()
+
+func _on_map_selected(activity_id: String) -> void:
+	if activity_id == "zone_01_map_01":
+		_play_match()
 
 func _play_match() -> void:
 	get_tree().change_scene_to_file(MATCH_SCENE)
