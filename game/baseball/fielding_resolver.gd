@@ -3,6 +3,10 @@ extends RefCounted
 
 const RULE_VERSION := "fielding_v2"
 const RECEPTION_RULE_VERSION := "reception_v1"
+const EquipmentStatAdapterClass = preload("res://game/baseball/equipment_stat_adapter.gd")
+
+var equipment_stat_adapter := EquipmentStatAdapterClass.new()
+
 const FIELD_POSITIONS := {
 	"C": Vector2(1035, 485),
 	"1B": Vector2(870, 390),
@@ -14,7 +18,7 @@ const FIELD_POSITIONS := {
 	"RF": Vector2(850, 295)
 }
 
-func resolve(event: BattedBallEvent, defensive_roster: Dictionary, timing_value: float, base_runners: Array, outs: int, rng: RandomNumberGenerator) -> Dictionary:
+func resolve(event: BattedBallEvent, defensive_roster: Dictionary, timing_value: float, base_runners: Array, outs: int, rng: RandomNumberGenerator, roster: RefCounted = null) -> Dictionary:
 	if event == null:
 		return _miss_result("no_event")
 	if event.result != "FIELDING_CANDIDATE":
@@ -27,7 +31,9 @@ func resolve(event: BattedBallEvent, defensive_roster: Dictionary, timing_value:
 	if defender == null:
 		return _miss_result("missing_defender")
 
-	var defense_score := clamp(defender.effective_stat("defense") / 120.0, 0.0, 1.0)
+	var defense_base := {"defense": int(defender.defense)}
+	var effective_defense := equipment_stat_adapter.get_stat(defender.id, "defense", defense_base, roster)
+	var defense_score := clamp(effective_defense / 120.0, 0.0, 1.0)
 	var target_position: Vector2 = FIELD_POSITIONS.get(defender_position, event.target)
 	var distance_score := clamp(target_position.distance_to(event.target) / 420.0, 0.0, 1.0)
 	var timing_score := clamp(timing_value, 0.0, 1.0)
