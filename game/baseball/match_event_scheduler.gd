@@ -24,6 +24,7 @@ var current_event := ""
 var elapsed := 0.0
 var sequence := 0
 var _started := false
+var _duration_overrides: Dictionary = {}
 
 func start_match_intro() -> void:
 	_start("MATCH_INTRO")
@@ -33,7 +34,7 @@ func start_plate_prep() -> void:
 
 func start_action_window(duration: float = -1.0) -> void:
 	if duration > 0.0:
-		DURATIONS["ACTION_WINDOW"] = duration
+		_duration_overrides["ACTION_WINDOW"] = duration
 	_start("ACTION_WINDOW")
 
 func start_resolution() -> void:
@@ -41,7 +42,7 @@ func start_resolution() -> void:
 
 func start_result(duration: float = -1.0) -> void:
 	if duration > 0.0:
-		DURATIONS["RESULT"] = duration
+		_duration_overrides["RESULT"] = duration
 	_start("RESULT")
 
 func tick(delta: float) -> Dictionary:
@@ -49,7 +50,7 @@ func tick(delta: float) -> Dictionary:
 		return {"active": false, "finished": false, "event": ""}
 
 	elapsed += max(delta, 0.0)
-	var duration := float(DURATIONS.get(current_event, 0.0))
+	var duration := float(_duration_overrides.get(current_event, DURATIONS.get(current_event, 0.0)))
 	var finished := duration <= 0.0 or elapsed >= duration
 	var progress := 1.0 if duration <= 0.0 else clamp(elapsed / duration, 0.0, 1.0)
 
@@ -81,7 +82,8 @@ func snapshot() -> Dictionary:
 		"current_event": current_event,
 		"elapsed": elapsed,
 		"sequence": sequence,
-		"started": _started
+		"started": _started,
+		"duration_overrides": _duration_overrides.duplicate(true)
 	}
 
 func restore(data: Dictionary) -> void:
@@ -89,6 +91,7 @@ func restore(data: Dictionary) -> void:
 	elapsed = max(float(data.get("elapsed", 0.0)), 0.0)
 	sequence = int(data.get("sequence", 0))
 	_started = bool(data.get("started", false))
+	_duration_overrides = data.get("duration_overrides", {}).duplicate(true)
 
 func _start(event_name: String) -> void:
 	current_event = event_name
