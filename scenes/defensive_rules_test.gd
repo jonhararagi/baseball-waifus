@@ -6,6 +6,7 @@ func _ready() -> void:
 	_test_force_chain_preservation()
 	_test_rundown_and_slide()
 	_test_reception_error_event()
+	_test_equipment_effective_stats_in_defense_and_runner()
 	print("DEFENSIVE RULES TEST OK")
 	get_tree().quit()
 
@@ -113,3 +114,43 @@ func _test_force_chain_preservation() -> void:
 	assert(state.base_runners[2] != null)
 	assert(state.base_runners[2].player_id == second.player_id)
 	assert(state.validate_invariants("force_chain").valid)
+
+
+func _test_equipment_effective_stats_in_defense_and_runner() -> void:
+	var progress := PlayerProgressStore.new()
+	progress.load_state()
+	var roster := CharacterRosterStore.new()
+	roster.load_state()
+	var progress_snapshot := progress.snapshot()
+	var roster_snapshot := roster.snapshot()
+	var character_id := "bw001"
+	var player := CharacterArchetypeCatalog.create_player(character_id)
+	if not roster.has_character(character_id):
+		assert(bool(roster.ensure_character(player).get("ok", false)))
+	assert(bool(progress.add_equipment("skirt_r_01", 1).get("ok", false)))
+	assert(bool(progress.add_equipment("gloves_r_01", 1).get("ok", false)))
+	var equipment_service := EquipmentService.new()
+	assert(bool(equipment_service.equip(character_id, "skirt_r_01", progress, roster).get("ok", false)))
+	assert(bool(equipment_service.equip(character_id, "gloves_r_01", progress, roster).get("ok", false)))
+	var equipped_player := roster.get_player(character_id)
+	var field_event := BattedBallEvent.new()
+	field_event.result = "FIELDING_CANDIDATE"
+	field_event.target = Vector2(620, 315)
+	field_event.origin = Vector2(1040, 430)
+	field_event.contact_quality = 0.75
+	var fielding := FieldingResolver.new()
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7
+	var equipped_result := fielding.resolve(field_event, {"SS": equipped_player}, 0.90, [], 0, rng, roster)
+	var expected_defense := float(equipped_player.defense + 2)
+	assert(abs(float(equipped_result.get("defense_score", 0.0)) - (expected_defense / 120.0)) < 0.0001)
+	var runner := RunnerToken.from_player(equipped_player)
+	var defensive_runner := DefensiveRunnerResolver.new()
+	var runner_rng := RandomNumberGenerator.new()
+	runner_rng.seed = 11
+	var runner_result := defensive_runner.resolve({"success": true, "defender_position": "SS", "defense_score": 0.90, "double_play": {}}, [runner, null, null], 0, runner_rng, roster)
+	var expected_speed := float(equipped_player.speed + 2)
+	var expected_chance := clamp(0.30 + 0.90 * 0.34 - expected_speed / 500.0 + 0.05, 0.22, 0.84)
+	assert(abs(float(runner_result.get("force_out_chance", 0.0)) - expected_chance) < 0.0001)
+	assert(progress.restore_snapshot(progress_snapshot))
+	assert(roster.restore_snapshot(roster_snapshot))
