@@ -46,12 +46,14 @@ func can_attempt(activity_id: String, activity_type: String, state: Dictionary) 
 func consume_attempt(activity_id: String, activity_type: String, state: Dictionary) -> Dictionary:
 	if not can_attempt(activity_id, activity_type, state):
 		return {"ok": false, "reason": "attempt_limit"}
-	var attempts: Dictionary = state.get("attempts", {})
+	var candidate := state.duplicate(true)
+	var attempts: Dictionary = candidate.get("attempts", {})
 	var next := int(attempts.get(activity_id, 0)) + 1
 	attempts[activity_id] = next
-	state["attempts"] = attempts
-	if not save_state(state):
+	candidate["attempts"] = attempts
+	if not save_state(candidate):
 		return {"ok": false, "reason": "save_failed"}
+	state["attempts"] = candidate.get("attempts", {})
 	return {
 		"ok": true,
 		"activity_id": activity_id,
