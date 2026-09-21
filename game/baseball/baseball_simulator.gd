@@ -13,6 +13,7 @@ const ADVANTAGE := {
 const PITCH_RULE_VERSION := "pitch_v1"
 const CONTACT_RULE_VERSION := "contact_v1"
 const EquipmentStatAdapterClass = preload("res://game/baseball/equipment_stat_adapter.gd")
+const BaseballSkillStateClass = preload("res://game/baseball/skill_state.gd")
 
 var equipment_stat_adapter := EquipmentStatAdapterClass.new()
 
@@ -45,30 +46,43 @@ func resolve_pitch(pitcher: PlayerData, pitch: Pitch, rng: RandomNumberGenerator
 		"rule_version": PITCH_RULE_VERSION
 	}
 
-func contact_probability(batter: PlayerData, pitcher: PlayerData, pitch: Pitch, timing: float) -> float:
+func contact_probability(batter: PlayerData, pitcher: PlayerData, pitch: Pitch, timing: float, skill_state: BaseballSkillState = null) -> float:
 	var timing_score := clamp(timing, 0.0, 1.0)
-	var contact_score := clamp(effective_stat(batter, "contact") / 100.0, 0.0, 1.2)
-	var control := clamp(effective_stat(pitcher, "control") / 100.0, 0.0, 1.2)
-	var chance := 0.20 + 0.45 * timing_score + 0.25 * contact_score - 0.25 * (pitch.difficulty + control * 0.25)
+	var contact := effective_stat(batter, "contact")
+	var control := effective_stat(pitcher, "control")
+	if skill_state != null:
+		contact *= skill_state.get_stat_multiplier(batter.id, "contact")
+		control *= skill_state.get_stat_multiplier(pitcher.id, "control")
+	var contact_score := clamp(contact / 100.0, 0.0, 1.2)
+	var control_score := clamp(control / 100.0, 0.0, 1.2)
+	var chance := 0.20 + 0.45 * timing_score + 0.25 * contact_score - 0.25 * (pitch.difficulty + control_score * 0.25)
 	chance += element_modifier(batter.element, pitcher.element)
 	return clamp(chance, 0.05, 0.95)
 
-func resolve_batted_ball(batter: PlayerData, pitcher: PlayerData, pitch: Pitch, timing: float, rng: RandomNumberGenerator) -> Dictionary:
+func resolve_batted_ball(batter: PlayerData, pitcher: PlayerData, pitch: Pitch, timing: float, rng: RandomNumberGenerator, skill_state: BaseballSkillState = null) -> Dictionary:
 	var label := timing_label(timing)
-	var chance := contact_probability(batter, pitcher, pitch, timing)
+	var chance := contact_probability(batter, pitcher, pitch, timing, skill_state)
 	if rng.randf() > chance:
 		return {"result": "STRIKE", "bases": 0, "timing": label, "contact_chance": chance, "rule_version": CONTACT_RULE_VERSION}
 
-	var power := effective_stat(batter, "power") / 100.0
+	var power := effective_stat(batter, "power")
+	if skill_state != null:
+		power *= skill_state.get_stat_multiplier(batter.id, "power")
+	power /= 100.0
 	var quality := clamp(timing * 0.72 + power * 0.28, 0.0, 1.0)
 	var critical := effective_stat(batter, "critical") / 100.0
 	var critical_chance := critical * 0.35 + max(0.0, timing - 0.85) * 0.6
+	if skill_state != null:
+		critical_chance += skill_state.get_outcome_bonus(batter.id, "critical")
 	var roll := rng.randf()
 
 	if timing < 0.50:
 		return {"result": "FOUL" if roll < 0.35 else "FIELDING_CANDIDATE", "bases": 1, "timing": label, "contact_quality": quality, "fielding_required": true, "contact_chance": chance, "rule_version": CONTACT_RULE_VERSION}
 
-	if roll < critical_chance and timing >= 0.85:
+	var home_run_bonus := 0.0
+	if skill_state != null:
+		home_run_bonus = skill_state.get_outcome_bonus(batter.id, "home_run")
+	if roll < clamp(critical_chance + home_run_bonus, 0.0, 0.95) and timing >= 0.85:
 		return {"result": "HOME RUN", "bases": 4, "timing": label, "contact_quality": quality, "fielding_required": false, "contact_chance": chance, "rule_version": CONTACT_RULE_VERSION}
 
 	var distance := quality + rng.randf_range(-0.12, 0.12)
