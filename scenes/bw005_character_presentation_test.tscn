@@ -1,0 +1,17 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource path="res://scenes/bw005_character_presentation_test.gd" type="Script" id="1"]
+[ext_resource path="res://game/ui/visual_qa_exporter.gd" type="Script" id="2"]
+
+[node name="BW005CharacterPresentationTest" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+
+[node name="VisualQAExporter" type="Node" parent="."]
+script = ExtResource("2")
+output_path = "res://qa_captures/bw005_character_presentation.png"
