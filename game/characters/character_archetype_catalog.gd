@@ -37,6 +37,7 @@ static func create_player(character_id: String) -> PlayerData:
 	player.defense = int(stats.defense)
 	player.critical = int(stats.critical)
 	player.stamina = int(stats.stamina)
+	CharmSystem.configure_player(player)
 	return player
 
 static func create_avatar(character_id: String, variant: Dictionary = {}) -> AvatarProfile:
