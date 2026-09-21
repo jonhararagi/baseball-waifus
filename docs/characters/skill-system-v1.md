@@ -108,3 +108,50 @@ Pendiente:
 - efectos de las 26 acciones de firma;
 - IA rival;
 - balance de números mediante simulaciones extensas.
+
+
+## Integración v1.1: pitcheo, defensa y corredores
+
+La capa de habilidades ahora puede actuar sobre resolvers concretos sin duplicar sus fórmulas.
+
+### Pitcheo
+- `Pitch Down`: reduce Control efectivo del pitcher rival durante una ventana de acciones.
+- El modificador entra en `BaseballSimulator.pitch_in_zone_probability()`; el resolver conserva sus límites y el RNG.
+
+### Defensa
+- `Catch Boost`: aumenta Defense efectiva mediante el mismo mecanismo estadístico ya usado por FieldingResolver.
+- `Double Play Setup`: añade un modificador acotado a la oportunidad de completar un doble play elegible.
+- `Defensive Cover`: modifica la cobertura defensiva de una resolución de corredor, sin crear un out automático.
+
+### Corredores
+- `Steal Up`: modifica la probabilidad del robo mediante `RunnerSystem`.
+- `Pickoff Counter`: utiliza la misma entrada de probabilidad del robo para representar lectura de la defensa/pickoff, sin saltarse el resolver.
+- `Runner to Batter`: una carrera/robo exitoso puede preparar un modificador temporal para la siguiente resolución de contacto de la bateadora enlazada.
+
+### Determinismo
+
+`RunnerSystem.attempt_steal()` acepta ahora un `RandomNumberGenerator` opcional y devuelve el roll junto con la probabilidad. Esto permite reproducir una resolución de robo con una seed compartida del partido.
+
+La presentación sigue recibiendo únicamente el resultado calculado. Ninguna animación, avatar o UI aplica estos modificadores.
+
+## Estado actualizado
+
+Implementado:
+- estado temporal de habilidades con modificadores estadísticos y de acción;
+- Pitch Down / Pitch Pressure sobre Control;
+- Catch Boost / Guard Wall sobre Defense;
+- Steal Up / Pickoff Counter sobre robo;
+- Double Play Setup sobre doble play;
+- Defensive Cover sobre cobertura de corredores;
+- Runner to Batter como enlace temporal de combo;
+- propagación del SkillState por el entry point principal del partido;
+- RNG compartido en robo para reproducibilidad.
+
+Pendiente:
+- interfaz de selección de habilidades;
+- costes/cooldowns definitivos;
+- asignación final de skills a cada personaje;
+- ejecución completa de las acciones de firma restantes;
+- IA rival que seleccione habilidades;
+- balance estadístico mediante simulaciones extensas;
+- validación runtime en Godot.
