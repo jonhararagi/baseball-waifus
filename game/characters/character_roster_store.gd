@@ -146,7 +146,7 @@ func add_character_energy(character_id: String, amount: int) -> Dictionary:
 	var record := snapshot_character(character_id)
 	if record.is_empty() or amount <= 0:
 		return {"ok": false, "reason": "invalid_request"}
-	var before := int(record.get("energy", ENERGY_MAX))
+	var before := get_character_energy(character_id)
 	return _update_character_value(character_id, "energy", clampi(before + amount, 0, ENERGY_MAX), before)
 
 func consume_character_energy(character_id: String, amount: int) -> Dictionary:
@@ -154,15 +154,23 @@ func consume_character_energy(character_id: String, amount: int) -> Dictionary:
 	var record := snapshot_character(character_id)
 	if record.is_empty() or amount <= 0:
 		return {"ok": false, "reason": "invalid_request"}
-	var before := int(record.get("energy", ENERGY_MAX))
+	var before := get_character_energy(character_id)
 	if before < amount:
 		return {"ok": false, "reason": "insufficient_energy", "current": before}
 	return _update_character_value(character_id, "energy", before - amount, before)
 
 func get_character_energy(character_id: String) -> int:
 	_ensure_loaded()
+	_regenerate_character(character_id, int(Time.get_unix_time_from_system()))
 	var record = state.get("characters", {}).get(character_id, null)
 	return clampi(int(record.get("energy", ENERGY_MAX)), 0, ENERGY_MAX) if typeof(record) == TYPE_DICTIONARY else 0
+
+func regenerate_character_energy(character_id: String, now_unix: int = -1) -> Dictionary:
+	_ensure_loaded()
+	if character_id.is_empty():
+		return {"ok": false, "reason": "invalid_character"}
+	var now := int(Time.get_unix_time_from_system()) if now_unix < 0 else now_unix
+	return _regenerate_character(character_id, now)
 
 func set_equipment_item(character_id: String, slot: String, item_id: String) -> Dictionary:
 	_ensure_loaded()
@@ -227,6 +235,7 @@ func _record_from_player(player: PlayerData) -> Dictionary:
 		"charm": clampi(player.charm, 0, CharmSystem.MAX_CHARM),
 		"mood": clampi(player.mood, MOOD_MIN, MOOD_MAX),
 		"energy": ENERGY_MAX,
+		"energy_last_regen_unix": int(Time.get_unix_time_from_system()),
 		"equipment": {}
 	}
 
@@ -286,9 +295,36 @@ func _sanitize(raw: Dictionary) -> Dictionary:
 			"charm": clampi(int(record.get("charm", 0)), 0, CharmSystem.MAX_CHARM),
 			"mood": clampi(int(record.get("mood", MOOD_MAX)), MOOD_MIN, MOOD_MAX),
 			"energy": clampi(int(record.get("energy", ENERGY_MAX)), 0, ENERGY_MAX),
+			"energy_last_regen_unix": maxi(0, int(record.get("energy_last_regen_unix", Time.get_unix_time_from_system()))),
 			"equipment": equipment.duplicate(true)
 		}
 	return clean
 
 func _sanitize_record(record: Dictionary) -> Dictionary:
 	return record.duplicate(true)
+
+
+func _regenerate_character(character_id: String, now_unix: int) -> Dictionary:
+	var record := snapshot_character(character_id)
+	if record.is_empty():
+		return {"ok": false, "reason": "character_not_owned"}
+	var energy := clampi(int(record.get("energy", ENERGY_MAX)), 0, ENERGY_MAX)
+	var last := int(record.get("energy_last_regen_unix", now_unix))
+	if now_unix < last:
+		return {"ok": false, "reason": "clock_rollback", "current": energy}
+	if energy >= ENERGY_MAX:
+		if last != now_unix:
+			record["energy_last_regen_unix"] = now_unix
+			return _replace_character(character_id, record)
+		return {"ok": true, "energy": energy, "ticks": 0}
+	var ticks := int((now_unix - last) / PlayerProgressStore.ENERGY_REGEN_SECONDS)
+	if ticks <= 0:
+		return {"ok": true, "energy": energy, "ticks": 0}
+	var after := mini(ENERGY_MAX, energy + ticks)
+	record["energy"] = after
+	record["energy_last_regen_unix"] = last + ticks * PlayerProgressStore.ENERGY_REGEN_SECONDS
+	var result := _replace_character(character_id, record)
+	if result.get("ok", false):
+		result["energy"] = after
+		result["ticks"] = ticks
+	return result
