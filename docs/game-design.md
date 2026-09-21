@@ -1648,3 +1648,23 @@ No se utiliza un contador de acciones por segundo para la IA. Los cálculos se r
 `inicio de plate appearance → preparar datos → mostrar presentación → acción del jugador → resolver → evento → animar resultado`
 
 La presentación gana tiempo de forma natural porque el cálculo ligero ocurre durante las fases existentes del partido. Si una animación cambia de duración, la autoridad sigue siendo el gameplay y no la animación.
+
+## IA rival y cálculo por evento
+
+La IA rival de Baseball Waifus no utiliza modelos gráficos, redes neuronales ni cálculos continuos por frame para decidir acciones. El conocimiento de béisbol se representa mediante reglas, umbrales y fórmulas explícitas en GDScript.
+
+Cada jugada crea un **snapshot situacional** durante una ventana natural de presentación: campo, mapa, personajes, preparación del pitcher y llegada de la pelota. El snapshot contiene inning, mitad, marcador, conteo, outs, ocupación de bases, bateadora, pitcher y roster defensivo.
+
+`BaseballSituationEvaluator` transforma ese snapshot en señales tácticas acotadas, como presión de strikes, valor de robo, oportunidad de doble play, diferencia de Contact/Control y prioridad de habilidad. `OpponentAI` utiliza esas señales para elegir una acción. Los resolvers existentes siguen siendo la única autoridad del resultado.
+
+El flujo es:
+
+`evento de jugada → snapshot → evaluación ligera → decisión → presentación → input/timing → resolver → resultado → evento visual`
+
+No se ejecuta una simulación del partido por segundo. Tampoco se predice el resultado final antes del input. El planificador prepara semillas independientes para pitch, contacto, defensa y robo. Así el programa puede preparar la incertidumbre de la jugada mientras la presentación consume tiempo visual, sin gastar CPU en una IA permanente.
+
+En bateo, el jugador conserva la decisión final mediante timing. El centro de la ventana puede producir `PERFECT`, una zona intermedia `GREAT/GOOD`, y un toque tardío o fuera de ventana puede producir `NORMAL/BAD` o `STRIKE`. Esas entradas alimentan el mismo resolver de contacto junto con estadísticas, habilidades, elementos y equipamiento.
+
+La IA puede razonar sobre **qué intentar**, pero nunca puede ordenar al resolver que una acción tenga éxito. Esto mantiene la arquitectura:
+
+`PLAYER/AI INPUT → GAMEPLAY RESOLVER → BASEBALL RESULT → EVENT → PRESENTATION`
