@@ -88,7 +88,7 @@ func _ready() -> void:
 	charm_panel.setup(charm_store)
 
 	_sync_match_roles()
-	decision_planner._master_rng.seed = rng.randi()
+	decision_planner.set_seed(rng.randi())
 	queue_redraw()
 
 func _build_demo_roster() -> void:
