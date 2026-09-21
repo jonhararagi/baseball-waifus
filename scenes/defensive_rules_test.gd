@@ -142,7 +142,7 @@ func _test_equipment_effective_stats_in_defense_and_runner() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 7
 	var equipped_result := fielding.resolve(field_event, {"SS": equipped_player}, 0.90, [], 0, rng, roster)
-	var expected_defense := float(equipped_player.defense + 2)
+	var expected_defense := float(int(equipped_player.effective_stat("defense")) + 2)
 	assert(abs(float(equipped_result.get("defense_score", 0.0)) - (expected_defense / 120.0)) < 0.0001)
 	var runner := RunnerToken.from_player(equipped_player)
 	var defensive_runner := DefensiveRunnerResolver.new()
