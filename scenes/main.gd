@@ -198,6 +198,8 @@ func _start_pitch() -> void:
 		var ai_plan := ai.choose_situational_action(batter, pitcher, {"phase": "pitch", "situation": decision_planner.current_plan().get("situation", {})}, skill_state)
 		if str(ai_plan.get("action", "BAT")) == "STEAL":
 			message = "AI tactical action: STEAL"
+			_attempt_steal()
+			return
 		var ai_skill: Dictionary = ai_plan.get("skill", {})
 		if bool(ai_skill.get("used", false)):
 			message = "AI skill: " + str(ai_skill.get("skill_id", ""))
