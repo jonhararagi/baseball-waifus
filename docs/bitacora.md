@@ -5597,7 +5597,6 @@ Se creó un test reproducible que comprueba:
 - duración del debuff durante cuatro acciones.
 
 **No se ejecutó Godot runtime en este entorno.** Los tests fueron escritos y revisados estáticamente, pero no se registra una ejecución real.
-
 ### Pendiente
 
 - asignar habilidades definitivas a personajes;
@@ -7856,4 +7855,10 @@ Se añadió webapp/js/contract_test.mjs y el workflow de GitHub Pages ahora ejec
 El frontend conserva la misma frontera de autoridad: el test valida solamente contratos de transporte y no modifica gameplay.
 
 **Runtime local:** no ejecutado. La validación queda preparada para GitHub Actions mediante Node en el job de despliegue.
+
+### Corrección de producción de Revisión 73: cancelación de requests
+
+webapp/js/api.js sustituye el timeout basado solamente en Promise.race por AbortController. Las peticiones de inicialización y turnos ahora cancelan la solicitud HTTP cuando vence el timeout, evitando requests huérfanas y reduciendo consumo innecesario en Android/WebView.
+
+No cambia el contrato DTO ni la autoridad del combate.
 
