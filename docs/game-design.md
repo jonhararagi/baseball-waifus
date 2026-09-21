@@ -1595,3 +1595,23 @@ Familias conectadas al núcleo:
 - Runner to Batter → enlace temporal entre una acción de corredor exitosa y la siguiente resolución ofensiva.
 
 La rareza, apariencia o animación no decide estos efectos. Las habilidades tampoco garantizan hits, outs, robos ni Home Runs.
+
+
+## IA rival y activación de habilidades
+
+La IA rival utiliza decisiones situacionales, no multiplicadores ocultos.
+
+Su flujo es:
+
+`estado del partido → heurística de acción → SkillResolver → resolver de béisbol → resultado`
+
+La IA puede elegir pitch y activar habilidades compatibles con el rol del personaje. Las habilidades solo modifican las entradas permitidas por el sistema de skills.
+
+La IA no puede modificar directamente:
+- RNG global;
+- estadísticas permanentes;
+- recompensas;
+- rareza;
+- resultados ya resueltos.
+
+Los cooldowns de la IA son estado de decisión, no una estadística del personaje.
