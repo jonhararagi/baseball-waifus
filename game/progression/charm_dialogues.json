@@ -1,0 +1,7357 @@
+{
+  "version": 1,
+  "max_conversations_per_character": 10,
+  "answer_rule": "correct_answer=20_charm; other_answers=3_charm",
+  "characters": [
+    {
+      "character_id": "bw001",
+      "conversations": [
+        {
+          "id": "bw001_talk_01",
+          "prompt": "¿Cómo te llamas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Aiko Hanamori",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "La entrenadora del rival",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "La gerente del estadio",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw001_talk_02",
+          "prompt": "¿Cuál es tu elemento?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "fire",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "neutral",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "darkness",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw001_talk_03",
+          "prompt": "¿Qué posición juegas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "3B",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw001_talk_04",
+          "prompt": "¿Cuál es tu especialidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Power / Home Run",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw001_talk_05",
+          "prompt": "¿Qué estadística alimenta principalmente tu afinidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Power",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw001_talk_06",
+          "prompt": "¿Qué rareza tienes?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "R",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "SSR",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw001_talk_07",
+          "prompt": "¿Cuál es tu estadística más alta actualmente?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Stamina",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Power",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw001_talk_08",
+          "prompt": "¿Cuál es tu segunda estadística más alta?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Power",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw001_talk_09",
+          "prompt": "¿Qué preset corporal usa tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "power",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "balanced",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "athletic",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw001_talk_10",
+          "prompt": "¿Qué estilo de uniforme aparece en tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "jacket",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "standard",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "sporty",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "character_id": "bw002",
+      "conversations": [
+        {
+          "id": "bw002_talk_01",
+          "prompt": "¿Cómo te llamas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Reina Kurose",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "La entrenadora del rival",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "La gerente del estadio",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw002_talk_02",
+          "prompt": "¿Cuál es tu elemento?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "ice",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "neutral",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "darkness",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw002_talk_03",
+          "prompt": "¿Qué posición juegas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "P",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "P",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r3",
+              "text": "CF",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw002_talk_04",
+          "prompt": "¿Cuál es tu especialidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Pitcher",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Pitcher",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r3",
+              "text": "Runner / robo",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw002_talk_05",
+          "prompt": "¿Qué estadística alimenta principalmente tu afinidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Pitch",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw002_talk_06",
+          "prompt": "¿Qué rareza tienes?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "SSR",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "R",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw002_talk_07",
+          "prompt": "¿Cuál es tu estadística más alta actualmente?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Stamina",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Pitch",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw002_talk_08",
+          "prompt": "¿Cuál es tu segunda estadística más alta?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Pitch",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Power",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw002_talk_09",
+          "prompt": "¿Qué preset corporal usa tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "athletic",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "balanced",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw002_talk_10",
+          "prompt": "¿Qué estilo de uniforme aparece en tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "standard",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "sporty",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "character_id": "bw003",
+      "conversations": [
+        {
+          "id": "bw003_talk_01",
+          "prompt": "¿Cómo te llamas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Miu Tachibana",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "La entrenadora del rival",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "La gerente del estadio",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw003_talk_02",
+          "prompt": "¿Cuál es tu elemento?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "lightning",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "neutral",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "darkness",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw003_talk_03",
+          "prompt": "¿Qué posición juegas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "SS",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw003_talk_04",
+          "prompt": "¿Cuál es tu especialidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Contact / técnica",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw003_talk_05",
+          "prompt": "¿Qué estadística alimenta principalmente tu afinidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Contact",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Defense",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw003_talk_06",
+          "prompt": "¿Qué rareza tienes?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "SR",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "R",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "SSR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw003_talk_07",
+          "prompt": "¿Cuál es tu estadística más alta actualmente?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Contact",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Defense",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw003_talk_08",
+          "prompt": "¿Cuál es tu segunda estadística más alta?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Defense",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Contact",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Power",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw003_talk_09",
+          "prompt": "¿Qué preset corporal usa tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "balanced",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "athletic",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw003_talk_10",
+          "prompt": "¿Qué estilo de uniforme aparece en tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "standard",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "sporty",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "character_id": "bw004",
+      "conversations": [
+        {
+          "id": "bw004_talk_01",
+          "prompt": "¿Cómo te llamas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Yuna Minase",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "La entrenadora del rival",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "La gerente del estadio",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw004_talk_02",
+          "prompt": "¿Cuál es tu elemento?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "nature",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "neutral",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "darkness",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw004_talk_03",
+          "prompt": "¿Qué posición juegas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "CF",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw004_talk_04",
+          "prompt": "¿Cuál es tu especialidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Runner / robo",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Runner / robo",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r3",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw004_talk_05",
+          "prompt": "¿Qué estadística alimenta principalmente tu afinidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Speed",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw004_talk_06",
+          "prompt": "¿Qué rareza tienes?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "SSR",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "R",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw004_talk_07",
+          "prompt": "¿Cuál es tu estadística más alta actualmente?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Speed",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw004_talk_08",
+          "prompt": "¿Cuál es tu segunda estadística más alta?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Stamina",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Speed",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Power",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw004_talk_09",
+          "prompt": "¿Qué preset corporal usa tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "athletic",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "balanced",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw004_talk_10",
+          "prompt": "¿Qué estilo de uniforme aparece en tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "sporty",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "standard",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "character_id": "bw005",
+      "conversations": [
+        {
+          "id": "bw005_talk_01",
+          "prompt": "¿Cómo te llamas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Sora Amamiya",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "La entrenadora del rival",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "La gerente del estadio",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw005_talk_02",
+          "prompt": "¿Cuál es tu elemento?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "water",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "neutral",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "darkness",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw005_talk_03",
+          "prompt": "¿Qué posición juegas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "C",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw005_talk_04",
+          "prompt": "¿Cuál es tu especialidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Catcher / receptor",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw005_talk_05",
+          "prompt": "¿Qué estadística alimenta principalmente tu afinidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Defense",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw005_talk_06",
+          "prompt": "¿Qué rareza tienes?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "SR",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "R",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "SSR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw005_talk_07",
+          "prompt": "¿Cuál es tu estadística más alta actualmente?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Defense",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw005_talk_08",
+          "prompt": "¿Cuál es tu segunda estadística más alta?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Stamina",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Defense",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Power",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw005_talk_09",
+          "prompt": "¿Qué preset corporal usa tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "power",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "balanced",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "athletic",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw005_talk_10",
+          "prompt": "¿Qué estilo de uniforme aparece en tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "standard",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "sporty",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "character_id": "bw006",
+      "conversations": [
+        {
+          "id": "bw006_talk_01",
+          "prompt": "¿Cómo te llamas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Akari Shimizu",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "La entrenadora del rival",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "La gerente del estadio",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw006_talk_02",
+          "prompt": "¿Cuál es tu elemento?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "lightning",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "neutral",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "darkness",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw006_talk_03",
+          "prompt": "¿Qué posición juegas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "1B",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw006_talk_04",
+          "prompt": "¿Cuál es tu especialidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Defensa",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw006_talk_05",
+          "prompt": "¿Qué estadística alimenta principalmente tu afinidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Defense",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw006_talk_06",
+          "prompt": "¿Qué rareza tienes?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "SR",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "R",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "SSR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw006_talk_07",
+          "prompt": "¿Cuál es tu estadística más alta actualmente?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Defense",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw006_talk_08",
+          "prompt": "¿Cuál es tu segunda estadística más alta?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Stamina",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Defense",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Power",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw006_talk_09",
+          "prompt": "¿Qué preset corporal usa tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "athletic",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "balanced",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw006_talk_10",
+          "prompt": "¿Qué estilo de uniforme aparece en tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "sleeveless",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "standard",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "sporty",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "character_id": "bw007",
+      "conversations": [
+        {
+          "id": "bw007_talk_01",
+          "prompt": "¿Cómo te llamas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Kira Kurosawa",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "La entrenadora del rival",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "La gerente del estadio",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw007_talk_02",
+          "prompt": "¿Cuál es tu elemento?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "darkness",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "neutral",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "neutral",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw007_talk_03",
+          "prompt": "¿Qué posición juegas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "RF",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw007_talk_04",
+          "prompt": "¿Cuál es tu especialidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Power / Home Run",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw007_talk_05",
+          "prompt": "¿Qué estadística alimenta principalmente tu afinidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Power",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw007_talk_06",
+          "prompt": "¿Qué rareza tienes?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "SSR",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "R",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw007_talk_07",
+          "prompt": "¿Cuál es tu estadística más alta actualmente?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Power",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw007_talk_08",
+          "prompt": "¿Cuál es tu segunda estadística más alta?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Stamina",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Power",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw007_talk_09",
+          "prompt": "¿Qué preset corporal usa tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "power",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "balanced",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "athletic",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw007_talk_10",
+          "prompt": "¿Qué estilo de uniforme aparece en tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "jacket",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "standard",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "sporty",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "character_id": "bw008",
+      "conversations": [
+        {
+          "id": "bw008_talk_01",
+          "prompt": "¿Cómo te llamas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Nao Fujimoto",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "La entrenadora del rival",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "La gerente del estadio",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw008_talk_02",
+          "prompt": "¿Cuál es tu elemento?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "water",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "neutral",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "darkness",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw008_talk_03",
+          "prompt": "¿Qué posición juegas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "2B",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw008_talk_04",
+          "prompt": "¿Cuál es tu especialidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Contact / técnica",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw008_talk_05",
+          "prompt": "¿Qué estadística alimenta principalmente tu afinidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Contact",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Speed",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw008_talk_06",
+          "prompt": "¿Qué rareza tienes?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "SR",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "R",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "SSR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw008_talk_07",
+          "prompt": "¿Cuál es tu estadística más alta actualmente?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Contact",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Speed",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw008_talk_08",
+          "prompt": "¿Cuál es tu segunda estadística más alta?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Speed",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Contact",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Power",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw008_talk_09",
+          "prompt": "¿Qué preset corporal usa tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "slim",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "balanced",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "athletic",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw008_talk_10",
+          "prompt": "¿Qué estilo de uniforme aparece en tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "standard",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "sporty",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "character_id": "bw009",
+      "conversations": [
+        {
+          "id": "bw009_talk_01",
+          "prompt": "¿Cómo te llamas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Rika Moriyama",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "La entrenadora del rival",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "La gerente del estadio",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw009_talk_02",
+          "prompt": "¿Cuál es tu elemento?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "nature",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "neutral",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "darkness",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw009_talk_03",
+          "prompt": "¿Qué posición juegas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "LF",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw009_talk_04",
+          "prompt": "¿Cuál es tu especialidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Runner / robo",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Runner / robo",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r3",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw009_talk_05",
+          "prompt": "¿Qué estadística alimenta principalmente tu afinidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Speed",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Defense",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw009_talk_06",
+          "prompt": "¿Qué rareza tienes?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "SR",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "R",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "SSR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw009_talk_07",
+          "prompt": "¿Cuál es tu estadística más alta actualmente?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Speed",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Defense",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw009_talk_08",
+          "prompt": "¿Cuál es tu segunda estadística más alta?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Defense",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Speed",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Power",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw009_talk_09",
+          "prompt": "¿Qué preset corporal usa tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "athletic",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "balanced",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw009_talk_10",
+          "prompt": "¿Qué estilo de uniforme aparece en tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "sporty",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "standard",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "character_id": "bw010",
+      "conversations": [
+        {
+          "id": "bw010_talk_01",
+          "prompt": "¿Cómo te llamas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Mei Kanzaki",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "La entrenadora del rival",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "La gerente del estadio",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw010_talk_02",
+          "prompt": "¿Cuál es tu elemento?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "lightning",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "neutral",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "darkness",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw010_talk_03",
+          "prompt": "¿Qué posición juegas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "DH",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw010_talk_04",
+          "prompt": "¿Cuál es tu especialidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Pitcher",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Pitcher",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r3",
+              "text": "Runner / robo",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw010_talk_05",
+          "prompt": "¿Qué estadística alimenta principalmente tu afinidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Pitch",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Control",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw010_talk_06",
+          "prompt": "¿Qué rareza tienes?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "SSR",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "R",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw010_talk_07",
+          "prompt": "¿Cuál es tu estadística más alta actualmente?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Control",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw010_talk_08",
+          "prompt": "¿Cuál es tu segunda estadística más alta?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Stamina",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Control",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Power",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw010_talk_09",
+          "prompt": "¿Qué preset corporal usa tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "slim",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "balanced",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "athletic",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw010_talk_10",
+          "prompt": "¿Qué estilo de uniforme aparece en tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "standard",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "sporty",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "character_id": "bw011",
+      "conversations": [
+        {
+          "id": "bw011_talk_01",
+          "prompt": "¿Cómo te llamas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Hina Sakuragi",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "La entrenadora del rival",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "La gerente del estadio",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw011_talk_02",
+          "prompt": "¿Cuál es tu elemento?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "light",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "neutral",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "darkness",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw011_talk_03",
+          "prompt": "¿Qué posición juegas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "C",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw011_talk_04",
+          "prompt": "¿Cuál es tu especialidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Catcher / receptor",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw011_talk_05",
+          "prompt": "¿Qué estadística alimenta principalmente tu afinidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Defense",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw011_talk_06",
+          "prompt": "¿Qué rareza tienes?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "R",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "SSR",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw011_talk_07",
+          "prompt": "¿Cuál es tu estadística más alta actualmente?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Defense",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw011_talk_08",
+          "prompt": "¿Cuál es tu segunda estadística más alta?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Stamina",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Defense",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Power",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw011_talk_09",
+          "prompt": "¿Qué preset corporal usa tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "balanced",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "athletic",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw011_talk_10",
+          "prompt": "¿Qué estilo de uniforme aparece en tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "standard",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "sporty",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "character_id": "bw012",
+      "conversations": [
+        {
+          "id": "bw012_talk_01",
+          "prompt": "¿Cómo te llamas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Sayu Kisaragi",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "La entrenadora del rival",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "La gerente del estadio",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw012_talk_02",
+          "prompt": "¿Cuál es tu elemento?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "nature",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "neutral",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "darkness",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw012_talk_03",
+          "prompt": "¿Qué posición juegas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "SS",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw012_talk_04",
+          "prompt": "¿Cuál es tu especialidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Defensa",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw012_talk_05",
+          "prompt": "¿Qué estadística alimenta principalmente tu afinidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Defense",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw012_talk_06",
+          "prompt": "¿Qué rareza tienes?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "SR",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "R",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "SSR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw012_talk_07",
+          "prompt": "¿Cuál es tu estadística más alta actualmente?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Defense",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw012_talk_08",
+          "prompt": "¿Cuál es tu segunda estadística más alta?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Stamina",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Defense",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Power",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw012_talk_09",
+          "prompt": "¿Qué preset corporal usa tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "balanced",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "athletic",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw012_talk_10",
+          "prompt": "¿Qué estilo de uniforme aparece en tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "sleeveless",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "standard",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "sporty",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "character_id": "bw013",
+      "conversations": [
+        {
+          "id": "bw013_talk_01",
+          "prompt": "¿Cómo te llamas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Kaede Arakawa",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "La entrenadora del rival",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "La gerente del estadio",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw013_talk_02",
+          "prompt": "¿Cuál es tu elemento?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "darkness",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "neutral",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "neutral",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw013_talk_03",
+          "prompt": "¿Qué posición juegas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "3B",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw013_talk_04",
+          "prompt": "¿Cuál es tu especialidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Power / Home Run",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw013_talk_05",
+          "prompt": "¿Qué estadística alimenta principalmente tu afinidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Power",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw013_talk_06",
+          "prompt": "¿Qué rareza tienes?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "SSR",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "R",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw013_talk_07",
+          "prompt": "¿Cuál es tu estadística más alta actualmente?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Stamina",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Power",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw013_talk_08",
+          "prompt": "¿Cuál es tu segunda estadística más alta?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Power",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw013_talk_09",
+          "prompt": "¿Qué preset corporal usa tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "power",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "balanced",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "athletic",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw013_talk_10",
+          "prompt": "¿Qué estilo de uniforme aparece en tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "jacket",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "standard",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "sporty",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "character_id": "bw014",
+      "conversations": [
+        {
+          "id": "bw014_talk_01",
+          "prompt": "¿Cómo te llamas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Rin Asakura",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "La entrenadora del rival",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "La gerente del estadio",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw014_talk_02",
+          "prompt": "¿Cuál es tu elemento?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "ice",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "neutral",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "darkness",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw014_talk_03",
+          "prompt": "¿Qué posición juegas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "CF",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw014_talk_04",
+          "prompt": "¿Cuál es tu especialidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Runner / robo",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Runner / robo",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r3",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw014_talk_05",
+          "prompt": "¿Qué estadística alimenta principalmente tu afinidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Speed",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw014_talk_06",
+          "prompt": "¿Qué rareza tienes?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "SR",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "R",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "SSR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw014_talk_07",
+          "prompt": "¿Cuál es tu estadística más alta actualmente?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Speed",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw014_talk_08",
+          "prompt": "¿Cuál es tu segunda estadística más alta?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Stamina",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Speed",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Power",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw014_talk_09",
+          "prompt": "¿Qué preset corporal usa tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "slim",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "balanced",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "athletic",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw014_talk_10",
+          "prompt": "¿Qué estilo de uniforme aparece en tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "sporty",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "standard",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "character_id": "bw015",
+      "conversations": [
+        {
+          "id": "bw015_talk_01",
+          "prompt": "¿Cómo te llamas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Momo Hoshino",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "La entrenadora del rival",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "La gerente del estadio",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw015_talk_02",
+          "prompt": "¿Cuál es tu elemento?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "fire",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "neutral",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "darkness",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw015_talk_03",
+          "prompt": "¿Qué posición juegas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "DH",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw015_talk_04",
+          "prompt": "¿Cuál es tu especialidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Power / Home Run",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw015_talk_05",
+          "prompt": "¿Qué estadística alimenta principalmente tu afinidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Power",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Control",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw015_talk_06",
+          "prompt": "¿Qué rareza tienes?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "SSR",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "R",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw015_talk_07",
+          "prompt": "¿Cuál es tu estadística más alta actualmente?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Stamina",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Control",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw015_talk_08",
+          "prompt": "¿Cuál es tu segunda estadística más alta?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Control",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Power",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw015_talk_09",
+          "prompt": "¿Qué preset corporal usa tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "curvy",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "balanced",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "athletic",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw015_talk_10",
+          "prompt": "¿Qué estilo de uniforme aparece en tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "jacket",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "standard",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "sporty",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "character_id": "bw016",
+      "conversations": [
+        {
+          "id": "bw016_talk_01",
+          "prompt": "¿Cómo te llamas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Fuyuki Aono",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "La entrenadora del rival",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "La gerente del estadio",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw016_talk_02",
+          "prompt": "¿Cuál es tu elemento?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "ice",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "neutral",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "darkness",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw016_talk_03",
+          "prompt": "¿Qué posición juegas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "P",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "P",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r3",
+              "text": "CF",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw016_talk_04",
+          "prompt": "¿Cuál es tu especialidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Pitcher",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Pitcher",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r3",
+              "text": "Runner / robo",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw016_talk_05",
+          "prompt": "¿Qué estadística alimenta principalmente tu afinidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Pitch",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Control",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw016_talk_06",
+          "prompt": "¿Qué rareza tienes?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "SR",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "R",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "SSR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw016_talk_07",
+          "prompt": "¿Cuál es tu estadística más alta actualmente?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Control",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw016_talk_08",
+          "prompt": "¿Cuál es tu segunda estadística más alta?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Stamina",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Control",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Power",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw016_talk_09",
+          "prompt": "¿Qué preset corporal usa tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "slim",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "balanced",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "athletic",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw016_talk_10",
+          "prompt": "¿Qué estilo de uniforme aparece en tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "standard",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "sporty",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "character_id": "bw017",
+      "conversations": [
+        {
+          "id": "bw017_talk_01",
+          "prompt": "¿Cómo te llamas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Yuzu Takahashi",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "La entrenadora del rival",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "La gerente del estadio",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw017_talk_02",
+          "prompt": "¿Cuál es tu elemento?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "light",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "neutral",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "darkness",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw017_talk_03",
+          "prompt": "¿Qué posición juegas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "2B",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw017_talk_04",
+          "prompt": "¿Cuál es tu especialidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Contact / técnica",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw017_talk_05",
+          "prompt": "¿Qué estadística alimenta principalmente tu afinidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Contact",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Defense",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw017_talk_06",
+          "prompt": "¿Qué rareza tienes?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "R",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "SSR",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw017_talk_07",
+          "prompt": "¿Cuál es tu estadística más alta actualmente?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Contact",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Defense",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw017_talk_08",
+          "prompt": "¿Cuál es tu segunda estadística más alta?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Defense",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Contact",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Power",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw017_talk_09",
+          "prompt": "¿Qué preset corporal usa tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "balanced",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "athletic",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw017_talk_10",
+          "prompt": "¿Qué estilo de uniforme aparece en tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "standard",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "sporty",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "character_id": "bw018",
+      "conversations": [
+        {
+          "id": "bw018_talk_01",
+          "prompt": "¿Cómo te llamas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Koharu Nishiki",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "La entrenadora del rival",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "La gerente del estadio",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw018_talk_02",
+          "prompt": "¿Cuál es tu elemento?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "nature",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "neutral",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "darkness",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw018_talk_03",
+          "prompt": "¿Qué posición juegas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "LF",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw018_talk_04",
+          "prompt": "¿Cuál es tu especialidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Defensa",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw018_talk_05",
+          "prompt": "¿Qué estadística alimenta principalmente tu afinidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Defense",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw018_talk_06",
+          "prompt": "¿Qué rareza tienes?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "SR",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "R",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "SSR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw018_talk_07",
+          "prompt": "¿Cuál es tu estadística más alta actualmente?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Defense",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw018_talk_08",
+          "prompt": "¿Cuál es tu segunda estadística más alta?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Stamina",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Defense",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Power",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw018_talk_09",
+          "prompt": "¿Qué preset corporal usa tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "balanced",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "athletic",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw018_talk_10",
+          "prompt": "¿Qué estilo de uniforme aparece en tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "sleeveless",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "standard",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "sporty",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "character_id": "bw019",
+      "conversations": [
+        {
+          "id": "bw019_talk_01",
+          "prompt": "¿Cómo te llamas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Chika Raikou",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "La entrenadora del rival",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "La gerente del estadio",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw019_talk_02",
+          "prompt": "¿Cuál es tu elemento?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "lightning",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "neutral",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "darkness",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw019_talk_03",
+          "prompt": "¿Qué posición juegas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "RF",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw019_talk_04",
+          "prompt": "¿Cuál es tu especialidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Power / Home Run",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw019_talk_05",
+          "prompt": "¿Qué estadística alimenta principalmente tu afinidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Power",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Defense",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw019_talk_06",
+          "prompt": "¿Qué rareza tienes?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "SSR",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "R",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw019_talk_07",
+          "prompt": "¿Cuál es tu estadística más alta actualmente?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Stamina",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Defense",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw019_talk_08",
+          "prompt": "¿Cuál es tu segunda estadística más alta?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Defense",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Power",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw019_talk_09",
+          "prompt": "¿Qué preset corporal usa tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "athletic",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "balanced",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw019_talk_10",
+          "prompt": "¿Qué estilo de uniforme aparece en tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "jacket",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "standard",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "sporty",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "character_id": "bw020",
+      "conversations": [
+        {
+          "id": "bw020_talk_01",
+          "prompt": "¿Cómo te llamas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Shiori Amane",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "La entrenadora del rival",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "La gerente del estadio",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw020_talk_02",
+          "prompt": "¿Cuál es tu elemento?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "darkness",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "neutral",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "neutral",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw020_talk_03",
+          "prompt": "¿Qué posición juegas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "SS",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw020_talk_04",
+          "prompt": "¿Cuál es tu especialidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Contact / técnica",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw020_talk_05",
+          "prompt": "¿Qué estadística alimenta principalmente tu afinidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Contact",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Defense",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw020_talk_06",
+          "prompt": "¿Qué rareza tienes?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "SR",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "R",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "SSR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw020_talk_07",
+          "prompt": "¿Cuál es tu estadística más alta actualmente?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Contact",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Defense",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw020_talk_08",
+          "prompt": "¿Cuál es tu segunda estadística más alta?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Defense",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Contact",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Power",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw020_talk_09",
+          "prompt": "¿Qué preset corporal usa tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "slim",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "balanced",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "athletic",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw020_talk_10",
+          "prompt": "¿Qué estilo de uniforme aparece en tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "standard",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "sporty",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "character_id": "bw021",
+      "conversations": [
+        {
+          "id": "bw021_talk_01",
+          "prompt": "¿Cómo te llamas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Noa Mizuno",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "La entrenadora del rival",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "La gerente del estadio",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw021_talk_02",
+          "prompt": "¿Cuál es tu elemento?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "water",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "neutral",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "darkness",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw021_talk_03",
+          "prompt": "¿Qué posición juegas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "C",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw021_talk_04",
+          "prompt": "¿Cuál es tu especialidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Catcher / receptor",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw021_talk_05",
+          "prompt": "¿Qué estadística alimenta principalmente tu afinidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Defense",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw021_talk_06",
+          "prompt": "¿Qué rareza tienes?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "R",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "SSR",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw021_talk_07",
+          "prompt": "¿Cuál es tu estadística más alta actualmente?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Defense",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw021_talk_08",
+          "prompt": "¿Cuál es tu segunda estadística más alta?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Stamina",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Defense",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Power",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw021_talk_09",
+          "prompt": "¿Qué preset corporal usa tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "balanced",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "athletic",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw021_talk_10",
+          "prompt": "¿Qué estilo de uniforme aparece en tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "standard",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "sporty",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "character_id": "bw022",
+      "conversations": [
+        {
+          "id": "bw022_talk_01",
+          "prompt": "¿Cómo te llamas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Ayame Tsukino",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "La entrenadora del rival",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "La gerente del estadio",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw022_talk_02",
+          "prompt": "¿Cuál es tu elemento?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "darkness",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "neutral",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "neutral",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw022_talk_03",
+          "prompt": "¿Qué posición juegas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "1B",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw022_talk_04",
+          "prompt": "¿Cuál es tu especialidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Defensa",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw022_talk_05",
+          "prompt": "¿Qué estadística alimenta principalmente tu afinidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Defense",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw022_talk_06",
+          "prompt": "¿Qué rareza tienes?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "SSR",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "R",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw022_talk_07",
+          "prompt": "¿Cuál es tu estadística más alta actualmente?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Defense",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw022_talk_08",
+          "prompt": "¿Cuál es tu segunda estadística más alta?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Stamina",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Defense",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Power",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw022_talk_09",
+          "prompt": "¿Qué preset corporal usa tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "power",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "balanced",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "athletic",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw022_talk_10",
+          "prompt": "¿Qué estilo de uniforme aparece en tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "sleeveless",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "standard",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "sporty",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "character_id": "bw023",
+      "conversations": [
+        {
+          "id": "bw023_talk_01",
+          "prompt": "¿Cómo te llamas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Towa Amami",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "La entrenadora del rival",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "La gerente del estadio",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw023_talk_02",
+          "prompt": "¿Cuál es tu elemento?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "light",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "neutral",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "darkness",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw023_talk_03",
+          "prompt": "¿Qué posición juegas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "CF",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw023_talk_04",
+          "prompt": "¿Cuál es tu especialidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Runner / robo",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Runner / robo",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r3",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw023_talk_05",
+          "prompt": "¿Qué estadística alimenta principalmente tu afinidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Speed",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Defense",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw023_talk_06",
+          "prompt": "¿Qué rareza tienes?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "SR",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "R",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "SSR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw023_talk_07",
+          "prompt": "¿Cuál es tu estadística más alta actualmente?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Speed",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Defense",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw023_talk_08",
+          "prompt": "¿Cuál es tu segunda estadística más alta?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Defense",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Speed",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Power",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw023_talk_09",
+          "prompt": "¿Qué preset corporal usa tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "athletic",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "balanced",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw023_talk_10",
+          "prompt": "¿Qué estilo de uniforme aparece en tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "sporty",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "standard",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "character_id": "bw024",
+      "conversations": [
+        {
+          "id": "bw024_talk_01",
+          "prompt": "¿Cómo te llamas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Nene Kagetsu",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "La entrenadora del rival",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "La gerente del estadio",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw024_talk_02",
+          "prompt": "¿Cuál es tu elemento?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "fire",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "neutral",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "darkness",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw024_talk_03",
+          "prompt": "¿Qué posición juegas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "P",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "P",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r3",
+              "text": "CF",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw024_talk_04",
+          "prompt": "¿Cuál es tu especialidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Pitcher",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Pitcher",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r3",
+              "text": "Runner / robo",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw024_talk_05",
+          "prompt": "¿Qué estadística alimenta principalmente tu afinidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Pitch",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Control",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw024_talk_06",
+          "prompt": "¿Qué rareza tienes?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "UR",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "R",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "SSR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw024_talk_07",
+          "prompt": "¿Cuál es tu estadística más alta actualmente?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Stamina",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Control",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw024_talk_08",
+          "prompt": "¿Cuál es tu segunda estadística más alta?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Control",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Power",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw024_talk_09",
+          "prompt": "¿Qué preset corporal usa tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "power",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "balanced",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "athletic",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw024_talk_10",
+          "prompt": "¿Qué estilo de uniforme aparece en tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "standard",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "sporty",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "character_id": "bw025",
+      "conversations": [
+        {
+          "id": "bw025_talk_01",
+          "prompt": "¿Cómo te llamas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Itsuki Kogane",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "La entrenadora del rival",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "La gerente del estadio",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw025_talk_02",
+          "prompt": "¿Cuál es tu elemento?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "ice",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "neutral",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "darkness",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw025_talk_03",
+          "prompt": "¿Qué posición juegas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "2B",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw025_talk_04",
+          "prompt": "¿Cuál es tu especialidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Defensa",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw025_talk_05",
+          "prompt": "¿Qué estadística alimenta principalmente tu afinidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Defense",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw025_talk_06",
+          "prompt": "¿Qué rareza tienes?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "SR",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "R",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "SSR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw025_talk_07",
+          "prompt": "¿Cuál es tu estadística más alta actualmente?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Defense",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw025_talk_08",
+          "prompt": "¿Cuál es tu segunda estadística más alta?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Stamina",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Defense",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Power",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw025_talk_09",
+          "prompt": "¿Qué preset corporal usa tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "athletic",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "balanced",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw025_talk_10",
+          "prompt": "¿Qué estilo de uniforme aparece en tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "sleeveless",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "standard",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "sporty",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "character_id": "bw026",
+      "conversations": [
+        {
+          "id": "bw026_talk_01",
+          "prompt": "¿Cómo te llamas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Ema Kuroyuri",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "La entrenadora del rival",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "La gerente del estadio",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw026_talk_02",
+          "prompt": "¿Cuál es tu elemento?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "nature",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "neutral",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "darkness",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw026_talk_03",
+          "prompt": "¿Qué posición juegas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "3B",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw026_talk_04",
+          "prompt": "¿Cuál es tu especialidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Contact / técnica",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw026_talk_05",
+          "prompt": "¿Qué estadística alimenta principalmente tu afinidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Contact",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw026_talk_06",
+          "prompt": "¿Qué rareza tienes?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "SSR",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "R",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw026_talk_07",
+          "prompt": "¿Cuál es tu estadística más alta actualmente?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Contact",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw026_talk_08",
+          "prompt": "¿Cuál es tu segunda estadística más alta?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Stamina",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Contact",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Power",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw026_talk_09",
+          "prompt": "¿Qué preset corporal usa tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "curvy",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "balanced",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "athletic",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw026_talk_10",
+          "prompt": "¿Qué estilo de uniforme aparece en tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "standard",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "sporty",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "character_id": "bw027",
+      "conversations": [
+        {
+          "id": "bw027_talk_01",
+          "prompt": "¿Cómo te llamas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Hotaru Kazehaya",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "La entrenadora del rival",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "La gerente del estadio",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw027_talk_02",
+          "prompt": "¿Cuál es tu elemento?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "lightning",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "neutral",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "darkness",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw027_talk_03",
+          "prompt": "¿Qué posición juegas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "LF",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw027_talk_04",
+          "prompt": "¿Cuál es tu especialidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Contact / técnica",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw027_talk_05",
+          "prompt": "¿Qué estadística alimenta principalmente tu afinidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Contact",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Speed",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw027_talk_06",
+          "prompt": "¿Qué rareza tienes?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "SR",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "R",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "SSR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw027_talk_07",
+          "prompt": "¿Cuál es tu estadística más alta actualmente?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Contact",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Speed",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw027_talk_08",
+          "prompt": "¿Cuál es tu segunda estadística más alta?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Speed",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Contact",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Power",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw027_talk_09",
+          "prompt": "¿Qué preset corporal usa tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "balanced",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "athletic",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw027_talk_10",
+          "prompt": "¿Qué estilo de uniforme aparece en tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "standard",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "sporty",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "character_id": "bw028",
+      "conversations": [
+        {
+          "id": "bw028_talk_01",
+          "prompt": "¿Cómo te llamas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Aria Solis",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "La entrenadora del rival",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "La gerente del estadio",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw028_talk_02",
+          "prompt": "¿Cuál es tu elemento?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "light",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "neutral",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "darkness",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw028_talk_03",
+          "prompt": "¿Qué posición juegas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "RF",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw028_talk_04",
+          "prompt": "¿Cuál es tu especialidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Power / Home Run",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw028_talk_05",
+          "prompt": "¿Qué estadística alimenta principalmente tu afinidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Power",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Control",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw028_talk_06",
+          "prompt": "¿Qué rareza tienes?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "SSR",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "R",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw028_talk_07",
+          "prompt": "¿Cuál es tu estadística más alta actualmente?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Stamina",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Control",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw028_talk_08",
+          "prompt": "¿Cuál es tu segunda estadística más alta?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Control",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Power",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw028_talk_09",
+          "prompt": "¿Qué preset corporal usa tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "curvy",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "balanced",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "athletic",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw028_talk_10",
+          "prompt": "¿Qué estilo de uniforme aparece en tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "jacket",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "standard",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "sporty",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "character_id": "bw029",
+      "conversations": [
+        {
+          "id": "bw029_talk_01",
+          "prompt": "¿Cómo te llamas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Sena Yoru",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "La entrenadora del rival",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "La gerente del estadio",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw029_talk_02",
+          "prompt": "¿Cuál es tu elemento?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "darkness",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "neutral",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "neutral",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw029_talk_03",
+          "prompt": "¿Qué posición juegas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "SS",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw029_talk_04",
+          "prompt": "¿Cuál es tu especialidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Runner / robo",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Runner / robo",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r3",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw029_talk_05",
+          "prompt": "¿Qué estadística alimenta principalmente tu afinidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Speed",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Defense",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw029_talk_06",
+          "prompt": "¿Qué rareza tienes?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "SR",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "R",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "SSR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw029_talk_07",
+          "prompt": "¿Cuál es tu estadística más alta actualmente?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Speed",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Defense",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw029_talk_08",
+          "prompt": "¿Cuál es tu segunda estadística más alta?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Defense",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Speed",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Power",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw029_talk_09",
+          "prompt": "¿Qué preset corporal usa tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "athletic",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "balanced",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw029_talk_10",
+          "prompt": "¿Qué estilo de uniforme aparece en tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "sporty",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "standard",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "character_id": "bw030",
+      "conversations": [
+        {
+          "id": "bw030_talk_01",
+          "prompt": "¿Cómo te llamas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Kagari Homura",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "La entrenadora del rival",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "La gerente del estadio",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw030_talk_02",
+          "prompt": "¿Cuál es tu elemento?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "fire",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "neutral",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "darkness",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw030_talk_03",
+          "prompt": "¿Qué posición juegas?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "C",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "P",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw030_talk_04",
+          "prompt": "¿Cuál es tu especialidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Catcher / receptor",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Pitcher",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw030_talk_05",
+          "prompt": "¿Qué estadística alimenta principalmente tu afinidad?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Defense",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw030_talk_06",
+          "prompt": "¿Qué rareza tienes?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "UR",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "R",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "SSR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw030_talk_07",
+          "prompt": "¿Cuál es tu estadística más alta actualmente?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Defense",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Stamina",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw030_talk_08",
+          "prompt": "¿Cuál es tu segunda estadística más alta?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "Stamina",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "Defense",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "Power",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw030_talk_09",
+          "prompt": "¿Qué preset corporal usa tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "power",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "balanced",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "athletic",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        },
+        {
+          "id": "bw030_talk_10",
+          "prompt": "¿Qué estilo de uniforme aparece en tu ficha?",
+          "responses": [
+            {
+              "id": "r1",
+              "text": "standard",
+              "correct": true,
+              "charm_delta": 20
+            },
+            {
+              "id": "r2",
+              "text": "sporty",
+              "correct": false,
+              "charm_delta": 3
+            },
+            {
+              "id": "r3",
+              "text": "UR",
+              "correct": false,
+              "charm_delta": 3
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
