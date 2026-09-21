@@ -3660,3 +3660,77 @@ El avance ponderado pasa de **≈70% a ≈74%**. El incremento refleja un bloque
 ### Regla de continuidad
 
 No se vuelve a usar el arte 2D de carta como modelo de campo. Las futuras mejoras visuales deben extender la bifurcación Card Renderer / Pixel 3D Gameplay Renderer y conservar PlayerData/AvatarProfile como fuente común.
+
+
+# Revisión 32: Integración del modo Encanto y endurecimiento del prototipo 3D
+
+**Fecha:** 2026-09-21
+**Tipo:** Integración de UI / persistencia / corrección técnica.
+
+### Qué se modifica
+
+El modo Amor o Encanto pasa de lógica reutilizable a una interfaz interactiva conectada al prototipo principal:
+- se añade CharmPanel;
+- se puede abrir/cerrar con la tecla C;
+- permite recorrer las 30 personajes;
+- carga y guarda Encanto por ID;
+- presenta la siguiente charla disponible;
+- aplica la respuesta seleccionada mediante CharmSystem;
+- consume regalos mediante CharmStateStore;
+- muestra materiales restantes y límite diario.
+
+La persistencia ahora conserva:
+- Encanto por personaje;
+- progreso de las 10 conversaciones por personaje;
+- límite diario;
+- personajes conversados ese día;
+- materiales de regalos.
+
+El prototipo 3D recibe correcciones de construcción:
+- los brazos y el bate pasan a tener padres Node3D correctos;
+- el controlador restablece transformaciones entre acciones;
+- la búsqueda de acciones usa el diccionario de enum de forma estable;
+- el adapter Player3DAvatarAdapter conserva la frontera PlayerData -> AvatarProfile -> renderer 3D.
+
+### Archivos principales añadidos/modificados
+
+- game/progression/charm_state_store.gd
+- game/ui/charm_panel.gd
+- scenes/main.gd
+- game/characters/player_data.gd
+- game/characters/character_archetype_catalog.gd
+- game/avatar3d/player_3d_avatar_adapter.gd
+- game/avatar3d/pixel_3d_baseball_character.gd
+- game/avatar3d/pixel_3d_batting_controller.gd
+- docs/canon/charm-and-affection-canon-v1.md
+- docs/pixel-3d-gameplay.md
+
+### Pruebas
+
+La prueba estructural de CharmSystem sigue cubriendo:
+- cap 100;
+- bonus determinista;
+- bonus de múltiplos de 10;
+- 3 charlas diarias;
+- un personaje una vez por día;
+- consumo de materiales;
+- 10 conversaciones y una respuesta correcta.
+
+Se realizó además una validación estructural del catálogo JSON durante la generación, verificando que las 30 personajes tengan 10 conversaciones y cada una exactamente una respuesta correcta.
+
+**Runtime Godot:** no ejecutado en este entorno. No se declara prueba de ejecución.
+
+### Estado
+
+**Implementado:** modo Encanto interactivo, persistencia por personaje, progreso de diálogos, regalos finitos, 30 x 10 conversaciones, integración en la escena principal y primer renderer 3D procedural con animación de bateo.
+
+**Pendiente:** integración del inventario/economía general, adquisición real de materiales, integración completa del renderer 3D con todos los eventos del partido principal, modelos 3D finales y animaciones de producción.
+
+### Porcentaje global revisado
+
+El avance se mantiene en **≈74%**. La revisión mejora la integración y robustez del bloque, pero no se aumenta artificialmente el porcentaje porque todavía faltan economía, gacha, crianza, campaña completa, persistencia global, contenido y producción visual final.
+
+### Regla de continuidad
+
+El modo Encanto es una capa de progresión independiente del resultado del béisbol. La UI nunca decide estadísticas ni recompensas por sí misma.
+
