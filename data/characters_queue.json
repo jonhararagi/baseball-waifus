@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "character_id": "bw013",
+  "canonical": {
+    "display_name": "Kaede Arakawa",
+    "adult": true,
+    "rarity": "SSR",
+    "position": "3B",
+    "element": "darkness",
+    "specialization": "power",
+    "potential": 5,
+    "stats": {
+      "power": 74,
+      "contact": 67,
+      "speed": 55,
+      "pitch": 58,
+      "control": 66,
+      "defense": 70,
+      "critical": 14,
+      "stamina": 81
+    },
+    "identity": {
+      "archetype": "dark_elegant_slugger",
+      "style_tags": [
+        "elegant",
+        "dark",
+        "curvy",
+        "power"
+      ],
+      "play_identity": "sacrifice_power",
+      "story_status": "story_seed",
+      "story_hook": "Una bateadora orgullosa debe aprender que ayudar a otra corredora puede ser una victoria personal.",
+      "signature_action_ids": [
+        "sacrifice_bunt"
+      ],
+      "contrast": "La bateadora de fuerza elige voluntariamente una jugada que renuncia al Home Run.",
+      "skill_roles": [
+        "attack",
+        "combination"
+      ]
+    },
+    "visual": {
+      "body_preset": "power",
+      "height": 1,
+      "face_style": "sharp",
+      "skin": "#e4b08d",
+      "hair_color": "#241c2a",
+      "hair_style": "long",
+      "uniform_style": "jacket",
+      "uniform_color": "#eee8f4",
+      "accent": "#8b5cf6",
+      "eye": "#2c2034"
+    }
+  },
+  "pollinations": {
+    "base_prompt": "adult anime female baseball player, Kaede Arakawa, SSR rarity, third baseman, elegant dark-themed power slugger, curvy adult woman, sharp facial features, long very dark plum-black hair, refined baseball jacket uniform, ivory-lilac uniform palette, deep violet accents, dark violet eyes, confident mature presence, polished anime game character art, clean silhouette, centered three-quarter portrait, card-ready composition, soft studio lighting, crisp linework, detailed eyes and hair, no text, no logo, no watermark",
+    "negative_prompt": "child, teenager, loli, young-looking, chibi, male, duplicate character, extra limbs, extra fingers, malformed hands, text, logo, watermark, blurry face, cropped head, photorealistic, western comic style",
+    "expressions": {
+      "neutral": "calm neutral expression, composed gaze, relaxed mouth, controlled posture",
+      "happy": "warm confident smile, bright eyes, subtle celebratory energy, relaxed shoulders",
+      "focused": "intense competitive focus, narrowed eyes, firm mouth, ready-to-bat concentration",
+      "surprised": "clear surprise, widened eyes, slightly raised eyebrows, lips parted, restrained reaction",
+      "disappointed": "quiet disappointment, softened gaze, slight frown, controlled frustration, dignified posture"
+    },
+    "generation_notes": {
+      "output_role": "character_expression_source",
+      "expression_count": 5,
+      "preserve_identity_across_variants": true,
+      "preserve_palette_across_variants": true,
+      "preserve_silhouette_across_variants": true,
+      "no_embedded_text": true
+    }
+  }
+}
