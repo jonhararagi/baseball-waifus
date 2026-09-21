@@ -6992,3 +6992,26 @@ Se modifica exclusivamente el ciclo de vida del exportador visual y su CI. No se
 ### Avance aproximado
 
 **≈96% estructural del prototipo.** Este porcentaje no representa porcentaje de arte final, balance definitivo, validación Android ni contenido completo.
+
+
+## Revisión 71: cierre administrativo de bw005 y traspaso al pipeline bw006
+
+**Fecha:** 2026-09-21
+**Motivo:** cerrar formalmente la unidad bw005 después de la corrección del ciclo de vida de VisualQAExporter y establecer que cualquier nueva unidad de personaje se trabaja en un único commit consolidado.
+
+### Estado de bw005
+
+- bw005 / Sora Amamiya queda cerrada.
+- Los cinco SVG, la escena de presentación, la documentación y la integración CI ya estaban presentes en la unidad anterior.
+- La corrección de VisualQAExporter quedó incorporada en los commits 3bacfaa y 4e9ff044.
+- No quedan cambios funcionales pendientes de bw005 que justifiquen otra modificación de sus assets o escena.
+
+### Regla de commits adoptada
+
+A partir de esta unidad, cada personaje se entrega mediante **un único commit consolidado** que contiene sus SVG, escena de presentación, test, documentación y cambios de CI estrictamente necesarios para esa unidad.
+
+No se reescribe el historial anterior para evitar alterar commits ya publicados.
+
+### Estado
+
+**bw005 cerrado. Próxima unidad: bw006.**
