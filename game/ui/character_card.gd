@@ -156,6 +156,15 @@ func _apply_player(player: PlayerData, portrait_path: String) -> void:
 		path = "res://assets/characters/generated/%s.svg" % player.id
 	if ResourceLoader.exists(path):
 		portrait.texture = load(path)
+	_play_entry_animation()
+
+func _play_entry_animation() -> void:
+	modulate = Color(1, 1, 1, 0)
+	scale = Vector2(0.97, 0.97)
+	var tween := create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(self, "modulate", Color.WHITE, 0.22)
+	tween.tween_property(self, "scale", Vector2.ONE, 0.28).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 func _apply_panel_style(rarity: String) -> void:
 	var style: Dictionary = RARITY_STYLES.get(rarity, RARITY_STYLES["R"])
