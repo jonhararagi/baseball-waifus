@@ -1,6 +1,8 @@
 class_name PlayerProgressStore
 extends RefCounted
 
+const RosterClass = preload("res://game/characters/character_roster_store.gd")
+
 ## Local authoritative progression/inventory state.
 ## Offline-first: no network, SDK, API or remote authority.
 ## Owns player energy, materials and per-character energy.
@@ -52,83 +54,16 @@ func get_material_count(item_id: String) -> int:
 	return maxi(0, int(state.get("materials", {}).get(item_id, 0)))
 
 func get_character_energy(character_id: String) -> int:
-	_ensure_loaded()
-	if character_id.is_empty():
-		return 0
-	_apply_passive_regeneration(int(Time.get_unix_time_from_system()))
-	return int(state.get("character_energy", {}).get(character_id, DEFAULT_CHARACTER_ENERGY))
-
-func add_player_energy(amount: int) -> Dictionary:
-	_ensure_loaded()
-	_apply_passive_regeneration(int(Time.get_unix_time_from_system()))
-	var snapshot_state := state.duplicate(true)
-	if amount <= 0:
-		return {"ok": false, "reason": "invalid_amount"}
-	var before := get_player_energy()
-	var after := clampi(before + amount, 0, MAX_PLAYER_ENERGY)
-	state["player_energy"] = after
-	state["player_energy_last_regen_unix"] = int(Time.get_unix_time_from_system())
-	return _commit_change("player_energy", before, after, snapshot_state)
-
-func add_material(item_id: String, amount: int) -> Dictionary:
-	_ensure_loaded()
-	var snapshot_state := state.duplicate(true)
-	if item_id.is_empty() or amount <= 0:
-		return {"ok": false, "reason": "invalid_material"}
-	var materials: Dictionary = state.get("materials", {})
-	var before := maxi(0, int(materials.get(item_id, 0)))
-	var after := before + amount
-	materials[item_id] = after
-	state["materials"] = materials
-	return _commit_change("material:" + item_id, before, after, snapshot_state)
+	var roster := RosterClass.new()
+	return roster.get_character_energy(character_id)
 
 func add_character_energy(character_id: String, amount: int) -> Dictionary:
-	_ensure_loaded()
-	_apply_passive_regeneration(int(Time.get_unix_time_from_system()))
-	var snapshot_state := state.duplicate(true)
-	if character_id.is_empty() or amount <= 0:
-		return {"ok": false, "reason": "invalid_character"}
-	var energies: Dictionary = state.get("character_energy", {})
-	var before := clampi(int(energies.get(character_id, DEFAULT_CHARACTER_ENERGY)), 0, MAX_CHARACTER_ENERGY)
-	var after := clampi(before + amount, 0, MAX_CHARACTER_ENERGY)
-	energies[character_id] = after
-	state["character_energy"] = energies
-	var regen_times: Dictionary = state.get("character_energy_last_regen_unix", {})
-	regen_times[character_id] = int(Time.get_unix_time_from_system())
-	state["character_energy_last_regen_unix"] = regen_times
-	return _commit_change("character_energy:" + character_id, before, after, snapshot_state)
-
-func consume_player_energy(amount: int) -> Dictionary:
-	_ensure_loaded()
-	_apply_passive_regeneration(int(Time.get_unix_time_from_system()))
-	var snapshot_state := state.duplicate(true)
-	if amount <= 0:
-		return {"ok": false, "reason": "invalid_amount"}
-	var before := get_player_energy()
-	if before < amount:
-		return {"ok": false, "reason": "insufficient_energy", "current": before}
-	var after := before - amount
-	state["player_energy"] = after
-	state["player_energy_last_regen_unix"] = int(Time.get_unix_time_from_system())
-	return _commit_change("player_energy", before, after, snapshot_state)
+	var roster := RosterClass.new()
+	return roster.add_character_energy(character_id, amount)
 
 func consume_character_energy(character_id: String, amount: int) -> Dictionary:
-	_ensure_loaded()
-	_apply_passive_regeneration(int(Time.get_unix_time_from_system()))
-	var snapshot_state := state.duplicate(true)
-	if character_id.is_empty() or amount <= 0:
-		return {"ok": false, "reason": "invalid_request"}
-	var before := get_character_energy(character_id)
-	if before < amount:
-		return {"ok": false, "reason": "insufficient_energy", "current": before}
-	var energies: Dictionary = state.get("character_energy", {})
-	var after := before - amount
-	energies[character_id] = after
-	state["character_energy"] = energies
-	var regen_times: Dictionary = state.get("character_energy_last_regen_unix", {})
-	regen_times[character_id] = int(Time.get_unix_time_from_system())
-	state["character_energy_last_regen_unix"] = regen_times
-	return _commit_change("character_energy:" + character_id, before, after, snapshot_state)
+	var roster := RosterClass.new()
+	return roster.consume_character_energy(character_id, amount)
 
 func snapshot() -> Dictionary:
 	_ensure_loaded()
