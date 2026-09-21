@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a1020">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Baseball Waifus Telegram Mini App">
+  <title>Baseball Waifus</title>
+  <link rel="stylesheet" href="./css/style.css">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar" aria-label="Baseball Waifus status">
+      <div class="brand-lockup">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 64 64" role="presentation">
+            <circle cx="32" cy="32" r="26" fill="none" stroke="currentColor" stroke-width="4"/>
+            <path d="M20 17c7 9 12 15 25 18M17 44c11-1 17 3 26 10" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="brand-name">BASEBALL WAIFUS</div>
+          <div class="brand-subtitle">TACTICAL BASEBALL COLLECTION</div>
+        </div>
+      </div>
+      <div id="connection-state" class="connection-state" role="status" aria-live="polite">Preparing match</div>
+    </header>
+
+    <section class="combat-shell" aria-label="Baseball combat presentation">
+      <canvas id="combat-canvas" class="combat-canvas" aria-label="Baseball Waifus match canvas"></canvas>
+
+      <div id="cutin" class="cutin" aria-hidden="true">
+        <div class="cutin-backdrop"></div>
+        <div class="cutin-panel">
+          <div class="cutin-copy">
+            <div id="cutin-eyebrow" class="cutin-eyebrow">GAME EVENT</div>
+            <div id="cutin-title" class="cutin-title">RESULT</div>
+            <div id="cutin-detail" class="cutin-detail"></div>
+          </div>
+          <div class="cutin-portrait-wrap">
+            <img id="cutin-portrait" class="cutin-portrait" alt="" decoding="async">
+          </div>
+        </div>
+      </div>
+
+      <div id="loading-state" class="loading-state" aria-live="polite">
+        <div class="loading-title">BASEBALL WAIFUS</div>
+        <div class="loading-detail">Waiting for an authoritative combat initialization payload.</div>
+      </div>
+    </section>
+
+    <section class="match-strip" aria-label="Match information">
+      <div class="match-block">
+        <span class="match-label">INNING</span>
+        <span id="match-inning" class="match-value">-</span>
+      </div>
+      <div class="match-block">
+        <span class="match-label">COUNT</span>
+        <span id="match-count" class="match-value">-</span>
+      </div>
+      <div class="match-block">
+        <span class="match-label">OUTS</span>
+        <span id="match-outs" class="match-value">-</span>
+      </div>
+      <div class="match-block score-block">
+        <span id="match-away" class="score-team">AWAY</span>
+        <span id="match-score" class="score-value">0 - 0</span>
+        <span id="match-home" class="score-team">HOME</span>
+      </div>
+    </section>
+
+    <section class="action-panel" aria-label="Match actions">
+      <button id="action-bat" class="action-button action-primary" type="button">BATEAR</button>
+      <button id="action-steal" class="action-button action-secondary" type="button">ROBAR</button>
+      <button id="action-sync" class="action-button action-quiet" type="button">ACTUALIZAR</button>
+    </section>
+
+    <footer class="footer">
+      <span>Presentation client only. Combat result authority remains server-side or inside the Godot gameplay core.</span>
+    </footer>
+  </main>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
