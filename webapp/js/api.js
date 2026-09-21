@@ -1,16 +1,22 @@
 const DEFAULT_TIMEOUT_MS = 8000;
 
-function withTimeout(promise, timeoutMs = DEFAULT_TIMEOUT_MS) {
-  let timeoutId = null;
-  const timeout = new Promise((_, reject) => {
-    timeoutId = window.setTimeout(() => reject(new Error("Request timed out")), timeoutMs);
-  });
+async function requestWithTimeout(url, options = {}, timeoutMs = DEFAULT_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
 
-  return Promise.race([promise, timeout]).finally(() => {
-    if (timeoutId !== null) {
-      window.clearTimeout(timeoutId);
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      throw new Error("Request timed out");
     }
-  });
+    throw error;
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
 }
 
 async function parseResponse(response) {
@@ -88,11 +94,12 @@ export class BaseballWaifusApi {
     }
 
     const id = encodeURIComponent(String(matchId));
-    const response = await withTimeout(
-      fetch(`${this.baseUrl}/v1/combat/${id}/init`, {
+    const response = await requestWithTimeout(
+      `${this.baseUrl}/v1/combat/${id}/init`,
+      {
         method: "GET",
         headers: this._headers()
-      }),
+      },
       this.timeoutMs
     );
 
@@ -105,8 +112,9 @@ export class BaseballWaifusApi {
     }
 
     const id = encodeURIComponent(String(matchId));
-    const response = await withTimeout(
-      fetch(`${this.baseUrl}/v1/combat/${id}/turn`, {
+    const response = await requestWithTimeout(
+      `${this.baseUrl}/v1/combat/${id}/turn`,
+      {
         method: "POST",
         headers: {
           ...this._headers(),
@@ -116,7 +124,7 @@ export class BaseballWaifusApi {
           match_id: String(matchId),
           action
         })
-      }),
+      },
       this.timeoutMs
     );
 
