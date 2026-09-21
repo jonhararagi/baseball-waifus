@@ -143,6 +143,7 @@ func apply_hit(batter: PlayerData, team_id: String, hit_bases: int) -> Dictionar
 
 	base_runners = after
 	_refresh_base_flags()
+	reset_count()
 
 	return {
 		"runs": runs,
