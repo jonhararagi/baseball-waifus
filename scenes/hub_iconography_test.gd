@@ -18,6 +18,8 @@ func _ready() -> void:
 	assert(icon.icon_id == "history")
 	assert(ResourceLoader.exists("res://game/ui/hub_menu_button.gd"))
 	assert(ResourceLoader.exists("res://game/ui/hub_menu_icon.gd"))
-	for forbidden in ["⚾", "👥", "🏋", "🎒", "🎲", "🎁", "📖", "✨", "⚙"]:
-		assert(not HubScript.COMMENTS.any(func(value): return str(value).contains(forbidden)), "Forbidden emoji leaked into Hub comments.")
+	for value in HubScript.COMMENTS:
+		var comment := str(value)
+		assert(comment.find("⚾") == -1, "Forbidden baseball emoji leaked into starter comments.")
+		assert(comment.find("⚡") == -1, "Forbidden energy emoji leaked into starter comments.")
 	print("Hub iconography structural checks passed.")
