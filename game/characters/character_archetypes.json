@@ -59,7 +59,10 @@
         "play_identity": "big_swing_threat",
         "story_status": "none",
         "signature_action_ids": [],
-        "contrast": "Su imagen de bateadora de fuerza no obliga a convertirla en una jugadora lenta o torpe."
+        "contrast": "Su imagen de bateadora de fuerza no obliga a convertirla en una jugadora lenta o torpe.",
+        "skill_roles": [
+          "attack"
+        ]
       }
     },
     {
@@ -120,7 +123,11 @@
         "signature_action_ids": [
           "tempo_freeze"
         ],
-        "contrast": "Su apariencia refinada esconde una decisión poco elegante: provocar al rival para que se precipite."
+        "contrast": "Su apariencia refinada esconde una decisión poco elegante: provocar al rival para que se precipite.",
+        "skill_roles": [
+          "power_down",
+          "combination"
+        ]
       }
     },
     {
@@ -181,7 +188,11 @@
         "signature_action_ids": [
           "hit_and_run_signal"
         ],
-        "contrast": "En vez de buscar lucirse con un swing espectacular, sacrifica protagonismo para abrir un hueco."
+        "contrast": "En vez de buscar lucirse con un swing espectacular, sacrifica protagonismo para abrir un hueco.",
+        "skill_roles": [
+          "attack",
+          "combination"
+        ]
       }
     },
     {
@@ -242,7 +253,11 @@
         "signature_action_ids": [
           "delayed_steal"
         ],
-        "contrast": "La corredora más impulsiva aprende a frenar antes de lanzarse."
+        "contrast": "La corredora más impulsiva aprende a frenar antes de lanzarse.",
+        "skill_roles": [
+          "statistic",
+          "attack"
+        ]
       }
     },
     {
@@ -303,7 +318,11 @@
         "signature_action_ids": [
           "pitchout_read"
         ],
-        "contrast": "Su aspecto imponente se expresa con control y paciencia, no con intimidación constante."
+        "contrast": "Su aspecto imponente se expresa con control y paciencia, no con intimidación constante.",
+        "skill_roles": [
+          "defense",
+          "power_down"
+        ]
       }
     },
     {
@@ -364,7 +383,11 @@
         "signature_action_ids": [
           "defensive_shift_bait"
         ],
-        "contrast": "La jugadora que parece destinada a resolver todo con fuerza utiliza posicionamiento y engaño."
+        "contrast": "La jugadora que parece destinada a resolver todo con fuerza utiliza posicionamiento y engaño.",
+        "skill_roles": [
+          "defense",
+          "combination"
+        ]
       }
     },
     {
@@ -425,7 +448,11 @@
         "signature_action_ids": [
           "disciplined_take"
         ],
-        "contrast": "La más teatral puede negarse deliberadamente a hacer swing."
+        "contrast": "La más teatral puede negarse deliberadamente a hacer swing.",
+        "skill_roles": [
+          "attack",
+          "statistic"
+        ]
       }
     },
     {
@@ -486,7 +513,11 @@
         "signature_action_ids": [
           "count_probe"
         ],
-        "contrast": "La chica silenciosa juega de forma deliberadamente provocadora para obtener información."
+        "contrast": "La chica silenciosa juega de forma deliberadamente provocadora para obtener información.",
+        "skill_roles": [
+          "statistic",
+          "power_down"
+        ]
       }
     },
     {
@@ -547,7 +578,11 @@
         "signature_action_ids": [
           "lead_feint"
         ],
-        "contrast": "Parece jugar sin tomárselo en serio, pero sus amagues obligan a la defensa a reaccionar."
+        "contrast": "Parece jugar sin tomárselo en serio, pero sus amagues obligan a la defensa a reaccionar.",
+        "skill_roles": [
+          "power_up",
+          "statistic"
+        ]
       }
     },
     {
@@ -608,7 +643,11 @@
         "signature_action_ids": [
           "count_trap"
         ],
-        "contrast": "La personalidad técnica se vuelve impredecible justo cuando el rival cree haber encontrado el patrón."
+        "contrast": "La personalidad técnica se vuelve impredecible justo cuando el rival cree haber encontrado el patrón.",
+        "skill_roles": [
+          "power_down",
+          "combination"
+        ]
       }
     },
     {
@@ -666,7 +705,11 @@
         "play_identity": "sacrifice_support",
         "story_status": "none",
         "signature_action_ids": [],
-        "contrast": "Su suavidad visual no implica falta de presencia defensiva."
+        "contrast": "Su suavidad visual no implica falta de presencia defensiva.",
+        "skill_roles": [
+          "defense",
+          "power_up"
+        ]
       }
     },
     {
@@ -727,7 +770,11 @@
         "signature_action_ids": [
           "coverage_switch"
         ],
-        "contrast": "La defensora reservada toma decisiones agresivas de cobertura cuando todos esperan que conserve su posición."
+        "contrast": "La defensora reservada toma decisiones agresivas de cobertura cuando todos esperan que conserve su posición.",
+        "skill_roles": [
+          "defense",
+          "combination"
+        ]
       }
     },
     {
@@ -788,7 +835,11 @@
         "signature_action_ids": [
           "sacrifice_bunt"
         ],
-        "contrast": "La bateadora de fuerza elige voluntariamente una jugada que renuncia al Home Run."
+        "contrast": "La bateadora de fuerza elige voluntariamente una jugada que renuncia al Home Run.",
+        "skill_roles": [
+          "attack",
+          "combination"
+        ]
       }
     },
     {
@@ -849,7 +900,11 @@
         "signature_action_ids": [
           "drag_bunt"
         ],
-        "contrast": "La corredora más rápida no siempre roba: a veces obliga a la defensa a perseguir una pelota corta."
+        "contrast": "La corredora más rápida no siempre roba: a veces obliga a la defensa a perseguir una pelota corta.",
+        "skill_roles": [
+          "attack",
+          "statistic"
+        ]
       }
     },
     {
@@ -910,7 +965,11 @@
         "signature_action_ids": [
           "sacrifice_fly_focus"
         ],
-        "contrast": "Una bateadora asociada al poder acepta buscar una pelota profunda aunque el resultado oficial sea un out."
+        "contrast": "Una bateadora asociada al poder acepta buscar una pelota profunda aunque el resultado oficial sea un out.",
+        "skill_roles": [
+          "attack",
+          "power_up"
+        ]
       }
     },
     {
@@ -971,7 +1030,11 @@
         "signature_action_ids": [
           "pickoff_check"
         ],
-        "contrast": "La pitcher callada se vuelve sorprendentemente activa contra corredores."
+        "contrast": "La pitcher callada se vuelve sorprendentemente activa contra corredores.",
+        "skill_roles": [
+          "power_down",
+          "defense"
+        ]
       }
     },
     {
@@ -1029,7 +1092,11 @@
         "play_identity": "situational_hitter",
         "story_status": "none",
         "signature_action_ids": [],
-        "contrast": "Su apariencia convencional no limita su repertorio táctico."
+        "contrast": "Su apariencia convencional no limita su repertorio táctico.",
+        "skill_roles": [
+          "power_up",
+          "statistic"
+        ]
       }
     },
     {
@@ -1090,7 +1157,11 @@
         "signature_action_ids": [
           "relay_chain"
         ],
-        "contrast": "La defensora que parece relajada convierte una recuperación ordinaria en una cadena defensiva precisa."
+        "contrast": "La defensora que parece relajada convierte una recuperación ordinaria en una cadena defensiva precisa.",
+        "skill_roles": [
+          "defense",
+          "combination"
+        ]
       }
     },
     {
@@ -1151,7 +1222,11 @@
         "signature_action_ids": [
           "hit_and_run_brawl"
         ],
-        "contrast": "La jugadora más frontal utiliza una jugada coordinada que depende de confiar en otra compañera."
+        "contrast": "La jugadora más frontal utiliza una jugada coordinada que depende de confiar en otra compañera.",
+        "skill_roles": [
+          "attack",
+          "combination"
+        ]
       }
     },
     {
@@ -1212,7 +1287,11 @@
         "signature_action_ids": [
           "delayed_steal_read"
         ],
-        "contrast": "La introvertida evita llamar la atención y precisamente por eso encuentra el momento de robar."
+        "contrast": "La introvertida evita llamar la atención y precisamente por eso encuentra el momento de robar.",
+        "skill_roles": [
+          "power_down",
+          "statistic"
+        ]
       }
     },
     {
@@ -1270,7 +1349,11 @@
         "play_identity": "pitchout_trap",
         "story_status": "none",
         "signature_action_ids": [],
-        "contrast": "Su aire relajado no significa que improvise sin plan."
+        "contrast": "Su aire relajado no significa que improvise sin plan.",
+        "skill_roles": [
+          "defense",
+          "power_down"
+        ]
       }
     },
     {
@@ -1331,7 +1414,11 @@
         "signature_action_ids": [
           "drawn_in_infield"
         ],
-        "contrast": "La defensora de fuerza juega deliberadamente más cerca del bateador, exponiéndose para proteger home."
+        "contrast": "La defensora de fuerza juega deliberadamente más cerca del bateador, exponiéndose para proteger home.",
+        "skill_roles": [
+          "defense",
+          "power_up"
+        ]
       }
     },
     {
@@ -1392,7 +1479,11 @@
         "signature_action_ids": [
           "aggressive_extra_base"
         ],
-        "contrast": "La imagen de idol cuidadosamente ensayada se rompe cuando improvisa una carrera extra."
+        "contrast": "La imagen de idol cuidadosamente ensayada se rompe cuando improvisa una carrera extra.",
+        "skill_roles": [
+          "attack",
+          "statistic"
+        ]
       }
     },
     {
@@ -1453,7 +1544,11 @@
         "signature_action_ids": [
           "pressure_sequence"
         ],
-        "contrast": "La ace de fuego aprende a ganar con contención en vez de fuerza bruta."
+        "contrast": "La ace de fuego aprende a ganar con contención en vez de fuerza bruta.",
+        "skill_roles": [
+          "power_down",
+          "attack"
+        ]
       }
     },
     {
@@ -1514,7 +1609,11 @@
         "signature_action_ids": [
           "fundamental_double_play"
         ],
-        "contrast": "La jugadora de perfil humilde se vuelve decisiva cuando la defensa necesita una ejecución limpia."
+        "contrast": "La jugadora de perfil humilde se vuelve decisiva cuando la defensa necesita una ejecución limpia.",
+        "skill_roles": [
+          "defense",
+          "combination"
+        ]
       }
     },
     {
@@ -1575,7 +1674,11 @@
         "signature_action_ids": [
           "squeeze_play"
         ],
-        "contrast": "La bateadora serena acepta una jugada de alto riesgo y máxima coordinación."
+        "contrast": "La bateadora serena acepta una jugada de alto riesgo y máxima coordinación.",
+        "skill_roles": [
+          "combination",
+          "power_up"
+        ]
       }
     },
     {
@@ -1636,7 +1739,11 @@
         "signature_action_ids": [
           "two_strike_foul_control"
         ],
-        "contrast": "La más inquieta del grupo aprende a alargar deliberadamente el turno."
+        "contrast": "La más inquieta del grupo aprende a alargar deliberadamente el turno.",
+        "skill_roles": [
+          "statistic",
+          "attack"
+        ]
       }
     },
     {
@@ -1697,7 +1804,11 @@
         "signature_action_ids": [
           "team_first_hit"
         ],
-        "contrast": "La estrella acepta sacrificar protagonismo para fabricar una carrera."
+        "contrast": "La estrella acepta sacrificar protagonismo para fabricar una carrera.",
+        "skill_roles": [
+          "power_up",
+          "combination"
+        ]
       }
     },
     {
@@ -1758,7 +1869,11 @@
         "signature_action_ids": [
           "silent_steal"
         ],
-        "contrast": "La chica que evita el contacto social se convierte en la corredora más agresiva cuando está sola entre bases."
+        "contrast": "La chica que evita el contacto social se convierte en la corredora más agresiva cuando está sola entre bases.",
+        "skill_roles": [
+          "attack",
+          "statistic"
+        ]
       }
     },
     {
@@ -1819,7 +1934,11 @@
         "signature_action_ids": [
           "catcher_read"
         ],
-        "contrast": "La figura de mando tiene que ceder control y confiar en otra jugadora."
+        "contrast": "La figura de mando tiene que ceder control y confiar en otra jugadora.",
+        "skill_roles": [
+          "defense",
+          "combination"
+        ]
       }
     }
   ],
