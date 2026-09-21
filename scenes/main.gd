@@ -11,6 +11,7 @@ var ai := OpponentAI.new()
 var runner_system := RunnerSystem.new()
 var fielding_resolver := FieldingResolver.new()
 var throw_resolver := ThrowResolver.new()
+var defensive_runner_resolver := DefensiveRunnerResolver.new()
 var rng := RandomNumberGenerator.new()
 
 var avatar_presenter: AvatarMatchPresenter
@@ -273,6 +274,17 @@ func _swing() -> void:
 		current_result["bases"] = int(fielding_result.get("bases", 1))
 		current_result["fielding"] = fielding_result
 
+		if not bool(fielding_result.get("double_play", {}).get("success", false)):
+			var runner_play := defensive_runner_resolver.resolve(
+				fielding_result,
+				state.base_runners,
+				state.outs,
+				rng
+			)
+			current_result["fielding"]["runner_play"] = runner_play
+			if str(runner_play.get("final_result", "")) == "FORCE OUT" or str(runner_play.get("final_result", "")) == "RUNDOWN OUT":
+				current_result["result"] = str(runner_play["final_result"])
+
 		var double_play: Dictionary = fielding_result.get("double_play", {})
 		if bool(double_play.get("success", false)):
 			fielding_play = FieldingPlayEvent.from_resolution(ball_event, fielding_result)
@@ -335,6 +347,24 @@ func _apply_batting_result(result: Dictionary) -> void:
 				state.remove_base_runner(0)
 				state.add_outs(2)
 				state.advance_lineup(batting_team_index)
+		"FORCE OUT":
+			var runner_play: Dictionary = result.get("fielding", {}).get("runner_play", {})
+			var force_index := int(runner_play.get("force_runner_index", -1))
+			var force_data := state.apply_force_out(force_index, batter, _team_for_batting().team_id)
+			if bool(force_data.get("applied", false)):
+				result["runner_play_state"] = force_data
+				state.add_out()
+				state.advance_lineup(batting_team_index)
+		"RUNDOWN OUT":
+			var rundown_play: Dictionary = result.get("fielding", {}).get("runner_play", {})
+			var rundown_index := int(rundown_play.get("rundown_runner_index", -1))
+			var rundown_data := state.apply_rundown_out(rundown_index)
+			if bool(rundown_data.get("applied", false)):
+				result["runner_play_state"] = rundown_data
+				state.add_out()
+				state.advance_lineup(batting_team_index)
+		"SAFE":
+			result["runner_play_state"] = result.get("fielding", {}).get("runner_play", {}).get("slide", {})
 		"SINGLE", "DOUBLE", "TRIPLE", "HOME RUN", "FIELDING ERROR":
 			var hit_data := state.apply_hit(batter, _team_for_batting().team_id, int(result.get("bases", 1)))
 			result["hit_plan"] = hit_data
