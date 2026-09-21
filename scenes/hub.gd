@@ -31,7 +31,6 @@ var panel_title: Label
 var panel_body: Label
 var panel_actions: HBoxContainer
 var campaign_map: BaseballCampaignMapView
-var comment_label: Label
 var energy_label: Label
 var coin_label: Label
 var level_label: Label
@@ -234,7 +233,6 @@ func _refresh_account() -> void:
 
 func _next_comment() -> void:
 	comment_index = (comment_index + 1) % COMMENT_LIMIT
-	comment_label.text = COMMENTS[comment_index]
 	if starter_card != null:
 		starter_card.set_comment(COMMENTS[comment_index])
 
