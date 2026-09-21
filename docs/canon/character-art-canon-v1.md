@@ -220,3 +220,25 @@ Pipeline visual actualizado:
 PlayerData -> PlayerAvatarAdapter -> AvatarProfile -> { 2D Card Renderer | Pixel 3D Gameplay Renderer }
 
 El arte 2D y el modelo 3D son dos representaciones del mismo personaje, no dos fuentes de identidad.
+
+
+## 14. Dirección 2D animada y 3D estilizada
+
+La dirección de presentación queda ampliada sin crear una segunda fuente de identidad:
+
+- 2D animado para roster, fichas, colección y escenas de presentación.
+- 3D anime estilizado para el gameplay de campo.
+
+El 2D utiliza el renderer procedural existente y el nuevo generador determinista `tools/character_ai/generate_motion_svg_roster.py`, con frames IDLE, READY, SWING y RUN.
+
+El 3D utiliza `Pixel3DBaseballCharacter` como backend procedural de prototipo. La geometría ahora incluye cabeza, cabello, ojos, uniforme, falda, extremidades, calzado, bate y gorra.
+
+Ambos caminos parten de `AvatarProfile`. La diferencia es de representación, no de identidad.
+
+Estas implementaciones son prototipos reemplazables. El arte final podrá sustituirlas por ilustraciones, sprite sheets, rig 2D o modelos 3D de producción sin modificar PlayerData ni la lógica del partido.
+
+## 15. Regla de continuidad visual
+
+Las referencias de presentación de juegos comerciales pueden utilizarse para describir objetivos de calidad o lenguaje de animación, pero no son fuentes de assets ni de código.
+
+El proyecto busca una presentación anime deportiva propia, adulta, colorida y orientada a colección. La dirección no copia personajes, modelos, texturas, rigs, animaciones ni identidad visual propietaria de otras franquicias.
