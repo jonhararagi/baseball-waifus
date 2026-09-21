@@ -35,6 +35,8 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_PASS
 	_build_style()
 	_build_layout()
+	if not character_id.is_empty():
+		_refresh()
 
 func setup(target_character_id: String, target_player: PlayerData = null) -> void:
 	assert(target_character_id == "bw001", "CharacterShowcaseCard phase 1 is intentionally limited to bw001.")
@@ -87,13 +89,19 @@ func _build_layout() -> void:
 	portrait_frame.add_theme_stylebox_override("panel", frame_style)
 	add_child(portrait_frame)
 
+	var rarity_badge := Panel.new()
+	rarity_badge.position = Vector2(28, 28)
+	rarity_badge.size = Vector2(54, 40)
+	rarity_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rarity_badge.add_theme_stylebox_override("panel", _pill_style("#9b552f", "#f7d27b", 16))
+	add_child(rarity_badge)
+
 	rarity_label = _make_label("R", 22, Color("#fff3d0"))
-	rarity_label.position = Vector2(28, 28)
-	rarity_label.size = Vector2(54, 40)
+	rarity_label.position = Vector2(0, 0)
+	rarity_label.size = rarity_badge.size
 	rarity_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	rarity_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	rarity_label.add_theme_stylebox_override("normal", _pill_style("#9b552f", "#f7d27b", 16))
-	add_child(rarity_label)
+	rarity_badge.add_child(rarity_label)
 
 	level_label = _make_label("LV. 1", 14, Color("#dfe8ff"))
 	level_label.position = Vector2(318, 33)
@@ -199,7 +207,7 @@ func _refresh() -> void:
 
 func _clear_stat_rows() -> void:
 	for child in stat_rows.get_children():
-		child.queue_free()
+		child.free()
 
 func _add_stat_row(stat_name: String, value: int) -> void:
 	var row := Control.new()
