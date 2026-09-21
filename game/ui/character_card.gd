@@ -194,24 +194,24 @@ func _build() -> void:
 
 	portrait_frame = Control.new()
 	portrait_frame.name = "PortraitArea"
-	portrait_frame.custom_minimum_size = Vector2(400, 330)
+	portrait_frame.custom_minimum_size = Vector2(400, 260)
 	root.add_child(portrait_frame)
 
 	portrait = TextureRect.new()
 	portrait.name = "Portrait"
-	portrait.position = Vector2(46, 8)
-	portrait.size = Vector2(308, 308)
+	portrait.position = Vector2(76, 4)
+	portrait.size = Vector2(248, 248)
 	portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	portrait.pivot_offset = Vector2(154, 154)
+	portrait.pivot_offset = Vector2(124, 124)
 	portrait.modulate = Color.WHITE
 	portrait_frame.add_child(portrait)
 
 	var frame := Panel.new()
 	frame.name = "PortraitFrame"
-	frame.position = Vector2(36, 0)
-	frame.size = Vector2(328, 320)
+	frame.position = Vector2(70, 0)
+	frame.size = Vector2(260, 252)
 	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	portrait_frame.add_child(frame)
 	portrait_frame.move_child(frame, 0)
@@ -225,7 +225,7 @@ func _build() -> void:
 	portrait_frame.add_child(rarity_badge)
 
 	element_icon = CardElementIcon.new()
-	element_icon.position = Vector2(342, 12)
+	element_icon.position = Vector2(342, 10)
 	element_icon.size = Vector2(42, 42)
 	element_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	portrait_frame.add_child(element_icon)
@@ -253,7 +253,7 @@ func _build() -> void:
 	identity_label = _label("", 11, Color.WHITE)
 	identity_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	identity_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	identity_label.custom_minimum_size = Vector2(0, 28)
+	identity_label.custom_minimum_size = Vector2(0, 22)
 	root.add_child(identity_label)
 
 	var stats_grid := GridContainer.new()
@@ -267,12 +267,12 @@ func _build() -> void:
 		var stat_key: String = entry[0]
 		var stat_short: String = entry[1]
 		var row := HBoxContainer.new()
-		row.custom_minimum_size = Vector2(188, 22)
+		row.custom_minimum_size = Vector2(188, 18)
 		var label := _label(stat_short, 10, Color("#aebbd3"))
-		label.custom_minimum_size = Vector2(34, 20)
+		label.custom_minimum_size = Vector2(34, 18)
 		row.add_child(label)
 		var bar := ProgressBar.new()
-		bar.custom_minimum_size = Vector2(140, 15)
+		bar.custom_minimum_size = Vector2(140, 12)
 		bar.max_value = 100.0
 		bar.show_percentage = false
 		bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -283,7 +283,7 @@ func _build() -> void:
 	comment_label = _label("", 10, Color("#dce5f7"))
 	comment_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	comment_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	comment_label.custom_minimum_size = Vector2(0, 34)
+	comment_label.custom_minimum_size = Vector2(0, 30)
 	root.add_child(comment_label)
 
 func _apply_player(player: PlayerData, portrait_path: String) -> void:
@@ -321,7 +321,7 @@ func _apply_player(player: PlayerData, portrait_path: String) -> void:
 		identity = "BASEBALL PLAYER"
 	identity_label.add_theme_color_override("font_color", Color("#dce5f7"))
 	identity_label.text = identity
-	identity_label.add_theme_color_override("font_color", Color("#dce5f7"))
+
 
 	for entry in STAT_ORDER:
 		var stat_key: String = entry[0]
