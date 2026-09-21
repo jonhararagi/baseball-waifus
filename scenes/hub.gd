@@ -15,7 +15,7 @@ const COMMENTS := [
 	"El equipamiento puede mejorar nuestras estadísticas sin cambiar quién soy como jugadora.",
 	"Cuando tengas más personajes, prueba combinaciones. Una buena alineación puede cambiar cómo se juega una entrada.",
 	"Si una jugada sale mal, mira el contexto antes de culpar al azar. El partido guarda sus propias reglas.",
-	"¡Ahora ve a Historia y juega una entrada! Yo me encargo de calentar el bate. ⚾"
+	"¡Ahora ve a Historia y juega una entrada! Yo me encargo de calentar el bate."
 ]
 
 var progress_store: PlayerProgressStore
@@ -36,6 +36,9 @@ var coin_label: Label
 var level_label: Label
 var panel_tween: Tween
 var starter_card: BaseballCharacterCard
+
+const HubMenuButtonClass = preload("res://game/ui/hub_menu_button.gd")
+const MENU_ICON_IDS := ["history", "team", "training", "equipment", "gacha", "inventory", "story", "events", "options"]
 
 func _ready() -> void:
 	progress_store = PlayerProgressStore.new()
@@ -94,10 +97,10 @@ func _build_ui() -> void:
 	level_label = _label("PLAYER • Aiko Hanamori", 16, Color("#f8f9ff"))
 	level_label.position = Vector2(760, 22)
 	content.add_child(level_label)
-	energy_label = _label("⚡ 100 / 100", 16, Color("#ffdf76"))
+	energy_label = _label("ENERGY 100 / 100", 16, Color("#ffdf76"))
 	energy_label.position = Vector2(900, 22)
 	content.add_child(energy_label)
-	coin_label = _label("◈ 0", 16, Color("#a9e7ff"))
+	coin_label = _label("COINS 0", 16, Color("#a9e7ff"))
 	coin_label.position = Vector2(1070, 22)
 	content.add_child(coin_label)
 
@@ -126,17 +129,17 @@ func _build_ui() -> void:
 	menu.add_theme_constant_override("v_separation", 12)
 	content.add_child(menu)
 
-	_add_menu_button(menu, "⚾ HISTORIA", "Mapa de campaña", _open_history)
-	_add_menu_button(menu, "👥 EQUIPO", "Roster y posiciones", _open_roster)
-	_add_menu_button(menu, "🏋 ENTRENAR", "Mejora de personajes", _open_training)
-	_add_menu_button(menu, "🎒 EQUIPAMIENTO", "Objetos y estadísticas", _open_equipment)
-	_add_menu_button(menu, "🎲 GACHA", "Colección", _open_gacha)
-	_add_menu_button(menu, "🎁 INVENTARIO", "Materiales y monedas", _open_inventory)
-	_add_menu_button(menu, "📖 HISTORIA", "Escenas y personajes", _open_story)
-	_add_menu_button(menu, "✨ EVENTOS", "Contenido temporal", _open_events)
-	_add_menu_button(menu, "⚙ OPCIONES", "Configuración", _open_options)
+	_add_menu_button(menu, "Historia", "Mapa de campaña", "history", _open_history)
+	_add_menu_button(menu, "Equipo", "Roster y posiciones", "team", _open_roster)
+	_add_menu_button(menu, "Entrenar", "Mejora de personajes", "training", _open_training)
+	_add_menu_button(menu, "Equipamiento", "Objetos y estadísticas", "equipment", _open_equipment)
+	_add_menu_button(menu, "Gacha", "Colección", "gacha", _open_gacha)
+	_add_menu_button(menu, "Inventario", "Materiales y monedas", "inventory", _open_inventory)
+	_add_menu_button(menu, "Crónicas", "Escenas y personajes", "story", _open_story)
+	_add_menu_button(menu, "Eventos", "Contenido temporal", "events", _open_events)
+	_add_menu_button(menu, "Opciones", "Configuración", "options", _open_options)
 
-	var play := _button("⚾  CONTINUAR / JUGAR", 740, 68)
+	var play := _button("CONTINUAR / JUGAR", 740, 68)
 	play.position = Vector2(500, 470)
 	play.add_theme_font_size_override("font_size", 21)
 	play.pressed.connect(_open_history)
@@ -181,12 +184,12 @@ func _build_ui() -> void:
 	close.pressed.connect(_close_panel)
 	panel_actions.add_child(close)
 
-func _add_menu_button(parent: GridContainer, title: String, sub: String, action: Callable) -> void:
-	var button := _button(title + "
-" + sub, 232, 98)
-	button.add_theme_font_size_override("font_size", 17)
-	button.pressed.connect(action)
-	parent.add_child(button)
+func _add_menu_button(parent: GridContainer, title: String, sub: String, icon_id: String, action: Callable) -> void:
+	var menu_button := HubMenuButtonClass.new()
+	menu_button.setup(title, sub, icon_id)
+	menu_button.custom_minimum_size = Vector2(232, 98)
+	menu_button.pressed.connect(action)
+	parent.add_child(menu_button)
 
 func _button(text_value: String, width: float, height: float) -> Button:
 	var b := Button.new()
