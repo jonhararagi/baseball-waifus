@@ -31,7 +31,7 @@ func resolve(event: BattedBallEvent, defensive_roster: Dictionary, timing_value:
 	if defender == null:
 		return _miss_result("missing_defender")
 
-	var defense_base := {"defense": int(defender.defense)}
+	var defense_base := {"defense": int(defender.effective_stat("defense"))}
 	var effective_defense := equipment_stat_adapter.get_stat(defender.id, "defense", defense_base, roster)
 	var defense_score := clamp(effective_defense / 120.0, 0.0, 1.0)
 	var target_position: Vector2 = FIELD_POSITIONS.get(defender_position, event.target)
