@@ -3,6 +3,7 @@ extends Node2D
 const BALL_START := Vector2(610, 350)
 const BATTER_POS := Vector2(1040, 430)
 const CATCHER_POS := Vector2(1035, 485)
+const TIMING_WINDOW_SECONDS := 1.0
 
 var simulator := BaseballSimulator.new()
 var state := BaseballGameState.new()
@@ -26,6 +27,7 @@ var current_pitch: Pitch
 var pitch_elapsed := 0.0
 var timing_value := 0.0
 var timing_direction := 1.0
+var timing_elapsed := 0.0
 var phase := "PITCH_SELECT"
 var result_timer := 0.0
 var current_result := {}
@@ -165,14 +167,23 @@ func _start_pitch() -> void:
 
 func _update_pitch(delta: float) -> void:
 	pitch_elapsed += delta
-	if pitch_elapsed >= 1.55 / current_pitch.speed:
-		phase = "TIMING"
-		timing_value = 0.0
-		timing_direction = 1.0
-		ball_controller.stop()
-		avatar_presenter.on_timing_started()
+	if pitch_elapsed < 1.55 / current_pitch.speed:
+		return
+
+	var pitch_result := simulator.resolve_pitch(pitcher, current_pitch, rng)
+	if str(pitch_result.get("result", "")) == "BALL":
+		_finish_ball(pitch_result)
+		return
+
+	phase = "TIMING"
+	timing_value = 0.0
+	timing_direction = 1.0
+	timing_elapsed = 0.0
+	ball_controller.stop()
+	avatar_presenter.on_timing_started()
 
 func _update_timing(delta: float) -> void:
+	timing_elapsed += delta
 	timing_value += delta * timing_direction * 1.25
 	if timing_value >= 1.0:
 		timing_value = 1.0
@@ -181,6 +192,46 @@ func _update_timing(delta: float) -> void:
 		timing_value = 0.0
 		timing_direction = 1.0
 	_get_hud().show_timing(timing_value)
+
+	if timing_elapsed >= TIMING_WINDOW_SECONDS:
+		_finish_called_strike()
+
+func _finish_ball(pitch_result: Dictionary) -> void:
+	var batting_team_index := state.team_batting()
+	var current_batter := batter
+	var ball_plan := state.apply_ball(current_batter, _team_for_batting().team_id)
+	current_result = pitch_result.duplicate()
+	current_result["result"] = "WALK" if bool(ball_plan.get("walk", false)) else "BALL"
+	current_result["balls"] = state.balls
+	current_result["runs_scored"] = int(ball_plan.get("runs", 0))
+	current_result["hit_plan"] = ball_plan
+	current_result["batting_team"] = batting_team_index
+	if bool(ball_plan.get("walk", false)):
+		state.advance_lineup(batting_team_index)
+
+	ball_controller.stop()
+	ball_controller.play_miss_to_catcher(BATTER_POS, CATCHER_POS)
+	avatar_presenter.on_batting_result(current_result)
+	field_avatar_presenter.sync_runners(state.base_runners)
+	field_avatar_presenter.animate_hit(ball_plan["plan"], ball_plan["after_runners"], current_batter)
+	_get_hud().show_result(current_result)
+	phase = "RESULT"
+	result_timer = 1.5
+
+func _finish_called_strike() -> void:
+	if phase != "TIMING":
+		return
+	var batting_team_index := state.team_batting()
+	current_result = {"result": "STRIKE", "bases": 0, "timing": "BAD", "called_strike": true}
+	state.strikes += 1
+	if state.strikes >= 3:
+		state.add_out()
+		state.advance_lineup(batting_team_index)
+	_get_hud().show_result(current_result)
+	avatar_presenter.on_batting_result(current_result)
+	ball_controller.play_miss_to_catcher(BATTER_POS, CATCHER_POS)
+	phase = "RESULT"
+	result_timer = 1.2
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch and event.pressed:
@@ -199,6 +250,8 @@ func _input(event: InputEvent) -> void:
 		input_router.request_steal()
 
 func _swing() -> void:
+	if phase != "TIMING":
+		return
 	var preliminary_result := simulator.resolve_batted_ball(batter, pitcher, current_pitch, timing_value, rng)
 	var ball_event := BattedBallEvent.from_result(preliminary_result, BATTER_POS, rng.randi())
 	var fielding_result: Dictionary = {}
@@ -261,31 +314,32 @@ func _swing() -> void:
 
 func _apply_batting_result(result: Dictionary) -> void:
 	var result_name := str(result.get("result", ""))
+	var batting_team_index := state.team_batting()
 	match result_name:
 		"STRIKE":
 			state.strikes += 1
 			if state.strikes >= 3:
 				state.add_out()
-				state.advance_lineup()
+				state.advance_lineup(batting_team_index)
 		"FOUL":
 			if state.strikes < 2:
 				state.strikes += 1
 		"OUT":
 			state.add_out()
-			state.advance_lineup()
+			state.advance_lineup(batting_team_index)
 		"DOUBLE PLAY":
 			var double_play: Dictionary = result.get("fielding", {}).get("double_play", {})
 			if bool(double_play.get("success", false)):
 				state.remove_base_runner(0)
-			state.add_outs(2)
-			state.advance_lineup()
+				state.add_outs(2)
+				state.advance_lineup(batting_team_index)
 		"SINGLE", "DOUBLE", "TRIPLE", "HOME RUN", "FIELDING ERROR":
 			var hit_data := state.apply_hit(batter, _team_for_batting().team_id, int(result.get("bases", 1)))
 			result["hit_plan"] = hit_data
 			result["runs_scored"] = hit_data["runs"]
-			state.score[state.team_batting()] += int(hit_data["runs"])
+			state.score[batting_team_index] += int(hit_data["runs"])
 			state.reset_count()
-			state.advance_lineup()
+			state.advance_lineup(batting_team_index)
 
 func _attempt_steal() -> void:
 	var from_index := 2
