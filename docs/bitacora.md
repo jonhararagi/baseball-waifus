@@ -7699,3 +7699,74 @@ Runtime local: no ejecutado en este entorno. La prueba queda preparada para Godo
 ### Avance aproximado
 
 **≈97% estructural del prototipo.** Este porcentaje no representa porcentaje de arte final, balance definitivo, validación Android local ni contenido completo.
+
+## Revisión 67: Lote de cola visual bw016-bw020
+
+**Fecha:** 2026-09-21
+**Tipo:** Pipeline artístico data-first / generación por lote / QA estructural / CI.
+
+### Motivo
+
+Acelerar la preparación de la línea visual mediante un lote controlado de cinco unidades, manteniendo la autoridad canónica en `game/characters/character_archetypes.json` y sin modificar la cadena de presentación ni el gameplay.
+
+### Unidades
+
+- **bw016 Fuyuki Aono:** SR, P, Ice, pitcher, `reserved_ice_pitcher`, paleta azul hielo/cian.
+- **bw017 Yuzu Takahashi:** R, 2B, Light, contact, `golden_light_contact_worker`, paleta crema/oro.
+- **bw018 Koharu Nishiki:** SR, LF, Nature, defender, `green_field_guardian`, paleta verde bosque/crema, pecas como rasgo visual.
+- **bw019 Chika Raikou:** SSR, RF, Lightning, power, `electric_athletic_brawler`, paleta grafito/blanco/oro eléctrico.
+- **bw020 Shiori Amane:** SR, SS, Darkness, contact, `dark_quiet_contact_ghost`, paleta ciruela/lavanda.
+
+Los atributos, estadísticas, identidad y paleta se sincronizan directamente desde el catálogo canónico. No se crea una segunda fuente de verdad.
+
+### Implementado
+
+- Extensión de `data/characters_queue.json` con `batch_units` para bw016-bw020.
+- `schema_version: 1` independiente por unidad.
+- Prompt base y negative prompt por personaje.
+- Cinco expresiones de Pollinations por personaje: neutral, happy, focused, surprised, disappointed.
+- Configuración de sprite pixel-art 128x128 con fondo transparente.
+- Capas de animación 2D por corte con cuatro animaciones base por unidad.
+- `scenes/bw016_bw020_generation_queue_test.gd`
+- `scenes/bw016_bw020_generation_queue_test.tscn`
+- job `bw016-020-generation-queue-qa` en `.github/workflows/visual_qa.yml`.
+- El trigger de Visual QA también contempla la escena de prueba del lote.
+
+### Decisiones arquitectónicas
+
+1. `CharacterArchetypeCatalog` continúa siendo la autoridad de atributos de gameplay.
+2. `data/characters_queue.json` es exclusivamente cola de generación visual.
+3. No se modifican `CharacterExpressionController`, `BaseballCharacterCard` ni resolvers deportivos.
+4. Los prompts fuerzan personaje femenino adulto y bloquean términos de menor de edad.
+5. No se incrustan URLs, recursos externos ni branding dentro de la cola.
+6. El lote utiliza una única escena de QA para validar las cinco unidades, evitando duplicar lógica de test.
+7. La integración final en `main` se realiza mediante squash para conservar un commit consolidado del lote.
+
+### Pruebas
+
+La prueba estructural valida:
+- cinco unidades exactas y únicas;
+- `schema_version` 1;
+- sincronización con catálogo canónico;
+- ocho estadísticas;
+- identidad, acción de firma y skill roles;
+- paletas hexadecimales;
+- cinco expresiones por unidad;
+- configuración 128x128;
+- rig y capas de animación;
+- ausencia de URLs remotas.
+
+**Runtime local:** no ejecutado en este entorno. La validación runtime queda delegada al workflow de GitHub Actions.
+
+### Problemas y correcciones
+
+La cola anterior era un único objeto de unidad (`bw015`). En lugar de convertirla a un nuevo formato raíz y romper el test existente, se añadió `batch_units` como extensión compatible con la estructura previa.
+
+### Estado
+
+**Implementación de datos, QA estructural y CI completados en la rama de trabajo. Pendiente de squash merge y ejecución real de GitHub Actions sobre `main`.**
+
+### Avance aproximado
+
+**≈97% estructural del prototipo.** Este porcentaje no representa porcentaje de arte final, balance definitivo, validación Android local ni contenido completo.
+
