@@ -10,8 +10,8 @@ func resolve(play: FieldingPlayEvent, defender: PlayerData, receiver: PlayerData
 	if play == null or defender == null or receiver == null:
 		return {"error": true, "chance": 0.20, "roll": 0.0, "rule_version": RULE_VERSION, "reason": "MISSING_THROW_ACTOR"}
 
-	var defender_base := {"defense": int(defender.defense)}
-	var receiver_base := {"defense": int(receiver.defense)}
+	var defender_base := {"defense": int(defender.effective_stat("defense"))}
+	var receiver_base := {"defense": int(receiver.effective_stat("defense"))}
 	var defender_defense := equipment_stat_adapter.get_stat(defender.id, "defense", defender_base, roster)
 	var receiver_defense := equipment_stat_adapter.get_stat(receiver.id, "defense", receiver_base, roster)
 	var defense_score := clamp(defender_defense / 120.0, 0.0, 1.0)
