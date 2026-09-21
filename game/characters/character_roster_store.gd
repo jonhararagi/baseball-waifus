@@ -323,7 +323,7 @@ func _regenerate_character(character_id: String, now_unix: int) -> Dictionary:
 		return {"ok": true, "energy": energy, "ticks": 0}
 	var after := mini(ENERGY_MAX, energy + ticks)
 	record["energy"] = after
-	record["energy_last_regen_unix"] = last + ticks * PlayerProgressStore.ENERGY_REGEN_SECONDS
+	record["energy_last_regen_unix"] = last + ticks * ENERGY_REGEN_SECONDS
 	var result := _replace_character(character_id, record)
 	if result.get("ok", false):
 		result["energy"] = after
