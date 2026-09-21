@@ -86,3 +86,32 @@ El Hub incorpora una composición por capas:
 El mapa de campaña incorpora fondo vectorial original, ruta de progreso, nodos de actividad, estados bloqueados y tarjeta de Demon King. Las microanimaciones de hover son únicamente presentación y no modifican estado de gameplay.
 
 La dirección artística busca cuidado perceptible antes que volumen artificial: cada asset puede reemplazarse posteriormente por ilustración final manteniendo los mismos contratos de datos.
+
+
+## Tarjetas de personaje v1.0
+
+La tarjeta de personaje es un componente reutilizable (game/ui/character_card.gd) y no una composición específica del Hub.
+
+La rareza tiene una identidad visual explícita y separada:
+- R: marco gris/plata, contraste sobrio.
+- SR: azul claro.
+- SSR: violeta.
+- UR: dorado.
+
+La rareza cambia presentación, no estadísticas ni resultados de béisbol.
+
+Cada tarjeta presenta:
+- retrato reemplazable;
+- rareza;
+- posición;
+- elemento;
+- especialización;
+- identidad de juego;
+- estadísticas resumidas;
+- espacio opcional para comentario contextual.
+
+El retrato se carga desde el ID de personaje y puede sustituirse posteriormente por arte final sin cambiar el contrato del componente.
+
+La entrada de la tarjeta utiliza una microanimación de opacidad y escala. Es presentación pura y no modifica PlayerData, probabilidades ni estado de partido.
+
+Regla de producción: primero se valida la tarjeta y su jerarquía visual con un personaje; después se escala al resto del roster. No se crean 30 variantes de UI manualmente.
