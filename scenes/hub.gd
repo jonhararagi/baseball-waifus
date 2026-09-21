@@ -231,7 +231,7 @@ func _panel_style(fill: String, border: String, width: int, radius: int) -> Styl
 
 func _refresh_account() -> void:
 	energy_label.text = "ENERGY  %d / 100" % progress_store.get_player_energy()
-	coin_label.text = "◈ %d" % progress_store.get_coins()
+	coin_label.text = "COINS  %d" % progress_store.get_coins()
 	if starter != null:
 		level_label.text = "PLAYER • %s" % starter.display_name
 
