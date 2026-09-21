@@ -155,3 +155,13 @@ Pendiente:
 - IA rival que seleccione habilidades;
 - balance estadístico mediante simulaciones extensas;
 - validación runtime en Godot.
+
+
+### Consumo defensivo de buffs estadísticos
+
+Los buffs de Defense y Speed del SkillState ya son consumidos por los resolvers correspondientes:
+- FieldingResolver: Defense.
+- DefensiveRunnerResolver: Speed y cobertura.
+- ThrowResolver: Defense de lanzadora y receptora.
+
+Esto evita que una habilidad pueda existir en el catálogo sin tener efecto real en el núcleo cuando su tipo ya está soportado.
