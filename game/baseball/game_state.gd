@@ -286,3 +286,69 @@ func _runner_id_snapshot() -> Array:
 		else:
 			result.append(str(runner.player_id))
 	return result
+
+func validate_invariants(context: String = "") -> Dictionary:
+	var errors: Array[String] = []
+
+	if base_runners.size() != 3:
+		errors.append("base_runners must contain exactly 3 slots")
+	if bases.size() != 3:
+		errors.append("bases must contain exactly 3 flags")
+	if batting_indices.size() != 2:
+		errors.append("batting_indices must contain exactly 2 team indices")
+
+	if inning < 1:
+		errors.append("inning must be >= 1")
+	if half < 0 or half > 1:
+		errors.append("half must be 0 or 1")
+	if outs < 0 or outs > 2:
+		errors.append("outs must remain in 0..2 between state transitions")
+	if strikes < 0 or strikes > 2:
+		errors.append("strikes must remain in 0..2")
+	if balls < 0 or balls > 3:
+		errors.append("balls must remain in 0..3")
+	if score.size() != 2:
+		errors.append("score must contain exactly 2 teams")
+	else:
+		for team_score in score:
+			if int(team_score) < 0:
+				errors.append("score cannot be negative")
+
+	if batting_indices.size() == 2:
+		for team_index in batting_indices:
+			if int(team_index) < 0:
+				errors.append("batting index cannot be negative")
+
+	if base_runners.size() == 3 and bases.size() == 3:
+		for index in range(3):
+			var occupied := base_runners[index] != null
+			if bool(bases[index]) != occupied:
+				errors.append("base flag mismatch at index %d" % index)
+
+	var seen_ids := {}
+	for runner in base_runners:
+		if runner == null:
+			continue
+		var player_id := str(runner.player_id)
+		if player_id.is_empty():
+			errors.append("runner player_id cannot be empty")
+		elif seen_ids.has(player_id):
+			errors.append("duplicate runner player_id: %s" % player_id)
+		else:
+			seen_ids[player_id] = true
+
+	if not game_over and winner != -1:
+		errors.append("winner must be -1 while game is active")
+	if game_over:
+		if outs != 0:
+			errors.append("game_over state must have zero outs")
+		for runner in base_runners:
+			if runner != null:
+				errors.append("game_over state must have empty bases")
+				break
+
+	return {
+		"valid": errors.is_empty(),
+		"errors": errors,
+		"context": context
+	}
