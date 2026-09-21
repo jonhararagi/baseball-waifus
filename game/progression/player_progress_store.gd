@@ -61,16 +61,18 @@ func get_character_energy(character_id: String) -> int:
 func add_player_energy(amount: int) -> Dictionary:
 	_ensure_loaded()
 	_apply_passive_regeneration(int(Time.get_unix_time_from_system()))
+	var snapshot_state := state.duplicate(true)
 	if amount <= 0:
 		return {"ok": false, "reason": "invalid_amount"}
 	var before := get_player_energy()
 	var after := clampi(before + amount, 0, MAX_PLAYER_ENERGY)
 	state["player_energy"] = after
 	state["player_energy_last_regen_unix"] = int(Time.get_unix_time_from_system())
-	return _commit_change("player_energy", before, after)
+	return _commit_change("player_energy", before, after, snapshot_state)
 
 func add_material(item_id: String, amount: int) -> Dictionary:
 	_ensure_loaded()
+	var snapshot_state := state.duplicate(true)
 	if item_id.is_empty() or amount <= 0:
 		return {"ok": false, "reason": "invalid_material"}
 	var materials: Dictionary = state.get("materials", {})
@@ -78,11 +80,12 @@ func add_material(item_id: String, amount: int) -> Dictionary:
 	var after := before + amount
 	materials[item_id] = after
 	state["materials"] = materials
-	return _commit_change("material:" + item_id, before, after)
+	return _commit_change("material:" + item_id, before, after, snapshot_state)
 
 func add_character_energy(character_id: String, amount: int) -> Dictionary:
 	_ensure_loaded()
 	_apply_passive_regeneration(int(Time.get_unix_time_from_system()))
+	var snapshot_state := state.duplicate(true)
 	if character_id.is_empty() or amount <= 0:
 		return {"ok": false, "reason": "invalid_character"}
 	var energies: Dictionary = state.get("character_energy", {})
@@ -93,11 +96,12 @@ func add_character_energy(character_id: String, amount: int) -> Dictionary:
 	var regen_times: Dictionary = state.get("character_energy_last_regen_unix", {})
 	regen_times[character_id] = int(Time.get_unix_time_from_system())
 	state["character_energy_last_regen_unix"] = regen_times
-	return _commit_change("character_energy:" + character_id, before, after)
+	return _commit_change("character_energy:" + character_id, before, after, snapshot_state)
 
 func consume_player_energy(amount: int) -> Dictionary:
 	_ensure_loaded()
 	_apply_passive_regeneration(int(Time.get_unix_time_from_system()))
+	var snapshot_state := state.duplicate(true)
 	if amount <= 0:
 		return {"ok": false, "reason": "invalid_amount"}
 	var before := get_player_energy()
@@ -111,6 +115,7 @@ func consume_player_energy(amount: int) -> Dictionary:
 func consume_character_energy(character_id: String, amount: int) -> Dictionary:
 	_ensure_loaded()
 	_apply_passive_regeneration(int(Time.get_unix_time_from_system()))
+	var snapshot_state := state.duplicate(true)
 	if character_id.is_empty() or amount <= 0:
 		return {"ok": false, "reason": "invalid_request"}
 	var before := get_character_energy(character_id)
@@ -139,9 +144,11 @@ func _ensure_loaded() -> void:
 	if state.is_empty():
 		load_state()
 
-func _commit_change(resource_key: String, before: int, after: int) -> Dictionary:
+func _commit_change(resource_key: String, before: int, after: int, snapshot_state: Dictionary) -> Dictionary:
 	var saved := save_state()
-	return {"ok": saved, "resource": resource_key, "before": before, "after": after, "delta": after - before, "reason": "" if saved else "save_failed"}
+	if not saved:
+		state = snapshot_state
+	return {"ok": saved, "resource": resource_key, "before": before, "after": after, "delta": after - before if saved else 0, "reason": "" if saved else "save_failed"}
 
 func _defaults() -> Dictionary:
 	return {
