@@ -24,13 +24,13 @@ extends Resource
 @export var charm_bonus_stats: Array = ["speed", "defense", "stamina"]
 
 func effective_stat(stat: String) -> float:
-    if charm_primary_stat.is_empty():
+    if charm_primary_stat != CharmSystem.primary_stat_for(specialization):
         CharmSystem.configure_player(self)
     var charm_adjusted := CharmSystem.stat_after_charm(self, stat)
     return float(charm_adjusted) * (0.85 + 0.03 * potential)
 
 func charm_stat_bonus(stat: String) -> int:
-    if charm_primary_stat.is_empty():
+    if charm_primary_stat != CharmSystem.primary_stat_for(specialization):
         CharmSystem.configure_player(self)
     return CharmSystem.stat_bonus(self, stat)
 
