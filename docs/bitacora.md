@@ -6619,3 +6619,63 @@ Se aisló la transición al TextureRect del retrato y se añadió control de twe
 **≈96% estructural del prototipo.**
 
 El porcentaje sigue representando infraestructura implementada y no contenido artístico final, pruebas runtime, balance definitivo ni publicación Android.
+
+## Revisión 65: cierre de la unidad bw001 y endurecimiento de la tarjeta existente
+
+**Fecha:** 2026-09-21
+**Motivo:** continuar la estrategia de producción de una personaje a la vez. La auditoría de continuidad confirmó que las revisiones 63-64 ya habían creado el Hub, la tarjeta reutilizable, iconografía propia y cinco expresiones de bw001. En lugar de crear otro pipeline, se conserva esa arquitectura y se corrigen solamente problemas concretos de presentación detectados por inspección estructural.
+
+### Unidad cerrada
+
+Solo se trabaja sobre bw001 como personaje inicial.
+
+No se modifican:
+- estadísticas canónicas del roster;
+- posiciones o elementos de otras personajes;
+- expresiones de las otras 29;
+- resolvers de béisbol;
+- economía;
+- IA;
+- gacha;
+- recompensas.
+
+### Correcciones
+
+1. game/ui/character_card.gd
+   - Se corrige la asignación de identity_label cuando el catálogo sí contiene character_identity.play_identity.
+   - Se compacta el área del retrato y la altura de filas para que la tarjeta pueda convivir con el layout actual del Hub de 1280x720 sin depender de un panel excesivamente alto.
+   - Se conserva el contrato existente de ocho estadísticas, rareza, elemento, expresiones y comentarios.
+   - No se altera ninguna autoridad de gameplay.
+
+2. scenes/hub.gd
+   - Se elimina el glifo Unicode de monedas y se utiliza texto explícito COINS, evitando dependencia de fuente/plataforma.
+   - La navegación, los nueve identificadores de iconografía y los diez comentarios existentes permanecen intactos.
+
+3. scenes/character_card_test.gd
+   - Se añade una aserción que verifica que bw001 presenta correctamente su identidad de juego BIG SWING THREAT.
+
+### Auditoría de continuidad
+
+Se detectó que una implementación paralela de tarjeta/Hub para bw001 duplicaba sistemas ya existentes. Esos archivos temporales fueron eliminados para conservar una única autoridad de presentación y evitar dos pipelines visuales para la misma función.
+
+La arquitectura vigente sigue siendo:
+
+CharacterArchetypeCatalog -> PlayerData / CharacterRosterStore
+
+y, para presentación:
+
+CharacterArchetypeCatalog -> CharacterExpressionController -> BaseballCharacterCard -> Hub
+
+### Pruebas
+
+- Inspección estructural de hub.gd, character_card.gd, CharacterExpressionController, iconografía y mapa de campaña.
+- Se añadió una aserción nueva para identidad de bw001.
+- No se ejecutó Godot runtime en este entorno. La validación de recorte, escala, transición y rendimiento en pantalla sigue pendiente de abrir res://scenes/hub.tscn en Godot real.
+
+### Estado
+
+**bw001 queda cerrado a nivel de implementación estructural.** La siguiente acción correcta es validación runtime real del Hub antes de tocar bw002.
+
+### Avance aproximado
+
+**≈96% estructural del prototipo.** Este porcentaje no significa 96% de arte final, balance definitivo, contenido, QA runtime o publicación Android.
