@@ -5005,3 +5005,120 @@ El porcentaje representa alcance técnico ponderado y no porcentaje de contenido
 ## Regla de continuidad
 
 No crear otro store que persista nivel, estadísticas, energía, Encanto, ánimo o equipamiento de una personaje. Las futuras recompensas, gacha, fusión, crianza y entrenamiento deben escribir mediante `CharacterRosterStore` o mediante una capa transaccional que lo utilice.
+
+
+# Revisión 46: Autoridad unificada de inventario, equipamiento y rewards
+
+**Fecha:** 2026-09-21  
+**Tipo:** Progresión / economía / persistencia / transacciones.
+
+### Motivo
+
+El roster persistente ya era la autoridad de personajes, pero la economía todavía tenía únicamente energía/materiales básicos y los rewards no tenían una transacción común para conectar mapas, gacha, Demon Kings y futuras fuentes de contenido.
+
+La prioridad de esta revisión es evitar que cada sistema cree su propio inventario o aplique recompensas directamente.
+
+### Implementado
+
+- `game/progression/player_progress_store.gd`
+  - pasa SAVE_VERSION de 2 a 3;
+  - mantiene Player Energy;
+  - añade Coins;
+  - mantiene Materials;
+  - añade Equipment quantities;
+  - conserva character_energy histórico solamente para compatibilidad;
+  - añade operaciones atómicas con snapshot y rollback ante fallo de guardado;
+  - añade `add_player_energy`, `consume_player_energy`, `add_coins`, `consume_coins`, `add_material`, `consume_material`, `add_equipment` y `consume_equipment`.
+
+- `game/progression/equipment_catalog.gd`
+  - catálogo inmutable de piezas;
+  - slots gloves, bats, caps, vests, skirts y shoes;
+  - validación de rareza y modificadores;
+  - utiliza exclusivamente las ocho estadísticas existentes.
+
+- `game/progression/equipment_catalog.json`
+  - catálogo inicial de prototipo con piezas R/SR;
+  - separa `visual_id` de los modificadores de gameplay;
+  - no crea todavía drops SSR/UR ni tasas de gacha.
+
+- `game/progression/reward_transaction_service.gd`
+  - autoridad única para aplicar un lote de rewards ya resuelto;
+  - valida antes de mutar;
+  - toma snapshot de PlayerProgressStore y CharacterRosterStore;
+  - aplica en orden;
+  - revierte ambas autoridades si una recompensa falla;
+  - soporta coins, player_energy, materials, equipment, character_energy, charm y character;
+  - no decide probabilidades, pity, drops ni resultados de IA.
+
+- `game/monetization/rewarded_ad_transaction.gd`
+  - deja de mutar PlayerProgressStore directamente;
+  - delega en RewardTransactionService.
+
+- `game/monetization/rewarded_ad_claim_service.gd`
+  - ahora toma snapshot de roster además del snapshot de cuenta;
+  - un fallo al persistir el contador diario del anuncio puede revertir también energía de personaje.
+
+- `scenes/reward_transaction_test.gd/.tscn`
+  - valida catálogo;
+  - valida batch de coins/material/equipment/character;
+  - valida rechazo de reward inválido sin mutación;
+  - restaura snapshots al finalizar.
+
+- `docs/progression/inventory-equipment-rewards-v1.md`
+  - documenta autoridad, inventario, catálogo, transacciones, migración y pendientes.
+
+- `docs/research/inventory-reward-architecture-v1.md`
+  - registra la revisión previa de arquitectura;
+  - se conserva PlayerProgressStore en lugar de crear un InventoryStore paralelo;
+  - no se añadieron dependencias externas.
+
+### Corrección adicional
+
+`CharacterRosterStore` tenía una referencia residual a `PlayerProgressStore.ENERGY_REGEN_SECONDS` dentro de su regeneración. Se reemplazó por su propia constante para mantener la independencia de autoridades y evitar una dependencia circular innecesaria.
+
+### Decisiones arquitectónicas
+
+La cadena de rewards queda:
+
+```
+RewardResolver / Map / Gacha / Demon King / Ads
+                    ↓
+          RewardTransactionService
+             ↙               ↘
+PlayerProgressStore     CharacterRosterStore
+```
+
+El resolver decide qué recompensa salió. La transacción decide si el payload es válido y cómo persistirlo. Ningún renderer, UI o IA recibe autoridad sobre economía.
+
+Los duplicados de personajes todavía se rechazan. No se inventó una conversión a fragmentos o moneda hasta cerrar esa regla.
+
+### Pruebas
+
+Se añadió prueba estructural `reward_transaction_test` para catálogo, lote válido, rechazo de reward inválido y restauración de snapshots.
+
+No se ejecutó Godot runtime en este entorno. Por tanto, esta revisión no afirma ejecución real de la escena de test.
+
+### Problemas y correcciones
+
+1. `RewardedAdTransaction` dependía de métodos de PlayerProgressStore que no estaban implementados en la versión persistida del archivo. Se incorporaron las operaciones de cuenta necesarias.
+2. La recompensa de energía de personaje podía quedar fuera del rollback de anuncios si fallaba el guardado del contador diario. Se añadió snapshot/restauración del roster.
+3. El sistema necesitaba inventario de equipamiento sin crear una segunda autoridad. Se amplió PlayerProgressStore en lugar de crear InventoryStore paralelo.
+4. Los modificadores de equipamiento no se mezclaron todavía con los resolvers de béisbol. Esa integración queda separada para poder cerrar primero las fórmulas maestras.
+
+### Estado
+
+**Implementado:** autoridad de inventario de cuenta, catálogo de equipamiento, transacción común de rewards, rollback cruzado de cuenta/roster y compatibilidad con rewarded ads.
+
+**Pendiente:** servicio equip/desequip, aplicación de modificadores de equipamiento a gameplay, RewardResolver existente conectado a esta autoridad, tablas definitivas de drops/gacha, pity/garantías y política de duplicados.
+
+### Porcentaje global
+
+Avance aproximado actualizado: **≈87%**.
+
+El porcentaje refleja la implementación de una capa importante de persistencia/economía, no significa que el juego esté terminado. Continúan pendientes partes críticas de balance, IA rival, integración completa de recompensas con contenido, equipamiento aplicado al gameplay, UI final y validación runtime/export.
+
+### Regla de continuidad
+
+No crear otro almacén para coins, materials, equipment quantities, level, stats, charm, mood o character energy.
+
+Las futuras recompensas de mapas, gacha, Demon Kings, fusión y crianza deben terminar en `RewardTransactionService` y escribir en las autoridades correspondientes.
