@@ -5618,3 +5618,18 @@ Se creó un test reproducible que comprueba:
 **Implementado como infraestructura funcional de código y catálogo; balance y contenido completo de habilidades pendientes.**
 
 **Avance global aproximado:** ≈91%.
+
+
+### Addendum de Revisión 51: roles de habilidad del roster
+
+Se añadió `skill_roles` a las 30 identidades del catálogo. Esto permite distinguir desde diseño entre:
+- attack;
+- defense;
+- power_up;
+- power_down;
+- statistic;
+- combination.
+
+Los roles son una guía de construcción de kit, no modificadores estadísticos automáticos ni una ventaja por rareza. El test de catálogo fue actualizado para exigir al menos un rol por personaje.
+
+No se asignaron todavía valores matemáticos únicos a las 26 acciones de firma; esos efectos se implementarán contra los resolvers concretos de bateo, pitcheo, defensa y corredores para evitar habilidades que funcionen fuera de las reglas reales del béisbol.
