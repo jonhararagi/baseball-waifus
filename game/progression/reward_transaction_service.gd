@@ -1,8 +1,8 @@
 class_name RewardTransactionService
 extends RefCounted
 
-## Applies already-resolved rewards atomically across account inventory and roster.
-## This service does not roll probabilities and never decides drops.
+## Applies already-resolved rewards as a compensating transaction across account inventory and roster.
+## Rollback is persisted on failure; cross-file crash atomicity is not claimed.
 ## RewardResolver / future gacha/map systems remain responsible for resolving a reward payload.
 
 const ProgressStoreClass = preload("res://game/progression/player_progress_store.gd")
@@ -82,6 +82,8 @@ func _validate_rewards(rewards: Array, roster: RefCounted) -> Dictionary:
 					return {"ok": false, "reason": "character_required_or_not_owned", "character_id": charm_character}
 			"character":
 				var new_character_id := str(reward.get("character_id", ""))
+				if amount != 1:
+					return {"ok": false, "reason": "character_amount_must_be_one"}
 				if new_character_id.is_empty() or CharacterArchetypeCatalog.find(new_character_id).is_empty():
 					return {"ok": false, "reason": "unknown_character", "character_id": new_character_id}
 				if roster.has_character(new_character_id):
