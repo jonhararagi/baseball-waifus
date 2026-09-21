@@ -107,6 +107,7 @@ func _build_ui() -> void:
 	content.add_child(starter_card)
 	starter_card.setup(starter)
 	starter_card.set_comment(COMMENTS[0])
+	starter_card.set_expression(CharacterExpressionController.expression_for_comment(comment_index))
 
 	var comment_button := _button("SIGUIENTE COMENTARIO", 390, 42)
 	comment_button.position = Vector2(60, 628)
@@ -235,6 +236,7 @@ func _next_comment() -> void:
 	comment_index = (comment_index + 1) % COMMENT_LIMIT
 	if starter_card != null:
 		starter_card.set_comment(COMMENTS[comment_index])
+		starter_card.set_expression(CharacterExpressionController.expression_for_comment(comment_index))
 
 func _open_history() -> void:
 	_show_panel("HISTORIA", _history_text(), true)
