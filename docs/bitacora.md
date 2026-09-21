@@ -5790,3 +5790,114 @@ Se ajustó la integración para que los buffs estadísticos no queden solo almac
 La fórmula base de cada resolver no fue reemplazada. Los modificadores se aplican en la entrada de la fórmula y el resolver conserva sus límites.
 
 **Runtime Godot:** no ejecutado.
+
+
+## Revisión 53: IA rival y activación situacional de habilidades
+
+**Fecha:** 2026-09-21
+**Motivo:** convertir la infraestructura de habilidades de la Revisión 52 en decisiones de gameplay realizadas por una IA local, sin darle autoridad sobre los resultados deportivos.
+
+### Sistemas afectados
+
+- OpponentAI
+- SkillResolver
+- BaseballSkillState
+- PlayerData
+- CharacterArchetypeCatalog
+- scenes/main.gd
+- catálogo de habilidades
+- pruebas de IA
+- documentación de skills y diseño
+
+### Implementación
+
+Se creó game/baseball/opponent_ai.gd.
+
+La IA local ahora puede:
+1. seleccionar pitch entre FASTBALL, CURVE y SPECIAL;
+2. considerar bolas, strikes y Control;
+3. activar habilidades ofensivas cuando controla la ofensiva rival;
+4. activar habilidades defensivas antes de que FieldingResolver calcule una jugada;
+5. activar Steal Up cuando controla un corredor;
+6. mantener cooldowns propios;
+7. guardar/restaurar su estado de decisión.
+
+La IA utiliza RandomNumberGenerator compartido cuando el partido se lo proporciona. La heurística decide la acción, pero no reemplaza los resolvers.
+
+### Integración en el partido
+
+scenes/main.gd conecta OpponentAI con selección de pitch, habilidades ofensivas del rival, preparación defensiva y robo de corredores rivales.
+
+Las habilidades defensivas se aplican antes de FieldingResolver, permitiendo que Catch Boost o Double Play Setup afecten realmente la fórmula existente.
+
+Las habilidades ofensivas se aplican antes de la resolución del pitch/contacto cuando el rival está bateando.
+
+### Skill roles
+
+PlayerData ahora expone skill_roles.
+
+CharacterArchetypeCatalog.create_player() carga estos roles desde character_archetypes.json.
+
+No se duplicó el catálogo de personajes dentro de la IA. Los roles existentes de la Revisión 51 continúan siendo la fuente de identidad funcional.
+
+### Decisiones arquitectónicas
+
+1. La IA decide acciones, no resultados.
+2. SkillResolver continúa siendo el único punto que transforma una skill declarada en un modificador temporal.
+3. OpponentAI no escribe estadísticas permanentes.
+4. OpponentAI no toca rewards, gacha, energía, rareza ni economía.
+5. Los cooldowns pertenecen al estado de decisión de la IA.
+6. La selección de pitch permanece heurística y auditable.
+7. No se añadió Dexterity ni otra estadística redundante.
+8. No se creó un sistema de IA dependiente de LLM, red o backend.
+9. Los resolvers existentes conservan la autoridad final.
+
+### Archivos creados
+
+- game/baseball/opponent_ai.gd
+- scenes/opponent_ai_test.gd
+- scenes/opponent_ai_test.tscn
+
+### Archivos modificados
+
+- game/characters/player_data.gd
+- game/characters/character_archetype_catalog.gd
+- scenes/main.gd
+- docs/characters/skill-system-v1.md
+- docs/game-design.md
+- docs/bitacora.md
+
+### Pruebas
+
+Se creó opponent_ai_test.gd para comprobar selección de pitch válido, activación ofensiva según skill role, modificación temporal generada por una skill, activación defensiva situacional, cooldowns y snapshot/restore de la IA.
+
+No se ejecutó Godot runtime en este entorno. Se registra como prueba escrita/revisión estática, no como prueba runtime.
+
+### Problemas encontrados y correcciones
+
+- No existía un OpponentAI dedicado aunque scenes/main.gd ya dependía de ese concepto. Se creó la clase faltante sin alterar la arquitectura del partido.
+- PlayerData no exponía los skill_roles del catálogo. Se añadió el campo y se conectó al factory.
+- La IA no debe inventar habilidades nuevas por personaje. Se reutiliza el catálogo existente y sus roles.
+- La activación defensiva debía ocurrir antes de FieldingResolver. Se colocó el hook en _swing() antes de la resolución defensiva.
+- El robo rival debía usar la misma entrada de RunnerSystem. Se conecta mediante Steal Up y el modificador existente.
+- Los cooldowns se mantienen fuera de PlayerData para no convertir una decisión de IA en una estadística persistente del personaje.
+
+### Estado
+
+Implementado a nivel de código y conectado al flujo principal.
+
+Pendiente:
+- IA completa para decisiones ofensivas de bateo;
+- IA completa para cobertura defensiva multi-jugadora;
+- IA situacional avanzada de pickoff;
+- interfaz de activación manual de habilidades para el jugador;
+- cooldowns/costes definitivos;
+- balance mediante miles de simulaciones;
+- ejecución runtime Godot;
+- validación Android.
+
+### Avance aproximado
+
+**≈93%.**
+
+Este porcentaje representa avance de implementación del prototipo, no porcentaje de contenido final del videojuego.
