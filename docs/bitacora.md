@@ -7413,3 +7413,83 @@ El workflow ejecuta Godot 4.5.1-stable en headless, lanza `bw010_character_prese
 ### Avance aproximado
 
 **≈96% estructural del prototipo.** Este porcentaje no representa porcentaje de arte final, balance definitivo, validación Android local ni contenido completo.
+
+
+## Revisión 63: Unidad visual bw011 (Hina Sakuragi)
+
+**Fecha:** 2026-09-21  
+**Tipo:** Pipeline artístico 2D / presentación de colección / Visual QA.
+
+### Motivo
+
+Continuar el pipeline artístico de una personaje por vez después del cierre consolidado de bw010. La unidad se mantiene aislada para detectar errores de identidad, expresión, assets, escena o CI antes de propagarlos al resto del roster.
+
+### Identidad canónica bloqueada
+
+La unidad reutiliza exclusivamente el registro existente de `bw011` en `game/characters/character_archetypes.json`:
+
+- **Nombre:** Hina Sakuragi
+- **Rareza:** R
+- **Posición:** C
+- **Elemento:** Light
+- **Especialización:** Catcher
+- **Potencial:** 3
+- **Stats:** Power 61, Contact 60, Speed 52, Pitch 59, Control 62, Defense 82, Critical 8, Stamina 78.
+- **Identidad:** `gentle_light_catcher`
+- **Play identity:** `sacrifice_support`
+- **Acción de firma:** ninguna en el catálogo actual
+- **Skill roles:** `defense`, `power_up`
+- **Paleta canónica:** cabello `#8a5a76`, acento `#f4ed9b`, ojos `#5b3b4e`, piel `#f6d1b2`, uniforme `#fff5ed`.
+
+No se crea una segunda fuente de verdad y no se modifican los atributos del catálogo.
+
+### Implementado
+
+- `assets/characters/expressions/bw011_neutral.svg`
+- `assets/characters/expressions/bw011_happy.svg`
+- `assets/characters/expressions/bw011_focused.svg`
+- `assets/characters/expressions/bw011_surprised.svg`
+- `assets/characters/expressions/bw011_disappointed.svg`
+- `scenes/bw011_character_presentation_test.gd`
+- `scenes/bw011_character_presentation_test.tscn`
+- `docs/characters/bw011-presentation-v1.md`
+- job `bw011-visual-qa` en `.github/workflows/visual_qa.yml`.
+
+### Decisiones de producción visual
+
+1. La cadena permanece estrictamente `CharacterArchetypeCatalog -> CharacterExpressionController -> BaseballCharacterCard`.
+2. Los cinco SVG son independientes, vectoriales, autónomos y no contienen `<text>`, fuentes embebidas ni referencias externas.
+3. Las cinco expresiones modifican geometría facial explícita y el test exige que los contenidos sean distintos.
+4. La dirección visual presenta a Hina como catcher adulta de imagen amable, pulcra y luminosa, usando ciruela, crema y dorado pálido como lenguaje visual.
+5. La presentación no convierte su apariencia amable en una ventaja estadística. Los efectos visuales permanecen presentation-only.
+6. Los assets tienen ViewBox 512x768, formas simples y pueden reemplazarse posteriormente por arte final sin modificar contratos de gameplay.
+7. Para reducir ejecuciones duplicadas de CI, el workflow de Visual QA queda restringido a `push` sobre `main`, manteniendo `workflow_dispatch` para ejecución manual.
+8. Todo el desarrollo de bw011 queda consolidado al integrar la rama mediante squash merge en `main`.
+
+### Validación estructural
+
+Se inspeccionaron los cinco SVG antes de integrar la unidad:
+- tamaños entre 5159 y 5439 caracteres;
+- inicio XML y cierre SVG válidos a nivel de texto;
+- ausencia de `<text>`;
+- ausencia de `href=`;
+- ausencia de `url(http`;
+- presencia completa de la paleta canónica;
+- los cinco contenidos son distintos.
+
+También se creó la escena de prueba con `VisualQAExporter` y el job headless de GitHub Actions para producir `qa_captures/bw011_character_presentation.png`.
+
+**Runtime local:** no ejecutado en este entorno. La captura runtime real queda delegada al workflow de GitHub Actions en `main`.
+
+### Problemas y correcciones
+
+- El pipeline anterior ejecutaba Visual QA en cualquier rama mediante `push`. Se añadió un filtro de rama para que los pushes automáticos se ejecuten únicamente en `main`, reduciendo ejecuciones duplicadas durante unidades visuales futuras.
+- No se modificaron `CharacterExpressionController`, `BaseballCharacterCard` ni el catálogo, porque sus contratos existentes son suficientes para bw011.
+
+### Estado
+
+**Implementado a nivel de assets, escena, documentación y CI; listo para integración consolidada.**
+
+### Avance aproximado
+
+**≈96% estructural del prototipo.** Este porcentaje no representa porcentaje de arte final, balance definitivo, validación Android local ni contenido completo.

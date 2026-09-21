@@ -3,6 +3,8 @@ name: Baseball Waifus Visual QA
 on:
   workflow_dispatch:
   push:
+    branches:
+      - "main"
     paths:
       - "assets/characters/expressions/**"
       - "game/ui/character_*.gd"
@@ -342,4 +344,44 @@ jobs:
         with:
           name: bw010-character-presentation
           path: qa_captures/bw010_character_presentation.png
+          if-no-files-found: error
+
+  bw011-visual-qa:
+    runs-on: ubuntu-22.04
+    env:
+      GODOT_VERSION: "4.5.1-stable"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl unzip libfontconfig1
+      - name: Install pinned Godot
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip" -o godot.zip
+          unzip -q godot.zip -d godot
+          chmod +x "godot/Godot_v${GODOT_VERSION}_linux.x86_64"
+          "godot/Godot_v${GODOT_VERSION}_linux.x86_64" --version
+      - name: Import project and build Godot script class cache
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout --signal=TERM 30s "godot/Godot_v${GODOT_VERSION}_linux.x86_64" --headless --editor --path . --quit
+      - name: Run bw011 structural and visual QA
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p qa_captures
+          timeout --signal=TERM 15s "godot/Godot_v${GODOT_VERSION}_linux.x86_64" --headless --path . --resolution 1280x720 res://scenes/bw011_character_presentation_test.tscn -- --run-qa-capture
+      - name: Verify capture
+        run: |
+          test -s qa_captures/bw011_character_presentation.png
+      - name: Upload bw011 visual QA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bw011-character-presentation
+          path: qa_captures/bw011_character_presentation.png
           if-no-files-found: error
