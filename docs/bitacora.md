@@ -6268,3 +6268,10 @@ Se creó prueba estructural para comprobar 10 comentarios, personaje inicial y r
 ### Avance aproximado
 
 **≈95% estructural del prototipo.**
+
+
+### Complemento visual de Revisión 59
+
+Se añadió `game/ui/campaign_map_view.gd` para que Historia no sea solamente texto: ahora el panel contiene una ruta visual con nodos, bloqueos y Demon King, además del selector Normal/Hard/Hell. El mapa sigue siendo presentación y emite solamente una selección de actividad; no consume energía ni decide recompensas.
+
+**Runtime Godot:** no ejecutado.
