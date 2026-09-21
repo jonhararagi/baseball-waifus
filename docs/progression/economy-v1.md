@@ -9,11 +9,17 @@ PlayerProgressStore owns energy and material resources. CampaignAttemptStore own
 | Activity | Player Energy | Attempts |
 |---|---:|---:|
 | Normal | 10 | 10 per map/cycle |
-| Hard | 15 | 10 per map/cycle |
+| Hard | 10 | 10 per map/cycle |
 | Hell | 15 | 10 per map/cycle |
-| Demon King | 25 | 3 per boss/cycle |
+| Demon King | 20 | 3 per boss/cycle |
 
-These are the current baseline values from the master design. They are explicit parameters, not hidden scaling.
+These are the current baseline values from the master design. Normal and Hard intentionally share the 10-energy cost so progression through stronger maps is driven by better rewards rather than an immediate energy wall. Hell remains 15 and Demon King 20 with 3 attempts. These are explicit parameters, not hidden scaling.
+
+## Farm maps
+
+Dedicated farm activities use the same entry authority. Current activities are `character_materials`, `equipment`, and `r_cards_charm`, each costing 10 energy with 10 attempts per cycle. Their reward tables remain separate from entry costs.
+
+See `docs/progression/farming-maps-v1.md` for the pacing decision and reward identities.
 
 ## Energy regeneration
 
