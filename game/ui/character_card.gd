@@ -284,7 +284,7 @@ func _apply_player(player: PlayerData, portrait_path: String) -> void:
 	rarity_badge.add_theme_stylebox_override("normal", _badge_style(str(style["badge"]), str(style["accent"])))
 
 	name_label.text = player.display_name
-	name_label.add_theme_color_override("font_color", Color(str(style["accent_soft"]))
+	name_label.add_theme_color_override("font_color", Color(str(style["accent_soft"])))
 
 	meta_label.text = "%s  •  %s  •  %s" % [
 		str(player.position),
@@ -296,7 +296,7 @@ func _apply_player(player: PlayerData, portrait_path: String) -> void:
 	level_label.text = "LV %d  •  POT %d" % [player.level, player.potential]
 	var element := str(player.element).to_lower()
 	element_label.text = element.to_upper()
-	element_label.add_theme_color_override("font_color", Color(str(ELEMENT_COLORS.get(element, ELEMENT_COLORS["neutral"])))
+	element_label.add_theme_color_override("font_color", Color(str(ELEMENT_COLORS.get(element, ELEMENT_COLORS["neutral"]))))
 	(element_icon as CardElementIcon).setup(element)
 
 	var identity := ""
