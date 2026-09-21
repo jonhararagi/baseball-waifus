@@ -6,6 +6,7 @@ func _ready() -> void:
 	_test_walk_forces_runners()
 	_test_walk_with_empty_first()
 	_test_lineup_advances_for_original_batting_team()
+	_test_final_inning_lead_ends_game()
 	print("BASEBALL RULES TEST OK")
 	get_tree().quit()
 
@@ -85,3 +86,12 @@ func _test_lineup_advances_for_original_batting_team() -> void:
 	state.advance_lineup(original_half)
 	assert(state.batting_indices[0] == 5)
 	assert(state.batting_indices[1] == 7)
+
+func _test_final_inning_lead_ends_game() -> void:
+	var state := BaseballGameState.new()
+	state.inning = state.max_innings
+	state.half = 0
+	state.score = [1, 2]
+	state.add_outs(3)
+	assert(state.game_over)
+	assert(state.winner == 1)
