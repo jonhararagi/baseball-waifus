@@ -85,12 +85,22 @@ var _hovered := false
 class CardElementIcon:
 	extends Control
 
+	const ICON_COLORS := {
+		"fire": "#ef6a4f",
+		"water": "#55a9e8",
+		"ice": "#8edff5",
+		"lightning": "#f2cf55",
+		"nature": "#6fc66b",
+		"darkness": "#9b79d1",
+		"light": "#f5e5a0",
+		"neutral": "#a9b4c7"
+	}
 	var element := "neutral"
 	var accent := Color.WHITE
 
 	func setup(value: String) -> void:
 		element = value.to_lower()
-		accent = Color(str(ELEMENT_COLORS.get(element, ELEMENT_COLORS["neutral"])))
+		accent = Color(str(ICON_COLORS.get(element, ICON_COLORS["neutral"])))
 		custom_minimum_size = Vector2(42, 42)
 		queue_redraw()
 
