@@ -1,139 +1,65 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Baseball Waifus Streaming Control</title>
-  <style>
-    :root{color-scheme:dark;font-family:system-ui,sans-serif}
-    body{margin:0;background:#0d1117;color:#eef2f7;min-height:100vh}
-    main{max-width:980px;margin:0 auto;padding:28px}
-    h1{margin:0 0 6px}
-    .sub{color:#98a2b3;margin:0 0 24px}
-    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
-    .card{background:#151b23;border:1px solid #293241;border-radius:14px;padding:16px}
-    .label{font-size:12px;color:#98a2b3;text-transform:uppercase;letter-spacing:.08em}
-    .value{font-size:28px;font-weight:700;margin-top:4px}
-    .ok{color:#7ee787}.warn{color:#f2cc60}.bad{color:#ff7b72}
-    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
-    button{border:0;border-radius:10px;padding:12px 16px;font-weight:700;cursor:pointer}
-    #start{background:#2ea043;color:#fff} #stop{background:#d1242f;color:#fff} #qa{background:#8957e5;color:#fff}
-    pre{background:#0a0f14;border-radius:12px;padding:12px;overflow:auto;color:#a8dadc}
-    footer{margin-top:20px;color:#667085;font-size:13px}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Baseball Waifus • Control Center</title>
+<style>
+:root{color-scheme:dark;--bg:#080b14;--panel:rgba(20,27,47,.88);--panel2:rgba(28,36,62,.92);--line:rgba(255,255,255,.10);--text:#f6f7fb;--muted:#9ba6be;--gold:#ffd76a;--pink:#ff708f;--blue:#7fd7ff;--green:#71f2a3;--purple:#b48cff;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;color:var(--text);background:radial-gradient(circle at 10% 0%,rgba(255,112,143,.18),transparent 30%),radial-gradient(circle at 90% 10%,rgba(127,215,255,.14),transparent 28%),linear-gradient(160deg,#080b14 0%,#10172a 55%,#0a0d18 100%)}
+main{width:min(1180px,calc(100% - 32px));margin:0 auto;padding:28px 0 36px}
+.hero{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:22px;border:1px solid var(--line);border-radius:28px;background:linear-gradient(135deg,rgba(28,36,62,.92),rgba(18,23,40,.82));box-shadow:0 24px 70px rgba(0,0,0,.30);backdrop-filter:blur(18px)}
+.brand{display:flex;align-items:center;gap:16px}.logo{width:64px;height:64px;border-radius:20px;background:linear-gradient(145deg,rgba(255,215,106,.25),rgba(255,112,143,.22));border:1px solid rgba(255,255,255,.15);display:grid;place-items:center;overflow:hidden}.logo svg{width:48px;height:48px}
+h1{font-size:clamp(24px,3vw,38px);margin:0 0 4px;letter-spacing:-.03em}.subtitle{margin:0;color:var(--muted);font-size:14px}
+.live{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:999px;background:rgba(113,242,163,.10);color:var(--green);border:1px solid rgba(113,242,163,.26);font-weight:800;font-size:13px}.dot{width:9px;height:9px;border-radius:50%;background:currentColor;box-shadow:0 0 18px currentColor}
+.section-title{margin:28px 0 12px;font-size:13px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.card{min-height:112px;padding:16px;border:1px solid var(--line);border-radius:20px;background:var(--panel);box-shadow:0 12px 36px rgba(0,0,0,.20)}.card.wide{grid-column:span 2}
+.label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.11em}.value{margin-top:9px;font-size:27px;font-weight:900;letter-spacing:-.03em}.small{font-size:13px;color:var(--muted);margin-top:7px}.ok{color:var(--green)}.warn{color:var(--gold)}.bad{color:var(--pink)}
+.actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px}button{min-height:58px;border:1px solid var(--line);border-radius:18px;color:#fff;font-weight:900;font-size:15px;cursor:pointer;transition:.18s transform,.18s filter;background:var(--panel2)}button:hover{transform:translateY(-2px);filter:brightness(1.12)}#start{background:linear-gradient(135deg,#217c4a,#32a65f)}#stop{background:linear-gradient(135deg,#a63857,#d65b78)}#qa{background:linear-gradient(135deg,#6346a5,#8d64dc)}
+.qa{margin-top:12px;padding:16px 18px;border-radius:18px;border:1px solid var(--line);background:rgba(13,18,33,.74);display:flex;align-items:center;justify-content:space-between;gap:12px}
+pre{margin:12px 0 0;background:#070a12;border:1px solid var(--line);border-radius:18px;padding:16px;overflow:auto;min-height:180px;color:#b9d7e6;font-size:12px;line-height:1.55}footer{margin-top:18px;color:#74809a;font-size:12px;text-align:center}
+@media (max-width:900px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.card.wide{grid-column:span 2}}@media (max-width:620px){main{width:min(100% - 18px,1180px);padding-top:10px}.hero{align-items:flex-start;flex-direction:column}.grid,.actions{grid-template-columns:1fr}.card.wide{grid-column:span 1}}
+</style>
 </head>
 <body>
 <main>
-  <h1>Baseball Waifus • Streaming Control</h1>
-  <p class="sub">Panel local del bridge. El servidor escucha solamente en localhost.</p>
+<section class="hero">
+<div class="brand"><div class="logo" aria-hidden="true"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="43" fill="#0b1020"/><circle cx="50" cy="50" r="37" fill="#ffd76a" opacity=".15"/><path d="M29 26c15 11 25 21 45 23 4 1 8 1 12 1" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/><path d="M24 67c16-2 29-1 40 4 12 5 20 12 28 21" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/><circle cx="33" cy="47" r="3" fill="#ffd76a"/><circle cx="66" cy="61" r="3" fill="#ff708f"/></svg></div><div><h1>Baseball Waifus • Control Center</h1><p class="subtitle">Estado del avatar, tracking, OBS, grabación y QA en una sola vista.</p></div></div>
+<div class="live"><span class="dot"></span> LOCAL ONLY</div>
+</section>
 
-  <section class="grid">
-    <div class="card"><div class="label">Tracking</div><div id="tracking" class="value">--</div></div>
-    <div class="card"><div class="label">Tracking age</div><div id="tracking-age" class="value">--</div></div>
-    <div class="card"><div class="label">FPS</div><div id="fps" class="value">--</div></div>
-    <div class="card"><div class="label">Sequence</div><div id="sequence" class="value">--</div></div>
-    <div class="card"><div class="label">Paquetes</div><div id="sent" class="value">--</div></div>
-    <div class="card"><div class="label">Uptime</div><div id="uptime" class="value">--</div></div>
-    <div class="card"><div class="label">Audio</div><div id="audio" class="value">--</div></div>
-    <div class="card"><div class="label">OBS</div><div id="obs" class="value">--</div></div>
-    <div class="card"><div class="label">Grabación</div><div id="recording" class="value">--</div></div>
-  </section>
+<div class="section-title">Live status</div>
+<section class="grid">
+<div class="card"><div class="label">Tracking</div><div id="tracking" class="value">--</div><div id="tracking-provider" class="small">Proveedor: --</div></div>
+<div class="card"><div class="label">Latencia</div><div id="tracking-age" class="value">--</div><div class="small">Edad del último frame</div></div>
+<div class="card"><div class="label">FPS</div><div id="fps" class="value">--</div><div class="small">Paquetes de tracking</div></div>
+<div class="card"><div class="label">OBS</div><div id="obs" class="value">--</div><div class="small">WebSocket</div></div>
+<div class="card"><div class="label">Paquetes</div><div id="sent" class="value">--</div><div id="sequence" class="small">Seq --</div></div>
+<div class="card"><div class="label">Audio</div><div id="audio" class="value">--</div><div class="small">Captura local</div></div>
+<div class="card"><div class="label">Grabación</div><div id="recording" class="value">--</div><div id="record-count" class="small">0 paquetes</div></div>
+<div class="card"><div class="label">Uptime</div><div id="uptime" class="value">--</div><div class="small">Bridge activo</div></div>
+<div class="card wide"><div class="label">Destino Godot</div><div id="target" class="value">--</div><div id="screen" class="small">Pantalla: --</div></div>
+</section>
 
-  <div class="actions">
-    <button id="start">Iniciar grabación</button>
-    <button id="stop">Detener grabación</button>
-    <button id="qa">Ejecutar QA</button>
-  </div>
-  <p id="qa-status" class="sub">QA: nunca ejecutado</p>
+<div class="section-title">Quick actions</div>
+<section class="actions"><button id="start">▶ Iniciar grabación</button><button id="stop">■ Detener grabación</button><button id="qa">✓ Ejecutar QA</button></section>
 
-  <h3>Diagnóstico</h3>
-  <pre id="detail">Cargando...</pre>
-  <footer>Solo accesible desde esta máquina. No expone cámara, micrófono ni tracking a Internet.</footer>
+<section class="qa"><div><div class="label">Automated QA</div><div id="qa-status" class="value">Nunca ejecutado</div></div><div id="qa-meta" class="small">Suite fija del proyecto</div></section>
+
+<div class="section-title">Diagnostics</div><pre id="detail">Cargando...</pre>
+<footer>El panel escucha solamente en localhost y no publica cámara, micrófono ni tracking en Internet.</footer>
 </main>
 
 <script>
-const el = (id) => document.getElementById(id);
-async function request(path, options = {}) {
-  const response = await fetch(path, { ...options, headers: {"Content-Type":"application/json"} });
-  const data = await response.json();
-  if (!response.ok || data.ok === false) throw new Error(data.error || "request failed");
-  return data;
-}
-function setClass(node, value) {
-  node.className = "value " + value;
-}
-function formatAge(ageMs) {
-  if (ageMs === null || ageMs === undefined) return "N/A";
-  if (ageMs < 1000) return ageMs + " ms";
-  return (ageMs / 1000).toFixed(1) + " s";
-}
-function formatUptime(seconds) {
-  const total = Math.max(0, Math.floor(seconds || 0));
-  const hours = Math.floor(total / 3600);
-  const minutes = Math.floor((total % 3600) / 60);
-  const secs = total % 60;
-  return hours > 0
-    ? hours + "h " + minutes + "m"
-    : minutes > 0
-      ? minutes + "m " + secs + "s"
-      : secs + "s";
-}
-async function refresh() {
-  try {
-    const s = await request("/api/status");
-    el("tracking").textContent = s.tracking_active ? "ACTIVO" : "SIN TRACKING";
-    setClass(el("tracking"), s.tracking_active ? "ok" : "warn");
-    const age = s.tracking_age_ms;
-    el("tracking-age").textContent = formatAge(age);
-    setClass(el("tracking-age"), age !== null && age < 500 ? "ok" : "warn");
-    el("fps").textContent = (s.fps || 0).toFixed(1);
-    el("sequence").textContent = String(s.sequence ?? 0);
-    el("sent").textContent = String(s.sent_packets ?? 0);
-    el("uptime").textContent = formatUptime(s.uptime_s);
-    el("audio").textContent = s.audio_enabled ? "ON" : "OFF";
-    setClass(el("audio"), s.audio_enabled ? "ok" : "warn");
-    el("obs").textContent = s.obs_connected ? "CONECTADO" : "OFFLINE";
-    setClass(el("obs"), s.obs_connected ? "ok" : "warn");
-    el("recording").textContent = s.recording ? "GRABANDO" : "DETENIDO";
-    setClass(el("recording"), s.recording ? "ok" : "warn");
-    el("detail").textContent = JSON.stringify(s, null, 2);
-  } catch (error) {
-    el("detail").textContent = String(error);
-  }
-}
-el("start").addEventListener("click", async () => { try { await request("/api/record/start",{method:"POST"}); await refresh(); } catch(e){ alert(e); } });
-el("stop").addEventListener("click", async () => { try { await request("/api/record/stop",{method:"POST"}); await refresh(); } catch(e){ alert(e); } });
-el("qa").addEventListener("click", async () => {
-  try {
-    await request("/api/qa/run", {method:"POST"});
-    await refreshQA();
-  } catch(e) {
-    alert(e);
-  }
-});
-async function refreshQA() {
-  try {
-    const q = await request("/api/qa/status");
-    if (q.running) {
-      el("qa-status").textContent = "QA: ejecutándose...";
-      setTimeout(refreshQA, 500);
-      return;
-    }
-    if (q.exit_code === null) {
-      el("qa-status").textContent = "QA: nunca ejecutado";
-      return;
-    }
-    el("qa-status").textContent = q.passed
-      ? "QA: PASS"
-      : "QA: FAIL (código " + q.exit_code + ")";
-    if (q.output) el("detail").textContent = q.output;
-  } catch (error) {
-    el("qa-status").textContent = "QA: " + String(error);
-  }
-}
-refreshQA();
-refresh();
-setInterval(refresh, 1000);
+const el=function(id){return document.getElementById(id)};
+async function request(path,options){options=options||{};const response=await fetch(path,Object.assign({},options,{headers:{"Content-Type":"application/json"}}));const data=await response.json();if(!response.ok||data.ok===false)throw new Error(data.error||"request failed");return data}
+function setStatus(node,ok,warn){node.className="value "+(ok?"ok":warn?"warn":"bad")}
+function formatAge(ms){if(ms===null||ms===undefined)return "N/A";if(ms<1000)return ms+" ms";return (ms/1000).toFixed(1)+" s"}
+function formatUptime(seconds){const t=Math.max(0,Math.floor(seconds||0)),h=Math.floor(t/3600),m=Math.floor((t%3600)/60),s=t%60;if(h)return h+"h "+m+"m";if(m)return m+"m "+s+"s";return s+"s"}
+async function refresh(){try{const s=await request("/api/status");el("tracking").textContent=s.tracking_active?"ACTIVO":"SIN TRACKING";setStatus(el("tracking"),s.tracking_active,true);el("tracking-provider").textContent="Proveedor: "+(s.tracking_provider||"unknown");const age=s.tracking_age_ms;el("tracking-age").textContent=formatAge(age);setStatus(el("tracking-age"),age!==null&&age<500,age!==null&&age<2000);el("fps").textContent=(s.fps||0).toFixed(1);setStatus(el("fps"),(s.fps||0)>=20,(s.fps||0)>0);el("obs").textContent=s.obs_connected?"CONECTADO":"OFFLINE";setStatus(el("obs"),s.obs_connected,true);el("sent").textContent=String(s.sent_packets??0);el("sequence").textContent="Seq "+String(s.sequence??0);el("audio").textContent=s.audio_enabled?"ON":"OFF";setStatus(el("audio"),s.audio_enabled,true);el("recording").textContent=s.recording?"GRABANDO":"DETENIDO";setStatus(el("recording"),s.recording,true);el("record-count").textContent=String(s.record_count??0)+" paquetes";el("uptime").textContent=formatUptime(s.uptime_s);el("target").textContent=s.target||"--";el("screen").textContent="Pantalla: "+(s.screen_enabled?"ON":"OFF")+" • Protocolo v1";el("detail").textContent=JSON.stringify(s,null,2)}catch(error){el("detail").textContent=String(error)}}
+async function refreshQA(){try{const q=await request("/api/qa/status");if(q.running){el("qa-status").textContent="Ejecutando...";el("qa-meta").textContent="No cierres el bridge durante la prueba.";setTimeout(refreshQA,500);return}if(q.exit_code===null){el("qa-status").textContent="Nunca ejecutado";el("qa-meta").textContent="Suite fija del proyecto";return}el("qa-status").textContent=q.passed?"PASS":"FAIL";el("qa-meta").textContent=q.passed?"Todas las pruebas terminaron correctamente.":"Código de salida "+q.exit_code;if(q.output)el("detail").textContent=q.output}catch(error){el("qa-status").textContent="ERROR";el("qa-meta").textContent=String(error)}}
+el("start").addEventListener("click",async function(){try{await request("/api/record/start",{method:"POST"});await refresh()}catch(e){alert(e)}});el("stop").addEventListener("click",async function(){try{await request("/api/record/stop",{method:"POST"});await refresh()}catch(e){alert(e)}});el("qa").addEventListener("click",async function(){try{await request("/api/qa/run",{method:"POST"});await refreshQA()}catch(e){alert(e)}});
+refresh();refreshQA();setInterval(refresh,1000);
 </script>
 </body>
 </html>
