@@ -1514,3 +1514,28 @@ El flujo es:
 `BattedBallEvent → FieldingResolver → Reception/DoublePlay/DefensiveRunnerResolver → BaseballGameState → Presenter`
 
 El renderer utiliza la pose `SLIDE` ya existente y nunca determina el resultado. Las fórmulas y límites están en `docs/defensive-rules-v1.md`.
+
+
+## Sistema de Amor o Encanto v1
+
+El juego incorpora un sistema opcional de afinidad de colección llamado **Amor o Encanto**.
+
+Reglas cerradas para el prototipo:
+
+- Encanto: 0-100.
+- Cada punto de Encanto añade +1 a una estadística primaria determinista de la personaje.
+- La estadística primaria depende de su especialización.
+- Cada 10 puntos añade +1 a tres estadísticas secundarias determinadas por posición.
+- Las estadísticas de gameplay tienen máximo 100 después de aplicar estos bonus.
+- No existe azar para decidir qué estadística recibe el bonus.
+- Los regalos consumen materiales finitos.
+- Las charlas tienen límite global de 3 personajes por día y una charla máxima por personaje al día.
+- Cada personaje dispone de 10 conversaciones con 3 respuestas.
+- Una respuesta correcta entrega +20 Encanto y las otras dos +3 Encanto.
+- La respuesta correcta se basa en información de la ficha/perfil del personaje.
+
+La implementación vive en game/progression/charm_system.gd y game/progression/charm_state_store.gd. La persistencia local se realiza en user://baseball_waifus/charm_state.json.
+
+## Separación visual de colección y gameplay
+
+El arte 2D plano queda reservado para fichas/cartas y presentación de colección. El gameplay adopta un renderer 3D pixel/low-poly independiente, conectado al mismo PlayerData/AvatarProfile. La resolución del béisbol permanece completamente fuera de ambos renderers.
