@@ -6551,3 +6551,71 @@ Durante la revisión se detectó un intento paralelo de crear un controlador de 
 
 ### Avance aproximado
 **≈96% estructural del prototipo.** El porcentaje no representa porcentaje de arte final ni de contenido terminado.
+
+## Revisión 64: endurecimiento profesional de presentación de expresiones para bw001
+
+**Fecha:** 2026-09-21  
+**Motivo:** cerrar correctamente la primera unidad visual antes de escalarla a otra personaje. La revisión anterior ya tenía cinco expresiones y una tarjeta reutilizable, pero el cambio de expresión todavía reaparecía visualmente toda la tarjeta. Se corrige la interacción y se mejora el paquete vectorial de bw001 sin modificar gameplay.
+
+### Sistemas afectados
+
+- tarjeta de colección;
+- retrato expresivo;
+- microanimación de presentación;
+- QA estructural de assets;
+- documentación visual.
+
+### Archivos modificados
+
+- game/ui/character_card.gd
+- scenes/character_expression_test.gd
+- docs/ui-character-expression-v1.md
+- docs/ui/character-card-v1.md
+- assets/characters/generated/bw001.svg
+- assets/characters/expressions/bw001_neutral.svg
+- assets/characters/expressions/bw001_happy.svg
+- assets/characters/expressions/bw001_focused.svg
+- assets/characters/expressions/bw001_surprised.svg
+- assets/characters/expressions/bw001_disappointed.svg
+
+### Decisiones arquitectónicas
+
+1. CharacterExpressionController conserva la autoridad única sobre IDs y rutas de expresión.
+2. BaseballCharacterCard.set_expression() ya no ejecuta la animación de entrada completa de la tarjeta.
+3. El cambio facial utiliza un tween localizado sobre el retrato: atenuación breve, cambio de textura en el punto medio y recuperación con una compresión mínima de escala.
+4. El resto de la tarjeta permanece estable mientras cambia el estado facial.
+5. La expresión continúa fuera de PlayerData y CharacterRosterStore: es exclusivamente presentación.
+6. Los seis SVG de bw001 comparten una misma dirección visual, pero cada estado contiene rasgos faciales diferentes.
+7. El paquete mantiene formato SVG para evitar dependencias de fuentes externas y conservar un coste de memoria pequeño.
+8. No se generaron todavía assets para las otras 29 personajes.
+
+### Pruebas
+
+La prueba estructural de expresiones ahora comprueba:
+- vocabulario cerrado de cinco estados;
+- existencia de cada asset;
+- tamaño mínimo razonable del archivo;
+- ausencia de etiquetas <text> dependientes de fuentes;
+- contenido distinto entre los cinco estados;
+- mapeo determinista de comentarios;
+- API set_expression() y current_expression() de la tarjeta.
+
+**Runtime Godot:** no ejecutado. No se registra como validación visual o runtime.
+
+### Problema encontrado
+
+El comportamiento anterior reaplicaba la animación de entrada completa cuando cambiaba el comentario y la expresión. Eso hacía que la tarjeta pareciera reconstruirse en lugar de reaccionar.
+
+### Corrección
+
+Se aisló la transición al TextureRect del retrato y se añadió control de tween activo para evitar carreras visuales si llegan cambios de expresión consecutivos.
+
+### Estado
+
+**Implementado a nivel de código y assets.** La unidad bw001 queda preparada para escalar el mismo contrato a otras personajes después de validación runtime.
+
+### Avance aproximado
+
+**≈96% estructural del prototipo.**
+
+El porcentaje sigue representando infraestructura implementada y no contenido artístico final, pruebas runtime, balance definitivo ni publicación Android.
