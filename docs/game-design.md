@@ -1538,4 +1538,20 @@ La implementación vive en game/progression/charm_system.gd y game/progression/c
 
 ## Separación visual de colección y gameplay
 
-El arte 2D plano queda reservado para fichas/cartas y presentación de colección. El gameplay adopta un renderer 3D pixel/low-poly independiente, conectado al mismo PlayerData/AvatarProfile. La resolución del béisbol permanece completamente fuera de ambos renderers.
+El arte 2D plano queda reservado para fichas/cartas y presentación de colección. El gameplay adopta un renderer 3D pixel/low-poly independiente, conectado al mismo PlayerData/AvatarProfile. La resolución del béisbol permanece completamente fuera de ambos renderers.## 3A. Diversidad del roster
+
+El roster debe representar una variedad amplia de mujeres adultas, no una colección de recolores del mismo arquetipo.
+
+Se contemplan diferencias de silueta y presentación, incluyendo cuerpos femeninos, curvilíneos/voluptuosos, atléticos, musculosos/tomboy, altos, bajos, delgados y robustos. También deben existir diferencias de estilo, desde idols muy arregladas hasta deportistas prácticas, personajes elegantes, callejeras o deliberadamente desarregladas.
+
+La personalidad y los hábitos también deben variar: extrovertidas, tímidas, competitivas, tranquilas, bromistas, disciplinadas, perezosas, intelectuales, otaku, introvertidas y personajes con hábitos de aislamiento o estilo de vida hikikomori.
+
+Detalles como pecas, ojeras, maquillaje, cabello cuidado o desordenado, accesorios y calzado ayudan a que las personajes sean reconocibles.
+
+Estas características son visuales o de personalidad. No otorgan estadísticas implícitas ni modifican probabilidades. Una tomboy musculosa no recibe Power automáticamente y una idol no recibe una ventaja por su apariencia.
+
+La especificación detallada queda en `docs/characters/character-diversity-v1.md`.
+
+---
+
+
