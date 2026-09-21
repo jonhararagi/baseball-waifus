@@ -8,6 +8,7 @@ const TIMING_WINDOW_SECONDS := 1.0
 var simulator := BaseballSimulator.new()
 var state := BaseballGameState.new()
 var ai := OpponentAI.new()
+var decision_planner := BaseballDecisionPlanner.new()
 var runner_system := RunnerSystem.new()
 var fielding_resolver := FieldingResolver.new()
 var throw_resolver := ThrowResolver.new()
@@ -87,6 +88,7 @@ func _ready() -> void:
 	charm_panel.setup(charm_store)
 
 	_sync_match_roles()
+	decision_planner._master_rng.seed = rng.randi()
 	queue_redraw()
 
 func _build_demo_roster() -> void:
@@ -172,11 +174,28 @@ func _process(delta: float) -> void:
 func _start_pitch() -> void:
 	pitch_select_elapsed = 0.0
 	_sync_match_roles()
+	decision_planner.prepare_plate_appearance({
+		"batter_id": batter.id if batter else "",
+		"pitcher_id": pitcher.id if pitcher else "",
+		"inning": state.inning,
+		"half": state.half,
+		"outs": state.outs,
+		"balls": state.balls,
+		"strikes": state.strikes,
+		"score_batting": state.score[state.team_batting()],
+		"score_fielding": state.score[1 - state.team_batting()],
+		"bases": [
+			state.base_runners[0] != null,
+			state.base_runners[1] != null,
+			state.base_runners[2] != null
+		]
+	})
 	if state.team_batting() == 1:
 		var ai_skill := ai.maybe_use_offensive_skill(batter, pitcher, {"phase": "pitch"}, skill_state)
 		if bool(ai_skill.get("used", false)):
 			message = "AI skill: " + str(ai_skill.get("skill_id", ""))
-	current_pitch = Pitch.create(ai.choose_pitch(pitcher, state.strikes, state.balls, rng))
+	var pitch_rng := decision_planner.rng_for("pitch")
+	current_pitch = Pitch.create(ai.choose_pitch(pitcher, state.strikes, state.balls, pitch_rng))
 	pitch_elapsed = 0.0
 	phase = "PITCHING"
 	_get_hud().clear_result()
@@ -278,7 +297,8 @@ func _input(event: InputEvent) -> void:
 func _swing() -> void:
 	if phase != "TIMING":
 		return
-	var preliminary_result := simulator.resolve_batted_ball(batter, pitcher, current_pitch, timing_value, rng, skill_state)
+	var contact_rng := decision_planner.rng_for("contact")
+	var preliminary_result := simulator.resolve_batted_ball(batter, pitcher, current_pitch, timing_value, contact_rng, skill_state)
 	var ball_event := BattedBallEvent.from_result(preliminary_result, BATTER_POS, rng.randi())
 	var fielding_result: Dictionary = {}
 	var fielding_play: FieldingPlayEvent = null
@@ -300,7 +320,7 @@ func _swing() -> void:
 			timing_value,
 			state.base_runners,
 			state.outs,
-			rng,
+			decision_planner.rng_for("defense"),
 			character_roster,
 			skill_state
 		)
@@ -441,7 +461,7 @@ func _attempt_steal() -> void:
 			if bool(ai_runner_skill.get("used", false)):
 				message = "AI skill: " + str(ai_runner_skill.get("skill_id", ""))
 	var steal_modifier := skill_state.get_action_modifier(source_runner.player_id, "steal")
-	var result := runner_system.attempt_steal(source_runner.speed, pitcher.effective_stat("defense"), steal_modifier, rng)
+	var result := runner_system.attempt_steal(source_runner.speed, pitcher.effective_stat("defense"), steal_modifier, decision_planner.rng_for("steal"))
 	message = result.result
 	var movement := state.move_runner_on_steal(from_index, result.success)
 
