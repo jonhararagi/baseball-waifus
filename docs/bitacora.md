@@ -6188,3 +6188,28 @@ Pendiente:
 **≈95%.**
 
 El porcentaje representa avance estructural del prototipo y no contenido final ni validación runtime.
+
+
+## Revisión 58: dirección visual, menú principal y arquitectura de navegación
+
+**Fecha:** 2026-09-21  
+**Motivo:** iniciar la capa de presentación del juego sin mezclarla con los resolvers de béisbol. Se adopta como referencia funcional la estructura de hubs anime de juegos de colección como Stella Sora y Blue Archive, sin copiar assets, código ni identidad visual.
+
+**Decisiones:**
+- El menú principal será un hub visual de juego, no un dashboard administrativo.
+- Los accesos principales usarán iconos/miniaturas y abrirán paneles internos o guiarán hacia la escena correspondiente.
+- Historia se representará como un mapa grande con ubicaciones seleccionables y ubicaciones bloqueadas por progreso.
+- Normal / Hard / Hell serán modos visibles dentro de la navegación de campaña y no mapas duplicados.
+- Se reservará un personaje inicial para comentarios tutoriales/contextuales, con hasta 10 líneas de texto sin requerir voz.
+- La voz se mantiene fuera del núcleo hasta disponer de assets/licencias adecuados. No se incorporarán voces de anime tomadas de vídeos o canciones de fans sin verificar derechos de redistribución.
+- Las expresiones de esfuerzo del béisbol se diseñarán como eventos de audio reemplazables. Los prototipos pueden funcionar con efectos sintéticos o placeholders propios; el gameplay no dependerá de ellos.
+
+**Sistemas afectados:** presentación, navegación, campaña, personaje inicial, audio placeholder.
+
+**Archivos:** diseño y estructura visual preparados como siguiente bloque de implementación; no se modifica la autoridad del gameplay.
+
+**Pruebas:** revisión estructural del repositorio. No se ejecutó Godot runtime.
+
+**Estado:** diseño adoptado; implementación visual completa pendiente.
+
+**Avance aproximado:** ≈94% estructural del prototipo.
