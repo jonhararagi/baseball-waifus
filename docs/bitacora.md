@@ -3219,3 +3219,72 @@ El avance global permanece en **≈64%**. Los personajes forman una nueva biblio
 ### Regla de continuidad
 
 No crear un segundo catálogo de personajes. `character_archetypes.json` queda como fuente de verdad para la primera biblioteca y futuras herramientas de arte.
+
+# 27. Revisión 27: guía visual inicial de Baseball Waifus
+
+**Fecha:** 2026-09-21  
+**Tipo:** Arte / dirección visual / documentación.
+
+### Motivo
+
+Se seleccionó la primera hoja de concept art generada para el proyecto como referencia visual común del universo **Baseball Waifus**. La intención es conservar una identidad artística compartida mientras se producen las ilustraciones individuales del roster.
+
+### Implementado
+
+- `assets/art_reference/baseball_waifus_visual_guide.svg`
+  - referencia visual autocontenida para el repositorio;
+  - conserva la composición general de la hoja generada;
+  - marcada como referencia y no como fuente de identidad de personajes.
+
+- `docs/baseball-waifus-visual-guide.md`
+  - documenta el propósito de la referencia;
+  - conecta la imagen con el pipeline de arte;
+  - establece qué datos continúan viniendo del catálogo JSON.
+
+### Decisión de continuidad
+
+La imagen **no convierte sus nombres o diseños accidentales en canon**.
+
+La fuente de verdad continúa siendo:
+`game/characters/character_archetypes.json`
+
+El arte sirve para fijar:
+- lenguaje anime/deportivo;
+- presentación de colección;
+- variedad visual;
+- colorido;
+- proporciones adultas;
+- sensación general del roster.
+
+Gameplay, estadísticas, posiciones, elementos, rarezas y variantes siguen separados del arte.
+
+### Relación con el pipeline
+
+El flujo queda:
+
+**CharacterArchetypeCatalog → AvatarProfile → variante → prompt → referencia visual → arte final**
+
+La lámina funciona como referencia de coherencia antes de generar los retratos individuales.
+
+### Pruebas
+
+- Se verificó que el asset visual quedó registrado dentro de `assets/art_reference/`.
+- Se añadió documentación específica enlazando la referencia.
+- Se verificó que la actualización no modifica la lógica de gameplay ni el catálogo de personajes.
+
+Esta comprobación es estructural del repositorio; no constituye una prueba de runtime de Godot.
+
+### Estado
+
+**Implementado:** primera guía visual persistente para Baseball Waifus.
+
+**Pendiente:** producción de retratos individuales, sprites/rig final, poses específicas, animaciones particulares y arte definitivo redistribuible.
+
+### Porcentaje
+
+El avance global permanece en **≈64%**. La revisión fija una referencia artística para el contenido, pero no completa los sistemas de arte final ni el roster definitivo.
+
+### Regla de continuidad
+
+No crear una segunda identidad visual independiente para el juego. Las futuras ilustraciones deben tomar esta guía como punto de partida y seguir reutilizando el pipeline de arte y el catálogo existente.
+
