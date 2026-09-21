@@ -6447,3 +6447,57 @@ Se añadieron comprobaciones estructurales para existencia del componente, escen
 
 ### Avance aproximado
 **≈96% estructural del prototipo.** El porcentaje continúa representando estructura del software, no volumen de arte final.
+
+# Revisión 50: Character Card de colección v1
+
+**Fecha:** 2026-09-21  
+**Tipo:** UI de colección / presentación / iconografía / animación.
+
+## Motivo
+
+El repositorio ya disponía de game/ui/character_card.gd, pero la tarjeta todavía tenía una presentación básica. Esta revisión mejora una sola pieza antes de multiplicarla por todo el roster.
+
+## Sistemas afectados
+- UI de colección.
+- Dirección visual de rarezas.
+- Iconografía elemental.
+- Expresiones.
+- Pipeline de retratos.
+- QA estructural.
+
+## Cambios realizados
+
+game/ui/character_card.gd ahora incluye jerarquía visual R/SR/SSR/UR, marco de retrato, icono elemental vectorial procedural, nombre, posición, elemento, especialización, nivel, potencial, identidad de juego, ocho barras de estadísticas, comentario opcional, entrada animada y transición de expresión.
+
+No se modifican PlayerData ni las reglas de gameplay.
+
+game/ui/character_card.tscn se conserva como escena mínima reutilizable.
+
+docs/ui/character-card-v1.md documenta el contrato visual.
+
+QA: se añadieron scenes/character_card_test.gd y scenes/character_card_test.tscn.
+
+## Decisiones arquitectónicas
+1. La tarjeta lee datos existentes y no modifica gameplay.
+2. Las estadísticas se representan, no se calculan.
+3. La rareza modifica presentación, nunca resultado deportivo.
+4. La iconografía elemental no depende de emojis.
+5. Los retratos siguen pasando por CharacterExpressionController.
+6. La tarjeta será reutilizada posteriormente en roster, gacha, recompensas y personaje.
+7. No se generan todavía 30 retratos finales.
+
+## Pruebas
+Se realizó inspección estructural del código y dependencias después de la implementación.
+Runtime Godot: no ejecutado porque este entorno no dispone del binario de Godot.
+
+Durante la implementación se detectaron y corrigieron errores sintácticos del primer reemplazo, además de aislar la paleta de iconos de la clase interna.
+
+## Estado
+Implementado: primera versión rigurosa de la tarjeta de colección.
+Pendiente: runtime Godot, retratos anime finales, expresiones finales y reutilización en roster/gacha/recompensas.
+
+## Porcentaje global
+≈90% estructural del prototipo. El porcentaje no significa juego terminado: arte final, balance, runtime, export Android, gacha completo, IA rival completa y contenido masivo siguen pendientes.
+
+## Regla de continuidad
+No multiplicar todavía esta implementación por las 30 personajes. Primero validar esta pieza en runtime y después construir el sistema de expresiones/retratos sobre el mismo contrato.
