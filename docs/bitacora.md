@@ -5123,3 +5123,90 @@ El porcentaje refleja la implementación de una capa importante de persistencia/
 No crear otro almacén para coins, materials, equipment quantities, level, stats, charm, mood o character energy.
 
 Las futuras recompensas de mapas, gacha, Demon Kings, fusión y crianza deben terminar en `RewardTransactionService` y escribir en las autoridades correspondientes.
+
+
+# Revisión 47: Servicio de equipamiento y puente de estadísticas de gameplay
+
+**Fecha:** 2026-09-21  
+**Motivo:** conectar el inventario de equipamiento con personajes sin crear otra autoridad y preparar su consumo por los resolvers de béisbol.
+
+### Sistemas afectados
+
+- Inventario de cuenta.
+- CharacterRosterStore.
+- Catálogo de equipamiento.
+- Progresión.
+- Gameplay stat access.
+- Tests.
+
+### Implementado
+
+- `game/progression/equipment_service.gd`
+  - servicio único de equipar/desequipar;
+  - valida personaje y pieza;
+  - consume una copia al equipar;
+  - devuelve al inventario la pieza reemplazada;
+  - devuelve la pieza al inventario al desequipar;
+  - usa snapshots compensatorios entre cuenta y roster;
+  - valida también referencias antiguas antes de reemplazarlas;
+  - impide que el renderer tenga autoridad sobre inventario.
+
+- `game/baseball/equipment_stat_adapter.gd`
+  - adapter de solo lectura para gameplay;
+  - calcula `base stats + equipment modifiers`;
+  - utiliza exclusivamente las ocho estadísticas maestras;
+  - no contiene fórmulas de béisbol ni decide resultados.
+
+- `scenes/equipment_service_test.gd/.tscn`
+  - cubre equipar, consultar modificadores, desequipar y restauración de snapshots.
+
+- `docs/progression/inventory-equipment-rewards-v1.md`
+  - documenta equip/desequip y el puente de estadísticas.
+
+### Decisión arquitectónica
+
+La cadena queda:
+
+```
+CharacterRosterStore
+       ↓
+EquipmentService
+       ↓
+EquipmentCatalog
+       ↓
+EquipmentStatAdapter
+       ↓
+Baseball Resolvers
+```
+
+El inventario sigue perteneciendo a `PlayerProgressStore`. Las referencias equipadas pertenecen a `CharacterRosterStore`. El catálogo es inmutable. No se crea `EquipmentInventoryStore` ni otra fuente paralela.
+
+Los modificadores de equipamiento son estadísticas efectivas de gameplay, pero no alteran permanentemente el stat base guardado en el personaje. Esto evita que equipar/desequipar produzca inflación permanente.
+
+### Aplicación al béisbol
+
+El adapter queda listo para que los resolvers existentes consuman estadísticas efectivas. No se duplican las fórmulas de contacto, pitch o defensa dentro del sistema de equipamiento.
+
+### Pruebas
+
+Se añadió test estructural para equipamiento y rollback.
+
+No se ejecutó Godot runtime en este entorno. No se afirma validación runtime.
+
+### Estado
+
+**Implementado:** autoridad de inventario, catálogo, rewards, equip/desequip y adapter de estadísticas.
+
+**Pendiente inmediato:** integrar el adapter en los resolvers concretos de pitch/contact/defense y verificar que ninguna escena siga usando directamente estadísticas base cuando corresponda.
+
+**Pendiente posterior:** RewardResolver de mapas/gacha, tablas explícitas de drops, pity/garantías y política de duplicados.
+
+### Avance aproximado
+
+**≈88%.**
+
+El porcentaje representa avance estructural del prototipo, no un estado de juego terminado. Runtime Godot, balance final, IA rival, UI final, audio/VFX, gacha completo y export Android siguen pendientes.
+
+### Regla de continuidad
+
+No crear otro almacén para equipamiento. No aplicar modificadores directamente al stat base persistente. Los resolvers deben consultar estadísticas efectivas mediante el adapter.
