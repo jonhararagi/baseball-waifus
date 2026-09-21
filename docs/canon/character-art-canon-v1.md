@@ -202,3 +202,21 @@ Este documento consolida esas decisiones. Las entradas originales de `docs/bitac
 Si una futura idea artística contradice este documento o `character_archetypes.json`, debe tratarse como **propuesta**, no como canon, hasta que se registre una revisión explícita.
 
 Nunca crear un segundo catálogo de personajes ni una segunda fuente de verdad visual.
+
+
+## 13. Separación 2D de ficha y modelo 3D de gameplay
+
+A partir de esta revisión se establece una frontera visual adicional:
+
+- El arte 2D plano de colección se utiliza para **fichas, cartas, roster, inventario y pantallas de personaje**.
+- Ese arte 2D no representa el modelo corporal utilizado durante el partido.
+- El gameplay de campo utiliza un **modelo 3D pixel/low-poly procedural** preparado para animación.
+- El modelo 3D recibe el mismo PlayerData y AvatarProfile, por lo que conserva identidad, proporciones y equipamiento sin duplicar la lógica de gameplay.
+- Pitch, swing, follow-through, catch, throw, run, slide, celebration y defeat se representan mediante el controlador 3D.
+- El cambio de renderer 2D a 3D no modifica estadísticas, probabilidades, resultados ni eventos del partido.
+
+Pipeline visual actualizado:
+
+PlayerData -> PlayerAvatarAdapter -> AvatarProfile -> { 2D Card Renderer | Pixel 3D Gameplay Renderer }
+
+El arte 2D y el modelo 3D son dos representaciones del mismo personaje, no dos fuentes de identidad.
