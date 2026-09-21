@@ -6275,3 +6275,67 @@ Se creó prueba estructural para comprobar 10 comentarios, personaje inicial y r
 Se añadió `game/ui/campaign_map_view.gd` para que Historia no sea solamente texto: ahora el panel contiene una ruta visual con nodos, bloqueos y Demon King, además del selector Normal/Hard/Hell. El mapa sigue siendo presentación y emite solamente una selección de actividad; no consume energía ni decide recompensas.
 
 **Runtime Godot:** no ejecutado.
+
+
+## Revisión 60: primera pasada de arte de juego para Hub y mapa de campaña
+
+**Fecha:** 2026-09-21  
+**Motivo:** llevar el Hub y el mapa de Historia desde un prototipo predominantemente administrativo/geométrico hacia una presentación más cercana a un videojuego anime deportivo cuidado, manteniendo la arquitectura de presentación separada del gameplay.
+
+### Sistemas afectados
+
+- Hub principal;
+- presentación de personaje;
+- navegación interna;
+- mapa de campaña;
+- transiciones y microinteracciones;
+- pipeline de assets vectoriales originales;
+- pruebas estructurales de presentación.
+
+### Archivos creados
+
+- `assets/ui/hub_background.svg`
+- `assets/ui/campaign_map_background.svg`
+- `assets/ui/starter_card_frame.svg`
+
+### Archivos modificados
+
+- `scenes/hub.gd`
+- `game/ui/campaign_map_view.gd`
+- `scenes/hub_navigation_test.gd`
+- `docs/game-design.md`
+- `docs/ui-style-guide.md`
+- `docs/bitacora.md`
+
+### Decisiones arquitectónicas
+
+1. Se conserva el Hub como capa de presentación y navegación, sin autoridad sobre estadísticas, probabilidades, recompensas ni resultados.
+2. Se reutiliza el asset existente `assets/characters/generated/bw001.svg` como personaje inicial, ahora dentro de una tarjeta visual con marco vectorial propio.
+3. El fondo del Hub y el fondo del mapa son assets SVG originales del repositorio, ligeros, reemplazables y adecuados para prototipo multiplataforma.
+4. El mapa de Historia deja de depender principalmente de texto y utiliza fondo ilustrado, ruta, nodos de actividad, bloqueos y Demon King.
+5. Se añaden microanimaciones de hover y transición de panel. Son exclusivamente visuales.
+6. Normal / Hard / Hell continúan compartiendo el mapa.
+7. No se agregan imágenes externas, voces, código de terceros ni dependencias nuevas.
+8. La mejora artística se plantea progresivamente: primero composición, jerarquía, estados, transiciones y assets propios; posteriormente podrán sustituirse piezas por ilustraciones finales sin cambiar contratos de gameplay.
+
+### Pruebas
+
+Se amplió `scenes/hub_navigation_test.gd` para comprobar la existencia de los assets de presentación y conservar las verificaciones de 10 comentarios, personaje inicial y ruta al partido.
+
+**Runtime Godot:** no ejecutado en este entorno. Las pruebas se consideran escritas/revisadas estructuralmente, no pruebas runtime.
+
+### Problemas encontrados y correcciones
+
+- El Hub original dependía de un retrato dibujado directamente por la escena. Se sustituyó por el asset vectorial existente del personaje y un marco independiente, reduciendo el acoplamiento entre arte y lógica.
+- El mapa original era principalmente una colección de botones sobre un fondo plano. Se incorporó un fondo vectorial original y una ruta visual sin mover la autoridad de selección fuera del mapa.
+- Se evitó introducir assets de terceros para acelerar la apariencia.
+
+### Estado
+
+**Implementado a nivel de código y assets de prototipo.** Pendiente: ilustraciones finales de personajes, tarjetas avanzadas por rareza, animación de personajes más rica, VFX, audio y adaptación visual fina para móviles estrechos.
+
+### Avance aproximado
+
+**≈96% estructural del prototipo.**
+
+El porcentaje representa avance estructural del prototipo, no contenido artístico final ni validación runtime.
