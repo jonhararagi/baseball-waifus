@@ -3095,3 +3095,127 @@ La revisión mejora la calidad y coherencia de la presentación, pero no cuenta 
 
 No crear un segundo sistema de estilos para el mismo juego. Las futuras pantallas deben reutilizar `ui_theme.gd`, `ui-style-guide.md` y el lenguaje visual del HUD antes de añadir componentes nuevos.
 
+
+
+# 26. Revisión 26: roster base de 30 personajes y pipeline de arte
+
+**Fecha:** 2026-09-21  
+**Tipo:** Personajes / datos / avatar / herramientas de arte.
+
+### Motivo
+
+El proyecto necesitaba una biblioteca inicial de personajes suficientemente grande para que el juego dejara de depender de personajes demo genéricos. La decisión fue crear 30 plantillas reutilizables en lugar de 30 sistemas visuales independientes.
+
+### Implementado
+
+- `game/characters/character_archetypes.json`
+  - 30 personajes adultos;
+  - IDs únicos;
+  - rareza;
+  - elemento;
+  - posición;
+  - especialización;
+  - potencial;
+  - ocho estadísticas;
+  - silueta corporal base;
+  - rostro;
+  - piel;
+  - cabello;
+  - uniforme;
+  - color de acento;
+  - ojos.
+
+- `game/characters/character_archetype_catalog.gd`
+  - fuente común para convertir una plantilla en PlayerData;
+  - creación de AvatarProfile;
+  - aplicación controlada de variantes.
+
+- `game/characters/demo_team_factory.gd`
+  - equipos demo conectados al catálogo real de personajes en lugar de nombres genéricos independientes.
+
+- `tools/character_ai/roster_prompt_builder.py`
+  - crea prompts de arte directamente desde el mismo catálogo;
+  - mantiene la identidad de gameplay separada de la imagen.
+
+- `tools/character_ai/validate_roster.py`
+  - valida cantidad;
+  - IDs únicos;
+  - rarezas;
+  - presets;
+  - restricciones de variantes.
+
+- `docs/character-roster-30.md`
+  - documentación de la biblioteca inicial.
+
+- `docs/character-art-pipeline.md`
+  - proceso para generar referencias y reemplazarlas posteriormente por arte definitivo.
+
+### Regla de variantes
+
+Las plantillas mantienen fija su identidad base.
+
+Una variante solo puede cambiar:
+
+1. color de cabello;
+2. peinado;
+3. escala corporal global entre 0.94 y 1.06.
+
+La variante no modifica:
+- rareza;
+- estadísticas;
+- elemento;
+- posición;
+- especialización;
+- rostro;
+- uniforme;
+- equipamiento.
+
+### Distribución actual
+
+- 4 R
+- 14 SR
+- 10 SSR
+- 2 UR
+
+### Cobertura
+
+El catálogo contiene los siete elementos definidos y las posiciones:
+- P
+- C
+- 1B
+- 2B
+- 3B
+- SS
+- LF
+- CF
+- RF
+- DH
+
+### Validación estructural
+
+La comprobación realizada sobre el catálogo confirmó:
+- 30 entradas;
+- 30 IDs únicos;
+- reglas de variante coherentes;
+- siete elementos presentes;
+- diez posiciones cubiertas.
+
+Esto es validación de datos del repositorio, no una prueba de runtime de Godot.
+
+### Arte
+
+Se prepara la generación de una hoja de roster consistente para usarla como referencia visual inicial. La ilustración generada no se considera automáticamente arte de producción ni se redistribuye como asset definitivo sin revisar las condiciones de licencia del generador/modelo.
+
+### Estado
+
+**Implementado:** catálogo de 30 personajes, factory de gameplay/avatar, conexión con equipos demo, restricciones de variantes, validador y pipeline de prompts.
+
+**Pendiente:** retratos individuales definitivos, sprites/rig final, animaciones particulares por personaje, habilidades únicas completas y persistencia final del roster del jugador.
+
+### Porcentaje
+
+El avance global permanece en **≈64%**. Los personajes forman una nueva biblioteca de contenido prototípico, pero todavía no representan el roster final completo ni sus sistemas de progresión/gacha/crianza.
+
+### Regla de continuidad
+
+No crear un segundo catálogo de personajes. `character_archetypes.json` queda como fuente de verdad para la primera biblioteca y futuras herramientas de arte.
