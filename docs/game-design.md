@@ -1471,6 +1471,24 @@ Si esto es divertido, los sistemas secundarios tienen una base sólida.
 
 ---
 
+# 48.1 Implementación vigente del conteo del prototipo
+
+La especificación de partido v1 ya tiene una primera implementación funcional en Godot:
+
+- los tres pitches conservan sus tipos existentes;
+- el pitch puede resolverse como `BALL` antes del timing;
+- 4 balls producen walk;
+- 3 strikes producen out;
+- un foul con 2 strikes no suma un tercer strike;
+- la ventana de timing termina en strike llamado si no hay swing;
+- el lineup avanza sobre el equipo que estaba bateando aunque el tercer out cambie la mitad del inning;
+- el prototipo usa 3 innings.
+
+Las reglas concretas y sus versiones están documentadas en `docs/baseball-rules-v1.md`.
+
+
+---
+
 # 49. Estado de esta versión
 
 Esta es la **versión integral de diseño v1.0**.
