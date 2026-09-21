@@ -21,6 +21,7 @@ const STAT_CAP := 100
 const LEVEL_MIN := 1
 const LEVEL_MAX := 100
 const ENERGY_MAX := 100
+const ENERGY_REGEN_SECONDS := 360
 const MOOD_MIN := 0
 const MOOD_MAX := 100
 
@@ -317,7 +318,7 @@ func _regenerate_character(character_id: String, now_unix: int) -> Dictionary:
 			record["energy_last_regen_unix"] = now_unix
 			return _replace_character(character_id, record)
 		return {"ok": true, "energy": energy, "ticks": 0}
-	var ticks := int((now_unix - last) / PlayerProgressStore.ENERGY_REGEN_SECONDS)
+	var ticks := int((now_unix - last) / ENERGY_REGEN_SECONDS)
 	if ticks <= 0:
 		return {"ok": true, "energy": energy, "ticks": 0}
 	var after := mini(ENERGY_MAX, energy + ticks)
