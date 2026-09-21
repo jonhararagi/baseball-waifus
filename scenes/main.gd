@@ -212,8 +212,10 @@ func _finish_ball(pitch_result: Dictionary) -> void:
 	ball_controller.stop()
 	ball_controller.play_miss_to_catcher(BATTER_POS, CATCHER_POS)
 	avatar_presenter.on_batting_result(current_result)
-	field_avatar_presenter.sync_runners(state.base_runners)
-	field_avatar_presenter.animate_hit(ball_plan["plan"], ball_plan["after_runners"], current_batter)
+	if bool(ball_plan.get("walk", false)):
+		field_avatar_presenter.animate_hit(ball_plan["plan"], ball_plan["after_runners"], current_batter)
+	else:
+		field_avatar_presenter.sync_runners(state.base_runners)
 	_get_hud().show_result(current_result)
 	phase = "RESULT"
 	result_timer = 1.5
