@@ -219,6 +219,8 @@ func move_runner_on_steal(from_index: int, success: bool) -> Dictionary:
 		return {"success": false, "from": from_index, "to": -1, "runner": runner}
 
 	var destination := from_index + 1
+	if destination < 3 and base_runners[destination] != null:
+		return {"success": false, "blocked": true, "from": from_index, "to": destination, "runner": runner}
 	base_runners[from_index] = null
 	if destination >= 3:
 		score[team_batting()] += 1
