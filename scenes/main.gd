@@ -172,7 +172,11 @@ func _process(delta: float) -> void:
 func _start_pitch() -> void:
 	pitch_select_elapsed = 0.0
 	_sync_match_roles()
-	current_pitch = Pitch.create(ai.choose_pitch(pitcher, state.strikes, state.balls))
+	if state.team_batting() == 1:
+		var ai_skill := ai.maybe_use_offensive_skill(batter, pitcher, {"phase": "pitch"}, skill_state)
+		if bool(ai_skill.get("used", false)):
+			message = "AI skill: " + str(ai_skill.get("skill_id", ""))
+	current_pitch = Pitch.create(ai.choose_pitch(pitcher, state.strikes, state.balls, rng))
 	pitch_elapsed = 0.0
 	phase = "PITCHING"
 	_get_hud().clear_result()
