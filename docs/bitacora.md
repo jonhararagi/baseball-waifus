@@ -6757,3 +6757,53 @@ La siguiente unidad correcta es bw003, pero solamente después de tratar la vali
 ### Avance aproximado
 
 **≈96% estructural del prototipo.** Este porcentaje no representa porcentaje de arte final, contenido, balance definitivo, QA runtime ni publicación Android.
+
+## Revisión 67: tercera unidad visual cerrada, bw003 Miu Tachibana
+
+**Fecha:** 2026-09-21  
+**Motivo:** continuar la estrategia de producción visual de una personaje por vez después del cierre estructural de bw001 y bw002. Se reutiliza el mismo contrato de expresiones, tarjeta y catálogo, sin duplicar sistemas.
+
+### Alcance
+Se trabajó exclusivamente sobre bw003 / Miu Tachibana:
+- rareza SR;
+- elemento Lightning;
+- posición SS;
+- especialidad Contact.
+
+No se modificaron estadísticas canónicas, gameplay, resolvers de béisbol, IA rival, economía, gacha, recompensas ni expresiones de las otras personajes.
+
+### Archivos creados
+- assets/characters/expressions/bw003_neutral.svg
+- assets/characters/expressions/bw003_happy.svg
+- assets/characters/expressions/bw003_focused.svg
+- assets/characters/expressions/bw003_surprised.svg
+- assets/characters/expressions/bw003_disappointed.svg
+- scenes/bw003_character_presentation_test.gd
+- scenes/bw003_character_presentation_test.tscn
+- docs/characters/bw003-presentation-v1.md
+
+### Decisiones arquitectónicas
+1. Se reutiliza CharacterExpressionController como autoridad única de vocabulario y resolución.
+2. BaseballCharacterCard continúa siendo el único componente de presentación de colección.
+3. Los cinco estados siguen siendo neutral, happy, focused, surprised y disappointed.
+4. La identidad visual de bw003 se diferencia mediante paleta cálida, amarillo eléctrico, silueta equilibrada y lectura facial energética/técnica.
+5. Las expresiones permanecen fuera de PlayerData y CharacterRosterStore.
+6. Los SVG no contienen texto ni dependen de fuentes del dispositivo.
+7. Cada expresión es un asset independiente para permitir reemplazo futuro por arte final sin tocar gameplay.
+8. No se produce todavía arte para bw004 ni se escala este cambio al resto del roster.
+
+### QA estructural
+Se comprobó mediante inspección del repositorio que:
+- los cinco SVG existen;
+- cada asset supera el tamaño mínimo usado por el pipeline;
+- no contiene etiquetas `<text>`;
+- las rutas siguen el contrato de CharacterExpressionController;
+- existe test estructural específico y documentación.
+
+**Runtime Godot:** no ejecutado. No se registra validación visual, FPS, memoria ni hardware Android.
+
+### Estado
+**bw003 queda cerrada a nivel de implementación estructural y paquete de assets.** La siguiente unidad correcta es bw004 después de una validación runtime real cuando exista un entorno Godot ejecutable.
+
+### Avance aproximado
+**≈96% estructural del prototipo.** Este porcentaje no representa porcentaje de arte final, balance definitivo, contenido, QA runtime ni publicación Android.
