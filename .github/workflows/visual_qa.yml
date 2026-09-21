@@ -3,6 +3,8 @@ name: Baseball Waifus Visual QA
 on:
   workflow_dispatch:
   push:
+    branches:
+      - "main"
     paths:
       - "assets/characters/expressions/**"
       - "game/ui/character_*.gd"
