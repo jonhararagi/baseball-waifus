@@ -10,7 +10,7 @@ La autoridad queda separada por tipo:
 - CharacterRosterStore: instancias poseídas y su progresión: nivel, estadísticas, charm, ánimo, energía y referencias de equipamiento.
 - PlayerProgressStore: recursos de cuenta: energía del jugador, monedas, materiales y cantidades de equipamiento.
 - EquipmentCatalog: catálogo inmutable de piezas y modificadores de gameplay.
-- RewardTransactionService: aplica un payload de recompensas ya resuelto de forma atómica entre PlayerProgressStore y CharacterRosterStore.
+- RewardTransactionService: coordina un payload de recompensas ya resuelto con rollback compensatorio entre PlayerProgressStore y CharacterRosterStore.
 
 ## Inventario de cuenta
 
@@ -144,3 +144,8 @@ RewardedAdClaimService toma snapshots de cuenta y roster para que un fallo al gu
 - fragmentos y evolución;
 - integración del RewardResolver existente con esta autoridad;
 - migración de UI que todavía cree PlayerData aislados.
+
+
+### Semántica de transacción
+
+La implementación utiliza una transacción compensatoria entre dos archivos de guardado. Se restaura el snapshot si una mutación falla. No se afirma atomicidad de sistema de archivos ante un cierre del proceso exactamente entre dos escrituras; esa protección requeriría un journal único o un contenedor de save futuro.
