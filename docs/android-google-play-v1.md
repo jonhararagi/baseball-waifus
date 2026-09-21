@@ -86,7 +86,9 @@ RewardedAdPolicy
       ↓
 RewardedAdUsageStore
       ↓
-Reward Transaction
+RewardedAdTransaction
+      ↓
+PlayerProgressStore
 ```
 
 El proveedor de anuncios puede informar disponibilidad y finalización, pero no puede decidir:
