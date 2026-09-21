@@ -18,7 +18,7 @@ const FIELD_POSITIONS := {
 	"RF": Vector2(850, 295)
 }
 
-func resolve(event: BattedBallEvent, defensive_roster: Dictionary, timing_value: float, base_runners: Array, outs: int, rng: RandomNumberGenerator, roster: RefCounted = null) -> Dictionary:
+func resolve(event: BattedBallEvent, defensive_roster: Dictionary, timing_value: float, base_runners: Array, outs: int, rng: RandomNumberGenerator, roster: RefCounted = null, skill_state: BaseballSkillState = null) -> Dictionary:
 	if event == null:
 		return _miss_result("no_event")
 	if event.result != "FIELDING_CANDIDATE":
@@ -49,6 +49,8 @@ func resolve(event: BattedBallEvent, defensive_roster: Dictionary, timing_value:
 	chance += timing_score * 0.16
 	chance += ball_handling_score * 0.08
 	chance += zone_bonus
+	if skill_state != null:
+		chance += skill_state.get_action_modifier(defender.id, "fielding")
 	chance = clamp(chance, 0.08, 0.92)
 
 	var roll := rng.randf()
@@ -97,7 +99,7 @@ func resolve(event: BattedBallEvent, defensive_roster: Dictionary, timing_value:
 			return result
 
 		var double_play_resolver := DoublePlayResolver.new()
-		var double_play := double_play_resolver.resolve(event, result, base_runners, outs, rng)
+		var double_play := double_play_resolver.resolve(event, result, base_runners, outs, rng, skill_state, defender.id)
 		result["double_play"] = double_play
 		if bool(double_play.get("success", false)):
 			result["final_result"] = "DOUBLE PLAY"
