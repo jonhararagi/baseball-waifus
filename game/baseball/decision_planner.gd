@@ -13,6 +13,9 @@ var _sequence := 0
 func _init(seed_value: int = 0) -> void:
 	_master_rng.seed = seed_value if seed_value != 0 else 734287
 
+func set_seed(seed_value: int) -> void:
+	_master_rng.seed = seed_value
+
 func prepare_plate_appearance(context: Dictionary) -> Dictionary:
 	_sequence += 1
 	var seed_base := _master_rng.randi()
