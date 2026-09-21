@@ -165,3 +165,26 @@ Los buffs de Defense y Speed del SkillState ya son consumidos por los resolvers 
 - ThrowResolver: Defense de lanzadora y receptora.
 
 Esto evita que una habilidad pueda existir en el catálogo sin tener efecto real en el núcleo cuando su tipo ya está soportado.
+
+
+## Integración v1.2: IA rival y activación situacional
+
+Se incorporó una capa `OpponentAI` independiente del resultado del béisbol.
+
+La IA puede:
+- seleccionar FASTBALL, CURVE o SPECIAL mediante heurísticas de bolas, strikes y Control;
+- activar habilidades disponibles según `skill_roles` del personaje;
+- usar habilidades ofensivas cuando el rival está bateando;
+- preparar habilidades defensivas antes de resolver una pelota bateada;
+- preparar habilidades de robo cuando controla corredores;
+- mantener cooldowns propios sin alterar estadísticas permanentes ni recompensas.
+
+La IA entrega acciones al `SkillResolver`. Después, los resolvers deportivos siguen calculando el resultado con sus fórmulas y RNG.
+
+### Regla de autoridad
+
+`OpponentAI` decide **qué acción intentar y cuándo**. No decide si el lanzamiento entra, si la bateadora conecta, si una defensora atrapa, si un robo tiene éxito ni qué recompensa recibe el jugador.
+
+### Skill roles
+
+`PlayerData.skill_roles` se carga desde `character_archetypes.json`. Esto mantiene la identidad de habilidades separada de las estadísticas y evita hardcodear un conjunto de skills dentro del renderer.
