@@ -7279,3 +7279,70 @@ El workflow ejecutará Godot 4.5.1-stable en headless, lanzará la escena con `-
 ### Avance aproximado
 
 **≈95% estructural del prototipo.**
+
+## Revisión 61: Unidad visual bw009 (Rika Moriyama)
+
+**Fecha:** 2026-09-21  
+**Tipo:** Pipeline artístico 2D / presentación de colección / Visual QA.
+
+### Motivo
+
+Continuar el pipeline artístico de una personaje por vez después del cierre de bw008. La unidad se mantiene aislada para detectar cualquier problema de asset, expresión, escena o CI antes de multiplicarlo al resto del roster.
+
+### Identidad canónica bloqueada
+
+La unidad utiliza exclusivamente el registro existente de `bw009` en `game/characters/character_archetypes.json`:
+
+- **Nombre:** Rika Moriyama
+- **Rareza:** SR
+- **Posición:** LF
+- **Elemento:** Nature
+- **Especialización:** Runner
+- **Potencial:** 4
+- **Stats:** Power 59, Contact 70, Speed 90, Pitch 50, Control 60, Defense 77, Critical 9, Stamina 75.
+- **Identidad:** `earthy_runner_prankster`
+- **Play identity:** `first_to_third_pressure`
+- **Acción de firma:** `lead_feint`
+- **Skill roles:** `power_up`, `statistic`
+- **Paleta canónica:** cabello `#5a7044`, acento `#4cae5f`, ojos `#344124`, piel `#c98c68`, uniforme `#f4f1da`.
+
+No se crea una segunda fuente de verdad y no se modifican los atributos canónicos del catálogo.
+
+### Implementado
+
+- `assets/characters/expressions/bw009_neutral.svg`
+- `assets/characters/expressions/bw009_happy.svg`
+- `assets/characters/expressions/bw009_focused.svg`
+- `assets/characters/expressions/bw009_surprised.svg`
+- `assets/characters/expressions/bw009_disappointed.svg`
+- `scenes/bw009_character_presentation_test.gd`
+- `scenes/bw009_character_presentation_test.tscn`
+- `docs/characters/bw009-presentation-v1.md`
+- extensión de `.github/workflows/visual_qa.yml` con job `bw009-visual-qa`.
+
+### Decisiones de producción visual
+
+1. La cadena permanece estrictamente `CharacterArchetypeCatalog -> CharacterExpressionController -> BaseballCharacterCard`.
+2. Los cinco SVG son independientes, vectoriales, autónomos y no contienen `<text>`, fuentes embebidas ni referencias externas.
+3. Las expresiones tienen modificaciones faciales explícitas y se valida que sus contenidos no sean idénticos.
+4. La dirección visual de Rika enfatiza su identidad de corredora atlética, estilo casual y actitud juguetona sin inferir estadísticas desde el aspecto.
+5. La expresión es presentation-only y nunca modifica PlayerData, progresión, equipamiento, RNG, IA ni resultados deportivos.
+6. Los assets están diseñados para su reutilización posterior en Android y PC; el backend vectorial puede reemplazarse por arte final sin tocar gameplay.
+7. Todo el desarrollo de bw009 queda agrupado en un único commit consolidado.
+
+### QA y CI
+
+La escena valida identidad, stats, skill roles, acción de firma, paleta, existencia y diferenciación de los cinco SVG, ausencia de `<text>` y resolución de paths mediante `CharacterExpressionController`.
+
+El workflow ejecutará Godot 4.5.1-stable en headless, lanzará `bw009_character_presentation_test.tscn` con `--run-qa-capture`, comprobará que `qa_captures/bw009_character_presentation.png` sea no vacío y publicará la captura como artifact.
+
+**Runtime local:** no ejecutado en este entorno. La validación runtime headless queda delegada a GitHub Actions.
+
+### Estado
+
+**Implementado a nivel estructural, assets, escena, documentación y CI. Pendiente de la ejecución runtime headless de GitHub Actions.**
+
+### Avance aproximado
+
+**≈96% estructural del prototipo.** Este porcentaje no representa porcentaje de arte final, balance definitivo, validación Android local ni contenido completo.
+
