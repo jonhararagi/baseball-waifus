@@ -73,3 +73,14 @@ No se agregan estadísticas nuevas.
 - recepción fallida como `FIELDING ERROR`.
 
 La prueba está preparada para Godot 4.x. No se declara ejecución runtime si el binario no está disponible.
+
+
+## Integración de EquipmentStatAdapter
+
+La integración de la Revisión 48 permite que los resolvers defensivos y de corredores reciban opcionalmente el CharacterRosterStore y consulten estadísticas efectivas mediante EquipmentStatAdapter.
+
+- FieldingResolver: Defense efectiva.
+- DefensiveRunnerResolver: Speed efectiva para force-out y rundown.
+- ThrowResolver: Defense efectiva de lanzadora y receptora.
+
+Las fórmulas existentes no cambian. El equipamiento modifica únicamente la estadística de entrada. Si un caller no entrega roster, se conserva el comportamiento compatible anterior.
