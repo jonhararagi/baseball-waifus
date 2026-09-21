@@ -2969,3 +2969,129 @@ La revisión mejora la modularidad de tooling, pero no aumenta significativament
 El código nuevo cuenta con pruebas unitarias del factory y del proveedor sintético. No se ejecutó todavía una suite completa sobre un checkout local del repositorio en este entorno.
 
 La validación hardware end-to-end con Godot + cámara + micrófono + OBS sigue pendiente.
+
+
+# 25. Revisión 25: interfaz visual de producto para juego y streaming
+
+**Fecha:** 2026-09-21  
+**Tipo:** UI/UX / Godot / panel operativo / assets vectoriales.
+
+### Motivo
+
+La arquitectura de streaming ya estaba modularizada, pero la presentación visual seguía teniendo aspecto de prototipo técnico. El juego necesita una interfaz intuitiva y vistosa, especialmente en móvil, sin mezclar la lógica de gameplay con la capa visual.
+
+### Implementado
+
+#### HUD de partido
+
+Se rediseña `game/ui/hud.gd` para usar una jerarquía visual clara:
+
+- marcador de ambos equipos;
+- inning y mitad;
+- outs;
+- strikes y balls;
+- bases;
+- bateadora y pitcher;
+- pitch actual;
+- mensaje contextual;
+- resultado destacado;
+- indicador de timing.
+
+Se incorpora `game/ui/hud_visual.gd` como capa de dibujo procedural para:
+- paneles;
+- franjas transparentes;
+- rail de timing;
+- zona PERFECT/GREAT;
+- marcador visual de estado;
+- énfasis temporal de resultados.
+
+La lógica de partido sigue separada del renderer de UI.
+
+#### Controles móviles
+
+`game/ui/mobile_controls.gd` se actualiza para:
+- botones grandes;
+- estados visuales enabled/disabled;
+- acciones BATEAR y ROBAR;
+- tipografía de mayor lectura;
+- icono vectorial;
+- vibración háptica existente.
+
+#### Estilo reutilizable
+
+Se añade `game/ui/ui_theme.gd` para centralizar:
+- paneles redondeados;
+- bordes;
+- sombras;
+- estilos de botones.
+
+#### Panel de streaming
+
+`tools/streaming_bridge/dashboard.html` pasa a un Control Center visual con:
+- tarjetas de estado;
+- proveedor de tracking;
+- latencia;
+- FPS;
+- OBS;
+- grabación;
+- destino Godot;
+- acciones rápidas;
+- QA;
+- diagnóstico JSON.
+
+No cambian los endpoints ni la frontera de seguridad localhost.
+
+#### Asset visual
+
+Se añade `assets/ui/baseball_waifus_icon.svg`, un asset vectorial original y pequeño para reutilizar en UI sin depender de imágenes externas.
+
+#### Documentación visual
+
+Se añade `docs/ui-style-guide.md` con el lenguaje visual que deberán reutilizar futuras pantallas.
+
+### Decisión arquitectónica
+
+La UI no decide gameplay.
+
+Flujo:
+
+`Gameplay State → Presentación/HUD → Input visual`
+
+El renderer visual no altera:
+- estadísticas;
+- probabilidades;
+- recompensas;
+- resultados;
+- roster.
+
+### Investigación visual
+
+Se mantiene la política de utilizar referencias externas solo como patrón de diseño. No se incorporan imágenes de Canva, PixAI, Danbooru u otros repositorios de terceros sin revisar primero derechos y licencia.
+
+Para assets funcionales de interfaz se prefiere SVG propio mientras el arte final del juego no esté cerrado.
+
+### Estado
+
+**Implementado:** HUD visual, controles móviles estilizados, panel de streaming renovado, asset SVG propio y guía visual.
+
+**Pendiente:** arte de producción, retratos finales, iconografía completa, efectos VFX, animaciones de UI, pantallas de roster/gacha/inventario y adaptación visual completa del menú principal.
+
+### Pruebas
+
+No se ejecutó todavía Godot en este entorno para validar visualmente el HUD y los controles en runtime.
+
+Se verificó mediante lectura del repositorio que:
+- los nuevos archivos están separados de la lógica de partido;
+- el panel conserva sus endpoints existentes;
+- el bridge añade el proveedor de tracking al estado sin cambiar el protocolo de transporte.
+
+### Porcentaje
+
+El avance global permanece en **≈64%**.
+
+La revisión mejora la calidad y coherencia de la presentación, pero no cuenta como gran aumento funcional del producto.
+
+### Regla de continuidad
+
+No crear un segundo sistema de estilos para el mismo juego. Las futuras pantallas deben reutilizar `ui_theme.gd`, `ui-style-guide.md` y el lenguaje visual del HUD antes de añadir componentes nuevos.
+
