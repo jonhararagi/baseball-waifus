@@ -10,4 +10,6 @@ func _ready() -> void:
 	assert(ResourceLoader.exists("res://assets/ui/campaign_map_background.svg"), "Campaign map background asset is missing.")
 	assert(ResourceLoader.exists("res://assets/ui/starter_card_frame.svg"), "Starter card frame asset is missing.")
 	assert(ResourceLoader.exists("res://assets/characters/generated/bw001.svg"), "Starter character asset is missing.")
+	assert(ResourceLoader.exists("res://game/ui/character_card.gd"), "Reusable character card script is missing.")
+	assert(ResourceLoader.exists("res://game/ui/character_card.tscn"), "Reusable character card scene is missing.")
 	print("Hub navigation structural checks passed.")
