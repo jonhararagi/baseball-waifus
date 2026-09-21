@@ -3982,3 +3982,33 @@ Auditoría técnica y prevención de errores: mejorada y documentada.
 Pendientes relevantes: fórmula definitiva de estadísticas, tabla elemental completa, integración de Encanto con roster global, gacha definitivo, economía, runtime Godot y balance estadístico.
 
 **Avance global aproximado:** ≈78%.
+
+## Revisión 36: endurecimiento offline-first y corrección de robo bloqueado
+
+**Fecha:** 2026-09-21  
+**Motivo:** establecer explícitamente que Baseball Waifus no dependerá de IA remota, APIs ni servicios online para el núcleo, y corregir una consecuencia detectada después de la Revisión 35.
+
+### Cambios
+- `scenes/main.gd`: un robo bloqueado por una base ocupada ya no se interpreta como robo fallido con out.
+- La presentación distingue `STEAL BLOCKED` de un robo fallido real.
+- Se creó `docs/architecture/offline-first-and-contingency-v1.md`.
+- Se definieron contingencias para ausencia de red, assets corruptos, saves corruptos, incompatibilidad de datos, errores de animación, RNG inválido, recompensas duplicadas, soft-locks y configuración inválida.
+- Se reafirma que la IA rival será local, determinista/heurística y sin LLM, API de IA o servidor de decisiones.
+
+### Problema encontrado
+La Revisión 35 protegía el estado de la base ocupada, pero el caller de `move_runner_on_steal()` seguía interpretando cualquier `success=false` como out. Eso convertía una protección de integridad en un resultado deportivo incorrecto.
+
+### Corrección
+Se separó:
+- `blocked=true`: acción inválida/no aplicable, sin mutación y sin out.
+- `success=false, blocked=false`: intento real de robo fallido, con out.
+
+### Pruebas
+- Se conserva la regresión de GameState para base ocupada.
+- Validación estática de la nueva rama de presentación/estado.
+- No se ejecutó Godot runtime en este entorno.
+
+### Estado
+Mejorada la resiliencia offline y corregida la semántica de acciones bloqueadas.
+
+**Avance global aproximado:** ≈79%.
