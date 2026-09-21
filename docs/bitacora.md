@@ -5514,3 +5514,107 @@ Posteriormente se añadieron:
 La prueba valida estructuralmente los 30 personajes, IDs únicos, presencia de estadísticas, esquema de identidad, diferencia R vs SR+, semillas narrativas y acciones de firma.
 
 La prueba fue escrita, pero **no ejecutada en Godot runtime** en este entorno.
+
+
+## Revisión 51: sistema de habilidades, buffs/debuffs y combinaciones
+
+**Fecha:** 2026-09-21  
+**Motivo:** convertir la idea de habilidades de personajes en una capa de gameplay basada en béisbol, permitiendo composiciones de equipo con atacantes, soporte, defensa y cadenas de combinación sin crear un RPG de daño ni garantizar resultados.
+
+### Sistemas afectados
+
+- habilidades de personajes;
+- estado temporal de partido;
+- resolución de contacto;
+- Power;
+- Contact;
+- Control;
+- Home Run;
+- futuras decisiones de equipo;
+- futura IA rival.
+
+### Decisión arquitectónica
+
+Se creó una capa data-driven:
+
+`SkillResolver -> BaseballSkillState -> BaseballSimulator -> Baseball Result`
+
+Las habilidades no modifican directamente el resultado final. Añaden modificadores temporales o condiciones que los resolvers existentes consumen.
+
+Se mantienen las ocho estadísticas actuales. En particular, el concepto de "destreza" del pitcher se representa mediante **Control** en lugar de añadir Dexterity/Technique, porque esas estadísticas duplicarían responsabilidades existentes.
+
+### Categorías adoptadas
+
+- attack;
+- defense;
+- power_up;
+- power_down;
+- statistic;
+- combination.
+
+Estas categorías describen la función de una habilidad dentro del béisbol y no representan daño RPG.
+
+### Ejemplo de combo implementado
+
+Se documentó e implementó como referencia:
+
+- `power_signal`: +3% Power al objetivo durante una acción;
+- `pitch_pressure`: -3% Control al pitcher rival durante cuatro acciones de pitch;
+- `flame_strike`: +5% Power durante una acción y +5 puntos porcentuales al modificador específico de Home Run.
+
+Los efectos pueden acumularse. El ejemplo produce un escenario potencial de +8% Power para la bateadora objetivo si las ventanas coinciden.
+
+**No se implementó "victoria asegurada".** El Home Run sigue dependiendo de contacto, timing, Power, Critical, dificultad del pitch, elementos, contexto y RNG. El modificador de Home Run también permanece acotado.
+
+### Archivos creados
+
+- `game/baseball/skill_state.gd`
+- `game/baseball/skill_resolver.gd`
+- `game/characters/skill_catalog.json`
+- `docs/characters/skill-system-v1.md`
+- `scenes/skill_system_test.gd`
+- `scenes/skill_system_test.tscn`
+
+### Archivos modificados
+
+- `game/baseball/baseball_simulator.gd`
+
+El simulador ahora acepta opcionalmente un `BaseballSkillState` sin romper las llamadas anteriores. Contact, Power y el modificador de Home Run pueden consumir el estado de habilidades.
+
+### Correcciones durante implementación
+
+1. Se detectó que el almacenamiento inicial de modificadores debía permitir múltiples efectos sobre la misma estadística. Se corrigió para permitir stacking.
+2. Se corrigió el contrato de almacenamiento de condiciones de combinación para distinguir `combo_id`, objetivo y condición.
+3. Se evitó introducir una estadística nueva para "destreza".
+4. Se limitó el rango de modificadores para impedir que una combinación de buffs cree valores arbitrarios.
+5. El sistema mantiene la separación entre decisión, modificador y resolución.
+
+### Pruebas
+
+Se creó un test reproducible que comprueba:
+- carga del catálogo;
+- presencia de las seis categorías;
+- aplicación de +3% Power;
+- aplicación de -3% Control;
+- stacking hasta +8% Power;
+- +5 puntos porcentuales de modificador de Home Run;
+- duración del debuff durante cuatro acciones.
+
+**No se ejecutó Godot runtime en este entorno.** Los tests fueron escritos y revisados estáticamente, pero no se registra una ejecución real.
+
+### Pendiente
+
+- asignar habilidades definitivas a personajes;
+- diseñar costes/cooldowns;
+- implementar las 26 acciones de firma;
+- integrar defensa, robo y pitch;
+- añadir interfaz de elección;
+- conectar IA rival;
+- ejecutar simulaciones de balance con seeds;
+- comprobar distribución real de victorias y resultados.
+
+### Estado
+
+**Implementado como infraestructura funcional de código y catálogo; balance y contenido completo de habilidades pendientes.**
+
+**Avance global aproximado:** ≈91%.
