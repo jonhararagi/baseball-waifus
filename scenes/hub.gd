@@ -36,6 +36,7 @@ var energy_label: Label
 var coin_label: Label
 var level_label: Label
 var panel_tween: Tween
+var starter_card: BaseballCharacterCard
 
 func _ready() -> void:
 	progress_store = PlayerProgressStore.new()
@@ -101,55 +102,23 @@ func _build_ui() -> void:
 	coin_label.position = Vector2(1070, 22)
 	content.add_child(coin_label)
 
-	var character_card := PanelContainer.new()
-	character_card.position = Vector2(40, 116)
-	character_card.size = Vector2(430, 500)
-	character_card.add_theme_stylebox_override("panel", _panel_style("#141b33", "#f06d91", 3, 24))
-	content.add_child(character_card)
-
-	var char_box := VBoxContainer.new()
-	char_box.add_theme_constant_override("separation", 7)
-	character_card.add_child(char_box)
-
-	var portrait_frame := Control.new()
-	portrait_frame.custom_minimum_size = Vector2(400, 300)
-	var portrait := TextureRect.new()
-	portrait.texture = load("res://assets/characters/generated/bw001.svg")
-	portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	portrait.position = Vector2(52, 4)
-	portrait.size = Vector2(296, 296)
-	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	portrait_frame.add_child(portrait)
-	var frame := TextureRect.new()
-	frame.texture = load("res://assets/ui/starter_card_frame.svg")
-	frame.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	frame.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	portrait_frame.add_child(frame)
-	char_box.add_child(portrait_frame)
-
-	var character_name := _label(starter.display_name, 25, Color("#fff5e5"))
-	character_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	char_box.add_child(character_name)
-	var character_meta := _label("%s • %s • %s • %s" % [starter.rarity, starter.position, starter.element.to_upper(), starter.specialization.to_upper()], 13, Color("#ff9c78"))
-	character_meta.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	char_box.add_child(character_meta)
+	starter_card = BaseballCharacterCard.new()
+	starter_card.position = Vector2(40, 116)
+	starter_card.size = Vector2(430, 500)
+	content.add_child(starter_card)
+	starter_card.setup(starter)
 
 	comment_label = _label(COMMENTS[0], 15, Color("#e8efff"))
-	comment_label.custom_minimum_size = Vector2(390, 82)
+	comment_label.position = Vector2(64, 455)
+	comment_label.size = Vector2(382, 70)
 	comment_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	comment_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	char_box.add_child(comment_label)
+	content.add_child(comment_label)
 
-	var comment_button := _button("💬 SIGUIENTE COMENTARIO", 390, 42)
+	var comment_button := _button("SIGUIENTE COMENTARIO", 390, 42)
+	comment_button.position = Vector2(60, 570)
 	comment_button.pressed.connect(_next_comment)
-	char_box.add_child(comment_button)
-
-	var stats := _label("POWER %d   CONTACT %d   SPEED %d   DEF %d" % [starter.power, starter.contact, starter.speed, starter.defense], 12, Color("#aab9d8"))
-	stats.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	char_box.add_child(stats)
+	content.add_child(comment_button)
 
 	var section_title := _label("CENTRAL", 14, Color("#9bb7e8"))
 	section_title.position = Vector2(500, 105)
