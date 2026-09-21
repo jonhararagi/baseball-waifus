@@ -31,12 +31,13 @@
 <path d="M335 151 Q322 102 296 94" fill="none" stroke="#b4d0ef" stroke-width="7" stroke-linecap="round" opacity=".28"/>
 <path d="M173 205 Q178 155 256 137 Q334 155 339 205 L326 310 Q313 369 256 392 Q199 369 186 310 Z" fill="url(#skin)" stroke="#b17b61" stroke-width="5"/>
 <path d="M190 171 Q219 145 256 139 Q293 145 322 171 L308 199 Q293 182 256 179 Q219 182 204 199 Z" fill="#263f78"/>
-<path d="M198 224 Q222 210 246 222" fill="none" stroke="#243457" stroke-width="8" stroke-linecap="round"/>
+<path d="M197 224 Q222 210 246 222" fill="none" stroke="#243457" stroke-width="8" stroke-linecap="round"/>
 <path d="M266 222 Q290 210 314 224" fill="none" stroke="#243457" stroke-width="8" stroke-linecap="round"/>
 <ellipse cx="225" cy="243" rx="8" ry="5" fill="#fff"/><ellipse cx="287" cy="243" rx="8" ry="5" fill="#fff"/>
 <circle cx="225" cy="243" r="4.2" fill="#243457"/><circle cx="287" cy="243" r="4.2" fill="#243457"/>
 <path d="M256 250 Q250 263 256 270 Q262 263 256 250" fill="none" stroke="#a96754" stroke-width="4"/>
-<path d="M243 287 Q256 293 269 287" fill="none" stroke="#754f49" stroke-width="5" stroke-linecap="round"/><path d="M176 238 Q142 245 151 279 Q158 296 181 286" fill="url(#skin)" stroke="#b17b61" stroke-width="5"/>
+<path d="M243 287 Q256 293 269 287" fill="none" stroke="#754f49" stroke-width="5" stroke-linecap="round"/>
+<path d="M176 238 Q142 245 151 279 Q158 296 181 286" fill="url(#skin)" stroke="#b17b61" stroke-width="5"/>
 <path d="M336 238 Q370 245 361 279 Q354 296 331 286" fill="url(#skin)" stroke="#b17b61" stroke-width="5"/>
 <path d="M173 304 Q145 362 171 450" fill="none" stroke="#263f78" stroke-width="34" stroke-linecap="round"/>
 <path d="M339 304 Q367 362 341 450" fill="none" stroke="#263f78" stroke-width="34" stroke-linecap="round"/>
