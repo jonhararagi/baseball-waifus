@@ -38,6 +38,8 @@ var pitch_select_elapsed := 0.0
 var input_router: MobileInputRouter
 var mobile_controls: MobileControls
 var platform_bridge: PlatformBridge
+var charm_store: CharmStateStore
+var charm_panel: CharmPanel
 
 func _ready() -> void:
 	rng.randomize()
@@ -74,6 +76,12 @@ func _ready() -> void:
 	add_child(hud)
 	hud.setup()
 	$HUDRef.set_meta("hud", hud)
+
+	charm_store = CharmStateStore.new()
+	charm_store.load_state()
+	charm_panel = CharmPanel.new()
+	add_child(charm_panel)
+	charm_panel.setup(charm_store)
 
 	_sync_match_roles()
 	queue_redraw()
@@ -243,6 +251,11 @@ func _input(event: InputEvent) -> void:
 		return
 
 	if input_router == null:
+		return
+
+	if event is InputEventKey and event.pressed and event.keycode == KEY_C:
+		if charm_panel != null:
+			charm_panel.toggle()
 		return
 
 	if event is InputEventKey and event.pressed and event.keycode == KEY_SPACE and phase == "TIMING":
