@@ -59,3 +59,7 @@ Portrait selection is delegated to CharacterExpressionController. The intended e
 scenes/character_card_test.gd validates rarity, name, metadata, level/potential, eight stat bars, expression validation and comment binding.
 
 The test is structural until Godot 4.x is actually executed.
+
+## Expression transition v1.1
+
+Changing expression swaps only the portrait presentation. The card does not replay its full entry animation when a comment changes. The portrait uses a bounded fade/scale transition, with a single texture load at the midpoint.
