@@ -159,13 +159,28 @@ func apply_force_out(runner_index: int, batter: PlayerData, team_id: String) -> 
 		return {"applied": false, "runs": 0, "before_ids": _runner_id_snapshot(), "after_runners": base_runners.duplicate()}
 	var before_ids := _runner_id_snapshot()
 	var forced_runner: RunnerToken = base_runners[runner_index]
-	base_runners[runner_index] = null
+	var before := base_runners.duplicate()
+	var after: Array = [null, null, null]
+
+	for index in range(3):
+		if index != runner_index:
+			after[index] = before[index]
+
 	var batter_token := RunnerToken.from_player(batter, team_id)
-	if base_runners[0] == null:
-		base_runners[0] = batter_token
+	if runner_index == 0:
+		after[0] = batter_token
 	else:
-		# A force at second/third removes the forced runner and the batter takes first.
-		base_runners[0] = batter_token
+		# Preserve the force chain. Runners behind the out base advance one slot.
+		for index in range(runner_index - 1, -1, -1):
+			if before[index] == null:
+				continue
+			var destination := index + 1
+			if destination <= runner_index and after[destination] == null:
+				after[destination] = before[index]
+				after[index] = null
+		after[0] = batter_token
+
+	base_runners = after
 	_refresh_base_flags()
 	reset_count()
 	return {
