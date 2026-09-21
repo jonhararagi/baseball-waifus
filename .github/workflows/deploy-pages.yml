@@ -46,6 +46,7 @@ jobs:
           node --experimental-default-type=module --check webapp/js/api.js
           node --experimental-default-type=module --check webapp/js/combat.js
           node --experimental-default-type=module --check webapp/js/app.js
+          node --experimental-default-type=module webapp/js/contract_test.mjs
 
       - name: Prepare static site
         shell: bash
