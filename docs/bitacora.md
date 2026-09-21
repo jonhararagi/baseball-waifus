@@ -21,7 +21,7 @@
 **Rama principal:** `main`  
 **Estado actual:** Prototipo técnico en Godot 4.x + núcleo de béisbol defensivo + laboratorio/canon de personajes + pipeline visual 2D/3D + puente de streaming auxiliar. Godot 4.x queda adoptado como motor del prototipo y del juego actual; los adapters externos siguen siendo una capa visual opcional.
 
-**Avance global revisado:** ≈81%.
+**Avance global revisado:** ≈89%.
 
 ### Cómo vamos
 
@@ -5227,3 +5227,122 @@ Puntos integrados:
 No se modificaron las fórmulas de contacto, timing, elementos ni resultados. Solamente se cambió la fuente de lectura de la estadística.
 
 No se ejecutó Godot runtime, por lo que la integración queda registrada como código preparado para validación runtime.
+
+
+# Revisión 48: integración del equipamiento en defensa y corredores
+
+**Fecha:** 2026-09-21  
+**Tipo:** Gameplay / defensa / corredores / integración de estadísticas efectivas.
+
+## Motivo
+
+La Revisión 47 ya conectó EquipmentStatAdapter con BaseballSimulator para Control, Contact, Power y Critical. El siguiente paso lógico era evitar que el equipamiento quedara limitado a lanzamiento y bateo.
+
+Se integró el mismo adapter en los resolvers defensivos y de corredores existentes, sin crear nuevas estadísticas ni duplicar fórmulas.
+
+## Sistemas afectados
+
+- FieldingResolver.
+- DefensiveRunnerResolver.
+- ThrowResolver.
+- EquipmentStatAdapter.
+- CharacterRosterStore.
+- pruebas defensivas.
+- documentación defensiva.
+
+## Cambios realizados
+
+### FieldingResolver
+
+Ahora acepta opcionalmente CharacterRosterStore y obtiene Defense efectiva mediante EquipmentStatAdapter.
+
+La fórmula fielding_v2 no cambia. Únicamente cambia la entrada:
+
+base Defense + modificadores de equipamiento → Defense efectiva → fórmula existente.
+
+### DefensiveRunnerResolver
+
+Ahora acepta opcionalmente CharacterRosterStore.
+
+Para force outs y rundowns obtiene Speed efectiva del RunnerToken mediante el player_id y EquipmentStatAdapter.
+
+Esto permite que las piezas equipadas afecten únicamente cuando el catálogo les asigne la estadística correspondiente.
+
+La fórmula defensive_runner_v1 no cambia.
+
+### ThrowResolver
+
+También se conecta al adapter para que la Defense efectiva de la defensora que lanza y de la receptora participe en throw_v1.
+
+No se modifica la probabilidad base ni la autoridad del resolver.
+
+### Compatibilidad
+
+Los parámetros de roster son opcionales. Los callers existentes que todavía no tengan acceso al CharacterRosterStore conservan su comportamiento anterior.
+
+La ruta completa con equipamiento queda preparada para que los entry points del partido pasen el roster persistente cuando corresponda.
+
+## Pruebas
+
+Se amplió scenes/defensive_rules_test.gd para comprobar:
+
+- una pieza de velocidad aumenta la Speed efectiva usada por DefensiveRunnerResolver;
+- una pieza defensiva aumenta la Defense efectiva usada por FieldingResolver;
+- la fórmula de force-out recibe la Speed efectiva;
+- los snapshots de cuenta y roster se restauran al terminar.
+
+También se mantiene la regresión existente de force chain, rundown, sliding y reception error.
+
+**Runtime Godot:** no ejecutado. El entorno actual no dispone del binario Godot, por lo que estas pruebas quedan preparadas y revisadas estructuralmente, no ejecutadas en runtime.
+
+## Problemas encontrados y correcciones
+
+- El adapter anterior estaba listo para recibir un roster, pero los resolvers defensivos no tenían una ruta explícita para suministrarlo.
+- Se resolvió mediante un parámetro opcional, evitando romper las llamadas existentes.
+- DefensiveRunnerResolver trabaja con RunnerToken, que conserva player_id y speed. Cuando existe roster, el resolver recupera la instancia persistente y recalcula Speed efectiva mediante el adapter.
+- No se modificó RunnerToken para almacenar estadísticas duplicadas ni se creó otra autoridad.
+
+## Decisiones arquitectónicas
+
+1. EquipmentStatAdapter sigue siendo de solo lectura.
+2. CharacterRosterStore continúa siendo la autoridad de la instancia de personaje.
+3. EquipmentService sigue siendo la autoridad para equipar/desequipar.
+4. Los resolvers siguen siendo la autoridad de los resultados deportivos.
+5. El renderer no recibe autoridad adicional.
+6. No se alteran stats base persistentes al equipar.
+7. No se crean estadísticas nuevas.
+8. No se crean fórmulas paralelas de defensa o corredores.
+
+## Estado
+
+**Implementado:**
+- equipamiento → Defense efectiva → FieldingResolver;
+- equipamiento → Speed efectiva → DefensiveRunnerResolver;
+- equipamiento → Defense efectiva → ThrowResolver;
+- pruebas estructurales de integración;
+- documentación defensiva actualizada.
+
+**Pendiente inmediato:**
+- pasar CharacterRosterStore desde los entry points reales del partido a todos los resolvers que ya admiten el adapter;
+- revisar cualquier lectura directa de stats base restante en gameplay;
+- integrar RewardTransactionService con mapas/gacha/Demon Kings una vez revisadas las tablas de recompensas.
+
+**Pendiente posterior:**
+- tablas definitivas de drops;
+- gacha con pity/garantías;
+- IA rival;
+- balance estadístico automatizado;
+- runtime Godot;
+- exportación Android.
+
+## Porcentaje global
+
+Avance aproximado actualizado: **≈89%**.
+
+El incremento es pequeño y corresponde a integración de un sistema ya construido dentro de más resolvers del núcleo. No implica que el juego esté terminado ni que exista validación runtime.
+
+## Regla de continuidad
+
+No volver a conectar equipamiento directamente desde escenas o UI. La ruta válida continúa siendo:
+
+CharacterRosterStore → EquipmentService/EquipmentCatalog → EquipmentStatAdapter → resolver de gameplay.
