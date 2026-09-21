@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="720" viewBox="0 0 1400 720">
+<defs>
+ <linearGradient id="bg" x2="0" y2="1"><stop stop-color="#182449"/><stop offset="1" stop-color="#10182e"/></linearGradient>
+ <linearGradient id="land" x2="0" y2="1"><stop stop-color="#304f69"/><stop offset="1" stop-color="#203d50"/></linearGradient>
+</defs>
+<rect width="1400" height="720" fill="url(#bg)"/>
+<path d="M0 180 Q180 80 390 160 T760 130 T1100 180 T1400 110 V560 Q1170 630 950 550 T500 570 T0 500Z" fill="url(#land)" opacity=".9"/>
+<path d="M0 430 Q240 350 450 430 T850 420 T1400 390" fill="none" stroke="#75a5b8" stroke-width="38" opacity=".18"/>
+<path d="M60 570 Q230 430 410 520 T700 490 T980 360 T1320 420" fill="none" stroke="#e2bf75" stroke-width="8" stroke-linecap="round" opacity=".72"/>
+<path d="M60 570 Q230 430 410 520 T700 490 T980 360 T1320 420" fill="none" stroke="#fff1c2" stroke-width="2" stroke-dasharray="10 14" opacity=".8"/>
+<g fill="#f6e7b6" opacity=".8">
+ <circle cx="150" cy="120" r="3"/><circle cx="520" cy="90" r="4"/><circle cx="900" cy="140" r="3"/><circle cx="1260" cy="95" r="4"/>
+</g>
+<g fill="#d9e8f2" opacity=".12">
+ <circle cx="230" cy="300" r="110"/><circle cx="1120" cy="250" r="150"/>
+</g>
+</svg>
