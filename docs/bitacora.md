@@ -5999,3 +5999,49 @@ Pendiente:
 **≈94%.**
 
 Este porcentaje representa avance de implementación del prototipo, no porcentaje de contenido final.
+
+## Revisión 55: RNG acotado, táctica cuantificable y economía de equipamiento
+
+**Fecha:** 2026-09-21  
+**Motivo:** definir una separación clara entre RNG deportivo y RNG de colección, evitando que el partido se convierta en una lotería mientras se conserva la incertidumbre natural del béisbol.
+
+### Decisión
+
+El RNG del partido permanece, pero queda subordinado a estadísticas, timing, circunstancias, habilidades, elementos y equipamiento. El jugador puede construir ventajas matemáticas y comparar tácticas sin recibir una garantía automática.
+
+Se crea `BaseballTacticalCalculator`, que reutiliza las fórmulas existentes para estimar contacto y comparar timings. No consume RNG ni puede cambiar el estado del partido.
+
+### Colección
+
+Se documenta una separación en dos capas para equipamiento:
+1. Drop del mapa: decide si aparece una pieza y su rango permitido según la dificultad.
+2. Roll de atributos: decide la combinación de estadísticas dentro del pool permitido por slot/template/rareza.
+
+Esto permite que el equipo tenga un RNG similar al de juegos de colección RPG, mientras personajes, materiales y recursos mantienen tablas explícitas y auditables.
+
+### Implementación
+
+Creado:
+- `game/baseball/tactical_calculator.gd`
+- `scenes/tactical_calculator_test.gd`
+- `scenes/tactical_calculator_test.tscn`
+- `docs/progression/rng-and-tactics-v1.md`
+
+### Pruebas
+
+La prueba creada comprueba que Perfect/Great contextualmente produce una probabilidad de contacto mayor que timing medio y que la misma entrada devuelve el mismo cálculo. No se ejecutó Godot runtime en este entorno.
+
+### Pendiente
+
+La aleatoriedad de atributos de equipamiento todavía no se conecta al inventario persistente porque el inventario actual guarda cantidades de `item_id` con modificadores fijos. Para introducir piezas únicas con rolls distintos será necesario añadir una autoridad de instancias sin romper `EquipmentService` ni los saves existentes.
+
+También quedan pendientes las tablas definitivas de drops, pity y garantías.
+
+### Estado
+
+**Implementado:** calculador táctico determinista y filosofía de RNG.  
+**En diseño:** equipo con substats/rolls e integración persistente.
+
+### Avance aproximado
+
+**≈94%.**
