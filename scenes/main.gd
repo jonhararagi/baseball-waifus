@@ -280,6 +280,16 @@ func _swing() -> void:
 	var fielding_play: FieldingPlayEvent = null
 
 	if str(preliminary_result.get("result", "")) == "FIELDING_CANDIDATE":
+		if state.team_batting() == 0:
+			var ai_defense_skill := ai.maybe_use_defense_skill(
+				defensive_roster,
+				state.base_runners,
+				state.outs,
+				{"phase": "defense"},
+				skill_state
+			)
+			if bool(ai_defense_skill.get("used", false)):
+				message = "AI skill: " + str(ai_defense_skill.get("skill_id", ""))
 		fielding_result = fielding_resolver.resolve(
 			ball_event,
 			defensive_roster,
@@ -323,6 +333,8 @@ func _swing() -> void:
 		current_result["fielding_play"] = fielding_play
 
 	_apply_batting_result(current_result)
+	skill_state.consume_action()
+	ai.tick_action()
 
 	if str(current_result.get("result", "")) == "STRIKE":
 		ball_controller.play_miss_to_catcher(BATTER_POS, CATCHER_POS)
@@ -418,6 +430,12 @@ func _attempt_steal() -> void:
 	field_avatar_presenter.on_steal_started(from_index)
 
 	var source_runner: RunnerToken = state.base_runners[from_index]
+	if state.team_batting() == 1:
+		var ai_runner_player := character_roster.get_player(source_runner.player_id)
+		if ai_runner_player != null:
+			var ai_runner_skill := ai.maybe_use_runner_skill(ai_runner_player, {"phase": "baserunning"}, skill_state)
+			if bool(ai_runner_skill.get("used", false)):
+				message = "AI skill: " + str(ai_runner_skill.get("skill_id", ""))
 	var steal_modifier := skill_state.get_action_modifier(source_runner.player_id, "steal")
 	var result := runner_system.attempt_steal(source_runner.speed, pitcher.effective_stat("defense"), steal_modifier, rng)
 	message = result.result
@@ -431,6 +449,7 @@ func _attempt_steal() -> void:
 	if presentation_success:
 		skill_state.add_action_modifier(batter.id, "runner_batter_combo", 0.03, 2, "runner_batter_link_runtime")
 	skill_state.consume_action()
+	ai.tick_action()
 	avatar_presenter.on_steal_result(presentation_success)
 	var destination_base := int(movement.get("to", -1))
 	field_avatar_presenter.on_steal_result(from_index, presentation_success, destination_base, state.base_runners)
