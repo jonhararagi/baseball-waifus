@@ -25,7 +25,7 @@ class MotionSvgGeneratorTests(unittest.TestCase):
     def test_motion_sheet_contains_four_frames(self):
         svg = svg_for(self._character())
         self.assertTrue(svg.startswith('<?xml'))
-        self.assertIn("IDLE", svg) is False
+        self.assertNotIn("IDLE", svg)
         self.assertEqual(svg.count("<g transform="), 4)
         self.assertIn("Test Player", svg)
 
