@@ -6679,3 +6679,10 @@ CharacterArchetypeCatalog -> CharacterExpressionController -> BaseballCharacterC
 ### Avance aproximado
 
 **≈96% estructural del prototipo.** Este porcentaje no significa 96% de arte final, balance definitivo, contenido, QA runtime o publicación Android.
+
+
+### Corrección posterior de Revisión 65
+
+Durante una revisión estructural final se detectó una aserción de character_card_test.gd con indentación incorrecta. Se corrigió antes de considerar el paquete de QA listo.
+
+**Runtime Godot:** sigue sin ejecutarse en este entorno.
