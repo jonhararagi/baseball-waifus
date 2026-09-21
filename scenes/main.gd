@@ -9,6 +9,7 @@ var simulator := BaseballSimulator.new()
 var state := BaseballGameState.new()
 var ai := OpponentAI.new()
 var decision_planner := BaseballDecisionPlanner.new()
+var event_scheduler := BaseballMatchEventScheduler.new()
 var runner_system := RunnerSystem.new()
 var fielding_resolver := FieldingResolver.new()
 var throw_resolver := ThrowResolver.new()
@@ -89,6 +90,8 @@ func _ready() -> void:
 
 	_sync_match_roles()
 	decision_planner.set_seed(rng.randi())
+	phase = "MATCH_INTRO"
+	event_scheduler.start_match_intro()
 	queue_redraw()
 
 func _build_demo_roster() -> void:
@@ -151,9 +154,14 @@ func _process(delta: float) -> void:
 		return
 
 	match phase:
+		"MATCH_INTRO":
+			var intro_event := event_scheduler.tick(delta)
+			if bool(intro_event.get("finished", false)):
+				phase = "PITCH_SELECT"
+				event_scheduler.start_plate_prep()
 		"PITCH_SELECT":
-			pitch_select_elapsed += delta
-			if pitch_select_elapsed >= 1.0:
+			var prep_event := event_scheduler.tick(delta)
+			if bool(prep_event.get("finished", false)):
 				_start_pitch()
 		"PITCHING":
 			_update_pitch(delta)
@@ -166,6 +174,7 @@ func _process(delta: float) -> void:
 				message = ""
 				phase = "PITCH_SELECT"
 				pitch_select_elapsed = 0.0
+				event_scheduler.start_plate_prep()
 				_get_hud().clear_result()
 
 	_update_hud()
@@ -217,7 +226,7 @@ func _update_pitch(delta: float) -> void:
 	if pitch_elapsed < 1.55 / current_pitch.speed:
 		return
 
-	var pitch_result := simulator.resolve_pitch(pitcher, current_pitch, rng, skill_state)
+	var pitch_result := simulator.resolve_pitch(pitcher, current_pitch, decision_planner.rng_for("pitch"), skill_state)
 	if str(pitch_result.get("result", "")) == "BALL":
 		_finish_ball(pitch_result)
 		return
