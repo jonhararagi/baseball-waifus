@@ -323,3 +323,19 @@ Además del recorder, el panel local expone:
 - `POST /api/qa/run`
 
 La investigación OSS del pipeline está en `docs/research/streaming_oss/`.
+
+
+## UI visual system
+
+El HUD del partido y los controles móviles comparten una capa visual reutilizable:
+
+- `game/ui/hud.gd`
+- `game/ui/hud_visual.gd`
+- `game/ui/ui_theme.gd`
+- `game/ui/mobile_controls.gd`
+
+La guía de diseño está en `docs/ui-style-guide.md`.
+
+El panel local del Streaming Bridge usa el mismo lenguaje visual en `tools/streaming_bridge/dashboard.html`.
+
+El asset vectorial original reutilizable está en `assets/ui/baseball_waifus_icon.svg`.
