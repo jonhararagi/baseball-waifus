@@ -5901,3 +5901,101 @@ Pendiente:
 **≈93%.**
 
 Este porcentaje representa avance de implementación del prototipo, no porcentaje de contenido final del videojuego.
+
+
+## Revisión 54: planificación ligera previa a la jugada
+
+**Fecha:** 2026-09-21  
+**Motivo:** adaptar la IA rival al modelo operativo del juego: conocimiento explícito del béisbol + reglas/heurísticas + cálculo por evento, sin IA gráfica pesada ni cálculos continuos por segundo.
+
+### Decisión principal
+
+No se implementa una IA visual, neural ni un sistema que recalcula decisiones cada frame. Se crea un planificador determinista ligero que prepara los datos necesarios mientras la presentación muestra el campo, personajes, entorno y preparación del lanzamiento.
+
+### Implementación
+
+Se creó `game/baseball/decision_planner.gd`.
+
+`BaseballDecisionPlanner` prepara por plate appearance:
+
+- identidad de bateadora y pitcher;
+- inning/mitad;
+- outs;
+- balls/strikes;
+- marcador;
+- ocupación de bases;
+- semillas independientes para pitch, contacto, defensa y robo.
+
+Cada canal posee un RNG determinista derivado de una semilla de la jugada. Esto permite preparar las posibilidades de una jugada sin gastar CPU en simulación continua ni depender de servicios externos.
+
+### Integración
+
+`scenes/main.gd` ahora prepara el contexto al iniciar el lanzamiento y obtiene RNG de los canales preparados para:
+
+- selección de pitch;
+- resolución de contacto;
+- defensa;
+- robo.
+
+La IA sigue utilizando `OpponentAI` para decidir acciones. El planner no decide resultados y tampoco reemplaza `SkillResolver` ni los resolvers de béisbol.
+
+### Modelo de timing
+
+El cálculo no se realiza por segundo ni por frame. El flujo queda:
+
+`preparar contexto → presentar → input del jugador → resolver → evento → animación`.
+
+El jugador conserva autoridad sobre el timing. Un toque en el centro, una zona intermedia o un fallo de la ventana producen distintas calidades de timing y pasan por el mismo resolver de contacto.
+
+### Ventaja técnica
+
+Las ventanas visuales existentes ya proporcionan tiempo útil:
+
+- preparación de pitch;
+- desplazamiento de la pelota;
+- entrada del timing;
+- presentación de resultado.
+
+Por ello no hace falta añadir una IA pesada para que el juego "piense". El programa calcula pequeñas estructuras de datos y semillas por evento, mientras la pantalla presenta la jugada.
+
+### Archivos creados
+
+- `game/baseball/decision_planner.gd`
+- `scenes/decision_planner_test.gd`
+- `scenes/decision_planner_test.tscn`
+
+### Archivos modificados
+
+- `scenes/main.gd`
+- `docs/game-design.md`
+- `docs/bitacora.md`
+
+### Pruebas
+
+Se creó una prueba estructural para comprobar que una misma semilla/contexto genera canales deterministas y separados.
+
+No se ejecutó Godot runtime en este entorno. No se registra como prueba runtime.
+
+### Problemas encontrados y correcciones
+
+- La IA anterior podía interpretarse como un sistema que debía evaluar continuamente la partida. Se separó explícitamente la decisión de la IA del cálculo previo de datos.
+- Se evitó utilizar la presentación como autoridad de gameplay. Las animaciones solo proporcionan una ventana natural para mostrar datos ya preparados.
+- Se evitó reutilizar una única secuencia RNG para todas las fases. Pitch, contacto, defensa y robo reciben semillas independientes.
+- El acceso a la semilla del planner se encapsuló mediante `set_seed()` en lugar de exponer directamente su estado interno.
+
+### Estado
+
+**Implementado y conectado al flujo principal a nivel de código.**
+
+Pendiente:
+- balance estadístico de los rangos de timing;
+- simulaciones masivas de distribución de resultados;
+- IA situacional completa de pickoff/cobertura;
+- validación runtime Godot;
+- validación Android.
+
+### Avance aproximado
+
+**≈94%.**
+
+Este porcentaje representa avance de implementación del prototipo, no porcentaje de contenido final.
