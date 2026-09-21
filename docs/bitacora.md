@@ -5402,3 +5402,105 @@ Los personajes del equipo rival que no pertenezcan al roster persistente conserv
 **Runtime Godot:** no aplica a esta revisión documental.
 
 **Avance aproximado:** ≈89%.
+
+
+## Revisión 50: identidad narrativa, diversidad funcional y acciones de firma
+
+**Fecha:** 2026-09-21  
+**Motivo:** evitar que la diversidad del roster se convierta en simples recolores y establecer cómo una personaje puede tener una identidad deportiva y narrativa distinta sin violar la separación entre apariencia y estadísticas.
+
+### Sistemas afectados
+
+- catálogo de personajes;
+- identidad visual;
+- diseño narrativo;
+- futuras habilidades;
+- futuras decisiones de bateo, pitcheo, corredores y defensa.
+
+### Decisión arquitectónica
+
+Se mantiene la separación:
+
+`CharacterIdentity / AvatarProfile -> presentación`
+
+`PlayerData -> estadísticas y progresión`
+
+`Skill / Action Resolver -> gameplay`
+
+La apariencia no puede inferir ni modificar Power, Contact, Speed, Pitch, Control, Defense, Critical, Stamina, rareza, probabilidades o recompensas.
+
+Las R conservan una identidad deportiva base sin requerir una historia extensa. Las SR/SSR/UR incorporan una semilla de historia y una acción de firma. La rareza no garantiza que la acción tenga éxito.
+
+### Implementación
+
+Modificado:
+- `game/characters/character_archetypes.json`
+- `docs/game-design.md`
+- `docs/bitacora.md`
+
+Creado:
+- `docs/characters/character-action-design-v1.md`
+
+El catálogo pasó a `version: 2` y añadió `character_identity_v1` con:
+- arquetipo;
+- etiquetas de estilo;
+- identidad de juego;
+- estado de historia;
+- semilla narrativa para SR/SSR/UR;
+- acción de firma;
+- contradicción estilística.
+
+Las 30 identidades recibieron una combinación propia. No se modificaron sus estadísticas ni sus presets corporales existentes.
+
+### Investigación
+
+Se revisó vocabulario y estructura táctica de béisbol mediante búsqueda pública de GitHub y referencias de simulación. Se estudiaron, entre otras, acciones reales como:
+- steal;
+- pickoff;
+- pitchout;
+- hit-and-run;
+- sacrifice bunt;
+- bunt for a hit;
+- squeeze play;
+- sacrifice fly;
+- take;
+- defensive shift;
+- infield playing in;
+- relay/coverage.
+
+También se inspeccionó `davidfwatson/game-simulator` y su `baseball.py` como referencia conceptual de simulación reproducible. No se copió código.
+
+### Problemas encontrados
+
+El catálogo visual anterior permitía demasiadas variaciones simples de pelo/color/cuerpo y no tenía un contrato explícito para diferenciar personajes por personalidad, historia y forma de jugar.
+
+### Corrección
+
+Se introdujo una capa de identidad separada del gameplay. La contradicción de estilo se utiliza como herramienta narrativa y como fuente para futuras habilidades, no como multiplicador oculto de estadísticas.
+
+### Pruebas realizadas
+
+- revisión estructural del JSON mediante parseo durante la actualización;
+- comprobación de que los 30 IDs recibieran metadatos de identidad;
+- revisión estática de que las estadísticas existentes se conservaran sin modificación;
+- revisión de que las R no recibieran obligatoriamente una habilidad narrativa de firma;
+- revisión documental de separación visual/gameplay.
+
+**No se ejecutó Godot en runtime en este entorno**, por lo que no se registra una prueba de ejecución.
+
+### Pendiente
+
+- SkillResolver;
+- contratos matemáticos de cada acción;
+- integración con decisiones del jugador;
+- integración con IA rival;
+- pruebas reproducibles de acciones;
+- balance de usos/cooldowns;
+- historias completas de SR/SSR/UR.
+
+### Estado
+
+**Implementado a nivel de catálogo y diseño.** Las acciones de firma son contratos de diseño, todavía no ejecutan efectos de gameplay.
+
+**Avance global aproximado:** ≈90%.
+
