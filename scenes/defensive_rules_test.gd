@@ -3,6 +3,7 @@ extends Node
 func _ready() -> void:
 	_test_force_out()
 	_test_game_state_force_out()
+	_test_force_chain_preservation()
 	_test_rundown_and_slide()
 	_test_reception_error_event()
 	print("DEFENSIVE RULES TEST OK")
@@ -92,3 +93,23 @@ func _test_reception_error_event() -> void:
 			assert(str(result.get("reason", "")) == "RECEPTION ERROR")
 			break
 	assert(found)
+
+
+func _test_force_chain_preservation() -> void:
+	var state := BaseballGameState.new()
+	var first := _runner(40.0)
+	var second := _runner(50.0)
+	var third := _runner(60.0)
+	state.base_runners = [first, second, third]
+	var batter := PlayerData.new()
+	batter.id = "batter_chain"
+	var result := state.apply_force_out(2, batter, "home")
+	assert(bool(result.get("applied", false)))
+	assert(result.runner_out.player_id == third.player_id)
+	assert(state.base_runners[0] != null)
+	assert(state.base_runners[0].player_id == batter.id)
+	assert(state.base_runners[1] != null)
+	assert(state.base_runners[1].player_id == first.player_id)
+	assert(state.base_runners[2] != null)
+	assert(state.base_runners[2].player_id == second.player_id)
+	assert(state.validate_invariants("force_chain").valid)
