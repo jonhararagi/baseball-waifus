@@ -34,7 +34,7 @@ func clear_bases() -> void:
 func apply_ball(batter: PlayerData, team_id: String) -> Dictionary:
 	balls += 1
 	if balls < 4:
-		return {"walk": false, "balls": balls, "forced": [], "runs": 0}
+		return {"walk": false, "balls": balls, "forced": [], "runs": 0, "after_runners": base_runners.duplicate()}
 	var plan := apply_walk(batter, team_id)
 	plan["walk"] = true
 	plan["balls"] = 4
@@ -145,7 +145,6 @@ func apply_hit(batter: PlayerData, team_id: String, hit_bases: int) -> Dictionar
 	_refresh_base_flags()
 
 	return {
-		"runs": runs,
 		"runs": runs,
 		"before_ids": before_ids,
 		"after_ids": _runner_id_snapshot(),
