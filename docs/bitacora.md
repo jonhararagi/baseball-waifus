@@ -3939,3 +3939,46 @@ Referencia externa → rasgos abstractos → combinación original → revisión
 Nunca:
 
 personaje externo → cambio de uniforme/color → personaje Baseball Waifus.
+
+
+## Revisión 35: auditoría de errores, terminología e integridad de estado
+
+**Fecha:** 2026-09-21  
+**Motivo:** continuar la auditoría técnica solicitada, concentrando el trabajo en términos ambiguos, errores de estado y prevención de errores comunes de juegos deportivos, gacha y nicho.
+
+### Sistemas afectados
+- BaseballGameState
+- robo de bases
+- terminología técnica
+- documentación de economía/gacha
+- documentación de personalidad
+- QA y prevención de regresiones
+
+### Cambios realizados
+1. Se corrigió un caso de integridad en move_runner_on_steal(): una base destino ocupada ya no puede ser sobrescrita silenciosamente.
+2. Se agregó un test estructural para verificar que un robo bloqueado no elimina ni reemplaza a la corredora existente.
+3. Se amplió el glosario con Outcome, Invariant, State Transition, Modifier, Audit Payload, Blocked Action, Invalid State y Single Source of Truth.
+4. Se documentó explícitamente el modificador actual de Potential para evitar doble aplicación futura.
+5. Se registró que Lightning todavía no posee una matriz elemental definitiva.
+6. Se creó docs/research/common-niche-game-failures-v1.md como bitácora preventiva de errores comunes de juegos de nicho, deportivos, de colección y gacha.
+7. La investigación externa sobre Baseball Heroes sigue separada de las conclusiones: este entorno no dispone de búsqueda web verificable, por lo que no se inventó una causa de fracaso.
+8. La mini biblia de personalidad sigue siendo una herramienta de inspiración abstracta. No se asignaron copias de personajes existentes al roster.
+
+### Problemas encontrados y correcciones
+- Problema: un robo exitoso hacia una base ocupada podía sobrescribir el estado existente.
+- Corrección: la acción se marca como bloqueada y no modifica la base origen/destino.
+- Problema documental: Potential tenía fórmula en código pero no contrato técnico explícito.
+- Corrección: se incorporó al glosario.
+- Problema de diseño pendiente: Lightning no tiene relaciones elementales cerradas.
+- Corrección: se marcó como pendiente en lugar de inventar balance.
+
+### Pruebas
+- Se añadió un test estructural de robo bloqueado.
+- Se mantuvieron los tests existentes de timing, pitch, walks, lineup, final de inning y hit.
+- No se ejecutó Godot runtime en este entorno. El resultado es validación estática/estructural, no prueba end-to-end.
+
+### Estado
+Auditoría técnica y prevención de errores: mejorada y documentada.
+Pendientes relevantes: fórmula definitiva de estadísticas, tabla elemental completa, integración de Encanto con roster global, gacha definitivo, economía, runtime Godot y balance estadístico.
+
+**Avance global aproximado:** ≈78%.
