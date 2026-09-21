@@ -6213,3 +6213,58 @@ El porcentaje representa avance estructural del prototipo y no contenido final n
 **Estado:** diseño adoptado; implementación visual completa pendiente.
 
 **Avance aproximado:** ≈94% estructural del prototipo.
+
+
+## Revisión 59: implementación del Hub, navegación y mapa de Historia
+
+**Fecha:** 2026-09-21  
+**Motivo:** convertir la dirección visual adoptada en la Revisión 58 en una primera capa jugable de presentación: Hub principal, navegación interna, mapa de Historia y personaje inicial con comentarios.
+
+### Sistemas afectados
+
+- presentación/UI;
+- navegación;
+- campaña visual;
+- personaje inicial;
+- integración con progreso persistente;
+- entrada al partido existente.
+
+### Archivos creados
+
+- `scenes/hub.gd`
+- `scenes/hub.tscn`
+- `scenes/hub_navigation_test.gd`
+- `scenes/hub_navigation_test.tscn`
+- `docs/ui-hub-navigation-v1.md`
+
+### Archivos modificados
+
+- `project.godot`: el punto de entrada pasa al Hub; `scenes/main.tscn` conserva el partido existente y se abre desde Historia.
+
+### Decisiones arquitectónicas
+
+1. El Hub es una capa de presentación y navegación. No calcula resultados de béisbol.
+2. `PlayerProgressStore` sigue siendo autoridad para energía/monedas y `CharacterRosterStore` para la instancia del personaje inicial.
+3. `bw001` se asegura en el roster existente y se muestra como personaje inicial.
+4. Se implementan exactamente 10 comentarios de texto, sin voz obligatoria.
+5. Historia utiliza un único mapa conceptual con selector Normal/Hard/Hell y ubicaciones bloqueadas, evitando duplicar escenas de mapa.
+6. Los paneles internos son contenedores visuales. Las reglas reales de entrenamiento, equipamiento, recompensas y progreso continúan en sus servicios existentes.
+7. El retrato procedural es temporal y propio. No se agregan assets externos ni dependencias nuevas.
+8. El botón de juego reutiliza el partido existente mediante `res://scenes/main.tscn`.
+
+### Pruebas
+
+Se creó prueba estructural para comprobar 10 comentarios, personaje inicial y ruta de escena de partido. No se ejecutó Godot runtime en este entorno.
+
+### Problemas encontrados y correcciones
+
+- La escena de partido existente no debe perderse al convertir el punto de entrada en Hub. Se conserva `main.tscn` y se añade una escena independiente de Hub.
+- No se inventan tasas de gacha ni recompensas de campaña para llenar la interfaz. Las pantallas muestran estado pendiente cuando el sistema todavía no tiene tablas definitivas.
+
+### Estado
+
+**Implementado a nivel de código; runtime Godot pendiente.** El mapa, paneles y retrato son una primera capa visual reemplazable. La adaptación móvil estrecha y arte final siguen pendientes.
+
+### Avance aproximado
+
+**≈95% estructural del prototipo.**
