@@ -1,7 +1,8 @@
 class_name FieldingResolver
 extends RefCounted
 
-const RULE_VERSION := "fielding_v1"
+const RULE_VERSION := "fielding_v2"
+const RECEPTION_RULE_VERSION := "reception_v1"
 const FIELD_POSITIONS := {
 	"C": Vector2(1035, 485),
 	"1B": Vector2(870, 390),
@@ -61,15 +62,40 @@ func resolve(event: BattedBallEvent, defensive_roster: Dictionary, timing_value:
 		"roll": roll,
 		"rule_version": RULE_VERSION,
 		"reason": "CAUGHT" if success else "FIELDING MISS",
-		"double_play": {}
+		"double_play": {},
+		"reception_error": {}
 	}
 
-	var double_play_resolver := DoublePlayResolver.new()
-	var double_play := double_play_resolver.resolve(event, result, base_runners, outs, rng)
-	result["double_play"] = double_play
-	if bool(double_play.get("success", false)):
-		result["final_result"] = "DOUBLE PLAY"
-		result["bases"] = 0
+	if success:
+		var reception_chance := clamp(
+			0.025
+			+ (1.0 - defense_score) * 0.07
+			+ contact_quality * 0.035
+			+ distance_score * 0.025,
+			0.02,
+			0.14
+		)
+		var reception_roll := rng.randf()
+		var reception_error := reception_roll < reception_chance
+		result["reception_error"] = {
+			"error": reception_error,
+			"chance": reception_chance,
+			"roll": reception_roll,
+			"rule_version": RECEPTION_RULE_VERSION
+		}
+		if reception_error:
+			result["success"] = false
+			result["final_result"] = "FIELDING ERROR"
+			result["bases"] = 1
+			result["reason"] = "RECEPTION ERROR"
+			return result
+
+		var double_play_resolver := DoublePlayResolver.new()
+		var double_play := double_play_resolver.resolve(event, result, base_runners, outs, rng)
+		result["double_play"] = double_play
+		if bool(double_play.get("success", false)):
+			result["final_result"] = "DOUBLE PLAY"
+			result["bases"] = 0
 	return result
 
 func _nearest_defender(target: Vector2) -> String:
