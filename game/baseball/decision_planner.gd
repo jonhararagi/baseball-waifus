@@ -6,7 +6,10 @@ extends RefCounted
 ## It prepares deterministic RNG streams and a compact context snapshot while
 ## presentation is showing the field, characters and pitch preparation.
 
+const SituationEvaluatorClass = preload("res://game/baseball/situation_evaluator.gd")
+
 var _master_rng := RandomNumberGenerator.new()
+var _situation_evaluator := SituationEvaluatorClass.new()
 var _plans: Dictionary = {}
 var _sequence := 0
 
@@ -21,6 +24,7 @@ func prepare_plate_appearance(context: Dictionary) -> Dictionary:
 	var seed_base := _master_rng.randi()
 	var plan := {
 		"sequence": _sequence,
+		"prepared_at_event": true,
 		"batter_id": str(context.get("batter_id", "")),
 		"pitcher_id": str(context.get("pitcher_id", "")),
 		"inning": int(context.get("inning", 0)),
@@ -31,6 +35,8 @@ func prepare_plate_appearance(context: Dictionary) -> Dictionary:
 		"score_batting": int(context.get("score_batting", 0)),
 		"score_fielding": int(context.get("score_fielding", 0)),
 		"bases": context.get("bases", [false, false, false]),
+		"max_innings": int(context.get("max_innings", 3)),
+		"situation": _situation_evaluator.evaluate(context, context.get("batter"), context.get("pitcher"), context.get("defensive_roster", {})),
 		"seeds": {
 			"pitch": _derive_seed(seed_base, 11),
 			"contact": _derive_seed(seed_base, 23),
@@ -40,6 +46,15 @@ func prepare_plate_appearance(context: Dictionary) -> Dictionary:
 	}
 	_plans[_sequence] = plan
 	return plan.duplicate(true)
+
+func evaluate_situation(context: Dictionary, batter: PlayerData, pitcher: PlayerData, defensive_roster: Dictionary = {}) -> Dictionary:
+	return _situation_evaluator.evaluate(context, batter, pitcher, defensive_roster)
+
+func preview_pitch(pitch: Pitch, batter: PlayerData, pitcher: PlayerData) -> Dictionary:
+	var plan := current_plan()
+	if plan.is_empty():
+		return {"valid": false}
+	return _situation_evaluator.preview_pitch(plan, batter, pitcher, pitch)
 
 func current_plan() -> Dictionary:
 	if _plans.is_empty():
