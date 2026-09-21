@@ -6807,3 +6807,57 @@ Se comprobó mediante inspección del repositorio que:
 
 ### Avance aproximado
 **≈96% estructural del prototipo.** Este porcentaje no representa porcentaje de arte final, balance definitivo, contenido, QA runtime ni publicación Android.
+
+
+## Revisión 68: cuarta unidad visual cerrada, bw004 Yuna Minase + captura visual headless
+
+**Fecha:** 2026-09-21
+**Motivo:** continuar la producción estricta de una personaje por vez. bw001, bw002 y bw003 ya poseen el contrato visual de expresiones; esta revisión incorpora exclusivamente bw004 y añade un pipeline reproducible de captura visual en CI.
+
+### Alcance
+- bw004 / Yuna Minase.
+- Rareza SSR.
+- Elemento Nature.
+- Posición CF.
+- Especialidad Runner.
+
+No se modifican estadísticas, gameplay, resolvers de béisbol, IA rival, economía, gacha, recompensas ni expresiones de bw001-bw003.
+
+### Archivos creados
+- assets/characters/expressions/bw004_neutral.svg
+- assets/characters/expressions/bw004_happy.svg
+- assets/characters/expressions/bw004_focused.svg
+- assets/characters/expressions/bw004_surprised.svg
+- assets/characters/expressions/bw004_disappointed.svg
+- scenes/bw004_character_presentation_test.gd
+- scenes/bw004_character_presentation_test.tscn
+- game/ui/visual_qa_exporter.gd
+- .github/workflows/visual_qa.yml
+- docs/characters/bw004-presentation-v1.md
+
+### Decisiones arquitectónicas
+1. Se reutiliza CharacterExpressionController como única autoridad de IDs y rutas.
+2. BaseballCharacterCard sigue siendo la única tarjeta de colección.
+3. Los cinco estados siguen siendo neutral, happy, focused, surprised y disappointed.
+4. Los SVG son assets propios, sin etiquetas <text> ni fuentes externas.
+5. La expresión permanece fuera de PlayerData y CharacterRosterStore.
+6. La escena QA muestra bw004 mediante la tarjeta existente y una tira paralela de sus cinco expresiones.
+7. VisualQAExporter se activa solamente con --run-qa-capture y guarda una captura determinista en res://qa_captures/bw004_character_presentation.png.
+8. GitHub Actions publica la captura como artefacto. El workflow fija Godot 4.5.1-stable para reproducibilidad de CI.
+9. Este pipeline es una herramienta de validación. No tiene autoridad sobre gameplay, resultados deportivos ni datos persistentes.
+
+### QA
+- La escena valida catálogo, identidad canónica de bw004, existencia de assets, tamaño mínimo, ausencia de texto SVG, continuidad de paleta, diferenciación de estados y API de la tarjeta.
+- El workflow ejecuta Godot en modo headless, solicita la captura con --run-qa-capture, verifica que el PNG exista y lo publica mediante actions/upload-artifact@v4.
+- **Runtime local:** no ejecutado en este entorno. No se registra como validación local.
+
+### Problemas encontrados y correcciones
+- El repositorio no tenía un exportador visual común ni un workflow dedicado. Se añadió sin modificar el pipeline de gameplay.
+- Se evitó crear un controlador visual específico para bw004.
+- La escena de QA utiliza thumbnails adicionales solamente dentro de la escena de prueba para no aumentar el coste del runtime real.
+
+### Estado
+**bw004 queda cerrada a nivel de implementación estructural, assets y pipeline de QA.** La siguiente unidad correcta es bw005, manteniendo la regla de una personaje por vez.
+
+### Avance aproximado
+**≈96% estructural del prototipo.** Este porcentaje no representa porcentaje de arte final, balance definitivo, validación runtime local, publicación Android ni contenido completo.
