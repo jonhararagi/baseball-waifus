@@ -81,6 +81,6 @@ La UI solo presenta opciones y resultados. No calcula el premio.
 
 ## 7. Estado de producción
 
-**Implementado:** reglas 0-100, bonus determinista, materiales finitos, límite diario de charlas, persistencia local, 300 conversaciones estructuradas y pruebas.
+**Implementado:** reglas 0-100, bonus determinista, materiales finitos, límite diario de charlas, persistencia local, 300 conversaciones estructuradas, pruebas y menú interactivo reutilizable.
 
-**Pendiente:** conectar el menú de Encanto a la UI principal, integrar la adquisición de materiales con el futuro sistema económico y balancear fuentes de materiales cuando economía/gacha estén implementados.
+**Pendiente:** integrar la adquisición de materiales con el futuro sistema económico y balancear sus fuentes cuando economía/gacha estén implementados.
