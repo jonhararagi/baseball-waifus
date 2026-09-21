@@ -152,6 +152,50 @@ func apply_hit(batter: PlayerData, team_id: String, hit_bases: int) -> Dictionar
 		"plan": plan
 	}
 
+
+func apply_force_out(runner_index: int, batter: PlayerData, team_id: String) -> Dictionary:
+	if runner_index < 0 or runner_index >= 3 or base_runners[runner_index] == null:
+		return {"applied": false, "runs": 0, "before_ids": _runner_id_snapshot(), "after_runners": base_runners.duplicate()}
+	var before_ids := _runner_id_snapshot()
+	var forced_runner: RunnerToken = base_runners[runner_index]
+	base_runners[runner_index] = null
+	var batter_token := RunnerToken.from_player(batter, team_id)
+	if base_runners[0] == null:
+		base_runners[0] = batter_token
+	else:
+		# A force at second/third removes the forced runner and the batter takes first.
+		base_runners[0] = batter_token
+	_refresh_base_flags()
+	reset_count()
+	return {
+		"applied": true,
+		"runner_out": forced_runner,
+		"runner_index": runner_index,
+		"runs": 0,
+		"before_ids": before_ids,
+		"after_ids": _runner_id_snapshot(),
+		"after_runners": base_runners.duplicate()
+	}
+
+func apply_rundown_out(runner_index: int) -> Dictionary:
+	if runner_index < 0 or runner_index >= 3 or base_runners[runner_index] == null:
+		return {"applied": false, "runs": 0, "after_runners": base_runners.duplicate()}
+	var before_ids := _runner_id_snapshot()
+	var runner: RunnerToken = base_runners[runner_index]
+	base_runners[runner_index] = null
+	_refresh_base_flags()
+	reset_count()
+	return {
+		"applied": true,
+		"runner_out": runner,
+		"runner_index": runner_index,
+		"runs": 0,
+		"before_ids": before_ids,
+		"after_ids": _runner_id_snapshot(),
+		"after_runners": base_runners.duplicate()
+	}
+
+
 func remove_base_runner(index: int) -> RunnerToken:
 	if index < 0 or index >= 3:
 		return null
