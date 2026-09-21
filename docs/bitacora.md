@@ -4071,3 +4071,168 @@ El objetivo es detectar estas corrupciones en tests antes de que lleguen al rend
 
 ### Regla de continuidad
 Antes de ampliar una mutación importante de BaseballGameState, el caso debe tener una invariante explícita o una prueba que demuestre qué estado válido produce. No crear validadores paralelos para el mismo estado.
+
+# Revisión 38: preparación Android y publicidad recompensada offline-first
+
+**Fecha:** 2026-09-21
+
+## Motivo
+
+Preparar la futura distribución de Baseball Waifus como aplicación Android y establecer una monetización de bajo impacto basada en anuncios de vídeo recompensados, sin introducir APIs, servidores, IA remota ni dependencia online en el núcleo del juego.
+
+## Sistemas afectados
+
+- Plataforma Android / exportación Godot.
+- Monetización opcional.
+- Energía global.
+- Energía de personajes.
+- Materiales.
+- Persistencia local.
+- Arquitectura offline-first.
+
+## Cambios realizados
+
+### Publicidad recompensada
+
+Se creó:
+
+- `game/monetization/rewarded_ad_policy.gd`
+- `game/monetization/rewarded_ad_service.gd`
+- `game/monetization/rewarded_ad_usage_store.gd`
+
+La política establece tres categorías independientes:
+
+1. Player Energy: +20.
+2. Materials: +1 paquete de materiales.
+3. Character Energy: +20.
+
+Cada categoría dispone de un máximo de **10 recompensas por día**.
+
+El núcleo no muestra anuncios ni depende de un proveedor externo. `RewardedAdService` funciona como contrato aislado para que una futura integración Android pueda informar disponibilidad y finalización.
+
+### Regla de recompensa
+
+La recompensa solo puede registrarse después de una finalización confirmada por el proveedor.
+
+No se recompensa:
+
+- abrir el anuncio;
+- cerrar el anuncio;
+- fallo del proveedor;
+- ausencia de proveedor;
+- categoría inválida;
+- límite diario alcanzado.
+
+El proveedor tampoco puede decidir la cantidad de recompensa.
+
+### Persistencia
+
+`RewardedAdUsageStore` guarda localmente:
+
+- versión del formato;
+- fecha UTC;
+- contador de cada categoría.
+
+El cambio de día reinicia los contadores de anuncios sin alterar el inventario.
+
+### Android / Google Play
+
+Se creó:
+
+- `docs/android-google-play-v1.md`
+- `docs/monetization/rewarded-ads-v1.md`
+
+Se documentó:
+
+- package ID previsto: `com.jonhararagi.baseballwaifus`;
+- diferencia entre APK para QA y AAB para distribución de Google Play;
+- firma de producción fuera del repositorio;
+- ausencia de secretos en GitHub;
+- permisos mínimos;
+- Data Safety;
+- clasificación de contenido;
+- privacidad y consentimiento cuando corresponda;
+- pruebas offline;
+- pruebas de publicidad;
+- necesidad de verificar los requisitos cambiantes de Play Console antes de cada release.
+
+No se fijaron números de API objetivo de Google Play como constantes permanentes porque esos requisitos cambian y deben verificarse al momento de publicación.
+
+## Decisión arquitectónica
+
+La monetización es una capa opcional:
+
+```
+Android Ad Adapter
+        ↓
+RewardedAdService
+        ↓
+RewardedAdPolicy
+        ↓
+RewardedAdUsageStore
+        ↓
+Reward Transaction
+```
+
+Nunca:
+
+```
+Ad SDK → resultado de béisbol
+Ad SDK → gacha
+Ad SDK → estadísticas
+Ad SDK → probabilidades
+```
+
+El juego debe continuar funcionando sin anuncios, sin red y sin proveedor.
+
+La futura integración real de publicidad debe estar aislada como adapter de plataforma. No se introduce todavía un SDK externo porque el requisito del proyecto mantiene el núcleo sin APIs externas.
+
+## Pruebas
+
+Se añadieron:
+
+- `scenes/rewarded_ad_policy_test.gd`
+- `scenes/rewarded_ad_usage_store_test.gd`
+
+Cubren:
+
+- límite 10/10;
+- independencia entre categorías;
+- recompensas conocidas;
+- categoría inválida;
+- cambio de día;
+- rechazo posterior al límite.
+
+Se realizó revisión estática de los archivos creados.
+
+**Runtime Godot:** no ejecutado. El entorno actual no dispone del binario Godot ni de un Android SDK configurado, por lo que no se declara generación o ejecución de APK/AAB.
+
+## Problemas y correcciones
+
+**Problema:** integrar directamente un proveedor de anuncios introduciría una dependencia externa incompatible con el principio offline-first del núcleo.
+
+**Corrección:** se separó el contrato de publicidad del gameplay y se dejó el proveedor Android como adapter futuro.
+
+**Problema:** un contador de anuncios en memoria permitiría perder o duplicar usos al cerrar la aplicación.
+
+**Corrección:** se añadió persistencia local versionada por fecha UTC.
+
+## Estado
+
+**Implementado:** arquitectura de monetización recompensada, límites diarios, persistencia local, documentación Android/Google Play y tests estructurales.
+
+**Pendiente:**
+- exportación real desde Godot;
+- Android SDK/JDK y Export Templates;
+- firma release;
+- build AAB;
+- prueba en dispositivo físico;
+- integración de un proveedor de anuncios real si se decide habilitar la capa comercial;
+- configuración final de consentimiento, Data Safety y Play Console;
+- validación de los requisitos vigentes de Google Play antes del lanzamiento.
+
+**Avance global aproximado:** ≈80%.
+
+## Regla de continuidad
+
+La publicidad nunca puede convertirse en requisito para jugar un partido, avanzar en campaña o mantener una colección funcional. Debe ser una fuente opcional de recursos que ayude a sostener el proyecto sin transformar el béisbol en una máquina de anuncios.
