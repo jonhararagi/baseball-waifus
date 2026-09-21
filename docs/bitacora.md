@@ -6392,3 +6392,58 @@ Se añadieron comprobaciones estructurales para existencia del componente, escen
 
 ### Avance aproximado
 **≈96% estructural del prototipo.**
+
+
+## Revisión 62: primera capa profesional de expresiones para bw001
+
+**Fecha:** 2026-09-21  
+**Motivo:** continuar la estrategia incremental de presentación sin multiplicar todavía el trabajo por 30. Se implementa primero el contrato de expresiones y una única personaje, bw001, para validar el flujo completo antes de escalar.
+
+### Sistemas afectados
+- presentación de tarjetas;
+- retratos 2D de colección;
+- Hub y comentarios del personaje inicial;
+- pipeline de assets visuales;
+- pruebas estructurales de UI.
+
+### Archivos creados
+- game/ui/character_expression_controller.gd
+- docs/ui-character-expression-v1.md
+- scenes/character_expression_test.gd
+- scenes/character_expression_test.tscn
+- assets/characters/expressions/bw001_neutral.svg
+- assets/characters/expressions/bw001_happy.svg
+- assets/characters/expressions/bw001_focused.svg
+- assets/characters/expressions/bw001_surprised.svg
+- assets/characters/expressions/bw001_disappointed.svg
+
+### Archivos modificados
+- game/ui/character_card.gd
+- scenes/hub.gd
+- docs/bitacora.md
+
+### Decisiones arquitectónicas
+1. Las expresiones son estado de presentación, no estado de gameplay.
+2. CharacterExpressionController centraliza el vocabulario y el fallback de assets.
+3. BaseballCharacterCard recibe la expresión como parámetro opcional para conservar compatibilidad con llamadas existentes.
+4. La personaje inicial bw001 es el único personaje con assets expresivos en esta revisión.
+5. Los diez comentarios existentes del Hub no se modifican; solamente reciben una asociación visual determinista.
+6. Los SVG expresivos son assets propios de prototipo y pueden sustituirse por arte final sin modificar PlayerData ni los resolvers.
+7. No se modifica la iconografía global ni se inicia todavía la producción artística de las otras 29 personajes.
+
+### Pruebas
+- Se creó una prueba estructural que valida los cinco estados y los cinco assets de bw001.
+- Se valida que el componente de tarjeta exponga set_expression().
+- Se valida que el mapeo comentario → expresión sea determinista.
+- **Runtime Godot:** no ejecutado. No se declara validación visual/runtime.
+
+### Problemas encontrados y correcciones
+- El componente de tarjeta necesitaba un punto único para resolver expresiones y fallback. Se añadió CharacterExpressionController en lugar de repartir rutas entre Hub y tarjeta.
+- Se evitó persistir la expresión en PlayerData, porque sería un estado puramente visual y podría contaminar la autoridad de datos del personaje.
+- La implementación queda limitada a bw001 para detectar problemas antes de multiplicar assets y mantenimiento por todo el roster.
+
+### Estado
+**Implementado a nivel de código y assets de prototipo.** Conectado al Hub y a la tarjeta reutilizable. Pendiente de validación runtime Godot y revisión visual en pantalla real.
+
+### Avance aproximado
+**≈96% estructural del prototipo.** El porcentaje continúa representando estructura del software, no volumen de arte final.
