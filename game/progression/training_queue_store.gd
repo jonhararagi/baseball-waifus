@@ -130,3 +130,28 @@ func claim(character_id: String, now_unix: int = -1) -> Dictionary:
 		"duration_key": str(record["duration_key"]),
 		"completed_unix": int(record["complete_unix"])
 	}
+
+func restore_claim(record: Dictionary) -> bool:
+	if typeof(record) != TYPE_DICTIONARY:
+		return false
+	var character_id := str(record.get("character_id", ""))
+	var started := int(record.get("started_unix", 0))
+	var complete := int(record.get("complete_unix", 0))
+	var training_type := str(record.get("training_type", ""))
+	var duration_key := str(record.get("duration_key", ""))
+	var duration := EconomyRules.training_duration_seconds(duration_key)
+	if character_id.is_empty() or started <= 0 or complete != started + duration or not EconomyRules.is_valid_training_type(training_type):
+		return false
+	var state := load_state()
+	var trainings: Dictionary = state.get("trainings", {})
+	if trainings.has(character_id):
+		return false
+	var candidate := state.duplicate(true)
+	candidate["trainings"][character_id] = {
+		"character_id": character_id,
+		"training_type": training_type,
+		"duration_key": duration_key,
+		"started_unix": started,
+		"complete_unix": complete
+	}
+	return save_state(candidate)
