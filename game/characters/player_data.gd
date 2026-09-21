@@ -18,6 +18,10 @@ extends Resource
 @export var critical := 10
 @export var stamina := 70
 
+@export_category("Progression")
+@export_range(0, 100, 1) var mood := 100
+@export var equipment_ids: Dictionary = {}
+
 @export_category("Charm")
 @export_range(0, 100, 1) var charm := 0
 @export var charm_primary_stat := "contact"
