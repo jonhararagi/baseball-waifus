@@ -43,6 +43,42 @@ func _ready() -> void:
 	assert(is_equal_approx(state.get_stat_modifier(batter.id, "power"), 0.08))
 	assert(is_equal_approx(state.get_outcome_bonus(batter.id, "home_run"), 0.05))
 
+
+	var defender := PlayerData.new()
+	defender.id = "test_defender"
+	defender.defense = 80
+
+	var runner := PlayerData.new()
+	runner.id = "test_runner"
+	runner.speed = 80
+
+	var pitch_down := resolver.get_skill(catalog, "pitch_down")
+	assert(resolver.apply_skill(pitch_down, batter, pitcher, {"same_team": false}, state).applied)
+	assert(is_equal_approx(state.get_stat_modifier(pitcher.id, "control"), -0.06))
+
+	var catch_boost := resolver.get_skill(catalog, "catch_boost")
+	assert(resolver.apply_skill(catch_boost, batter, defender, {"same_team": true}, state).applied)
+	assert(is_equal_approx(state.get_stat_modifier(defender.id, "defense"), 0.04))
+
+	var steal_up := resolver.get_skill(catalog, "steal_up")
+	assert(resolver.apply_skill(steal_up, batter, runner, {"same_team": true}, state).applied)
+	assert(is_equal_approx(state.get_action_modifier(runner.id, "steal"), 0.05))
+
+	var dp_setup := resolver.get_skill(catalog, "double_play_setup")
+	assert(resolver.apply_skill(dp_setup, defender, defender, {"same_team": true}, state).applied)
+	assert(is_equal_approx(state.get_action_modifier(defender.id, "double_play"), 0.05))
+
+	var combo := resolver.get_skill(catalog, "runner_batter_link")
+	assert(resolver.apply_skill(combo, runner, batter, {"same_team": true}, state).applied)
+	assert(is_equal_approx(state.get_action_modifier(batter.id, "runner_batter_combo"), 0.03))
+
+	var runner_system := RunnerSystem.new()
+	var steal_rng := RandomNumberGenerator.new()
+	steal_rng.seed = 123
+	var steal_result := runner_system.attempt_steal(80.0, 50.0, state.get_action_modifier(runner.id, "steal"), steal_rng)
+	assert(float(steal_result.get("chance_modifier", 0.0)) == 0.05)
+	assert(float(steal_result.get("roll", -1.0)) >= 0.0 and float(steal_result.get("roll", -1.0)) < 1.0)
+
 	state.consume_action()
 	assert(is_equal_approx(state.get_stat_modifier(batter.id, "power"), 0.0))
 	assert(is_equal_approx(state.get_stat_modifier(pitcher.id, "control"), -0.03))
