@@ -3734,3 +3734,109 @@ El avance se mantiene en **≈74%**. La revisión mejora la integración y robus
 
 El modo Encanto es una capa de progresión independiente del resultado del béisbol. La UI nunca decide estadísticas ni recompensas por sí misma.
 
+
+
+# Revisión 33: endurecimiento defensivo y salto visual 2D/3D
+
+**Fecha:** 2026-09-21  
+**Tipo:** Corrección de integridad del partido / herramientas de arte / presentación de personajes.
+
+### Motivo
+
+La Revisión 29 ya había completado force outs, rundowns, recepción independiente y sliding. La Revisión 32 había dejado el renderer 3D como prototipo low-poly todavía demasiado cercano a primitivas geométricas. Además, una revisión del flujo actual detectó un problema de integridad en main.gd: BaseballGameState.apply_hit() ya actualiza el marcador, pero main.gd volvía a sumar las carreras, lo que podía duplicar el score de un hit. También el HUD podía mostrar 0 balls después de un walk porque el estado reinicia el conteo inmediatamente.
+
+Este bloque corrige esas inconsistencias y avanza el arte sin cambiar los contratos existentes.
+
+### Cambios de gameplay
+
+- scenes/main.gd
+  - elimina la suma duplicada de carreras después de apply_hit();
+  - conserva el reset_count() en la capa de flujo después del hit;
+  - registra 4 balls en current_result cuando el resultado es WALK antes de que el estado quede reiniciado a 0.
+
+- scenes/baseball_rules_test.gd
+  - añade regresión para comprobar que un Home Run suma exactamente una carrera y no duplica el score.
+
+### Cambios de arte 2D
+
+- tools/character_ai/generate_motion_svg_roster.py
+  - nuevo generador determinista de hojas de movimiento SVG;
+  - usa únicamente character_archetypes.json;
+  - genera cuatro frames por personaje: IDLE, READY, SWING y RUN;
+  - no inventa identidad, estadísticas ni gameplay;
+  - prepara una biblioteca 2D animada reemplazable por sprites/rig final.
+
+- scenes/character_art_motion_test.gd
+- scenes/character_art_motion_test.tscn
+  - recorren las 30 personajes del catálogo;
+  - alternan automáticamente poses de béisbol;
+  - sirven como banco visual de coherencia del roster.
+
+- docs/character-art-production-v2.md
+  - documenta la ruta 2D animada y la ruta 3D.
+
+### Cambios de arte 3D
+
+- game/avatar3d/pixel_3d_baseball_character.gd
+  - sustituye el cuerpo basado principalmente en cajas por una figura modular con cápsulas, esferas y cilindros;
+  - añade cabeza, masa de cabello, ojos, falda, brazos articulados, piernas, calzado, bate y gorra;
+  - soporta ponytail/twin-tail según AvatarProfile;
+  - usa materiales 3D iluminables en lugar de un render completamente plano.
+
+- game/avatar3d/pixel_3d_match_stage.gd
+  - añade iluminación de prueba;
+  - permite que CONTACT reciba origen, destino y duración desde el payload de presentación.
+
+- docs/pixel-3d-gameplay.md
+  - registra la evolución del backend 3D.
+
+- docs/canon/character-art-canon-v1.md
+  - amplía el canon con la separación 2D animada / 3D estilizada.
+
+### Decisiones arquitectónicas
+
+1. No se crea un segundo catálogo de personajes.
+2. character_archetypes.json sigue siendo la autoridad de identidad.
+3. PlayerData → AvatarProfile continúa siendo la frontera común.
+4. 2D y 3D son renderers intercambiables, no fuentes de gameplay.
+5. Las referencias a Baseball Heroes/NIKKE se tratan como objetivos de presentación, no como assets, código o identidad visual a copiar.
+6. Los errores de score se corrigen en el flujo existente sin mover autoridad desde BaseballGameState.
+7. El resolver defensivo sigue siendo la autoridad para force out, rundown y recepción; esta revisión no duplica esas reglas.
+
+### Pruebas
+
+**Añadidas:** regresión estructural para score único después de apply_hit().
+
+**No ejecutado:** runtime Godot. El entorno actual no dispone del binario Godot, por lo que no se declara ejecución de las escenas nuevas ni de la suite Godot.
+
+**Validación disponible:** revisión estructural de los archivos finales del repositorio y preservación de los contratos existentes.
+
+### Problemas encontrados y corregidos
+
+- **Score duplicado:** apply_hit() ya mutaba score; main.gd volvía a sumar runs. Se eliminó la segunda mutación.
+- **HUD de WALK:** el conteo se reinicia correctamente para continuar el siguiente turno, pero el resultado necesita conservar el valor histórico de cuatro balls. Se registra 4 en el evento visual antes del reset.
+- **3D demasiado primitivo:** se amplió el mismo backend procedural, sin reemplazar AvatarProfile, el adapter ni el presenter.
+
+### Estado
+
+**Implementado:** endurecimiento del score del partido; corrección de visualización de WALK; generador 2D animado reproducible; preview de 30 personajes; backend 3D anime procedural enriquecido; documentación canónica actualizada.
+
+**Pendiente:** runtime Godot; arte 2D de producción; modelos 3D de producción; rigging/clips finales; integración completa del renderer 3D con todos los eventos del partido; economía; gacha; crianza; campaña completa; persistencia global; backend/PvP.
+
+### Porcentaje global revisado
+
+El avance ponderado pasa de **≈74% a ≈76%**.
+
+El aumento refleja una mejora real de integridad del núcleo y un salto del prototipo visual, pero no se considera terminado el arte de producción ni los sistemas económicos y de contenido todavía ausentes.
+
+### Regla de continuidad
+
+La base vigente queda:
+
+**BaseballGameState + resolvers defensivos + presenters existentes**
+
+y, para personajes:
+
+**character_archetypes.json → PlayerData / AvatarProfile → 2D animado o 3D estilizado**
+
+No crear una tercera fuente de identidad ni duplicar las reglas defensivas en el renderer.
