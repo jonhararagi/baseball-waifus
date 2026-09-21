@@ -1,0 +1,101 @@
+{
+  "version": 1,
+  "equipment": [
+    {
+      "id": "gloves_r_01",
+      "display_name": "Training Mitt",
+      "slot": "gloves",
+      "rarity": "R",
+      "stat_modifiers": {"defense": 2},
+      "visual_id": "gloves_basic_01"
+    },
+    {
+      "id": "gloves_sr_01",
+      "display_name": "League Mitt",
+      "slot": "gloves",
+      "rarity": "SR",
+      "stat_modifiers": {"defense": 4},
+      "visual_id": "gloves_league_01"
+    },
+    {
+      "id": "bat_r_01",
+      "display_name": "Practice Bat",
+      "slot": "bats",
+      "rarity": "R",
+      "stat_modifiers": {"power": 2},
+      "visual_id": "bat_basic_01"
+    },
+    {
+      "id": "bat_sr_01",
+      "display_name": "League Bat",
+      "slot": "bats",
+      "rarity": "SR",
+      "stat_modifiers": {"power": 4, "contact": 1},
+      "visual_id": "bat_league_01"
+    },
+    {
+      "id": "cap_r_01",
+      "display_name": "Practice Cap",
+      "slot": "caps",
+      "rarity": "R",
+      "stat_modifiers": {"contact": 2},
+      "visual_id": "cap_basic_01"
+    },
+    {
+      "id": "cap_sr_01",
+      "display_name": "League Cap",
+      "slot": "caps",
+      "rarity": "SR",
+      "stat_modifiers": {"contact": 4},
+      "visual_id": "cap_league_01"
+    },
+    {
+      "id": "vest_r_01",
+      "display_name": "Training Vest",
+      "slot": "vests",
+      "rarity": "R",
+      "stat_modifiers": {"stamina": 2},
+      "visual_id": "vest_basic_01"
+    },
+    {
+      "id": "vest_sr_01",
+      "display_name": "League Vest",
+      "slot": "vests",
+      "rarity": "SR",
+      "stat_modifiers": {"stamina": 4},
+      "visual_id": "vest_league_01"
+    },
+    {
+      "id": "skirt_r_01",
+      "display_name": "Training Skirt",
+      "slot": "skirts",
+      "rarity": "R",
+      "stat_modifiers": {"speed": 2},
+      "visual_id": "skirt_basic_01"
+    },
+    {
+      "id": "skirt_sr_01",
+      "display_name": "League Skirt",
+      "slot": "skirts",
+      "rarity": "SR",
+      "stat_modifiers": {"speed": 4},
+      "visual_id": "skirt_league_01"
+    },
+    {
+      "id": "shoes_r_01",
+      "display_name": "Training Cleats",
+      "slot": "shoes",
+      "rarity": "R",
+      "stat_modifiers": {"speed": 2},
+      "visual_id": "shoes_basic_01"
+    },
+    {
+      "id": "shoes_sr_01",
+      "display_name": "League Cleats",
+      "slot": "shoes",
+      "rarity": "SR",
+      "stat_modifiers": {"speed": 4, "defense": 1},
+      "visual_id": "shoes_league_01"
+    }
+  ]
+}
