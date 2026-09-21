@@ -6861,3 +6861,74 @@ No se modifican estadísticas, gameplay, resolvers de béisbol, IA rival, econom
 
 ### Avance aproximado
 **≈96% estructural del prototipo.** Este porcentaje no representa porcentaje de arte final, balance definitivo, validación runtime local, publicación Android ni contenido completo.
+
+## Revisión 69: quinta unidad visual cerrada, bw005 Sora Amamiya
+
+**Fecha:** 2026-09-21
+**Motivo:** continuar el pipeline de producción artística controlada, una personaje por vez, después del cierre de bw004 y su pipeline de captura headless.
+
+### Alcance
+
+Se trabajó exclusivamente sobre bw005 / Sora Amamiya:
+- rareza SR;
+- elemento Water;
+- posición C;
+- especialidad Catcher;
+- preset corporal power.
+
+No se modifican estadísticas canónicas, gameplay, resolvers de béisbol, IA rival, economía, gacha, recompensas ni expresiones de bw001-bw004.
+
+### Archivos creados
+
+- assets/characters/expressions/bw005_neutral.svg
+- assets/characters/expressions/bw005_happy.svg
+- assets/characters/expressions/bw005_focused.svg
+- assets/characters/expressions/bw005_surprised.svg
+- assets/characters/expressions/bw005_disappointed.svg
+- scenes/bw005_character_presentation_test.gd
+- scenes/bw005_character_presentation_test.tscn
+- docs/characters/bw005-presentation-v1.md
+
+### Archivos modificados
+
+- .github/workflows/visual_qa.yml
+- docs/bitacora.md
+
+### Decisiones arquitectónicas
+
+1. CharacterArchetypeCatalog continúa siendo la fuente de verdad de identidad canónica.
+2. CharacterExpressionController mantiene la autoridad única sobre los cinco IDs expresivos y sus rutas.
+3. BaseballCharacterCard continúa siendo el único componente de presentación de colección.
+4. Los cinco SVG de bw005 son independientes, autónomos, sin etiquetas <text> ni dependencias de fuentes.
+5. La dirección visual de Sora enfatiza Catcher/Water mediante una silueta fuerte, paleta azul petróleo y azul agua y señales visuales de protección de catcher.
+6. La expresión no se guarda en PlayerData ni en CharacterRosterStore.
+7. La escena de QA utiliza la tarjeta de producción y una tira paralela de los cinco estados, pero esta tira no existe en el runtime real.
+8. VisualQAExporter genera la captura mediante --run-qa-capture.
+9. El workflow conserva Godot 4.5.1-stable y ahora valida también bw005 en push/manual CI.
+10. El PNG de bw005 es un artefacto de CI, no una fuente de verdad ni un asset de gameplay.
+
+### QA
+
+La escena verifica:
+- identidad canónica;
+- construcción de PlayerData;
+- existencia de los cinco SVG;
+- tamaño mínimo;
+- ausencia de <text>;
+- paleta canónica;
+- diferencia entre los cinco estados;
+- resolución determinista de rutas;
+- API de BaseballCharacterCard.
+
+La CI ejecuta:
+`res://scenes/bw005_character_presentation_test.tscn -- --run-qa-capture`
+y verifica que exista un PNG no vacío en `qa_captures/bw005_character_presentation.png`.
+
+### Estado
+
+**bw005 queda cerrado a nivel de implementación estructural, assets y pipeline CI.**
+
+### Avance aproximado
+
+**≈96% estructural del prototipo.** Este porcentaje no representa porcentaje de arte final, balance definitivo, validación Android local ni contenido completo.
+
