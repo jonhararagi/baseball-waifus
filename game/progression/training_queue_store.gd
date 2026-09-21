@@ -128,7 +128,9 @@ func claim(character_id: String, now_unix: int = -1) -> Dictionary:
 		"character_id": character_id,
 		"training_type": str(record["training_type"]),
 		"duration_key": str(record["duration_key"]),
-		"completed_unix": int(record["complete_unix"])
+		"completed_unix": int(record["complete_unix"]),
+		"started_unix": int(record["started_unix"]),
+		"complete_unix": int(record["complete_unix"])
 	}
 
 func restore_claim(record: Dictionary) -> bool:
