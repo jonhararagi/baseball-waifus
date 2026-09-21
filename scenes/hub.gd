@@ -107,16 +107,10 @@ func _build_ui() -> void:
 	starter_card.size = Vector2(430, 500)
 	content.add_child(starter_card)
 	starter_card.setup(starter)
-
-	comment_label = _label(COMMENTS[0], 15, Color("#e8efff"))
-	comment_label.position = Vector2(64, 455)
-	comment_label.size = Vector2(382, 70)
-	comment_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	comment_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	content.add_child(comment_label)
+	starter_card.set_comment(COMMENTS[0])
 
 	var comment_button := _button("SIGUIENTE COMENTARIO", 390, 42)
-	comment_button.position = Vector2(60, 570)
+	comment_button.position = Vector2(60, 628)
 	comment_button.pressed.connect(_next_comment)
 	content.add_child(comment_button)
 
@@ -241,6 +235,8 @@ func _refresh_account() -> void:
 func _next_comment() -> void:
 	comment_index = (comment_index + 1) % COMMENT_LIMIT
 	comment_label.text = COMMENTS[comment_index]
+	if starter_card != null:
+		starter_card.set_comment(COMMENTS[comment_index])
 
 func _open_history() -> void:
 	_show_panel("HISTORIA", _history_text(), true)
