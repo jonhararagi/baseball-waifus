@@ -2097,7 +2097,6 @@ AvatarProfile conserva el contrato de datos. El renderer procedural continúa si
 La dirección visual sigue siendo anime adulto deportivo, cuerpos atléticos redondeados y fanservice moderado. No se incorporan imitaciones directas de CLAMP o Jujutsu Kaisen. Fairy Tail permanece solamente como referencia funcional para proporciones shonen redondeadas.
 
 Las familias de benchmark continúan siendo Animagine XL, Illustrious XL, NoobAI-XL y Pony/SDXL. La búsqueda disponible fue mediante GitHub y no debe interpretarse como ranking mundial actual.
-
 ### Estado
 
 **Implementado:**
@@ -3497,7 +3496,6 @@ No duplicar estas decisiones en `main.gd`, renderer, UI o animaciones.
 ### Motivo
 
 Las revisiones 26, 27 y 29 ya habían establecido el roster de 30 personajes, la guía visual y los assets SVG de prototipo, pero la información artística permanecía distribuida entre varias páginas. Se consolida ahora en un único documento canónico para evitar reinterpretaciones o duplicación futura.
-
 ### Implementado
 
 - `docs/canon/character-art-canon-v1.md`
@@ -4897,7 +4895,6 @@ Se modificó:
 - `game/progression/charm_state_store.gd`
 
 ## Decisión arquitectónica
-
 La separación vigente queda:
 
 ```
@@ -6297,7 +6294,6 @@ Se añadió `game/ui/campaign_map_view.gd` para que Historia no sea solamente te
 - `assets/ui/hub_background.svg`
 - `assets/ui/campaign_map_background.svg`
 - `assets/ui/starter_card_frame.svg`
-
 ### Archivos modificados
 
 - `scenes/hub.gd`
@@ -7697,7 +7693,6 @@ Runtime local: no ejecutado en este entorno. La prueba queda preparada para Godo
 **Implementación de estructura completa completada; generación de assets finales y animación runtime de bw015 quedan como etapas posteriores del pipeline.**
 
 ### Avance aproximado
-
 **≈97% estructural del prototipo.** Este porcentaje no representa porcentaje de arte final, balance definitivo, validación Android local ni contenido completo.
 
 ## Revisión 67: Lote de cola visual bw016-bw020
@@ -7769,4 +7764,89 @@ La cola anterior era un único objeto de unidad (`bw015`). En lugar de convertir
 ### Avance aproximado
 
 **≈97% estructural del prototipo.** Este porcentaje no representa porcentaje de arte final, balance definitivo, validación Android local ni contenido completo.
+
+
+## Revisión 73: Telegram Mini App frontend y pipeline de GitHub Pages
+
+**Fecha:** 2026-09-21  
+**Tipo:** Distribución web opcional / frontend / CI/CD / contratos de transporte.
+
+### Motivo
+
+Se instala la primera capa de Telegram Mini App solicitada sin convertirla en una segunda autoridad de gameplay. La TMA funciona como cliente de presentación y transporte; Godot y los servicios autoritativos siguen siendo la fuente del resultado deportivo, progreso y economía.
+
+### Implementado
+
+Frontend:
+- webapp/index.html
+- webapp/css/style.css
+- webapp/js/app.js
+- webapp/js/combat.js
+- webapp/js/api.js
+
+Assets:
+- assets/production/sprites/.gitkeep
+- assets/production/cards/.gitkeep
+
+CI/CD:
+- .github/workflows/deploy-pages.yml
+
+Documentación:
+- docs/game-design/WAIFUMON_RULES.md
+
+### Arquitectura
+
+El flujo web queda:
+
+CombatInitDTO / TurnResultDTO
+→ API client / Telegram bridge
+→ CombatRenderer Canvas 2D
+→ UI y Cut-In
+
+El renderer utiliza requestAnimationFrame, limita el device pixel ratio para controlar memoria gráfica y mantiene un AssetBank que precarga sprites y retratos declarados por manifest o DTO.
+
+El cliente puede solicitar acciones BAT y STEAL, pero nunca calcula su resultado. La API transmite la acción y el servidor autoritativo debe responder con TurnResultDTO.
+
+La integración Telegram utiliza el SDK oficial cargado en index.html. initDataUnsafe se utiliza únicamente para presentación; la documentación establece que la identidad privilegiada debe verificarse del lado servidor antes de cualquier operación sensible.
+
+### GitHub Pages
+
+El workflow valida los cinco archivos de frontend, valida la existencia de los directorios de producción y comprueba sintaxis JavaScript mediante Node.
+
+Como los assets de producción viven fuera de webapp/, el workflow construye un sitio temporal que copia webapp/ y después incorpora assets/production/ bajo el mismo árbol publicado. También genera manifest.json con los sprites y cards encontrados, de modo que el renderer pueda precargarlos sin depender de un listado manual del navegador.
+
+### Monetización y referidos
+
+WAIFUMON_RULES.md documenta Telegram Stars como canal de pago opcional y exige verificación, idempotencia y concesión de entitlements en el backend. También define referidos como atribución validada por servidor y no como una orden de recompensa controlada por el cliente.
+
+No se crea en esta revisión un backend de pagos, verificación de Telegram, servicio de referidos ni nueva economía paralela.
+
+### Decisiones arquitectónicas
+
+1. La TMA es opcional y no reemplaza el cliente Godot.
+2. El frontend no decide resultados deportivos, recompensas, rarity, pity, energía ni pagos.
+3. No se añade una base de datos web local que compita con PlayerProgressStore o CharacterRosterStore.
+4. La ruta de assets se normaliza en el artefacto de Pages para que el mismo renderer funcione con una manifestación de producción.
+5. Se evita depender de emojis como iconografía funcional.
+6. No se incorporan voces, assets externos ni librerías propietarias adicionales.
+
+### QA
+
+Se añadió validación automática de estructura y sintaxis JavaScript al workflow de Pages. La validación está preparada para ejecutarse en GitHub Actions tras el push a main.
+
+Runtime del frontend dentro de Telegram: no ejecutado localmente en este entorno. Runtime Godot: sin cambios y no ejecutado.
+
+### Problemas encontrados y correcciones
+
+- El requisito de publicar únicamente webapp/ habría dejado fuera los assets que viven en assets/production/. Se corrigió mediante un paso de staging del sitio antes de upload-pages-artifact.
+- El frontend necesitaba una forma reproducible de descubrir assets sin acceso a listado de directorios del navegador. Se resolvió con manifest.json generado por CI y descriptores de assets dentro de los DTO.
+- La monetización podía crear una segunda autoridad económica. Se bloqueó explícitamente la concesión client-side y se dejó el backend futuro como único responsable de verificar y entregar entitlements.
+
+### Estado
+
+**Implementado a nivel de frontend, contrato de transporte y CI/CD. Backend Telegram/Stars/referidos pendiente de una fase posterior y deberá conservar la autoridad existente del juego.**
+
+### Avance aproximado
+
+**≈96% estructural del prototipo.** El porcentaje continúa representando estructura implementada y no porcentaje de contenido final, runtime móvil, arte final completo, backend comercial ni publicación efectiva en Telegram.
 
