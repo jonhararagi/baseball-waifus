@@ -275,6 +275,38 @@ func on_steal_result(from_base: int, success: bool, destination_base: int, after
 			runner_avatars[from_base].visible = false
 		)
 
+func on_defensive_runner_play(play: Dictionary, after_runners: Array = []) -> void:
+	if play.is_empty():
+		return
+	var slide: Dictionary = play.get("slide", {})
+	var style := str(slide.get("style", "FEET_FIRST"))
+	var is_force := str(play.get("final_result", "")) == "FORCE OUT"
+	var is_rundown := str(play.get("final_result", "")) == "RUNDOWN OUT"
+	var runner_index := int(play.get("force_runner_index", play.get("rundown_runner_index", -1)))
+	if runner_index < 0 or runner_index >= 3 or not runner_avatars[runner_index].visible:
+		return
+
+	var motion := runner_motions[runner_index]
+	var avatar := runner_avatars[runner_index]
+	if bool(slide.get("attempted", false)):
+		motion.play(AnimeAvatar2D.Pose.SLIDE, 0.48, AnimeAvatar2D.Pose.OUT if is_force or is_rundown else AnimeAvatar2D.Pose.IDLE)
+	else:
+		motion.play(AnimeAvatar2D.Pose.OUT if is_force or is_rundown else AnimeAvatar2D.Pose.RUN, 0.48, AnimeAvatar2D.Pose.IDLE)
+
+	if is_force:
+		trajectory.move_to(avatar, BASE_POSITIONS[1], 0.48, 10.0)
+	elif is_rundown:
+		var retreat_base := max(runner_index - 1, 0)
+		trajectory.move_to(avatar, BASE_POSITIONS[retreat_base], 0.48, 10.0)
+	else:
+		motion.play(AnimeAvatar2D.Pose.SLIDE, 0.48, AnimeAvatar2D.Pose.IDLE)
+
+	if not after_runners.is_empty():
+		get_tree().create_timer(0.58).timeout.connect(func():
+			sync_runners(after_runners, true)
+		)
+
+
 func on_game_over(winner: int) -> void:
 	for position in field_avatars.keys():
 		var motion: AvatarMotionController = field_motions[position]
