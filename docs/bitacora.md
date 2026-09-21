@@ -6932,3 +6932,13 @@ y verifica que exista un PNG no vacío en `qa_captures/bw005_character_presentat
 
 **≈96% estructural del prototipo.** Este porcentaje no representa porcentaje de arte final, balance definitivo, validación Android local ni contenido completo.
 
+### Corrección de Revisión 69: diferenciación efectiva de expresiones de bw005
+
+**Fecha:** 2026-09-21
+
+Durante la segunda pasada de QA se detectó que los cinco SVG de bw005 habían heredado inicialmente el mismo bloque facial por una sustitución textual demasiado estricta. La corrección reemplazó el bloque facial por estado mediante límites estructurales del SVG y añadió señales visuales de catcher sin alterar el contrato de presentación.
+
+**Validación estructural posterior:** los cinco archivos mantienen la misma identidad cromática y longitud de asset, pero ahora contienen contenido SVG distinto por estado.
+
+**Runtime Godot:** no se ejecutó localmente. La validación visual headless queda delegada al workflow CI configurado para bw005.
+
