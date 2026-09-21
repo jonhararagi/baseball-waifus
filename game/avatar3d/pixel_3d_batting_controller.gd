@@ -35,6 +35,7 @@ func _apply_action(t: float) -> void:
     if body == null:
         return
     body.rotation = Vector3.ZERO
+    body.position = Vector3.ZERO
     character.bat_pivot.rotation = Vector3.ZERO
     character.front_leg.rotation = Vector3.ZERO
     character.rear_leg.rotation = Vector3.ZERO
