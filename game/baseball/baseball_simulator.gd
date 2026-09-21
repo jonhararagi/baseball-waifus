@@ -55,6 +55,7 @@ func contact_probability(batter: PlayerData, pitcher: PlayerData, pitch: Pitch, 
 	var control := effective_stat(pitcher, "control")
 	if skill_state != null:
 		contact *= skill_state.get_stat_multiplier(batter.id, "contact")
+		contact *= skill_state.get_action_multiplier(batter.id, "runner_batter_combo")
 		control *= skill_state.get_stat_multiplier(pitcher.id, "control")
 	var contact_score := clamp(contact / 100.0, 0.0, 1.2)
 	var control_score := clamp(control / 100.0, 0.0, 1.2)
