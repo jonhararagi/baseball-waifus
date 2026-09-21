@@ -86,5 +86,451 @@
       "power_swing_execution",
       "base_run_sprint"
     ]
-  }
+  },
+  "batch_units": [
+    {
+      "schema_version": 1,
+      "character_id": "bw016",
+      "canonical": {
+        "display_name": "Fuyuki Aono",
+        "adult": true,
+        "rarity": "SR",
+        "position": "P",
+        "element": "ice",
+        "specialization": "pitcher",
+        "potential": 4,
+        "stats": {
+          "power": 50,
+          "contact": 59,
+          "speed": 64,
+          "pitch": 76,
+          "control": 81,
+          "defense": 63,
+          "critical": 12,
+          "stamina": 80
+        },
+        "identity": {
+          "archetype": "reserved_ice_pitcher",
+          "style_tags": [
+            "slim",
+            "reserved",
+            "traditional",
+            "pitcher"
+          ],
+          "play_identity": "pickoff_control",
+          "story_status": "story_seed",
+          "signature_action_ids": [
+            "pickoff_check"
+          ],
+          "skill_roles": [
+            "power_down",
+            "defense"
+          ]
+        },
+        "visual": {
+          "body_preset": "slim",
+          "height": 0.92,
+          "face_style": "sharp",
+          "skin": "#e9c1a4",
+          "hair_color": "#546fa4",
+          "hair_style": "long",
+          "uniform_style": "standard",
+          "uniform_color": "#f1f6ff",
+          "accent": "#8ad9ff",
+          "eye": "#304769"
+        }
+      },
+      "pollinations": {
+        "base_prompt": "adult anime female baseball player, Fuyuki Aono, SR rarity, pitcher, reserved ice-element pitcher, slim adult woman, long cool blue hair, sharp refined face, blue-gray eyes, calm reserved expression, traditional baseball uniform, pale ice-blue and silver-white palette with cyan accents, polished anime mobile game character art, elegant clean silhouette, centered three-quarter portrait, crisp linework, refined shading, detailed eyes and hair, professional game key art, no text, no logo, no watermark",
+        "negative_prompt": "child, teenager, loli, underage, young-looking, male, chibi, baby face, mascot proportions, duplicate character, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, bad anatomy, distorted body, blurry face, low detail, muddy colors, oversaturated neon, photorealistic, western comic style, 3d render, text, logo, watermark, cropped head, cropped face, broken uniform, exposed anatomy",
+        "expressions": {
+          "neutral": "calm reserved expression, composed gaze, relaxed shoulders, subtle closed-mouth expression",
+          "happy": "gentle genuine smile, softened eyes, quiet satisfaction, restrained celebratory warmth",
+          "focused": "intense pitching concentration, narrowed blue-gray eyes, firm posture, precise controlled expression",
+          "surprised": "sudden surprise, widened eyes, raised eyebrows, slight open mouth, controlled but visible reaction",
+          "disappointed": "subtle disappointed expression, lowered gaze, small frown, contained frustration, dignified posture"
+        }
+      },
+      "pixel_art_generator": {
+        "sprite_resolution": "128x128",
+        "style": "16-bit anime game sprite, clean pixel grid, sharp outlines, limited palette, transparent background",
+        "prompt_sprite": "pixel art 128x128 sprite, adult anime baseball pitcher Fuyuki Aono, side three-quarter pitching stance, long blue hair, pale ice-blue and white standard uniform, baseball glove, icy cyan accent, clean pixel outline, polished 16-bit sports RPG sprite, transparent background, no text"
+      },
+      "animation_layers": {
+        "type": "2D_cutout_node_system",
+        "root_node": "FuyukiAono_Rig",
+        "parts": [
+          "head_neutral",
+          "hair_long_back",
+          "hair_long_front",
+          "torso_slim",
+          "arm_pitch_windup",
+          "glove_hand",
+          "legs_pitcher_stance",
+          "baseball_ice_ball"
+        ],
+        "preset_animations": [
+          "idle_breathing",
+          "pitching_windup_loop",
+          "pitch_release",
+          "pickoff_check"
+        ]
+      }
+    },
+    {
+      "schema_version": 1,
+      "character_id": "bw017",
+      "canonical": {
+        "display_name": "Yuzu Takahashi",
+        "adult": true,
+        "rarity": "R",
+        "position": "2B",
+        "element": "light",
+        "specialization": "contact",
+        "potential": 3,
+        "stats": {
+          "power": 56,
+          "contact": 79,
+          "speed": 69,
+          "pitch": 49,
+          "control": 61,
+          "defense": 71,
+          "critical": 10,
+          "stamina": 70
+        },
+        "identity": {
+          "archetype": "golden_light_contact_worker",
+          "style_tags": [
+            "feminine",
+            "cheerful",
+            "tidy",
+            "contact"
+          ],
+          "play_identity": "situational_hitter",
+          "story_status": "none",
+          "signature_action_ids": [],
+          "skill_roles": [
+            "power_up",
+            "statistic"
+          ]
+        },
+        "visual": {
+          "body_preset": "balanced",
+          "height": 1,
+          "face_style": "soft",
+          "skin": "#f0c09e",
+          "hair_color": "#d29b31",
+          "hair_style": "long",
+          "uniform_style": "standard",
+          "uniform_color": "#fff4da",
+          "accent": "#f4ed9b",
+          "eye": "#554018"
+        }
+      },
+      "pollinations": {
+        "base_prompt": "adult anime female baseball player, Yuzu Takahashi, R rarity, second baseman, light-element contact specialist, balanced adult woman, long golden honey-blonde hair, soft feminine face, warm brown eyes, cheerful tidy appearance, classic clean baseball uniform, cream and pale gold palette with luminous yellow accent, polished anime mobile game character art, elegant readable silhouette, centered three-quarter portrait, crisp linework, clean cel shading, detailed hair and eyes, no text, no logo, no watermark",
+        "negative_prompt": "child, teenager, loli, underage, young-looking, male, chibi, baby face, mascot proportions, duplicate character, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, bad anatomy, blurry face, low detail, muddy colors, oversaturated neon, photorealistic, western comic style, 3d render, text, logo, watermark, cropped head, cropped face, broken anatomy, distorted clothing",
+        "expressions": {
+          "neutral": "friendly composed expression, neat posture, soft attentive gaze, small polite smile",
+          "happy": "bright cheerful smile, sparkling eyes, energetic but tidy posture, delighted expression",
+          "focused": "concentrated contact-batting focus, narrowed eyes, precise stance, serious competitive expression",
+          "surprised": "wide brown eyes, raised eyebrows, small open mouth, startled but expressive reaction",
+          "disappointed": "gentle disappointed look, slight frown, lowered shoulders, restrained frustration"
+        }
+      },
+      "pixel_art_generator": {
+        "sprite_resolution": "128x128",
+        "style": "16-bit anime game sprite, clean pixel grid, sharp outlines, warm limited palette, transparent background",
+        "prompt_sprite": "pixel art 128x128 sprite, adult anime second baseman Yuzu Takahashi, compact contact-batting stance, long golden hair, cream baseball uniform with pale gold accents, clean pixel outline, polished 16-bit sports RPG sprite, transparent background, no text"
+      },
+      "animation_layers": {
+        "type": "2D_cutout_node_system",
+        "root_node": "YuzuTakahashi_Rig",
+        "parts": [
+          "head_neutral",
+          "hair_long_back",
+          "hair_long_front",
+          "torso_balanced",
+          "arm_left_bat_grip",
+          "arm_right_bat_grip",
+          "legs_contact_stance",
+          "baseball_bat_light"
+        ],
+        "preset_animations": [
+          "idle_breathing",
+          "batting_ready_loop",
+          "contact_swing",
+          "infield_run"
+        ]
+      }
+    },
+    {
+      "schema_version": 1,
+      "character_id": "bw018",
+      "canonical": {
+        "display_name": "Koharu Nishiki",
+        "adult": true,
+        "rarity": "SR",
+        "position": "LF",
+        "element": "nature",
+        "specialization": "defender",
+        "potential": 4,
+        "stats": {
+          "power": 58,
+          "contact": 65,
+          "speed": 67,
+          "pitch": 53,
+          "control": 61,
+          "defense": 86,
+          "critical": 9,
+          "stamina": 82
+        },
+        "identity": {
+          "archetype": "green_field_guardian",
+          "style_tags": [
+            "natural",
+            "casual",
+            "freckled",
+            "defender"
+          ],
+          "play_identity": "relay_specialist",
+          "story_status": "story_seed",
+          "signature_action_ids": [
+            "relay_chain"
+          ],
+          "skill_roles": [
+            "defense",
+            "combination"
+          ]
+        },
+        "visual": {
+          "body_preset": "balanced",
+          "height": 1,
+          "face_style": "round",
+          "skin": "#d99f7a",
+          "hair_color": "#54713a",
+          "hair_style": "long",
+          "uniform_style": "sleeveless",
+          "uniform_color": "#eff5e3",
+          "accent": "#4cae5f",
+          "eye": "#304024"
+        }
+      },
+      "pollinations": {
+        "base_prompt": "adult anime female baseball player, Koharu Nishiki, SR rarity, left fielder, nature-element defensive specialist, balanced adult woman, long moss-green hair, round friendly face, dark green eyes, visible freckles, relaxed casual athletic personality, sleeveless baseball uniform, forest green cream and leaf-green palette, polished anime mobile game character art, natural confident silhouette, centered three-quarter portrait, crisp linework, soft cel shading, detailed freckles hair and eyes, no text, no logo, no watermark",
+        "negative_prompt": "child, teenager, loli, underage, young-looking, male, chibi, baby face, mascot proportions, duplicate character, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, bad anatomy, missing freckles, blurry face, low detail, muddy colors, oversaturated neon, photorealistic, western comic style, 3d render, text, logo, watermark, cropped head, cropped face, broken anatomy",
+        "expressions": {
+          "neutral": "relaxed friendly expression, easygoing gaze, subtle smile, calm field-ready posture",
+          "happy": "open cheerful smile, bright eyes, playful warmth, relaxed celebratory pose",
+          "focused": "sharp defensive concentration, alert eyes, ready-to-catch posture, serious expression",
+          "surprised": "eyes widened, eyebrows raised, mouth slightly open, freckles clearly visible, startled reaction",
+          "disappointed": "soft frown, thoughtful disappointed gaze, slight slouch, frustration kept understated"
+        }
+      },
+      "pixel_art_generator": {
+        "sprite_resolution": "128x128",
+        "style": "16-bit anime game sprite, clean pixel grid, crisp outlines, natural green palette, transparent background",
+        "prompt_sprite": "pixel art 128x128 sprite, adult anime left fielder Koharu Nishiki, ready-to-catch outfield stance, long moss-green hair, visible freckles, sleeveless cream and green baseball uniform, baseball glove, polished 16-bit sports RPG sprite, transparent background, no text"
+      },
+      "animation_layers": {
+        "type": "2D_cutout_node_system",
+        "root_node": "KoharuNishiki_Rig",
+        "parts": [
+          "head_neutral",
+          "hair_long_back",
+          "hair_long_front",
+          "freckles_face",
+          "torso_balanced",
+          "glove_arm",
+          "throwing_arm",
+          "legs_outfield_ready",
+          "baseball_nature_accent"
+        ],
+        "preset_animations": [
+          "idle_breathing",
+          "fielding_ready_loop",
+          "catch_recovery",
+          "relay_throw"
+        ]
+      }
+    },
+    {
+      "schema_version": 1,
+      "character_id": "bw019",
+      "canonical": {
+        "display_name": "Chika Raikou",
+        "adult": true,
+        "rarity": "SSR",
+        "position": "RF",
+        "element": "lightning",
+        "specialization": "power",
+        "potential": 5,
+        "stats": {
+          "power": 69,
+          "contact": 68,
+          "speed": 65,
+          "pitch": 57,
+          "control": 62,
+          "defense": 75,
+          "critical": 17,
+          "stamina": 79
+        },
+        "identity": {
+          "archetype": "electric_athletic_brawler",
+          "style_tags": [
+            "athletic",
+            "tomboy",
+            "bold",
+            "power"
+          ],
+          "play_identity": "pressure_hitter",
+          "story_status": "story_seed",
+          "signature_action_ids": [
+            "hit_and_run_brawl"
+          ],
+          "skill_roles": [
+            "attack",
+            "combination"
+          ]
+        },
+        "visual": {
+          "body_preset": "athletic",
+          "height": 1.02,
+          "face_style": "sharp",
+          "skin": "#c88765",
+          "hair_color": "#38343d",
+          "hair_style": "long",
+          "uniform_style": "jacket",
+          "uniform_color": "#f1f0ed",
+          "accent": "#f6d447",
+          "eye": "#2d2a31"
+        }
+      },
+      "pollinations": {
+        "base_prompt": "adult anime female baseball player, Chika Raikou, SSR rarity, right fielder, lightning-element athletic power hitter, muscular adult tomboy athlete, long charcoal-black hair, sharp confident face, dark eyes, bold competitive expression, modern baseball jacket uniform, graphite white and electric gold palette, subtle lightning motifs, polished anime mobile game character art, strong readable silhouette, centered three-quarter portrait, crisp linework, dynamic cel shading, detailed hair and eyes, high-end sports character key art, no text, no logo, no watermark",
+        "negative_prompt": "child, teenager, loli, underage, young-looking, male, chibi, baby face, mascot proportions, duplicate character, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, bad anatomy, distorted muscles, blurry face, low detail, muddy colors, oversaturated neon, photorealistic, western comic style, 3d render, text, logo, watermark, cropped head, cropped face, broken anatomy, exaggerated sexual anatomy",
+        "expressions": {
+          "neutral": "confident neutral gaze, squared athletic posture, composed competitive attitude, closed-mouth expression",
+          "happy": "bold victorious grin, bright eyes, energized athletic posture, confident celebration",
+          "focused": "intense power-hitting concentration, fierce eyes, strong jaw, grounded stance, maximum competitive focus",
+          "surprised": "eyes widened, raised eyebrows, mouth slightly open, athletic posture interrupted by genuine surprise",
+          "disappointed": "tight frown, narrowed eyes, controlled frustration, shoulders slightly lowered after a failed play"
+        }
+      },
+      "pixel_art_generator": {
+        "sprite_resolution": "128x128",
+        "style": "16-bit anime game sprite, clean pixel grid, strong athletic silhouette, crisp highlights, transparent background",
+        "prompt_sprite": "pixel art 128x128 sprite, adult anime athletic tomboy right fielder Chika Raikou, powerful batting stance, long charcoal hair, graphite and white baseball jacket uniform with electric gold accents, polished 16-bit sports RPG sprite, transparent background, no text"
+      },
+      "animation_layers": {
+        "type": "2D_cutout_node_system",
+        "root_node": "ChikaRaikou_Rig",
+        "parts": [
+          "head_neutral",
+          "hair_long_back",
+          "hair_long_front",
+          "torso_athletic",
+          "arm_left_bat_grip",
+          "arm_right_bat_grip",
+          "legs_power_stance",
+          "baseball_bat_lightning"
+        ],
+        "preset_animations": [
+          "idle_breathing",
+          "batting_ready_loop",
+          "power_swing_execution",
+          "outfield_sprint"
+        ]
+      }
+    },
+    {
+      "schema_version": 1,
+      "character_id": "bw020",
+      "canonical": {
+        "display_name": "Shiori Amane",
+        "adult": true,
+        "rarity": "SR",
+        "position": "SS",
+        "element": "darkness",
+        "specialization": "contact",
+        "potential": 4,
+        "stats": {
+          "power": 54,
+          "contact": 83,
+          "speed": 68,
+          "pitch": 47,
+          "control": 58,
+          "defense": 79,
+          "critical": 13,
+          "stamina": 73
+        },
+        "identity": {
+          "archetype": "dark_quiet_contact_ghost",
+          "style_tags": [
+            "slim",
+            "dark",
+            "introverted",
+            "contact"
+          ],
+          "play_identity": "late_reaction_runner",
+          "story_status": "story_seed",
+          "signature_action_ids": [
+            "delayed_steal_read"
+          ],
+          "skill_roles": [
+            "power_down",
+            "statistic"
+          ]
+        },
+        "visual": {
+          "body_preset": "slim",
+          "height": 0.92,
+          "face_style": "sharp",
+          "skin": "#f1c5aa",
+          "hair_color": "#2d253d",
+          "hair_style": "long",
+          "uniform_style": "standard",
+          "uniform_color": "#f2eafd",
+          "accent": "#8b5cf6",
+          "eye": "#342a4b"
+        }
+      },
+      "pollinations": {
+        "base_prompt": "adult anime female baseball player, Shiori Amane, SR rarity, shortstop, darkness-element contact specialist, slim adult woman, long deep plum-black hair, sharp quiet face, dark violet eyes, introverted mysterious presence, subtle confident posture, elegant standard baseball uniform, lavender cream and deep violet palette, polished anime mobile game character art, clean silhouette, centered three-quarter portrait, crisp linework, restrained cinematic shading, detailed eyes and hair, premium sports collection game key art, no text, no logo, no watermark",
+        "negative_prompt": "child, teenager, loli, underage, young-looking, male, chibi, baby face, mascot proportions, duplicate character, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, bad anatomy, blurry face, low detail, muddy colors, oversaturated neon, photorealistic, western comic style, 3d render, text, logo, watermark, cropped head, cropped face, broken anatomy, distorted clothing, exaggerated sexual anatomy",
+        "expressions": {
+          "neutral": "quiet neutral expression, steady violet gaze, relaxed posture, reserved composure",
+          "happy": "small genuine smile, softened eyes, subtle pleased expression, restrained warmth",
+          "focused": "cold precise focus, narrowed eyes, alert shortstop posture, highly attentive expression",
+          "surprised": "wide violet eyes, raised eyebrows, slight open mouth, visible break in composure",
+          "disappointed": "downcast gaze, faint frown, quiet frustration, withdrawn but controlled posture"
+        }
+      },
+      "pixel_art_generator": {
+        "sprite_resolution": "128x128",
+        "style": "16-bit anime game sprite, clean pixel grid, dark limited palette, crisp outlines, transparent background",
+        "prompt_sprite": "pixel art 128x128 sprite, adult anime shortstop Shiori Amane, low athletic fielding stance, long deep plum-black hair, lavender cream baseball uniform, dark violet accents, polished 16-bit sports RPG sprite, transparent background, no text"
+      },
+      "animation_layers": {
+        "type": "2D_cutout_node_system",
+        "root_node": "ShioriAmane_Rig",
+        "parts": [
+          "head_neutral",
+          "hair_long_back",
+          "hair_long_front",
+          "torso_slim",
+          "glove_arm",
+          "throwing_arm",
+          "legs_shortstop_crouch",
+          "baseball_darkness_accent"
+        ],
+        "preset_animations": [
+          "idle_breathing",
+          "shortstop_ready_loop",
+          "quick_contact_swing",
+          "late_reaction_runner"
+        ]
+      }
+    }
+  ]
 }
