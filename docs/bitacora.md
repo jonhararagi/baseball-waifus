@@ -5504,3 +5504,13 @@ Se introdujo una capa de identidad separada del gameplay. La contradicción de e
 
 **Avance global aproximado:** ≈90%.
 
+
+### Addendum de Revisión 50: prueba de catálogo
+
+Posteriormente se añadieron:
+- `scenes/character_identity_catalog_test.gd`
+- `scenes/character_identity_catalog_test.tscn`
+
+La prueba valida estructuralmente los 30 personajes, IDs únicos, presencia de estadísticas, esquema de identidad, diferencia R vs SR+, semillas narrativas y acciones de firma.
+
+La prueba fue escrita, pero **no ejecutada en Godot runtime** en este entorno.
