@@ -71,7 +71,5 @@ func _apply_action(t: float) -> void:
 
 func _action_from_name(name: String) -> int:
     var normalized := name.to_upper().replace("-", "_").replace(" ", "_")
-    for value in Action.values():
-        if str(Action.keys()[value]) == normalized:
-            return value
-    return -1
+    var keys := Action.keys()
+    return keys.find(normalized)
