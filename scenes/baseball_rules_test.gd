@@ -107,3 +107,5 @@ func _test_hit_scores_once() -> void:
 	assert(state.base_runners[0] == null)
 	assert(state.base_runners[1] == null)
 	assert(state.base_runners[2] == null)
+	assert(state.balls == 0)
+	assert(state.strikes == 0)
