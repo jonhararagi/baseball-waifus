@@ -4633,3 +4633,80 @@ Se actualizaron las pruebas estructurales para verificar:
 ## Regla de continuidad
 
 Los costes de entrada no deben modificarse desde la UI ni desde las tablas de recompensa. Toda actividad nueva debe registrarse en `EconomyRules` y utilizar `CampaignEntryService`.
+
+
+# Revisión 42: endurecimiento de progresión y cola de entrenamiento
+
+**Fecha:** 2026-09-21
+
+## Motivo
+
+Continuar la progresión después de cerrar el pacing de campaña/grindeo. Se detectó que PlayerProgressStore podía dejar cambios en memoria si un guardado fallaba. Además, las duraciones de entrenamiento ya existían en EconomyRules, pero todavía no había una cola persistente que evitara dobles reclamaciones.
+
+## Sistemas afectados
+
+- PlayerProgressStore.
+- Entrenamiento.
+- Persistencia offline.
+- Economía de progresión.
+
+## Cambios realizados
+
+### Persistencia de PlayerProgressStore
+
+Las mutaciones de energía/materiales ahora conservan un snapshot previo y restauran el estado en memoria si save_state() falla.
+
+Esto mantiene la regla de que una operación con save_failed no debe aparentar haber aplicado la mutación localmente.
+
+### Entrenamiento
+
+Se creó:
+
+- game/progression/training_queue_store.gd
+- game/progression/training_service.gd
+- scenes/training_queue_test.gd
+- docs/progression/training-v1.md
+
+La cola admite una actividad por personaje y guarda personaje, tipo, duración, timestamp de inicio y timestamp de finalización.
+
+La reclamación es de una sola vez y se persiste antes de entregar el payload de ganancias.
+
+### Ganancias v1
+
+- 30m: +1 primaria.
+- 2h: +2 primaria, +1 secundaria.
+- 6h: +4 primaria, +2 secundaria.
+- 12h: +7 primaria, +3 secundaria.
+- 24h: +12 primaria, +5 secundaria.
+
+Tipos:
+
+- batting → Power/Contact.
+- running → Speed/Stamina.
+- pitching → Pitch/Control.
+- defense → Defense/Critical.
+- balanced → Contact/Stamina.
+
+No se añadió un coste de energía/materiales porque esa regla no estaba cerrada previamente.
+
+### Protección temporal
+
+La cola detecta reloj retrocedido y bloquea la operación en vez de conceder progreso gratuito.
+
+## Pruebas
+
+El test estructural cubre duraciones, ganancias deterministas, inicio, rechazo de entrenamiento duplicado, entrenamiento todavía no terminado, reloj retrocedido, reclamación, ganancias de la reclamación y segunda reclamación rechazada.
+
+**Runtime Godot:** no ejecutado. El entorno no dispone del binario Godot.
+
+## Estado
+
+**Implementado:** cola persistente offline y endurecimiento de mutaciones económicas.
+
+**Pendiente:** autoridad persistente unificada del roster, aplicación atómica de las ganancias a PlayerData, inventario completo, tablas definitivas de recompensas, gacha, fusión y balance por simulación.
+
+**Avance global aproximado:** **≈84%**.
+
+## Regla de continuidad
+
+El entrenamiento no debe crear una segunda fuente de verdad para estadísticas. Hasta que exista el almacenamiento persistente del roster, TrainingService entrega un payload determinista y la futura autoridad de personajes deberá aplicarlo de forma atómica.
