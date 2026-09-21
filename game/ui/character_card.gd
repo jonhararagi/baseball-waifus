@@ -42,13 +42,15 @@ var meta_label: Label
 var rarity_badge: Label
 var stats_label: Label
 var identity_label: Label
+var comment_label: Label
 var accent_color := Color.WHITE
 
 func setup(player: PlayerData, portrait_path: String = "") -> void:
 	if player == null:
 		return
 	character_id = player.id
-	_build()
+	if not has_node("CardRoot"):
+		_build()
 	_apply_player(player, portrait_path)
 
 func _ready() -> void:
