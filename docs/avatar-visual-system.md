@@ -174,3 +174,20 @@ Esto evita que el renderer invente una trayectoria diferente a la que está most
 `scenes/baseball_ball_test.tscn` ejecuta una secuencia de Pitch, Single, Double, Triple, Home Run, Foul y Out sin iniciar un partido completo.
 
 Sirve para depurar velocidad, arco, destino y lectura visual de las acciones antes de introducir arte final.
+
+
+## Secondary Motion 3D
+
+El renderer 3D incorpora `SecondaryMotion3D` como una capa independiente de presentación. El objetivo visual es una silueta adulta de anime deportivo con movimiento corporal perceptible desde frente, lateral, espalda y tres cuartos.
+
+La capa aplica respuesta amortiguada a:
+
+- torso/espalda;
+- pecho;
+- cadera/falda;
+- muslos;
+- piernas.
+
+Las acciones de partido generan una intención de movimiento y el componente calcula el seguimiento secundario. La física visual nunca participa en gameplay.
+
+Referencia visual: se busca una presencia corporal estilizada y dinámica propia del anime deportivo moderno, incluyendo una lectura atractiva de la silueta trasera, sin copiar modelos, rigs o animaciones propietarios.
