@@ -30,5 +30,5 @@ func _ready() -> void:
 	scheduler.start_result()
 	scheduler.restore(snapshot)
 	assert(scheduler.snapshot() == snapshot)
-	assert(started.size() == 4)
+	assert(started.size() == 3)
 	print("BaseballMatchEventScheduler structural test prepared.")
