@@ -1555,3 +1555,28 @@ La especificación detallada queda en `docs/characters/character-diversity-v1.md
 ---
 
 
+
+
+## 2026-09-21: Identidad de personaje vs estadísticas y acciones de firma
+
+**Estado:** Adoptado.
+
+La apariencia no determina las estadísticas. El cuerpo, rostro, piel, cabello, peinado, ropa, accesorios y nivel de arreglo personal son datos visuales. La personalidad tampoco otorga estadísticas implícitas.
+
+Las R son jugadoras normales con identidad visual y deportiva propia. A partir de SR, y con mayor profundidad en SSR/UR, cada personaje debe poseer una historia de fondo, una contradicción de personalidad/estilo y una acción de firma relacionada con esa historia.
+
+La acción de firma no significa que la personalidad cambie matemáticamente las estadísticas. Es una regla de gameplay explícita que se activa bajo condiciones concretas y se resuelve mediante los sistemas de béisbol existentes.
+
+Ejemplos adoptados:
+- una bateadora de Power puede tener una acción de sacrifice bunt;
+- una tomboy musculosa puede destacar por posicionamiento defensivo y engaño;
+- una idol puede tener una acción de juego colectivo que sacrifique protagonismo;
+- una personaje hikikomori puede tener una acción de robo silencioso;
+- una pitcher refinada puede manipular el ritmo del turno;
+- una catcher dominante puede tener una acción basada en confiar en su pitcher.
+
+El objetivo es que dos personajes con el mismo color de pelo, cuerpo o especialización sigan siendo distinguibles por su combinación de estilo, personalidad, historia y manera de jugar.
+
+El catálogo `game/characters/character_archetypes.json` incorpora ahora `character_identity_v1`, sin modificar las estadísticas existentes.
+
+Referencia detallada: `docs/characters/character-action-design-v1.md`.
