@@ -1,66 +1,66 @@
 {
   "schema_version": 1,
-  "character_id": "bw013",
+  "character_id": "bw014",
   "canonical": {
-    "display_name": "Kaede Arakawa",
+    "display_name": "Rin Asakura",
     "adult": true,
-    "rarity": "SSR",
-    "position": "3B",
-    "element": "darkness",
-    "specialization": "power",
-    "potential": 5,
+    "rarity": "SR",
+    "position": "CF",
+    "element": "ice",
+    "specialization": "runner",
+    "potential": 4,
     "stats": {
-      "power": 74,
-      "contact": 67,
-      "speed": 55,
-      "pitch": 58,
-      "control": 66,
-      "defense": 70,
-      "critical": 14,
-      "stamina": 81
+      "power": 53,
+      "contact": 68,
+      "speed": 94,
+      "pitch": 46,
+      "control": 56,
+      "defense": 74,
+      "critical": 10,
+      "stamina": 77
     },
     "identity": {
-      "archetype": "dark_elegant_slugger",
+      "archetype": "ice_speed_specialist",
       "style_tags": [
-        "elegant",
-        "dark",
-        "curvy",
-        "power"
+        "slim",
+        "athletic",
+        "quiet",
+        "runner"
       ],
-      "play_identity": "sacrifice_power",
+      "play_identity": "hit_for_speed",
       "story_status": "story_seed",
-      "story_hook": "Una bateadora orgullosa debe aprender que ayudar a otra corredora puede ser una victoria personal.",
+      "story_hook": "Su obsesión por la velocidad la llevó a practicar el toque hasta convertirlo en amenaza.",
       "signature_action_ids": [
-        "sacrifice_bunt"
+        "drag_bunt"
       ],
-      "contrast": "La bateadora de fuerza elige voluntariamente una jugada que renuncia al Home Run.",
+      "contrast": "La corredora más rápida no siempre roba: a veces obliga a la defensa a perseguir una pelota corta.",
       "skill_roles": [
         "attack",
-        "combination"
+        "statistic"
       ]
     },
     "visual": {
-      "body_preset": "power",
-      "height": 1,
-      "face_style": "sharp",
-      "skin": "#e4b08d",
-      "hair_color": "#241c2a",
+      "body_preset": "slim",
+      "height": 0.92,
+      "face_style": "soft",
+      "skin": "#f3ceb5",
+      "hair_color": "#7fa0b8",
       "hair_style": "long",
-      "uniform_style": "jacket",
-      "uniform_color": "#eee8f4",
-      "accent": "#8b5cf6",
-      "eye": "#2c2034"
+      "uniform_style": "sporty",
+      "uniform_color": "#edf8ff",
+      "accent": "#8ad9ff",
+      "eye": "#334957"
     }
   },
   "pollinations": {
-    "base_prompt": "adult anime female baseball player, Kaede Arakawa, SSR rarity, third baseman, elegant dark-themed power slugger, curvy adult woman, sharp facial features, long very dark plum-black hair, refined baseball jacket uniform, ivory-lilac uniform palette, deep violet accents, dark violet eyes, confident mature presence, polished anime game character art, clean silhouette, centered three-quarter portrait, card-ready composition, soft studio lighting, crisp linework, detailed eyes and hair, no text, no logo, no watermark",
-    "negative_prompt": "child, teenager, loli, young-looking, chibi, male, duplicate character, extra limbs, extra fingers, malformed hands, text, logo, watermark, blurry face, cropped head, photorealistic, western comic style",
+    "base_prompt": "adult anime female baseball player, Rin Asakura, SR rarity, center fielder, ice-element speed specialist, slim athletic adult woman, quiet composed personality, long cool blue-gray hair, soft facial features, focused sports expression, modern anime baseball uniform with sporty styling, pale icy blue and white palette, cyan accents, deep blue-gray eyes, premium anime mobile game character art, polished production-quality key visual, clean silhouette, full upper-body three-quarter portrait, card-ready composition, refined cel shading, crisp linework, detailed hair strands, expressive eyes, subtle fabric folds, controlled rim lighting, elegant color harmony, high visual clarity, no text, no logo, no watermark",
+    "negative_prompt": "child, teenager, loli, underage, young-looking, male, chibi, mascot proportions, duplicate character, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, blurry face, low detail, muddy colors, oversaturated neon, photorealistic, western comic style, 3d render, text, logo, watermark, cropped head, cropped face, broken anatomy, exaggerated body proportions",
     "expressions": {
-      "neutral": "calm neutral expression, composed gaze, relaxed mouth, controlled posture",
-      "happy": "warm confident smile, bright eyes, subtle celebratory energy, relaxed shoulders",
-      "focused": "intense competitive focus, narrowed eyes, firm mouth, ready-to-bat concentration",
-      "surprised": "clear surprise, widened eyes, slightly raised eyebrows, lips parted, restrained reaction",
-      "disappointed": "quiet disappointment, softened gaze, slight frown, controlled frustration, dignified posture"
+      "neutral": "calm neutral expression, composed gaze, relaxed mouth, quiet confidence, balanced posture",
+      "happy": "gentle genuine smile, slightly brighter eyes, subtle cheerful warmth, relaxed shoulders, restrained celebration",
+      "focused": "intense runner focus, narrowed eyes, firm mouth, forward-leaning posture, concentrated competitive energy",
+      "surprised": "clear sudden surprise, widened eyes, raised eyebrows, slightly parted lips, brief loss of composure",
+      "disappointed": "quiet disappointment, softened gaze, small frown, controlled frustration, shoulders slightly lowered"
     },
     "generation_notes": {
       "output_role": "character_expression_source",
@@ -68,6 +68,8 @@
       "preserve_identity_across_variants": true,
       "preserve_palette_across_variants": true,
       "preserve_silhouette_across_variants": true,
+      "preserve_hair_style_across_variants": true,
+      "preserve_uniform_style_across_variants": true,
       "no_embedded_text": true
     }
   }
