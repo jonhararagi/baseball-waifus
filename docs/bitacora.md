@@ -7167,3 +7167,56 @@ Se amplía `VisualQAExporter` sin eliminar su contrato anterior:
 - watchdog de 5 s y códigos de salida 0/1 intactos.
 
 La captura continúa siendo una herramienta de presentación y nunca toca gameplay.
+
+## Revisión 59: Unidad visual bw007 (Kira Kurosawa)
+
+**Fecha:** 2026-09-21  
+**Tipo:** Pipeline artístico 2D / presentación de colección / Visual QA.
+
+### Motivo
+
+Completar la siguiente unidad controlada del pipeline visual después de bw006 sin alterar el catálogo canónico ni la infraestructura compartida de expresiones, tarjetas o captura headless.
+
+### Identidad canónica bloqueada
+
+La unidad utiliza exclusivamente el registro existente de `bw007` en `game/characters/character_archetypes.json`:
+
+- **Nombre:** Kira Kurosawa
+- **Rareza:** SSR
+- **Posición:** RF
+- **Elemento:** Darkness
+- **Especialización:** Power
+- **Potencial:** 5
+- **Stats:** Power 76, Contact 69, Speed 57, Pitch 54, Control 67, Defense 61, Critical 16, Stamina 74.
+- **Paleta:** cabello `#3b1e49`, acento `#8b5cf6`, ojos `#3c2148`, piel `#e1aa8d`, uniforme `#f1e8ff`.
+
+No se crea una segunda fuente de verdad. El test bloquea cualquier deriva del catálogo.
+
+### Implementado
+
+- cinco SVG de expresión independientes bajo `assets/characters/expressions/`;
+- `scenes/bw007_character_presentation_test.gd`;
+- `scenes/bw007_character_presentation_test.tscn`;
+- extensión de `.github/workflows/visual_qa.yml` con job headless `bw007-visual-qa`.
+
+### Decisiones de producción visual
+
+1. SVG autónomo, sin `<text>`, fuentes embebidas ni referencias externas.
+2. Los cinco estados tienen cambios faciales específicos y se valida que sus contenidos sean distintos.
+3. La dirección visual expresa a Kira como bateadora Power adulta, dramática y segura, con cabello largo oscuro púrpura, acento violeta y chaqueta deportiva.
+4. El flujo permanece `CharacterArchetypeCatalog -> CharacterExpressionController -> BaseballCharacterCard`.
+5. No se modifican estadísticas, RNG, equipamiento ni resolvers de béisbol.
+
+### QA
+
+La escena comprueba identidad, stats, roles, paleta, existencia y unicidad de los cinco assets, ausencia de `<text>` y resolución de paths. CI genera `qa_captures/bw007_character_presentation.png` con Godot 4.5.1-stable y lo publica como artifact.
+
+**Runtime local:** no disponible en este entorno. La ejecución headless queda delegada al workflow de GitHub Actions activado por el push a `main`.
+
+### Estado
+
+**Implementado y conectado.** bw007 queda cerrado como unidad del pipeline visual a nivel de código, assets vectoriales, escena y CI.
+
+### Avance aproximado
+
+**≈95% estructural del prototipo.**
