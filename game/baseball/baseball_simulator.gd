@@ -29,13 +29,16 @@ func timing_label(t: float) -> String:
 	if t >= 0.50: return "NORMAL"
 	return "BAD"
 
-func pitch_in_zone_probability(pitcher: PlayerData, pitch: Pitch) -> float:
-	var control := clamp(effective_stat(pitcher, "control") / 100.0, 0.0, 1.2)
+func pitch_in_zone_probability(pitcher: PlayerData, pitch: Pitch, skill_state: BaseballSkillState = null) -> float:
+	var control := float(effective_stat(pitcher, "control"))
+	if skill_state != null:
+		control *= skill_state.get_stat_multiplier(pitcher.id, "control")
+	control = clamp(control / 100.0, 0.0, 1.2)
 	var chance := pitch.zone_bias + (control - 0.50) * 0.18
 	return clamp(chance, 0.65, 0.96)
 
-func resolve_pitch(pitcher: PlayerData, pitch: Pitch, rng: RandomNumberGenerator) -> Dictionary:
-	var chance := pitch_in_zone_probability(pitcher, pitch)
+func resolve_pitch(pitcher: PlayerData, pitch: Pitch, rng: RandomNumberGenerator, skill_state: BaseballSkillState = null) -> Dictionary:
+	var chance := pitch_in_zone_probability(pitcher, pitch, skill_state)
 	var roll := rng.randf()
 	var in_zone := roll < chance
 	return {
