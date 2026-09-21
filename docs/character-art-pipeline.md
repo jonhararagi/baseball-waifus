@@ -44,3 +44,12 @@ La referencia generada no se convierte automáticamente en asset de producción.
 game/characters/character_archetypes.json
 
 No editar una ilustración para cambiar estadísticas. Las estadísticas siguen siendo datos de gameplay.
+
+
+## Prototipo visual generado en repositorio
+
+A partir de la Revisión 29 se generan automáticamente 30 retratos SVG ligeros en `assets/characters/generated/`, usando únicamente `character_archetypes.json`. El generador reproducible es `tools/character_ai/generate_svg_roster.py` y el inventario queda en `assets/characters/generated/manifest.json`.
+
+Estos SVG son arte de prototipo intercambiable, no sustituyen todavía los retratos anime de producción. Su función es que cada entrada del roster tenga un asset visual real desde ahora y que el renderer pueda probar una biblioteca completa sin introducir dependencias externas ni pesos de modelos dentro del repositorio.
+
+Regla: el catálogo JSON sigue siendo la fuente de verdad. El asset puede reemplazarse por PNG/WebP, sprite sheet o rig 2D con licencia compatible sin modificar PlayerData ni gameplay.
