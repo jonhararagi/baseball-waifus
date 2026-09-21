@@ -2,6 +2,7 @@ extends Node
 
 func _ready() -> void:
 	_test_force_out()
+	_test_game_state_force_out()
 	_test_rundown_and_slide()
 	_test_reception_error_event()
 	print("DEFENSIVE RULES TEST OK")
@@ -34,6 +35,20 @@ func _test_force_out() -> void:
 	assert(float(result.force_out_chance) >= 0.22 and float(result.force_out_chance) <= 0.84)
 	assert(result.has("slide"))
 	assert(str(result.slide.get("style", "")) in ["HEADFIRST", "FEET_FIRST"])
+
+func _test_game_state_force_out() -> void:
+	var state := BaseballGameState.new()
+	var runner := _runner(50.0)
+	state.base_runners[0] = runner
+	var batter := PlayerData.new()
+	batter.id = "batter"
+	batter.display_name = "Batter"
+	var result := state.apply_force_out(0, batter, "home")
+	assert(bool(result.get("applied", false)))
+	assert(state.base_runners[0] != null)
+	assert(state.base_runners[0].player_id == "batter")
+	assert(result.runner_out.player_id == runner.player_id)
+
 
 func _test_rundown_and_slide() -> void:
 	var resolver := DefensiveRunnerResolver.new()
