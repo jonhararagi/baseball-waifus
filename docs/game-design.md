@@ -1668,3 +1668,47 @@ En bateo, el jugador conserva la decisión final mediante timing. El centro de l
 La IA puede razonar sobre **qué intentar**, pero nunca puede ordenar al resolver que una acción tenga éxito. Esto mantiene la arquitectura:
 
 `PLAYER/AI INPUT → GAMEPLAY RESOLVER → BASEBALL RESULT → EVENT → PRESENTATION`
+
+# 28. Preparación por eventos y cálculo ligero del partido
+
+## 28.1 Principio
+
+El rival no utiliza una IA gráfica, neuronal ni un modelo pesado. El conocimiento de béisbol se expresa mediante reglas, fórmulas y heurísticas deterministas en GDScript.
+
+La IA toma decisiones por evento, no por frame. Durante una ventana visual natural el programa prepara un snapshot de la situación y deriva semillas independientes para pitch, contacto, defensa y robo.
+
+El flujo objetivo es:
+
+[evento de presentación] → [snapshot situacional] → [cálculo táctico] → [input del jugador] → [resolver] → [resultado] → [animación]
+
+La preparación puede ocurrir mientras se muestran el campo, entorno, personajes, pitcher y bateadora. El tiempo visual no se utiliza para hacer cálculos continuos. Sirve para que la presentación y la preparación del siguiente evento estén desacopladas.
+
+## 28.2 RNG deportivo
+
+El RNG del partido existe, pero no debe convertir el béisbol en una lotería. Las tiradas están acotadas por estadísticas, timing, circunstancias, elementos, habilidades y equipamiento.
+
+BaseballDecisionPlanner prepara canales reproducibles. BaseballTacticalCalculator puede comparar escenarios sin consumir RNG. Los resolvers siguen siendo los únicos que convierten la entrada final en un resultado deportivo.
+
+Por ejemplo, el programa puede conocer de antemano las semillas de contacto de una jugada, pero no puede conocer el resultado final hasta recibir el timing real del jugador. Un toque en el centro, uno fuera del centro o la pérdida de la ventana pasan por la misma fórmula.
+
+## 28.3 Eventos temporales de presentación
+
+BaseballMatchEventScheduler coordina ventanas discretas:
+
+- MATCH_INTRO: presentación inicial del campo y contexto;
+- PLATE_PREP: presentación de pitcher, bateadora, corredores y situación;
+- ACTION_WINDOW: ventana reservada para una decisión interactiva futura;
+- RESOLUTION: transición lógica sin simulación continua;
+- RESULT: presentación del resultado.
+
+La resolución de béisbol no depende de que un cálculo tarde segundos. En hardware normal estos cálculos deben ser pequeños. Las ventanas existen para sincronizar gameplay y presentación, ocultar posibles cargas de datos y crear ritmo de partido sin añadir una IA pesada.
+
+## 28.4 Timing del jugador
+
+El timing continúa siendo una entrada humana. No se pre-rolla un Home Run ni un Strike como resultado definitivo antes del input.
+
+El planificador prepara posibilidades y semillas. El resolver utiliza el timing real para calcular la probabilidad y producir el resultado. Esto conserva la agencia del jugador y permite tácticas cuantificables: comparar Power/Contact contra Pitch/Control, valorar un robo, buscar una situación de doble play o utilizar una habilidad antes de la resolución.
+
+## 28.5 Regla de rendimiento
+
+No ejecutar búsquedas de estados, Monte Carlo, inferencia visual, árboles de decisión profundos ni evaluación de IA por segundo para el rival. La IA debe consumir snapshots pequeños y producir una acción discreta.
