@@ -19,9 +19,9 @@
 **Proyecto:** Baseball Waifus  
 **Repositorio:** `jonhararagi/baseball-waifus`  
 **Rama principal:** `main`  
-**Estado actual:** Prototipo técnico en Godot 4.x + laboratorio de personajes + puente de streaming + rig procedural interno. Godot 4.x queda adoptado como motor del prototipo y del juego actual; los adapters externos siguen siendo una capa visual opcional.
+**Estado actual:** Prototipo técnico en Godot 4.x + núcleo de béisbol defensivo + laboratorio/canon de personajes + pipeline visual 2D/3D + puente de streaming auxiliar. Godot 4.x queda adoptado como motor del prototipo y del juego actual; los adapters externos siguen siendo una capa visual opcional.
 
-**Avance global revisado:** ≈70%.
+**Avance global revisado:** ≈77%.
 
 ### Cómo vamos
 
@@ -3840,3 +3840,102 @@ y, para personajes:
 **character_archetypes.json → PlayerData / AvatarProfile → 2D animado o 3D estilizado**
 
 No crear una tercera fuente de identidad ni duplicar las reglas defensivas en el renderer.
+
+
+# Revisión 34: auditoría técnica, terminología y biblia de inspiración
+
+**Fecha:** 2026-09-21  
+**Tipo:** QA estructural / corrección de términos / investigación de producto / continuidad de personajes.
+
+### Motivo
+
+La revisión del estado actual detectó que la documentación superior de la bitácora seguía mostrando ≈70% aunque revisiones posteriores habían llevado el avance a ≈76%. También había una responsabilidad de estado de partido que estaba mejor ubicada en BaseballGameState: apply_hit() debía limpiar el conteo por sí mismo, no depender de que la escena lo recordara.
+
+Además, se solicitó una investigación sobre riesgos de popularidad, retención y gacha y una mini biblia para inspirar personalidades originales a partir de anime/manga sin copiar identidades.
+
+### Correcciones técnicas
+
+- game/baseball/game_state.gd
+  - apply_hit() ahora llama a reset_count() después de resolver corredores y marcador.
+  - Esto mantiene el conteo como responsabilidad del estado del partido y permite utilizar el resolver fuera de main.gd sin dejar balls/strikes antiguos.
+
+- scenes/baseball_rules_test.gd
+  - añade regresión para confirmar que un hit limpia balls y strikes.
+
+### Documentación técnica
+
+- docs/technical-glossary-v1.md
+  - normaliza Pitch, Ball, Strike, Foul, Timing, Fielding Candidate, Force Out, Rundown, Presenter, Renderer, Resolver, Gacha, Pity y Power Creep;
+  - aclara la frontera PlayerData → AvatarProfile → Renderer;
+  - corrige nomenclatura: Gacha, no “garcha” en documentación técnica;
+  - confirma que las rarezas vigentes son R/SR/SSR/UR;
+  - evita introducir una rareza S por la expresión “S-SR”.
+
+### Investigación de producto
+
+- docs/research/baseball-market-retention-v1.md
+  - registra una matriz de investigación sobre Baseball Heroes y juegos deportivos/gacha;
+  - separa hipótesis de hechos verificables;
+  - identifica retención, profundidad del béisbol, economía, gacha, contenido, accesibilidad, comunidad y diferenciación como áreas de investigación;
+  - establece que no se declarará una causa concreta de fracaso sin fuente verificable.
+
+El entorno de esta revisión no dispone de acceso web externo, por lo que no se inventaron fuentes ni se presentaron hipótesis como hechos.
+
+### Biblia de personajes
+
+- docs/canon/character-personality-inspiration-bible-v1.md
+  - crea una fuente canónica de metodología, no una segunda fuente de identidad;
+  - utiliza anime/manga populares como fuentes de estudio de rasgos;
+  - extrae actitudes, defectos, virtudes y comportamientos, nunca personajes completos;
+  - prohíbe copiar historia de origen, poderes, frases, relaciones, diseño o combinación visual distintiva;
+  - incorpora una guardia de similitud antes de convertir una inspiración en personaje;
+  - mantiene la rareza separada de la personalidad;
+  - no modifica character_archetypes.json.
+
+### Decisiones arquitectónicas
+
+1. BaseballGameState conserva la autoridad del conteo.
+2. Los presenters/renderers continúan siendo exclusivamente visuales.
+3. No se agrega una nueva estadística para personalidad.
+4. La personalidad será una capa de identidad/contenido separada de PlayerData estadístico.
+5. Las referencias de anime/manga se convierten en ejes combinables y originales.
+6. No se asignan todavía semillas de personalidad a personajes existentes para evitar contaminar el canon antes de una revisión individual.
+7. La investigación de mercado queda separada de las reglas definitivas de gacha.
+
+### Pruebas
+
+**Añadida:** regresión estructural para limpieza del conteo después de apply_hit().
+
+**Runtime Godot:** no ejecutado. El entorno no contiene el binario Godot.
+
+**Investigación externa:** no verificada en web durante esta revisión; se registró explícitamente la limitación.
+
+### Problemas encontrados
+
+- Porcentaje superior de la bitácora desactualizado respecto de las revisiones 31–33.
+- apply_hit() dependía parcialmente del flujo de escena para limpiar el conteo.
+- Terminología informal podía entrar en documentación técnica.
+- La expresión “S-SR” podía introducir accidentalmente una rareza inexistente.
+- Faltaba una frontera documental entre inspiración de personalidad y copia de personajes.
+
+### Estado
+
+**Implementado:** corrección de ownership del conteo, prueba de regresión, glosario técnico, marco de investigación de producto y mini biblia canónica de inspiración de personalidad.
+
+**Pendiente:** verificación web de fuentes sobre Baseball Heroes y juegos deportivos/gacha; cierre de fórmulas maestras; economía/gacha definitivo; asignación individual de personalidades; runtime Godot.
+
+### Porcentaje global revisado
+
+**≈77%.**
+
+El aumento es pequeño porque esta revisión es principalmente de calidad, continuidad y documentación. No se contabiliza como terminado ningún sistema económico o de contenido que continúe pendiente.
+
+### Regla de continuidad
+
+Para nuevas personajes:
+
+Referencia externa → rasgos abstractos → combinación original → revisión de similitud → personaje Baseball Waifus
+
+Nunca:
+
+personaje externo → cambio de uniforme/color → personaje Baseball Waifus.
