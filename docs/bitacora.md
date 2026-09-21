@@ -3487,3 +3487,84 @@ El núcleo defensivo vigente queda:
 **FieldingResolver → Reception → DoublePlayResolver / DefensiveRunnerResolver → GameState → Presentation**
 
 No duplicar estas decisiones en `main.gd`, renderer, UI o animaciones.
+
+
+# 30. Revisión 30: consolidación canónica del arte de personajes
+
+**Fecha:** 2026-09-21  
+**Tipo:** Arte / continuidad / documentación / pipeline de contenido.
+
+### Motivo
+
+Las revisiones 26, 27 y 29 ya habían establecido el roster de 30 personajes, la guía visual y los assets SVG de prototipo, pero la información artística permanecía distribuida entre varias páginas. Se consolida ahora en un único documento canónico para evitar reinterpretaciones o duplicación futura.
+
+### Implementado
+
+- `docs/canon/character-art-canon-v1.md`
+  - consolida las decisiones artísticas de las revisiones 26, 27 y 29;
+  - define autoridad de datos;
+  - fija reglas de variantes;
+  - fija lenguaje visual;
+  - documenta la guía visual;
+  - documenta los 30 assets SVG;
+  - establece estado Canónico / En desarrollo / Pendiente;
+  - conserva explícitamente la separación entre arte y gameplay.
+
+- `docs/character-art-pipeline.md`
+  - enlaza el documento canónico y conserva las instrucciones operativas.
+
+- `docs/baseball-waifus-visual-guide.md`
+  - enlaza el canon consolidado y mantiene su función de referencia visual.
+
+### Decisiones canónicas consolidadas
+
+1. `game/characters/character_archetypes.json` continúa siendo la fuente de verdad de identidad y datos del roster.
+2. El roster inicial tiene 30 personajes adultos, `bw001`–`bw030`.
+3. Las variantes solo pueden cambiar color de cabello, peinado y escala corporal global 0.94–1.06.
+4. La guía visual establece lenguaje artístico, no nombres ni estadísticas.
+5. Los SVG generados son prototipos reemplazables, no arte anime final.
+6. La generación artística nunca modifica PlayerData ni decide gameplay.
+7. No se crea un segundo catálogo ni una segunda fuente de verdad.
+
+### Arte generado
+
+Los 30 assets procedurales ya existentes quedan formalmente registrados como prototipos de roster en el canon.
+
+El pipeline reproducible queda:
+
+`character_archetypes.json → generate_svg_roster.py → assets/characters/generated/`
+
+El manifest correspondiente es:
+
+`assets/characters/generated/manifest.json`
+
+### Pruebas
+
+Validación estructural del repositorio:
+- documento canónico creado;
+- pipeline enlazado;
+- guía visual enlazada;
+- manifest de assets conservado;
+- historial de revisiones 26, 27 y 29 conservado.
+
+**Runtime Godot:** no ejecutado en este entorno.
+
+### Estado
+
+**Implementado:** consolidación documental del canon artístico y trazabilidad del pipeline.
+
+**En desarrollo:** retratos anime individuales, poses, expresiones, sprites/rig final y arte final de equipamiento.
+
+### Porcentaje
+
+El porcentaje global se mantiene en **≈70%**. Esta revisión mejora continuidad y trazabilidad, pero no se contabiliza como un gran bloque de gameplay.
+
+### Regla de continuidad
+
+A partir de esta revisión, cualquier trabajo artístico debe comenzar leyendo:
+
+`docs/canon/character-art-canon-v1.md`
+
+y utilizar `character_archetypes.json` como autoridad de identidad.
+
+Las revisiones históricas no se borran.
