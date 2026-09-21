@@ -144,3 +144,12 @@ La producción se realiza personaje por personaje. No se generan automáticament
 La navegación del Hub utiliza iconografía vectorial propia mediante `BaseballHubMenuIcon`. No se utilizan emojis ni glifos dependientes de fuentes de plataforma para representar funciones. El texto de cada botón permanece visible para conservar claridad y accesibilidad.
 
 Los iconos se identifican por contratos estables (`history`, `team`, `training`, `equipment`, `gacha`, `inventory`, `story`, `events`, `options`).
+
+
+## Hub y tarjeta de personaje: bw001 v1
+
+La primera tarjeta validable del Hub utiliza una composición compacta de personaje + datos de identidad + progreso. La rareza se comunica con una insignia propia, no con emoji. Elementos y especializaciones utilizan iconografía vectorial del repositorio.
+
+La tarjeta no debe convertirse en una tabla de estadísticas. El orden visual es: retrato, nombre, identidad deportiva, elemento/especialidad, estadísticas útiles y estado. La información secundaria queda subordinada a la silueta y al retrato.
+
+La unidad inicial validada es bw001. Las siguientes personajes no deben reutilizarse como clon visual: primero se comprueba la lectura, escala y rendimiento de la pieza cerrada y después se extiende el pipeline personaje por personaje.
