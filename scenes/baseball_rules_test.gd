@@ -7,6 +7,7 @@ func _ready() -> void:
 	_test_walk_with_empty_first()
 	_test_lineup_advances_for_original_batting_team()
 	_test_final_inning_lead_ends_game()
+	_test_hit_scores_once()
 	print("BASEBALL RULES TEST OK")
 	get_tree().quit()
 
@@ -95,3 +96,14 @@ func _test_final_inning_lead_ends_game() -> void:
 	state.add_outs(3)
 	assert(state.game_over)
 	assert(state.winner == 1)
+
+
+func _test_hit_scores_once() -> void:
+	var state := BaseballGameState.new()
+	var batter := _make_player("hitter")
+	var result := state.apply_hit(batter, "team", 4)
+	assert(int(result.get("runs", 0)) == 1)
+	assert(state.score[state.team_batting()] == 1)
+	assert(state.base_runners[0] == null)
+	assert(state.base_runners[1] == null)
+	assert(state.base_runners[2] == null)
