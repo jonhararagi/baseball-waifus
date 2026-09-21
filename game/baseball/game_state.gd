@@ -204,6 +204,10 @@ func end_half() -> void:
 	clear_bases()
 	outs = 0
 	if half == 0:
+		if inning >= max_innings and score[1] > score[0]:
+			game_over = true
+			winner = 1
+			return
 		half = 1
 	else:
 		half = 0
