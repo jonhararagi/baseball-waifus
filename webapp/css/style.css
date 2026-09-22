@@ -1139,3 +1139,69 @@ body::after {
 :root[data-quality="low"] .cutin {
   filter: none;
 }
+
+
+/* P10 mobile touch surface and responsive full-screen ergonomics */
+html {
+  min-height: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  min-height: 100dvh;
+  overscroll-behavior: none;
+  touch-action: manipulation;
+}
+
+button,
+select,
+input,
+.main-menu-button,
+.action-button {
+  touch-action: manipulation;
+}
+
+.combat-shell,
+.combat-canvas {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.main-menu-nav {
+  touch-action: pan-x;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.main-menu-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.main-menu-button,
+.action-button {
+  min-height: 44px;
+}
+
+@media (max-width: 720px) {
+  .app-shell {
+    min-height: 100dvh;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .play-controls {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+
+  .combat-shell {
+    min-height: min(64dvh, 620px);
+  }
+
+  .action-panel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
