@@ -97,6 +97,11 @@ jobs:
           test -s webapp/js/haptics_bridge.js
           test -s webapp/js/area_theme_manager.js
           test -s webapp/js/area_theme_test.mjs
+          test -s webapp/js/batter_renderer.js
+          test -s webapp/js/batter_renderer_test.mjs
+          test -s webapp/js/combat_effects.js
+          test -s webapp/js/combat_effects_test.mjs
+          test -s webapp/js/combat_hud.js
           test -s webapp/js/share_bridge.js
           test -s webapp/js/economy.js
           test -s webapp/js/tma_bridge_test.mjs
@@ -131,6 +136,11 @@ jobs:
           node --experimental-default-type=module --check webapp/js/haptics_bridge.js
           node --experimental-default-type=module --check webapp/js/area_theme_manager.js
           node --experimental-default-type=module webapp/js/area_theme_test.mjs
+          node --experimental-default-type=module --check webapp/js/batter_renderer.js
+          node --experimental-default-type=module webapp/js/batter_renderer_test.mjs
+          node --experimental-default-type=module --check webapp/js/combat_effects.js
+          node --experimental-default-type=module webapp/js/combat_effects_test.mjs
+          node --experimental-default-type=module --check webapp/js/combat_hud.js
           node --experimental-default-type=module --check webapp/js/share_bridge.js
           node --experimental-default-type=module --check webapp/js/economy.js
           node --experimental-default-type=module webapp/js/economy_test.mjs
