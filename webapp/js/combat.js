@@ -238,6 +238,7 @@ export class CombatRenderer {
   async setArea(areaId) {
     const theme = this.themeManager.setArea(areaId);
     await this.themeManager.preloadTheme(theme);
+    this.audioBridge?.setBiome?.(String(areaId || "cyberpunk"));
     this._renderStaticLayer();
     return theme;
   }
@@ -1084,46 +1085,42 @@ export class CombatRenderer {
   _triggerAudioForTurn(dto) {
     const result = String(dto?.result || "").toUpperCase();
     const timing = String(dto?.timing || "").toUpperCase();
-
-    if (result === "FOUL" || timing === "BAD") {
-      this._playAudio("bat.foul");
-      this._playHaptics("combat_error");
-    }
     const event = String(
       dto?.event
       || dto?.animation?.event
       || dto?.action
       || ""
     ).toUpperCase();
+    const hitResults = ["SINGLE", "DOUBLE", "TRIPLE", "HIT", "FIELDING_ERROR"];
 
     if (event === "SWING") {
-      this._playAudio("bat.swing", {
-        frequency: 150,
-        waveform: "square",
-        duration: 0.09
-      });
+      this._playAudio("bat.swing");
+    }
+
+    if (result === "FOUL" || (timing === "BAD" && !hitResults.includes(result))) {
+      this._playAudio("bat.foul");
+      this._playHaptics("combat_error");
+      return;
+    }
+
+    if (result === "MISS") {
+      this._playAudio("result.miss");
+      this._playHaptics("combat_error");
       return;
     }
 
     if (result === "HOME_RUN") {
-      this._playAudio("result.home_run", {
-        frequency: 880,
-        waveform: "sawtooth",
-        duration: 0.15
-      });
+      this._playAudio("result.home_run");
       this._playHaptics("home_run");
       return;
     }
 
-    if (
-      event === "HIT"
-      || ["SINGLE", "DOUBLE", "TRIPLE", "HIT", "FIELDING_ERROR"].includes(result)
-    ) {
-      this._playAudio("result.hit", {
-        frequency: 880,
-        waveform: "sawtooth",
-        duration: 0.12
-      });
+    if (hitResults.includes(result) || event === "HIT") {
+      if (timing === "PERFECT") {
+        this._playAudio("result.perfect");
+      } else {
+        this._playAudio("result.hit");
+      }
       this._playHaptics(result === "SINGLE" || result === "HIT" ? "single_hit" : "hit");
     }
   }
