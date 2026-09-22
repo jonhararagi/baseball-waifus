@@ -83,7 +83,13 @@ function handleScrapEarned({ amount, result }) {
 const renderer = new CombatRenderer(document.querySelector("#combat-canvas"), {
   audioBridge,
   hapticsBridge,
-  onScrapEarned: handleScrapEarned
+  onScrapEarned: handleScrapEarned,
+  getHudResources: () => ({
+    scrap: gachaController.getScavengerScrap(),
+    energy: renderer?.state?.energy
+      ?? renderer?.state?.state?.energy
+      ?? 100
+  })
 });
 gachaController.setCutInRenderer(renderer);
 
@@ -311,7 +317,10 @@ async function sendAction(actionType) {
   }
 }
 
-batButton.addEventListener("click", () => sendAction("BAT"));
+batButton.addEventListener("click", () => {
+  renderer.beginBatterWindup();
+  sendAction("BAT");
+});
 stealButton.addEventListener("click", () => sendAction("STEAL"));
 syncButton.addEventListener("click", syncCombat);
 
@@ -326,6 +335,14 @@ gachaButton?.addEventListener("click", async () => {
         ? result.share
         : null
     );
+    if (result?.rarity === "UR") {
+      renderer.showHudBanner(
+        "UR RECRUITED!",
+        (result.character?.canonical?.display_name || result.character?.character_id || "UNKNOWN")
+          + " • UR",
+        { accent: "#ffcd66", duration: 1.8 }
+      );
+    }
     gallery.refresh();
     updateGachaHud(gachaController.getStatus(), result);
   } catch (error) {
@@ -340,6 +357,14 @@ gachaButton?.addEventListener("click", async () => {
 gachaController.subscribe((status, result) => {
   if (result && (result.rarity === "SSR" || result.rarity === "UR")) {
     setShareTarget(result.share);
+    if (result.rarity === "UR") {
+      renderer.showHudBanner(
+        "UR RECRUITED!",
+        (result.character?.canonical?.display_name || result.character?.character_id || "UNKNOWN")
+          + " • UR",
+        { accent: "#ffcd66", duration: 1.8 }
+      );
+    }
   }
   updateGachaHud(status, result);
   gallery.refresh();
