@@ -335,14 +335,7 @@ gachaButton?.addEventListener("click", async () => {
         ? result.share
         : null
     );
-    if (result?.rarity === "UR") {
-      renderer.showHudBanner(
-        "UR RECRUITED!",
-        (result.character?.canonical?.display_name || result.character?.character_id || "UNKNOWN")
-          + " • UR",
-        { accent: "#ffcd66", duration: 1.8 }
-      );
-    }
+
     gallery.refresh();
     updateGachaHud(gachaController.getStatus(), result);
   } catch (error) {
