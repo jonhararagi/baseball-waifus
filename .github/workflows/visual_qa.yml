@@ -17,6 +17,7 @@ on:
       - "scenes/visual_qa_exporter_test.*"
       - ".github/workflows/visual_qa.yml"
       - "data/characters_queue.json"
+      - "webapp/js/**"
       - "scenes/bw015_generation_queue_test.*"
       - "scenes/bw016_bw020_generation_queue_test.*"
       - "scenes/bw021_bw030_generation_queue_test.*"
@@ -522,3 +523,26 @@ jobs:
         run: |
           set -euo pipefail
           timeout --signal=TERM 15s "godot/Godot_v${GODOT_VERSION}_linux.x86_64" --headless --path . res://scenes/bw016_bw020_generation_queue_test.tscn
+
+  webapp-p8-unit-tests:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Node syntax checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in             webapp/js/audio_engine.js             webapp/js/upgrade_system.js             webapp/js/team_manager.js             webapp/js/gacha_controller.js             webapp/js/waifu_dex.js             webapp/js/gallery.js             webapp/js/combat.js             webapp/js/app.js; do
+            node --check "$file"
+          done
+      - name: P8 audio engine test
+        run: node webapp/js/audio_engine_test.mjs
+      - name: P8 upgrade system test
+        run: node webapp/js/upgrade_system_test.mjs
+      - name: P8 team manager test
+        run: node webapp/js/team_manager_test.mjs
