@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { isCombatInitDTO, isTurnResultDTO } from "./api.js";
+import { CHARACTER_FACTIONS, isCombatInitDTO, isTurnResultDTO } from "./api.js";
 
 const combatInit = {
   type: "CombatInitDTO",
@@ -18,8 +18,8 @@ const combatInit = {
   },
   home_team: { name: "HOME", score: 0 },
   away_team: { name: "AWAY", score: 0 },
-  batter: { id: "bw001", card_id: "bw001" },
-  pitcher: { id: "bw002", card_id: "bw002" },
+  batter: { id: "bw001", card_id: "bw001", faction: "bosozoku_wild" },
+  pitcher: { id: "bw002", card_id: "bw002", faction: "shadow_magic" },
   assets: {
     cards: [
       {
@@ -75,6 +75,38 @@ console.log("[webapp-contract] DTO validation passed");
 
 const fs = await import("node:fs/promises");
 const indexHtml = await fs.readFile(new URL("../index.html", import.meta.url), "utf8");
+
+const queue = JSON.parse(
+  await fs.readFile(new URL("../../data/characters_queue.json", import.meta.url), "utf8")
+);
+const queueEntries = [queue, ...(queue.batch_units || [])];
+assert.equal(queueEntries.length, 16);
+assert.equal(queueEntries.every(
+  (entry) => CHARACTER_FACTIONS.includes(entry?.canonical?.faction)
+), true);
+assert.equal(queueEntries.every(
+  (entry) => entry?.pollinations?.faction === entry?.canonical?.faction
+), true);
+assert.equal(queueEntries.every(
+  (entry) => entry?.pollinations?.faction_palette?.primary
+    && entry?.pollinations?.faction_palette?.secondary
+    && entry?.pollinations?.faction_palette?.accent
+    && entry?.pollinations?.faction_palette?.glow
+), true);
+
+const canonical = JSON.parse(
+  await fs.readFile(new URL("../../game/characters/character_archetypes.json", import.meta.url), "utf8")
+);
+assert.equal(canonical.characters.length, 30);
+assert.equal(canonical.characters.every(
+  (character) => CHARACTER_FACTIONS.includes(character?.character_identity?.faction)
+), true);
+assert.equal(
+  new Set(canonical.characters.map((character) => character.character_identity.faction)).size,
+  CHARACTER_FACTIONS.length
+);
+console.log("[webapp-contract] faction DTO/catalog contract passed");
+
 const styleCss = await fs.readFile(new URL("../css/style.css", import.meta.url), "utf8");
 const combatJs = await fs.readFile(new URL("./combat.js", import.meta.url), "utf8");
 
