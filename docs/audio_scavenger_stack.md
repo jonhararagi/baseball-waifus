@@ -1,6 +1,6 @@
 # Audio Scavenger Stack Register
 
-Estado del stack: **INVENTARIO / CANDIDATOS / SIN PROVEEDOR FINAL**
+Estado del stack: **STACK #1 ADOPTADO PARA PROTOTIPO, PROVEEDORES EXTERNOS NO FIJADOS**
 
 Este documento registra tecnologías de audio que pueden estudiarse para Baseball Waifus. Ninguna de las librerías candidatas queda fijada como dependencia de producción hasta completar medición de bundle, compatibilidad móvil, licencia, pruebas de escucha y decisión final de descarte/adopción.
 
@@ -25,7 +25,7 @@ El renderer no importa librerías de audio concretas. Un adapter opcional puede 
 
 | Tecnología / fuente | Peso estimado | Sonidos previstos | Complejidad | Estado |
 |---|---:|---|---|---|
-| Web Audio API nativa | ~0 KB externos | Bateo, impacto, UI, ambiente neón procedural | Baja-Media | Candidato principal para prototipos auditivos |
+| **Stack #1: WebAudio API Synthesizer (ZzFX Lightweight)** | **~0 KB externos** | **Bateo, impacto, Home Run, UI y ambiente procedural** | **Baja** | **ADOPTADO PARA PROTOTIPO; implementación nativa, sin dependencia ZzFX** |
 | HTML5 Audio / `Audio()` pool | ~0 KB externos | Voces Cut-In, impactos, ambiente pregrabado | Baja | Candidato de fallback |
 | ZzFX / generador PCM compacto | ~2-6 KB de código, según build | Bateo, impacto, arcade, UI | Baja | Candidato, no integrado |
 | jsfxr / port compacto | ~5-15 KB de código, según implementación | SFX 8-bit/arcade, impacto | Baja-Media | Candidato, no integrado |
@@ -83,3 +83,33 @@ Cuando una pila sea adoptada, se registrará:
 - `webapp/js/app.js`: puede inyectar el bridge sin fijar una tecnología concreta.
 
 No existe todavía un motor de audio productivo, una librería externa fijada ni una colección de SFX adoptada.
+
+## Stack de Audio #1: WebAudio API Synthesizer (ZzFX Lightweight)
+
+### Alcance
+
+Primera pila implementada para efectos cortos de béisbol y presentación.
+
+- Sin archivos de audio estáticos.
+- Sin librería externa.
+- Sin dependencia de Tone.js, jsfxr o ZzFX.
+- Utiliza solamente la Web Audio API del navegador.
+- El diseño usa el patrón de envolvente corto y liviano que se busca en generadores tipo ZzFX.
+
+### Eventos
+
+- `bat.swing`: 150 Hz, onda cuadrada, caída rápida.
+- `result.hit`: 880 Hz, sierra, caída rápida.
+- `result.home_run`: 880 Hz, sierra, caída rápida ligeramente más intensa.
+
+### Memoria y rendimiento
+
+El coste de código externo es **0 KB**. El `AudioContext` se crea de forma diferida y se reutiliza durante la sesión. Cada sonido crea solamente un oscilador y una ganancia temporal, que se desconectan al terminar.
+
+### Estado
+
+**ADOPTADO como Stack #1 de prototipo y totalmente descartable.** La interfaz estable continúa siendo `AudioBridge.play(soundId, options)`. La eliminación de esta pila no requiere modificar gameplay ni `CombatRenderer`.
+
+### Licencia
+
+No se incorpora código de terceros. La implementación es propia sobre API estándar del navegador.
