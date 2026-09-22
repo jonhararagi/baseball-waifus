@@ -41,6 +41,7 @@ jobs:
           test -s assets/production/cards/bw002.svg
           test -s assets/production/sprites/bw001.svg
           test -s assets/production/sprites/bw002.svg
+          ! grep -R --fixed-strings "./assets/demo-characters/" webapp/js/app.js webapp/js/combat.js
 
       - name: Validate JavaScript syntax
         shell: bash
