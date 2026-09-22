@@ -106,3 +106,17 @@ assert.equal(
   combatInit.assets.sprites.some((asset) => asset.path.includes("demo-characters")),
   false
 );
+
+const audioBridgeJs = await fs.readFile(new URL("./audio_bridge.js", import.meta.url), "utf8");
+assert.match(audioBridgeJs, /class WebAudioSynthAdapter/);
+assert.match(audioBridgeJs, /function playScavengerSFX/);
+assert.match(audioBridgeJs, /"bat\.swing"/);
+assert.match(audioBridgeJs, /"result\.home_run"/);
+assert.doesNotMatch(audioBridgeJs, /Tone\.js|zzfx|jsfxr/i);
+
+assert.match(combatJs, /cameraShakeTimer/);
+assert.match(combatJs, /Math\.random\(\) \* 6 - 3/);
+assert.match(combatJs, /globalCompositeOperation = "lighter"/);
+assert.match(combatJs, /_drawNeonParticles\(target\)/);
+
+console.log("[webapp-contract] audio and impact presentation contract passed");
