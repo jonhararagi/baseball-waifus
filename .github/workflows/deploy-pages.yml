@@ -8,6 +8,7 @@ on:
       - "data/characters_queue.json"
       - "tools/generate_production_artwork.py"
       - "webapp/**"
+      - "data/game_schemas_recycled.json"
       - "assets/production/**"
       - ".github/workflows/deploy-pages.yml"
   workflow_dispatch:
@@ -90,6 +91,7 @@ jobs:
           test -s webapp/js/audio_bridge.js
           test -s webapp/js/audio.js
           test -s webapp/js/audio_bridge_test.mjs
+          test -s data/game_schemas_recycled.json
           test -d assets/production/sprites
           test -d assets/production/cards
           test -s assets/production/cards/bw001--normal.jpg
@@ -124,6 +126,8 @@ jobs:
           rm -rf site
           mkdir -p site
           cp -R webapp/. site/
+          mkdir -p site/data
+          cp data/game_schemas_recycled.json site/data/game_schemas_recycled.json
           mkdir -p site/assets/production/sprites site/assets/production/cards
           cp -R assets/production/sprites/. site/assets/production/sprites/ || true
           cp -R assets/production/cards/. site/assets/production/cards/ || true
