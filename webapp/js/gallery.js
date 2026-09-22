@@ -58,7 +58,8 @@ export class GalleryController {
     queueUrl = DEFAULT_QUEUE_URL,
     manifestUrl = DEFAULT_MANIFEST_URL,
     fetchImpl = typeof globalThis !== "undefined" ? globalThis.fetch?.bind(globalThis) : null,
-    onActiveBatterChange = null
+    onActiveBatterChange = null,
+    onShare = null
   } = {}) {
     this.root = root;
     this.grid = grid;
@@ -69,6 +70,7 @@ export class GalleryController {
     this.manifestUrl = manifestUrl;
     this.fetchImpl = fetchImpl;
     this.onActiveBatterChange = onActiveBatterChange;
+    this.onShare = onShare;
     this.queue = [];
     this.manifest = null;
     this.state = readState(storage, storageKey);
@@ -156,12 +158,23 @@ export class GalleryController {
       : "ACCESS // LOCKED";
     meta.append(name, rarity, faction, duplicate, position);
     if (unlocked) {
+      const actions = document.createElement("div");
+      actions.className = "dex-actions";
+
       const action = document.createElement("button");
       action.type = "button";
       action.className = "dex-select";
       action.textContent = this.state.active_batter === id ? "ACTIVE BATTER" : "SET ACTIVE";
       action.addEventListener("click", () => this.selectActiveBatter(id));
-      meta.appendChild(action);
+
+      const share = document.createElement("button");
+      share.type = "button";
+      share.className = "dex-share";
+      share.textContent = "COMPARTIR / PRESUMIR";
+      share.addEventListener("click", () => this.onShare?.(unit));
+
+      actions.append(action, share);
+      meta.appendChild(actions);
     } else {
       const lock = document.createElement("div");
       lock.className = "dex-lock";
