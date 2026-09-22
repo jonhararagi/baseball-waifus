@@ -22,15 +22,30 @@ const combatInit = {
   pitcher: { id: "bw002", card_id: "bw002" },
   assets: {
     cards: [
-      { id: "bw001", card_hd_url: "./assets/production/cards/bw001.svg", path: "./assets/production/cards/bw001.svg" },
-      { id: "bw002", path: "./assets/demo-characters/bw002.svg" }
+      {
+        id: "bw001",
+        card_hd_url: "./assets/production/cards/bw001.svg",
+        path: "./assets/production/cards/bw001.svg"
+      },
+      {
+        id: "bw002",
+        card_hd_url: "./assets/production/cards/bw002.svg",
+        path: "./assets/production/cards/bw002.svg"
+      }
     ],
     sprites: [
-      { id: "bw001", card_hd_url: "./assets/production/cards/bw001.svg", path: "./assets/production/cards/bw001.svg" },
-      { id: "bw002", path: "./assets/demo-characters/bw002.svg" }
+      {
+        id: "bw001",
+        sprite_url: "./assets/production/sprites/bw001.svg",
+        path: "./assets/production/sprites/bw001.svg"
+      },
+      {
+        id: "bw002",
+        sprite_url: "./assets/production/sprites/bw002.svg",
+        path: "./assets/production/sprites/bw002.svg"
+      }
     ]
-  }
-};
+  }};
 
 const turnResult = {
   type: "TurnResultDTO",
@@ -59,5 +74,17 @@ assert.equal(isTurnResultDTO(null), false);
 console.log("[webapp-contract] DTO validation passed");
 
 
-assert.equal(combatInit.assets.cards.every((asset) => asset.card_hd_url.includes("/assets/production/cards/")), true);
-assert.equal(combatInit.assets.sprites.every((asset) => asset.sprite_url.includes("/assets/production/sprites/")), true);
+assert.equal(combatInit.assets.cards.every(
+  (asset) => asset.card_hd_url.includes("/assets/production/cards/")
+), true);
+assert.equal(combatInit.assets.sprites.every(
+  (asset) => asset.sprite_url.includes("/assets/production/sprites/")
+), true);
+assert.equal(
+  combatInit.assets.cards.some((asset) => asset.path.includes("demo-characters")),
+  false
+);
+assert.equal(
+  combatInit.assets.sprites.some((asset) => asset.path.includes("demo-characters")),
+  false
+);
