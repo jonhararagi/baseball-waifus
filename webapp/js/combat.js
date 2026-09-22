@@ -174,6 +174,10 @@ export class CombatRenderer {
     this.impactTimer = 0;
     this.impactKind = "";
     this.ballTrail = [];
+    this.staticCanvas = document.createElement("canvas");
+    this.staticCtx = this.staticCanvas.getContext("2d", { alpha: false });
+    this.frameCanvas = document.createElement("canvas");
+    this.frameCtx = this.frameCanvas.getContext("2d", { alpha: false });
     this.lastFrame = performance.now();
 
     this.handleViewportResize = () => this.resize();
@@ -294,10 +298,20 @@ export class CombatRenderer {
     this.canvas.style.height = `${cssHeight}px`;
 
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    this.staticCanvas.width = Math.max(1, Math.round(cssWidth * dpr));
+    this.staticCanvas.height = Math.max(1, Math.round(cssHeight * dpr));
+    this.frameCanvas.width = this.staticCanvas.width;
+    this.frameCanvas.height = this.staticCanvas.height;
+
+    this.staticCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    this.frameCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
     this.pixelWidth = cssWidth;
     this.pixelHeight = cssHeight;
     this.viewportWidth = viewportWidth;
     this.viewportHeight = viewportHeight;
+    this._renderStaticLayer();
   }
 
   dispose() {
@@ -306,6 +320,10 @@ export class CombatRenderer {
     window.removeEventListener("resize", this.handleViewportResize);
     window.visualViewport?.removeEventListener("resize", this.handleViewportResize);
     window.visualViewport?.removeEventListener("scroll", this.handleViewportResize);
+    this.staticCanvas.width = 1;
+    this.staticCanvas.height = 1;
+    this.frameCanvas.width = 1;
+    this.frameCanvas.height = 1;
   }
 
   frame(time) {
@@ -340,32 +358,81 @@ export class CombatRenderer {
     }
   }
 
-  _render(time) {
-    const ctx = this.ctx;
+  _renderStaticLayer() {
+    if (!this.staticCtx || !this.pixelWidth || !this.pixelHeight) {
+      return;
+    }
+
+    const ctx = this.staticCtx;
     const w = this.pixelWidth;
     const h = this.pixelHeight;
 
     ctx.save();
     ctx.clearRect(0, 0, w, h);
-    if (this.impactTimer > 0) {
-      ctx.filter = "contrast(1.10) saturate(1.16)";
-    }
     this._drawBackground(ctx, w, h);
     this._drawStadium(ctx, w, h);
+    if (!this.matchReady || !this.state) {
+      this._drawIdleGrid(ctx, w, h);
+    }
+    ctx.restore();
+  }
+
+  _render(time) {
+    const w = this.pixelWidth;
+    const h = this.pixelHeight;
+    const target = this.impactTimer > 0 && this.frameCtx ? this.frameCtx : this.ctx;
+
+    target.save();
+    target.clearRect(0, 0, w, h);
+
+    if (target === this.ctx) {
+      this.ctx.drawImage(this.staticCanvas, 0, 0, w, h);
+    } else {
+      target.drawImage(this.staticCanvas, 0, 0, w, h);
+      target.filter = "contrast(1.10) saturate(1.16)";
+    }
 
     if (this.matchReady && this.state) {
-      this._drawMatchState(ctx, w, h);
-    } else {
-      this._drawIdleGrid(ctx, w, h);
+      this._drawMatchState(target, w, h);
     }
 
     if (this.ballTrail.length > 0) {
-      this._drawBallTrail(ctx, time);
+      this._drawBallTrail(target, time);
     }
 
     if (this.resultPulse > 0 && this.lastTurn) {
-      this._drawResultPulse(ctx, w, h);
+      this._drawResultPulse(target, w, h);
     }
+
+    target.restore();
+
+    if (target !== this.ctx) {
+      this._presentImpactFrame(w, h);
+    }
+  }
+
+  _presentImpactFrame(w, h) {
+    const ctx = this.ctx;
+    const split = clamp(this.impactTimer / 0.24, 0, 1);
+    const offset = 1.5 + split * 1.5;
+
+    ctx.save();
+    ctx.clearRect(0, 0, w, h);
+    ctx.drawImage(this.staticCanvas, 0, 0, w, h);
+
+    ctx.globalCompositeOperation = "source-over";
+    ctx.globalAlpha = 1;
+    ctx.filter = "contrast(1.10) saturate(1.16)";
+    ctx.drawImage(this.frameCanvas, 0, 0, w, h);
+
+    ctx.globalCompositeOperation = "screen";
+    ctx.globalAlpha = 0.24 * split;
+    ctx.filter = "hue-rotate(300deg) saturate(4.2) contrast(1.14)";
+    ctx.drawImage(this.frameCanvas, offset, 0, w, h);
+
+    ctx.globalAlpha = 0.22 * split;
+    ctx.filter = "hue-rotate(168deg) saturate(4.0) contrast(1.12)";
+    ctx.drawImage(this.frameCanvas, -offset, 0, w, h);
 
     ctx.restore();
   }
@@ -682,6 +749,13 @@ export class CombatRenderer {
 
   _triggerVisualImpact(dto) {
     const result = String(dto?.result || "").toUpperCase();
+    const event = String(
+      dto?.event
+      || dto?.animation?.event
+      || dto?.action
+      || ""
+    ).toUpperCase();
+    const isSwingEvent = event === "SWING" || event === "HIT";
     const hitResults = new Set(["SINGLE", "DOUBLE", "TRIPLE", "FIELDING_ERROR", "HIT"]);
     const runResults = new Set(["RUN", "STEAL", "STEAL_BLOCKED", "SAFE", "HOME_RUN"]);
     const dangerResults = new Set(["OUT", "STRIKE", "FIELDING_ERROR"]);
@@ -695,7 +769,9 @@ export class CombatRenderer {
     }
 
     this.impactKind = kind;
-    this.impactTimer = superResults.has(result) ? 0.42 : 0.24;
+    this.impactTimer = superResults.has(result)
+      ? 0.42
+      : (isSwingEvent || hitResults.has(result) || runResults.has(result) || dangerResults.has(result) ? 0.24 : 0);
 
     if (!this.combatShell || (!hitResults.has(result) && !runResults.has(result) && !dangerResults.has(result))) {
       return;

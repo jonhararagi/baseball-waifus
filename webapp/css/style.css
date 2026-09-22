@@ -830,6 +830,16 @@ body::after {
 }
 
 .cutin-panel {
+  clip-path: polygon(
+    0 7%,
+    4% 0,
+    96% 0,
+    100% 12%,
+    100% 88%,
+    96% 100%,
+    4% 100%,
+    0 92%
+  );
   width: min(95%, 900px);
   min-height: 45%;
   border: 1px solid rgba(0, 240, 255, 0.44);
@@ -846,6 +856,16 @@ body::after {
 
 .cutin-panel::before {
   content: "";
+  clip-path: polygon(
+    0 6%,
+    4% 0,
+    96% 0,
+    100% 12%,
+    100% 88%,
+    96% 100%,
+    4% 100%,
+    0 92%
+  );
   position: absolute;
   inset: 10px;
   border: 1px solid rgba(255, 0, 85, 0.18);

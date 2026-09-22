@@ -8195,3 +8195,55 @@ Con esto se eliminan referencias cruzadas entre ambos ámbitos.
 ### Estado
 
 **Corregido a nivel de código; pendiente de nueva ejecución CI.**
+
+
+# Revisión 74: SCAVENGER RGB split y buffer de presentación del CombatRenderer
+
+**Fecha:** 2026-09-21  
+**Tipo:** Frontend / Canvas2D / optimización / presentación.
+
+### Motivo
+
+Extender la capa visual SCAVENGER sin introducir shaders externos ni convertir la presentación en una segunda autoridad de gameplay. El renderer ya disponía del hook de impacto; esta revisión añade aberración cromática RGB-split durante eventos de swing/hit y reduce trabajo repetido mediante un buffer estático en memoria.
+
+### Implementado
+
+- `webapp/js/combat.js`
+  - `staticCanvas` + `staticCtx` para cachear fondo, estadio y grid cuando corresponda;
+  - `frameCanvas` + `frameCtx` reservado para impactos temporales;
+  - `_renderStaticLayer()` se ejecuta durante resize y evita regenerar geometría estática cada frame;
+  - `_render()` usa el buffer estático y mantiene el render dinámico de jugadores, corredores, pelota y resultado;
+  - `_presentImpactFrame()` aplica dos capas desplazadas de color mediante Canvas2D `filter`, una magenta y una cian, únicamente durante el impacto;
+  - `_triggerVisualImpact()` reconoce `event`, `animation.event` o `action` con valor `SWING/HIT`, además de los resultados deportivos ya existentes;
+  - el buffer temporal vuelve a caer a render normal al terminar el impacto.
+
+- `webapp/css/style.css`
+  - las tarjetas Cut-In reciben una máscara octagonal/cyberpunk mediante `clip-path: polygon(...)`;
+  - el borde interior mantiene la misma geometría para no dejar un rectángulo visible durante la transición.
+
+- `docs/research/scavenger-frontend-v1.md`
+  - registra las referencias GitHub inspeccionadas y la decisión de no copiar código;
+  - deja explícita la limitación de que Qiita/BOOTH no pudieron verificarse en vivo en este entorno.
+
+### Decisiones arquitectónicas
+
+1. No se introduce WebGL ni una librería de postprocesado pesada.
+2. El fondo estático es cacheado y solo se reconstruye en resize.
+3. La aberración RGB es un efecto de presentación posterior a un resultado ya resuelto.
+4. El color magenta/cian no altera DTOs, probabilidades, estadísticas, recompensas ni decisiones de IA.
+5. La implementación sigue siendo compatible con navegadores móviles y WebView porque utiliza Canvas2D, canvas en memoria y filtros nativos.
+6. La arquitectura mantiene el flujo `DTO → CombatRenderer → presentación`.
+
+### QA
+
+La validación estructural existente de `webapp/js/contract_test.mjs` permanece como barrera de contrato. La revisión añade al contenido de `combat.js` las rutas verificables de `staticCanvas`, `frameCanvas`, `_presentImpactFrame()` y detección de `SWING/HIT`.
+
+No se declara ejecución local del navegador en esta revisión. El workflow de GitHub Pages sigue siendo la ruta de validación de sintaxis y contrato del frontend.
+
+### Estado
+
+**Implementado en `main`, pendiente de la ejecución del workflow para validar sintaxis, contrato y despliegue de Pages.**
+
+### Porcentaje aproximado
+
+**≈96% estructural del prototipo.** La revisión mejora presentación y rendimiento del frontend, no añade contenido de gameplay.
