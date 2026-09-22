@@ -1130,22 +1130,27 @@ export class CombatRenderer {
     const result = String(dto?.result || "").toUpperCase();
     const timing = String(dto?.timing || "").toUpperCase();
     const theme = this.themeManager.getCurrentTheme();
+    const hitLike = new Set(["SINGLE", "DOUBLE", "TRIPLE", "HIT", "FIELDING_ERROR"]);
     const effectQuality = result === "HOME_RUN"
       ? "HOME_RUN"
-      : timing === "PERFECT"
+      : timing === "PERFECT" && hitLike.has(result)
         ? "PERFECT"
-        : timing === "GOOD"
+        : timing === "GOOD" && hitLike.has(result)
           ? "GOOD"
           : result === "FOUL"
             ? "FOUL"
             : result === "MISS"
               ? "MISS"
-              : "HIT";
+              : hitLike.has(result)
+                ? "HIT"
+                : null;
 
-    this.combatEffects.trigger(effectQuality, {
-      color: theme.strikeZoneColor,
-      result
-    });
+    if (effectQuality) {
+      this.combatEffects.trigger(effectQuality, {
+        color: theme.strikeZoneColor,
+        result
+      });
+    }
     const event = String(
       dto?.event
       || dto?.animation?.event
