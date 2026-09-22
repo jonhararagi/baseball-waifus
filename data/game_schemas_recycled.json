@@ -1,0 +1,271 @@
+{
+  "schema_version": 1,
+  "schema_id": "baseball_waifus_recycled_game_schemas_v1",
+  "status": "configuration_only",
+  "authority": {
+    "gameplay": "existing_godot_gameplay_systems",
+    "character_catalog": "game/characters/character_archetypes.json",
+    "frontend_dto": "webapp/js/api.js",
+    "economy_and_rewards": "existing_progression_services",
+    "note": "This file is a transport/configuration contract. It does not replace gameplay, progression, inventory, gacha, or reward authorities."
+  },
+  "sources": [
+    {
+      "repository": "ookamiiixd/Yoimiya",
+      "license": "MIT",
+      "pattern": "Banner -> rarity pools -> per-banner pity state -> soft/hard pity metadata",
+      "reuse_mode": "structural_only",
+      "active_balance": false
+    },
+    {
+      "repository": "fireman333/study-rpg",
+      "license": "AGPL-3.0-or-later",
+      "pattern": "Item definition + ItemInstance identity + rarity + equipment metadata",
+      "reuse_mode": "schema_concept_only",
+      "active_balance": false
+    },
+    {
+      "repository": "log-pr/open_baseball_manager",
+      "license": "GPL-3.0",
+      "pattern": "immutable situation snapshots, separate game/player state, lineup, base runners, event-oriented simulation seams",
+      "reuse_mode": "schema_concept_only",
+      "active_balance": false
+    }
+  ],
+  "stat_mapping": {
+    "POWER": {
+      "canonical_path": "stats.power",
+      "source_candidates": ["power", "bat_power", "bat_speed"],
+      "note": "Uses the existing Power statistic."
+    },
+    "CONTACT": {
+      "canonical_path": "stats.contact",
+      "source_candidates": ["contact", "accuracy", "hit"],
+      "note": "Uses the existing Contact statistic."
+    },
+    "SPEED": {
+      "canonical_path": "stats.speed",
+      "source_candidates": ["speed", "run_speed"],
+      "note": "Uses the existing Speed statistic."
+    },
+    "DEFENSE": {
+      "canonical_path": "stats.defense",
+      "source_candidates": ["defense", "fielding"],
+      "note": "Uses the existing Defense statistic."
+    },
+    "ARM": {
+      "canonical_path": "stats.defense",
+      "projection": "throwing_defense_projection",
+      "note": "Compatibility alias only. No independent Arm stat is created."
+    },
+    "STAMINA": {
+      "canonical_path": "stats.stamina",
+      "source_candidates": ["stamina", "fatigue"],
+      "note": "Uses the existing Stamina statistic."
+    },
+    "PITCH_VELOCITY": {
+      "canonical_path": "stats.pitch",
+      "projection": "pitching_projection",
+      "note": "Compatibility alias over the existing Pitch statistic. No independent Pitch Velocity stat is created."
+    },
+    "PITCH_CONTROL": {
+      "canonical_path": "stats.control",
+      "source_candidates": ["control", "command"],
+      "note": "Uses the existing Control statistic."
+    }
+  },
+  "inventory_waifu_dex": {
+    "pattern": "definition_plus_instance",
+    "character_definition": {
+      "id": "bw001",
+      "display_name": "string",
+      "rarity": "R|SR|SSR|UR",
+      "element": "fire|water|ice|lightning|nature|darkness|light",
+      "position": "P|C|1B|2B|3B|SS|LF|CF|RF",
+      "faction": "bosozoku_wild|cyber_tech|idol_sparkle|tactical_milspec|shadow_magic",
+      "specialization": "string",
+      "stats": {
+        "power": 0,
+        "contact": 0,
+        "speed": 0,
+        "pitch": 0,
+        "control": 0,
+        "defense": 0,
+        "critical": 0,
+        "stamina": 0
+      },
+      "visual": {
+        "card_hd_url": "string",
+        "sprite_url": "string"
+      }
+    },
+    "character_instance": {
+      "instance_id": "string",
+      "character_id": "bw001",
+      "owned": true,
+      "duplicate_count": 0,
+      "breakthrough_rank": 0,
+      "level": 1,
+      "level_cap": 100,
+      "locked": false,
+      "obtained_at": 0
+    },
+    "duplicate_policy": {
+      "mode": "data_only",
+      "conversion_rule": null,
+      "note": "Duplicate conversion and breakthrough rewards remain under the existing RewardTransactionService/economy authority."
+    },
+    "level_scaling": {
+      "mode": "external_authority",
+      "formula": null,
+      "stats_source": "CharacterRosterStore",
+      "note": "No new progression formula is introduced by this schema."
+    }
+  },
+  "gacha": {
+    "rarity_pool": ["R", "SR", "SSR", "UR"],
+    "banner": {
+      "id": "string",
+      "name": "string",
+      "active": true,
+      "rate_up_character_id": null,
+      "pool_by_rarity": {
+        "R": [],
+        "SR": [],
+        "SSR": [],
+        "UR": []
+      }
+    },
+    "rates": {
+      "status": "pending_canonical_game_table",
+      "R": null,
+      "SR": null,
+      "SSR": null,
+      "UR": null
+    },
+    "pity": {
+      "model": "per_banner_counter",
+      "soft_pity": {
+        "enabled": false,
+        "start_pull": null,
+        "formula": null
+      },
+      "hard_pity": {
+        "enabled": false,
+        "pull_limit": null,
+        "guaranteed_rarity": null
+      },
+      "counters": {
+        "pulls_since_SR_or_better": 0,
+        "pulls_since_SSR_or_better": 0,
+        "pulls_since_UR": 0
+      },
+      "note": "The structure is recycled from open gacha implementations, but Baseball Waifus rates and pity thresholds are intentionally not activated here."
+    },
+    "reference_only": {
+      "source": "ookamiiixd/Yoimiya",
+      "standard_character_banner_example": {
+        "source_rarity": "THREE_STAR",
+        "mapped_reference_rarity": "R",
+        "rate_percent": 94.3
+      },
+      "four_star_example": {
+        "source_rarity": "FOUR_STAR",
+        "mapped_reference_rarity": "SR",
+        "rate_percent": 5.1
+      },
+      "five_star_example": {
+        "source_rarity": "FIVE_STAR",
+        "mapped_reference_rarity": "SSR",
+        "rate_percent": 0.6
+      },
+      "UR_reference_rate": null,
+      "pity_reference": {
+        "soft_pity_start": 75,
+        "hard_pity": 90,
+        "lower_rarity_guarantee_pull": 10
+      },
+      "warning": "Reference values are not Baseball Waifus balance and must not be consumed as live rates."
+    }
+  },
+  "match_dto": {
+    "type": "CombatInitDTO",
+    "match_id": "string",
+    "state": {
+      "inning": 1,
+      "half": "TOP|BOTTOM",
+      "outs": 0,
+      "balls": 0,
+      "strikes": 0,
+      "bases": {
+        "first": false,
+        "second": false,
+        "third": false
+      }
+    },
+    "home_team": {
+      "id": "string",
+      "name": "string",
+      "score": 0
+    },
+    "away_team": {
+      "id": "string",
+      "name": "string",
+      "score": 0
+    },
+    "batter": {
+      "id": "string",
+      "name": "string",
+      "card_id": "string",
+      "rarity": "R|SR|SSR|UR",
+      "element": "string",
+      "faction": "string",
+      "position": "string"
+    },
+    "pitcher": {
+      "id": "string",
+      "name": "string",
+      "card_id": "string",
+      "rarity": "R|SR|SSR|UR",
+      "element": "string",
+      "faction": "string",
+      "position": "P"
+    },
+    "players_on_field": [
+      {
+        "player_id": "string",
+        "team": "HOME|AWAY",
+        "role": "PITCHER|CATCHER|INFIELDER|OUTFIELDER|RUNNER",
+        "position": "P|C|1B|2B|3B|SS|LF|CF|RF|1|2|3",
+        "base": null
+      }
+    ],
+    "assets": {
+      "cards": [
+        {
+          "id": "string",
+          "card_hd_url": "string",
+          "path": "string"
+        }
+      ],
+      "sprites": [
+        {
+          "id": "string",
+          "sprite_url": "string",
+          "path": "string"
+        }
+      ]
+    },
+    "transport_notes": {
+      "authoritative_result": "Godot gameplay core or configured authoritative service",
+      "frontend_role": "presentation_only",
+      "aiohttp_role": "transport/serialization only",
+      "renderer_must_not": [
+        "change probabilities",
+        "change stats",
+        "choose rewards",
+        "resolve baseball outcomes"
+      ]
+    }
+  }
+}
