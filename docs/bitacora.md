@@ -8423,3 +8423,58 @@ Implementado sin modificar gameplay, IA, economía, resolvers ni autoridad depor
 ### Porcentaje aproximado
 
 **≈96% estructural del prototipo.**
+
+## Revisión 59: Facciones visuales Scavenger para el roster
+
+**Fecha:** 2026-09-22  
+**Motivo:** incorporar una arquitectura explícita de cinco facciones visuales al catálogo de personajes y al pipeline de generación, sin convertir la facción en un modificador oculto de gameplay.
+
+### Sistemas afectados
+
+- catálogo canónico de personajes;
+- cola de generación Pollinations;
+- identidad PlayerData;
+- CharacterArchetypeCatalog;
+- contrato de CombatInitDTO;
+- pruebas estructurales del roster y frontend;
+- documentación de diseño.
+
+### Implementación
+
+- Creado `data/factions.json` como fuente única de las cinco facciones y sus paletas.
+- Asignadas facciones a bw001-bw030 en `game/characters/character_archetypes.json`.
+- Sincronizada la cola `data/characters_queue.json` para bw015-bw030 con `canonical.faction`, `pollinations.faction`, paleta hexadecimal y estilo de prompt.
+- Extendidos `PlayerData` y `CharacterArchetypeCatalog` para exponer la facción como identidad de catálogo.
+- `webapp/js/api.js` ahora exige una facción válida en las referencias de bateadora y pitcher de `CombatInitDTO`.
+- `webapp/js/app.js` actualiza el partido demo con facciones válidas.
+- `webapp/js/contract_test.mjs` valida DTO, cobertura 30/30 y sincronización de la cola.
+- `scenes/character_identity_catalog_test.gd` exige una de las cinco facciones por personaje.
+- `docs/game-design.md` documenta que la facción es presentación/colección y no balance deportivo.
+
+### Distribución
+
+Cada facción contiene exactamente 6 personajes. La asignación reutiliza la personalidad y estilo ya existentes, sin alterar estadísticas, rarezas, posiciones ni elementos.
+
+### Decisiones arquitectónicas
+
+La facción es una identidad transversal de colección y presentación. No modifica Power, Contact, Speed, Pitch, Control, Defense, Critical, Stamina, RNG, recompensas ni resultados de béisbol. Cualquier futura bonificación de equipo deberá existir como regla explícita y auditable del sistema de habilidades/composición, no como efecto implícito.
+
+### QA
+
+Se realizaron validaciones estructurales mediante lectura y parseo de los documentos del repositorio:
+- 30/30 personajes con facción válida;
+- 5 IDs de facción;
+- 6 personajes por facción;
+- cola bw015-bw030 con facción y paleta completa;
+- prompts de la cola con la estética correspondiente;
+- `CombatInitDTO` demo con facción en bateadora y pitcher.
+
+No se ejecutaron Node ni Godot runtime directamente en este entorno. El workflow de Pages ejecuta `webapp/js/contract_test.mjs` y las validaciones asociadas después del push a `main`.
+
+### Estado
+
+**Implementado y conectado a nivel de código/data.** Pendiente: consumir estas facciones en Hub, tarjetas y filtros de colección como capa de presentación.
+
+### Avance aproximado
+
+**≈95% estructural del prototipo.**
