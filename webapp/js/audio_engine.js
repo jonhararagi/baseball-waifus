@@ -114,7 +114,7 @@ export class AudioEngine {
     this.ambientNodes = [];
     const persisted = readStorage(storage, storageKey);
     this.settings = {
-      volume: clamp(Number(persisted.volume) || 0.8, 0, 1),
+      volume: clamp(Number.isFinite(Number(persisted.volume)) ? Number(persisted.volume) : 0.8, 0, 1),
       muted: Boolean(persisted.muted),
       biome: normalizeBiome(persisted.biome || "cyberpunk")
     };
