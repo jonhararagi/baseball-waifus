@@ -176,6 +176,10 @@ export class CombatRenderer {
     this.resultPulse = 0;
     this.impactTimer = 0;
     this.impactKind = "";
+    this.cameraShakeTimer = 0;
+    this.cameraShakeDuration = 0.15;
+    this.impactParticles = [];
+    this.maxImpactParticles = 28;
     this.ballTrail = [];
     this.staticCanvas = document.createElement("canvas");
     this.staticCtx = this.staticCanvas.getContext("2d", { alpha: false });
@@ -353,6 +357,17 @@ export class CombatRenderer {
   _update(delta) {
     this.resultPulse = Math.max(0, this.resultPulse - delta * 2.1);
     this.impactTimer = Math.max(0, this.impactTimer - delta);
+    this.cameraShakeTimer = Math.max(0, this.cameraShakeTimer - delta);
+
+    for (const particle of this.impactParticles) {
+      particle.age += delta;
+      particle.x += particle.vx * delta;
+      particle.y += particle.vy * delta;
+      particle.vy += particle.gravity * delta;
+    }
+    this.impactParticles = this.impactParticles.filter(
+      (particle) => particle.age < particle.life
+    );
 
     if (this.impactTimer === 0 && this.combatShell) {
       this.combatShell.classList.remove("is-glitching", "impact-hit", "impact-run", "impact-danger", "impact-super");
@@ -367,7 +382,11 @@ export class CombatRenderer {
     if (this.cutinRoot?.classList.contains("visible")) {
       const age = performance.now() - this.cutInStartedAt;
       if (age >= this.cutInDurationMs) {
-        this.cutinRoot.classList.remove("visible");
+        if (dto.animation?.event === "CUT_IN" || dto.animation?.camera_shake === true) {
+      this._startCameraShake();
+    }
+
+    this.cutinRoot.classList.remove("visible");
       }
     }
   }
@@ -399,11 +418,25 @@ export class CombatRenderer {
     target.save();
     target.clearRect(0, 0, w, h);
 
+    const shake = this.cameraShakeTimer > 0
+      ? clamp(this.cameraShakeTimer / this.cameraShakeDuration, 0, 1)
+      : 0;
+    if (shake > 0) {
+      target.translate(
+        (Math.random() * 6 - 3) * shake,
+        (Math.random() * 6 - 3) * shake
+      );
+    }
+
     if (target === this.ctx) {
       this.ctx.drawImage(this.staticCanvas, 0, 0, w, h);
     } else {
       target.drawImage(this.staticCanvas, 0, 0, w, h);
       target.filter = "contrast(1.10) saturate(1.16)";
+    }
+
+    if (this.impactParticles.length > 0) {
+      this._drawNeonParticles(target);
     }
 
     if (this.matchReady && this.state) {
@@ -761,6 +794,108 @@ export class CombatRenderer {
     };
   }
 
+  _startCameraShake(duration = this.cameraShakeDuration) {
+    this.cameraShakeTimer = Math.max(
+      this.cameraShakeTimer,
+      clamp(Number(duration) || this.cameraShakeDuration, 0.05, 0.2)
+    );
+  }
+
+  _spawnImpactParticles(result) {
+    const normalizedResult = String(result || "").toUpperCase();
+    const count = normalizedResult === "HOME_RUN"
+      ? this.maxImpactParticles
+      : Math.min(18, this.maxImpactParticles);
+    const originX = this.pixelWidth * 0.5;
+    const originY = this.pixelHeight * 0.48;
+    const colors = ["#00f0ff", "#ff2b1f", "#ff0055"];
+
+    this.impactParticles = [];
+    for (let index = 0; index < count; index += 1) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 70 + Math.random() * 180;
+      this.impactParticles.push({
+        x: originX + (Math.random() * 32 - 16),
+        y: originY + (Math.random() * 24 - 12),
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 24,
+        gravity: 70 + Math.random() * 90,
+        age: 0,
+        life: 0.24 + Math.random() * 0.22,
+        size: 1.5 + Math.random() * 2.5,
+        color: colors[index % colors.length]
+      });
+    }
+  }
+
+  _drawNeonParticles(ctx) {
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+
+    for (const particle of this.impactParticles) {
+      const remaining = clamp(1 - particle.age / particle.life, 0, 1);
+      const tail = Math.max(
+        5,
+        Math.min(18, Math.abs(particle.vx) * 0.018 + Math.abs(particle.vy) * 0.012)
+      );
+
+      ctx.globalAlpha = remaining * 0.9;
+      ctx.strokeStyle = particle.color;
+      ctx.shadowColor = particle.color;
+      ctx.shadowBlur = 6;
+      ctx.lineWidth = particle.size;
+
+      ctx.beginPath();
+      ctx.moveTo(particle.x, particle.y);
+      ctx.lineTo(
+        particle.x - particle.vx * 0.018,
+        particle.y - particle.vy * 0.018 + tail * 0.04
+      );
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+
+  _triggerAudioForTurn(dto) {
+    const result = String(dto?.result || "").toUpperCase();
+    const event = String(
+      dto?.event
+      || dto?.animation?.event
+      || dto?.action
+      || ""
+    ).toUpperCase();
+
+    if (event === "SWING") {
+      this._playAudio("bat.swing", {
+        frequency: 150,
+        waveform: "square",
+        duration: 0.09
+      });
+      return;
+    }
+
+    if (result === "HOME_RUN") {
+      this._playAudio("result.home_run", {
+        frequency: 880,
+        waveform: "sawtooth",
+        duration: 0.15
+      });
+      return;
+    }
+
+    if (
+      event === "HIT"
+      || ["SINGLE", "DOUBLE", "TRIPLE", "HIT", "FIELDING_ERROR"].includes(result)
+    ) {
+      this._playAudio("result.hit", {
+        frequency: 880,
+        waveform: "sawtooth",
+        duration: 0.12
+      });
+    }
+  }
+
   _triggerVisualImpact(dto) {
     const result = String(dto?.result || "").toUpperCase();
     const event = String(
@@ -786,6 +921,23 @@ export class CombatRenderer {
     this.impactTimer = superResults.has(result)
       ? 0.42
       : (isSwingEvent || hitResults.has(result) || runResults.has(result) || dangerResults.has(result) ? 0.24 : 0);
+
+    const criticalImpact = superResults.has(result);
+    const hasImpactPresentation = Boolean(
+      dto?.animation?.camera_shake === true
+      || dto?.animation?.event === "CUT_IN"
+      || criticalImpact
+    );
+
+    if (hasImpactPresentation) {
+      this._startCameraShake();
+    }
+
+    if (hitResults.has(result) || superResults.has(result) || isSwingEvent) {
+      this._spawnImpactParticles(result || "HIT");
+    }
+
+    this._triggerAudioForTurn(dto);
 
     if (!this.combatShell || (!hitResults.has(result) && !runResults.has(result) && !dangerResults.has(result))) {
       return;
