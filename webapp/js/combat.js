@@ -974,7 +974,6 @@ export class CombatRenderer {
     if (result === "FOUL" || timing === "BAD") {
       this._playAudio("bat.foul");
       this._playHaptics("combat_error");
-      return;
     }
     const event = String(
       dto?.event
