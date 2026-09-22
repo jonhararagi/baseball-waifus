@@ -158,6 +158,7 @@ export class CombatRenderer {
     this.cutinTitle = document.querySelector("#cutin-title");
     this.cutinDetail = document.querySelector("#cutin-detail");
     this.cutinPortrait = document.querySelector("#cutin-portrait");
+    this.combatShell = canvas.closest(".combat-shell");
 
     this.assetBank = new AssetBank();
     this.manifestUrl = manifestUrl;
@@ -170,6 +171,8 @@ export class CombatRenderer {
     this.cutInStartedAt = 0;
     this.cutInDurationMs = 880;
     this.resultPulse = 0;
+    this.impactTimer = 0;
+    this.impactKind = "";
     this.ballTrail = [];
     this.lastFrame = performance.now();
 
@@ -268,6 +271,7 @@ export class CombatRenderer {
 
     this._prepareBallTrail(dto);
     this._triggerCutIn(dto);
+    this._triggerVisualImpact(dto);
     this.resultPulse = 1;
     this.onState?.(this.state);
   }
@@ -316,6 +320,11 @@ export class CombatRenderer {
 
   _update(delta) {
     this.resultPulse = Math.max(0, this.resultPulse - delta * 2.1);
+    this.impactTimer = Math.max(0, this.impactTimer - delta);
+
+    if (this.impactTimer === 0 && this.combatShell) {
+      this.combatShell.classList.remove("is-glitching", "impact-hit", "impact-run", "impact-danger", "impact-super");
+    }
 
     for (const point of this.ballTrail) {
       point.age += delta;
@@ -338,6 +347,9 @@ export class CombatRenderer {
 
     ctx.save();
     ctx.clearRect(0, 0, w, h);
+    if (this.impactTimer > 0) {
+      ctx.filter = "contrast(1.10) saturate(1.16)";
+    }
     this._drawBackground(ctx, w, h);
     this._drawStadium(ctx, w, h);
 
@@ -666,6 +678,43 @@ export class CombatRenderer {
       second: { x: w * 0.5, y: h * 0.28 },
       third: { x: w * 0.32, y: h * 0.5 }
     };
+  }
+
+  _triggerVisualImpact(dto) {
+    const result = String(dto?.result || "").toUpperCase();
+    const hitResults = new Set(["SINGLE", "DOUBLE", "TRIPLE", "FIELDING_ERROR", "HIT"]);
+    const runResults = new Set(["RUN", "STEAL", "STEAL_BLOCKED", "SAFE", "HOME_RUN"]);
+    const dangerResults = new Set(["OUT", "STRIKE", "FIELDING_ERROR"]);
+    const superResults = new Set(["HOME_RUN", "TRIPLE"]);
+
+    let kind = "hit";
+    if (runResults.has(result)) {
+      kind = "run";
+    } else if (dangerResults.has(result)) {
+      kind = "danger";
+    }
+
+    this.impactKind = kind;
+    this.impactTimer = superResults.has(result) ? 0.42 : 0.24;
+
+    if (!this.combatShell || (!hitResults.has(result) && !runResults.has(result) && !dangerResults.has(result))) {
+      return;
+    }
+
+    this.combatShell.classList.remove(
+      "is-glitching",
+      "impact-hit",
+      "impact-run",
+      "impact-danger",
+      "impact-super"
+    );
+
+    void this.combatShell.offsetWidth;
+
+    this.combatShell.classList.add("is-glitching", `impact-${kind}`);
+    if (superResults.has(result)) {
+      this.combatShell.classList.add("impact-super");
+    }
   }
 
   _triggerCutIn(dto) {
