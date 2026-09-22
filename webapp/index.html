@@ -37,6 +37,25 @@
 
     <nav id="main-menu" class="main-menu-nav" aria-label="Main navigation"></nav>
 
+    <section class="play-controls" aria-label="Play mode">
+      <label>MODE
+        <select id="play-mode">
+          <option value="PRACTICE">PRACTICE / ARCADE</option>
+          <option value="ENDLESS">ENDLESS / DESAFÍO</option>
+        </select>
+      </label>
+      <label>BIOME
+        <select id="play-biome">
+          <option value="cyberpunk">CYBERPUNK</option>
+          <option value="beach">BEACH</option>
+          <option value="volcano">VOLCANO</option>
+          <option value="forest">FOREST</option>
+        </select>
+      </label>
+      <span id="play-score">SCORE // 0</span>
+      <span id="play-speed">PITCH ×1.00</span>
+    </section>
+
     <section class="combat-shell" aria-label="Baseball combat presentation" data-render-layer="combat">
       <canvas id="combat-canvas" class="combat-canvas" aria-label="Baseball Waifus match canvas"></canvas>
 
