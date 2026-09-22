@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-ui-skin="scavenger">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0a1020">
+  <meta name="theme-color" content="#07020d">
   <meta name="color-scheme" content="dark">
   <meta name="description" content="Baseball Waifus Telegram Mini App">
   <title>Baseball Waifus</title>
@@ -11,8 +11,8 @@
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
-  <main class="app-shell">
-    <header class="topbar" aria-label="Baseball Waifus status">
+  <main class="app-shell scavenger-shell">
+    <header class="topbar" aria-label="Baseball Waifus status" data-panel="scavenger">
       <div class="brand-lockup">
         <div class="brand-mark" aria-hidden="true">
           <svg viewBox="0 0 64 64" role="presentation">
@@ -28,7 +28,7 @@
       <div id="connection-state" class="connection-state" role="status" aria-live="polite">Preparing match</div>
     </header>
 
-    <section class="combat-shell" aria-label="Baseball combat presentation">
+    <section class="combat-shell" aria-label="Baseball combat presentation" data-render-layer="combat">
       <canvas id="combat-canvas" class="combat-canvas" aria-label="Baseball Waifus match canvas"></canvas>
 
       <div id="cutin" class="cutin" aria-hidden="true">
@@ -51,7 +51,7 @@
       </div>
     </section>
 
-    <section class="match-strip" aria-label="Match information">
+    <section class="match-strip" aria-label="Match information" data-hud="arcade">
       <div class="match-block">
         <span class="match-label">INNING</span>
         <span id="match-inning" class="match-value">-</span>
@@ -71,7 +71,7 @@
       </div>
     </section>
 
-    <section class="action-panel" aria-label="Match actions">
+    <section class="action-panel" aria-label="Match actions" data-hud="controls">
       <button id="action-bat" class="action-button action-primary" type="button">BATEAR</button>
       <button id="action-steal" class="action-button action-secondary" type="button">ROBAR</button>
       <button id="action-sync" class="action-button action-quiet" type="button">ACTUALIZAR</button>
