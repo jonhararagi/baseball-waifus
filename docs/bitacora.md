@@ -7997,3 +7997,60 @@ La Telegram Mini App ya disponía de HTML, cliente DTO y `CombatRenderer`, pero 
 ### Avance aproximado
 
 **≈96% estructural del prototipo.** Este porcentaje no representa porcentaje de contenido final, arte definitivo, backend comercial ni validación completa en dispositivos físicos.
+
+
+## Revisión 76: integración de artwork de producción en la demo web
+
+**Fecha:** 2026-09-21  
+**Tipo:** Frontend web / pipeline de assets / GitHub Pages / QA.
+
+### Motivo
+
+Eliminar la dependencia directa de los SVG de demostración `assets/demo-characters/bw001.svg` y `bw002.svg` en la Telegram Mini App. La presentación debe consumir el mismo paquete de artwork de producción servido por GitHub Pages, sin URLs externas ni una segunda fuente de identidad.
+
+### Implementado
+
+Assets creados:
+- `assets/production/cards/bw001.svg`
+- `assets/production/cards/bw002.svg`
+- `assets/production/sprites/bw001.svg`
+- `assets/production/sprites/bw002.svg`
+
+Los cuatro recursos son SVG vectoriales locales, escalables, ligeros y derivados de la identidad canónica de CharacterArchetypeCatalog. Las cards utilizan composición HD para cut-ins y colección; los sprites mantienen fondo transparente para representación sobre el campo.
+
+Frontend:
+- `webapp/js/app.js`: `CombatInitDTO` demo usa `card_hd_url` y `sprite_url` bajo `assets/production/`.
+- `webapp/js/combat.js`: el `AssetBank` resuelve `card_hd_url`/`sprite_url`, el cut-in consume la card HD y el campo consume sprites transparentes. Los corredores también pueden recibir un sprite cuando el DTO aporta `state.runners` o `state.base_runners`.
+- `webapp/js/contract_test.mjs`: verifica que cards y sprites del demo apunten a producción.
+
+CI/CD:
+- `.github/workflows/deploy-pages.yml`: valida los cuatro assets de producción y bloquea referencias residuales a `assets/demo-characters/` dentro del frontend.
+- El staging de Pages publica directamente `assets/production/` y genera el manifest a partir de esos archivos.
+
+### Decisiones arquitectónicas
+
+1. El frontend no genera arte remoto durante runtime y no depende de Pollinations.
+2. `card_hd_url` y `sprite_url` son metadatos de presentación, no autoridad de gameplay.
+3. `CharacterArchetypeCatalog` continúa siendo la única fuente canónica de identidad y atributos.
+4. El renderer mantiene fallback a `path` para compatibilidad con DTOs existentes.
+5. El renderer utiliza sprites transparentes para los actores del campo y cards HD exclusivamente para cut-ins.
+6. No se altera la autoridad del partido, resolvers, IA ni economía.
+
+### QA
+
+Validación estructural realizada mediante revisión del contenido actualizado. No se ejecutó localmente un navegador/Telegram Mini App en este entorno. La sintaxis JS y el staging final quedan cubiertos por el workflow de GitHub Actions al recibir el push a `main`.
+
+### Problemas encontrados y correcciones
+
+- `assets/production/cards/` y `assets/production/sprites/` existían solo como contenedores vacíos, mientras el demo seguía publicando los SVG procedurales directamente.
+- Se eliminó ese acoplamiento del workflow y del DTO.
+- El renderer inicialmente trataba cualquier `path` como si fuera siempre una card; se agregó resolución explícita por tipo de asset.
+- Los runners estaban representados únicamente por marcadores geométricos; se añadió soporte para sprites cuando el DTO proporciona identidad del corredor.
+
+### Estado
+
+**Código y assets integrados directamente en `main`. El push actualiza automáticamente el pipeline de GitHub Pages. La finalización efectiva del deploy depende de la ejecución de GitHub Actions.**
+
+### Avance aproximado
+
+**≈97% estructural del prototipo.** El porcentaje no representa porcentaje de arte final del roster completo, balance definitivo, backend comercial ni validación física en dispositivos Android.
