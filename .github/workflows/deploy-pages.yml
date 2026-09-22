@@ -95,6 +95,8 @@ jobs:
           test -s webapp/js/gallery.js
           test -s webapp/js/economy_test.mjs
           test -s webapp/js/haptics_bridge.js
+          test -s webapp/js/share_bridge.js
+          test -s webapp/js/economy.js
           test -s webapp/js/tma_bridge_test.mjs
           test -s webapp/js/audio_bridge_test.mjs
           test -s data/game_schemas_recycled.json
@@ -125,6 +127,8 @@ jobs:
           node --experimental-default-type=module --check webapp/js/gacha_controller.js
           node --experimental-default-type=module --check webapp/js/gallery.js
           node --experimental-default-type=module --check webapp/js/haptics_bridge.js
+          node --experimental-default-type=module --check webapp/js/share_bridge.js
+          node --experimental-default-type=module --check webapp/js/economy.js
           node --experimental-default-type=module webapp/js/economy_test.mjs
           node --experimental-default-type=module webapp/js/tma_bridge_test.mjs
           node --experimental-default-type=module webapp/js/gacha_controller_test.mjs
