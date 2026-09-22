@@ -157,8 +157,10 @@ export class WaifuDex {
     const canonical = unit?.canonical || {};
     const unlocked = Boolean(this.state.inventory[id]);
     const role = normalizeRole(unit);
+    const active = this.state.active_batter === id;
     const card = document.createElement("article");
     card.className = "dex-card " + (unlocked ? "is-unlocked" : "is-locked");
+    if (active) card.classList.add("is-active");
     const artWrap = document.createElement("div");
     artWrap.className = "dex-art-wrap";
     artWrap.dataset.characterId = id;
@@ -186,7 +188,17 @@ export class WaifuDex {
 
     const roleLabel = document.createElement("div");
     roleLabel.className = "dex-position";
-    roleLabel.textContent = role.toUpperCase();
+    roleLabel.textContent = "ROLE // " + role.toUpperCase();
+
+    const factionLabel = document.createElement("div");
+    factionLabel.className = "dex-faction";
+    factionLabel.textContent = unlocked
+      ? "FACTION // " + String(canonical.faction || "UNKNOWN").replace(/_/g, " ").toUpperCase()
+      : "FACTION // ENCRYPTED";
+
+    const areaLabel = document.createElement("div");
+    areaLabel.className = "dex-position";
+    areaLabel.textContent = "AREA // " + normalizeArea(unit).toUpperCase();
 
     const duplicate = document.createElement("div");
     duplicate.className = "dex-duplicates";
@@ -201,7 +213,7 @@ export class WaifuDex {
       ? "PWR " + stats.swingPower + " • TWIN " + stats.timingWindow.toFixed(2) + " • SCRAP ×" + stats.scrapMultiplier.toFixed(2)
       : "ACCESS // LOCKED";
 
-    meta.append(name, rarity, roleLabel, duplicate, statLine);
+    meta.append(name, rarity, roleLabel, factionLabel, areaLabel, duplicate, statLine);
 
     if (unlocked) {
       const actions = document.createElement("div");
