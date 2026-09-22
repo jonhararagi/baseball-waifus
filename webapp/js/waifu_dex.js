@@ -66,7 +66,8 @@ export class WaifuDex {
     storageKey = "baseball_waifus_gacha_v1",
     onSelect = null,
     onShare = null,
-    onInspect = null
+    onInspect = null,
+    progressionProvider = null
   } = {}) {
     this.root = root;
     this.grid = grid;
@@ -78,6 +79,7 @@ export class WaifuDex {
     this.onSelect = onSelect;
     this.onShare = onShare;
     this.onInspect = onInspect;
+    this.progressionProvider = progressionProvider;
     this.units = [];
     this.state = { inventory: {}, active_batter: null };
     this.filters = { rarity: "ALL", role: "ALL", area: "ALL" };
