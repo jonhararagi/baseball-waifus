@@ -1,3 +1,4 @@
+import { WaifuDex } from "./waifu_dex.js";
 const DEFAULT_QUEUE_URL = "./data/characters_queue.json";
 const DEFAULT_STORAGE_KEY = "baseball_waifus_gacha_v1";
 const DEFAULT_MANIFEST_URL = "./assets/production/manifest.json";
@@ -59,7 +60,8 @@ export class GalleryController {
     manifestUrl = DEFAULT_MANIFEST_URL,
     fetchImpl = typeof globalThis !== "undefined" ? globalThis.fetch?.bind(globalThis) : null,
     onActiveBatterChange = null,
-    onShare = null
+    onShare = null,
+    onInspect = null
   } = {}) {
     this.root = root;
     this.grid = grid;
@@ -71,6 +73,19 @@ export class GalleryController {
     this.fetchImpl = fetchImpl;
     this.onActiveBatterChange = onActiveBatterChange;
     this.onShare = onShare;
+    this.onInspect = onInspect;
+    this.dex = new WaifuDex({
+      root,
+      grid,
+      rarityFilter: root?.querySelector("#dex-filter-rarity") || null,
+      roleFilter: root?.querySelector("#dex-filter-role") || null,
+      areaFilter: root?.querySelector("#dex-filter-area") || null,
+      storage,
+      storageKey,
+      onSelect: (id) => this.selectActiveBatter(id),
+      onShare: (unit) => this.onShare?.(unit),
+      onInspect: (unit) => this.onInspect?.(unit)
+    });
     this.queue = [];
     this.manifest = null;
     this.state = readState(storage, storageKey);
@@ -82,6 +97,7 @@ export class GalleryController {
     const queueResponse = await this.fetchImpl(this.queueUrl, { cache: "no-cache" });
     if (!queueResponse?.ok) throw new Error("Unable to load Waifu Dex queue");
     this.queue = normalizeQueue(await queueResponse.json());
+    this.dex.setUnits(this.queue);
     try {
       const manifestResponse = await this.fetchImpl(this.manifestUrl, { cache: "no-cache" });
       if (manifestResponse?.ok) this.manifest = await manifestResponse.json();
@@ -94,9 +110,9 @@ export class GalleryController {
   }
   refresh() {
     this.state = readState(this.storage, this.storageKey);
+    this.dex.setUnits(this.queue);
+    this.dex.refresh();
     this._renderActiveLabel();
-    this.grid.replaceChildren();
-    for (const unit of this.queue) this.grid.appendChild(this._createCard(unit));
     return this;
   }
   getActiveBatter() {
