@@ -560,9 +560,11 @@ export class CombatRenderer {
     target.save();
     target.clearRect(0, 0, w, h);
 
-    const legacyShake = this.cameraShakeTimer > 0
-      ? clamp(this.cameraShakeTimer / this.cameraShakeDuration, 0, 1)
-      : 0;
+    const legacyShake = this.combatEffects.shakeTimer > 0
+      ? 0
+      : (this.cameraShakeTimer > 0
+        ? clamp(this.cameraShakeTimer / this.cameraShakeDuration, 0, 1)
+        : 0);
     const effectShake = this.combatEffects.getCameraOffset();
     if (legacyShake > 0 || effectShake.x !== 0 || effectShake.y !== 0) {
       target.translate(
