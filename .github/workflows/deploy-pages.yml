@@ -87,6 +87,8 @@ jobs:
           test -s webapp/js/app.js
           test -s webapp/js/combat.js
           test -s webapp/js/api.js
+          test -s webapp/js/audio_bridge.js
+          test -s webapp/js/audio_bridge_test.mjs
           test -d assets/production/sprites
           test -d assets/production/cards
           test -s assets/production/cards/bw001--normal.jpg
@@ -109,6 +111,8 @@ jobs:
           node --experimental-default-type=module --check webapp/js/api.js
           node --experimental-default-type=module --check webapp/js/combat.js
           node --experimental-default-type=module --check webapp/js/app.js
+          node --experimental-default-type=module --check webapp/js/audio_bridge.js
+          node --experimental-default-type=module webapp/js/audio_bridge_test.mjs
           node --experimental-default-type=module webapp/js/contract_test.mjs
 
       - name: Prepare static site
