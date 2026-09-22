@@ -7931,3 +7931,69 @@ El push a `main` continúa disparando el workflow existente de GitHub Pages. Su 
 
 **≈96% estructural del prototipo.** El porcentaje no representa porcentaje de arte final, balance definitivo, validación Android local ni contenido completo.
 
+
+## Revisión 75: inicialización visual demo y Canvas responsive para Telegram Mini App
+
+**Fecha:** 2026-09-21  
+**Tipo:** Frontend web / demo state / renderizado responsive / CI-CD.
+
+### Motivo
+
+La Telegram Mini App ya disponía de HTML, cliente DTO y `CombatRenderer`, pero sin backend configurado quedaba en un estado de espera y no mostraba una jugada de demostración. Además, el Canvas debía reforzar su adaptación al contenedor responsive y a los cambios de viewport propios de Telegram/WebView.
+
+### Implementado
+
+- `webapp/js/app.js`
+  - se añade `createDemoCombatInit()` con un `CombatInitDTO` determinista;
+  - demo canónica `bw001 Aiko Hanamori` vs `bw002 Reina Kurose`;
+  - estado inicial de inning, cuenta, outs y bases;
+  - descriptores de retrato/sprite apuntando a assets canónicos generados;
+  - `initializeDefaultDemo()` se ejecuta automáticamente cuando no existe API configurada;
+  - un payload real recibido por `postMessage` o por API sigue reemplazando la demo mediante `CombatRenderer.setCombatInit()`;
+  - las acciones BAT/STEAL quedan deshabilitadas en modo demo para no simular una autoridad de combate inexistente.
+
+- `webapp/js/combat.js`
+  - el buffer interno del Canvas se recalcula según el tamaño real del contenedor;
+  - se utiliza `devicePixelRatio` limitado a 2.5 para proteger memoria gráfica;
+  - se añade respuesta a `window.resize` y `visualViewport` resize/scroll;
+  - se eliminan listeners al destruir el renderer;
+  - el renderer conserva la separación DTO → presentación y no calcula resultados deportivos.
+
+- `.github/workflows/deploy-pages.yml`
+  - valida la presencia de los SVG de `bw001` y `bw002`;
+  - copia esos assets canónicos a `site/assets/demo-characters/`;
+  - mantiene separado el manifest de producción para no convertir la demo en una nueva fuente de autoridad.
+
+- `webapp/js/contract_test.mjs`
+  - amplía el contrato `CombatInitDTO` con bases y descriptors de assets de la demo.
+
+### Decisiones arquitectónicas
+
+1. La demo es exclusivamente una capa de presentación local.
+2. `CharacterArchetypeCatalog` sigue siendo la autoridad canónica de identidad; la demo solo referencia `bw001` y `bw002` por ID.
+3. No se crea un backend falso ni se inventan resultados deportivos client-side.
+4. Los assets se sirven dentro del artefacto de GitHub Pages y no dependen de URLs externas.
+5. El renderer sigue siendo 2D Canvas, con escalado DPR acotado y sin duplicar estado de gameplay.
+6. Cuando exista un `CombatInitDTO` real, este conserva prioridad sobre la demo.
+
+### Pruebas
+
+- Validación estructural de `CombatInitDTO` ampliada para `bw001`/`bw002`, bases y assets.
+- Validación de sintaxis JavaScript queda integrada en el workflow de Pages mediante Node.
+- Workflow actualizado para comprobar que los dos SVG canónicos estén disponibles antes del staging.
+- **Runtime local del navegador/Telegram:** no ejecutado en este entorno.
+- **Godot runtime:** sin cambios y no ejecutado.
+
+### Problemas encontrados y correcciones
+
+- La página podía abrir correctamente pero quedar en estado de espera cuando no existía backend configurado. Se añadió una inicialización demo explícita.
+- El Canvas ya respondía al tamaño CSS, pero el buffer debía quedar más robusto frente a cambios de viewport de Telegram. Se añadieron `ResizeObserver`, `window.resize` y `visualViewport`.
+- El pipeline de Pages no publicaba los SVG generados del roster porque solo copiaba `assets/production/`. Se añadió un staging específico para los dos personajes de la demo sin alterar el manifest productivo.
+
+### Estado
+
+**Implementado y conectado a `main`. El push dispara el workflow existente de GitHub Pages; la finalización efectiva del deploy queda determinada por GitHub Actions.**
+
+### Avance aproximado
+
+**≈96% estructural del prototipo.** Este porcentaje no representa porcentaje de contenido final, arte definitivo, backend comercial ni validación completa en dispositivos físicos.
