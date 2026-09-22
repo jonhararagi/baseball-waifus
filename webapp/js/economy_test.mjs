@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { getScrapRewardForResult } from "./combat.js";
 import { GachaController, SCAVENGER_SCRAP_COST } from "./gacha_controller.js";
+import { requestScrapPurchase, resolveScrapInvoiceUrl } from "./economy.js";
 
 assert.equal(getScrapRewardForResult("HOME_RUN"), 100);
 assert.equal(getScrapRewardForResult("SINGLE"), 10);
@@ -27,4 +28,47 @@ assert.equal(controller.getScavengerScrap(), 0);
 controller.addScrap(110);
 await assert.rejects(() => controller.rollGacha(), /Not enough Scavenger Scrap/);
 assert.equal(controller.getScavengerScrap(), 110);
-console.log("[economy] scrap rewards and 1000-Scrap gacha affordability passed");
+
+const invoiceUrl = "https://t.me/$baseball_waifus_1000";
+assert.equal(resolveScrapInvoiceUrl(1000, invoiceUrl), invoiceUrl);
+let invoiceCalls = [];
+const paid = await requestScrapPurchase(1000, {
+  webApp: {
+    openInvoice(url, callback) {
+      invoiceCalls.push(url);
+      callback("paid");
+    }
+  },
+  invoiceUrl
+});
+assert.deepEqual(invoiceCalls, [invoiceUrl]);
+assert.deepEqual(paid, {
+  ok: true,
+  status: "paid",
+  simulated: false,
+  amount: 1000
+});
+
+const simulated = await requestScrapPurchase(250, {
+  webApp: null,
+  devFallback: true
+});
+assert.deepEqual(simulated, {
+  ok: true,
+  status: "paid",
+  simulated: true,
+  amount: 250
+});
+
+const unavailable = await requestScrapPurchase(250, {
+  webApp: null,
+  devFallback: false
+});
+assert.deepEqual(unavailable, {
+  ok: false,
+  status: "invoice_unavailable",
+  simulated: false,
+  amount: 250
+});
+
+console.log("[economy] scrap rewards, gacha affordability, and Stars hook passed");
