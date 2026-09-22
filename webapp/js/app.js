@@ -195,6 +195,7 @@ function createDemoCombatInit() {
   return {
     type: "CombatInitDTO",
     match_id: "demo-bw001-vs-bw002",
+    area_id: "cyberpunk",
     state: {
       inning: 1,
       half: "TOP",
