@@ -62,7 +62,8 @@
         "contrast": "Su imagen de bateadora de fuerza no obliga a convertirla en una jugadora lenta o torpe.",
         "skill_roles": [
           "attack"
-        ]
+        ],
+        "faction": "bosozoku_wild"
       }
     },
     {
@@ -127,7 +128,8 @@
         "skill_roles": [
           "power_down",
           "combination"
-        ]
+        ],
+        "faction": "shadow_magic"
       }
     },
     {
@@ -192,7 +194,8 @@
         "skill_roles": [
           "attack",
           "combination"
-        ]
+        ],
+        "faction": "bosozoku_wild"
       }
     },
     {
@@ -257,7 +260,8 @@
         "skill_roles": [
           "statistic",
           "attack"
-        ]
+        ],
+        "faction": "idol_sparkle"
       }
     },
     {
@@ -322,7 +326,8 @@
         "skill_roles": [
           "defense",
           "power_down"
-        ]
+        ],
+        "faction": "tactical_milspec"
       }
     },
     {
@@ -387,7 +392,8 @@
         "skill_roles": [
           "defense",
           "combination"
-        ]
+        ],
+        "faction": "bosozoku_wild"
       }
     },
     {
@@ -452,7 +458,8 @@
         "skill_roles": [
           "attack",
           "statistic"
-        ]
+        ],
+        "faction": "idol_sparkle"
       }
     },
     {
@@ -517,7 +524,8 @@
         "skill_roles": [
           "statistic",
           "power_down"
-        ]
+        ],
+        "faction": "cyber_tech"
       }
     },
     {
@@ -582,7 +590,8 @@
         "skill_roles": [
           "power_up",
           "statistic"
-        ]
+        ],
+        "faction": "bosozoku_wild"
       }
     },
     {
@@ -647,7 +656,8 @@
         "skill_roles": [
           "power_down",
           "combination"
-        ]
+        ],
+        "faction": "cyber_tech"
       }
     },
     {
@@ -709,7 +719,8 @@
         "skill_roles": [
           "defense",
           "power_up"
-        ]
+        ],
+        "faction": "idol_sparkle"
       }
     },
     {
@@ -774,7 +785,8 @@
         "skill_roles": [
           "defense",
           "combination"
-        ]
+        ],
+        "faction": "tactical_milspec"
       }
     },
     {
@@ -839,7 +851,8 @@
         "skill_roles": [
           "attack",
           "combination"
-        ]
+        ],
+        "faction": "shadow_magic"
       }
     },
     {
@@ -904,7 +917,8 @@
         "skill_roles": [
           "attack",
           "statistic"
-        ]
+        ],
+        "faction": "tactical_milspec"
       }
     },
     {
@@ -969,7 +983,8 @@
         "skill_roles": [
           "attack",
           "support"
-        ]
+        ],
+        "faction": "shadow_magic"
       }
     },
     {
@@ -1034,7 +1049,8 @@
         "skill_roles": [
           "power_down",
           "defense"
-        ]
+        ],
+        "faction": "cyber_tech"
       }
     },
     {
@@ -1096,7 +1112,8 @@
         "skill_roles": [
           "power_up",
           "statistic"
-        ]
+        ],
+        "faction": "idol_sparkle"
       }
     },
     {
@@ -1161,7 +1178,8 @@
         "skill_roles": [
           "defense",
           "combination"
-        ]
+        ],
+        "faction": "shadow_magic"
       }
     },
     {
@@ -1226,7 +1244,8 @@
         "skill_roles": [
           "attack",
           "combination"
-        ]
+        ],
+        "faction": "bosozoku_wild"
       }
     },
     {
@@ -1291,7 +1310,8 @@
         "skill_roles": [
           "power_down",
           "statistic"
-        ]
+        ],
+        "faction": "cyber_tech"
       }
     },
     {
@@ -1353,7 +1373,8 @@
         "skill_roles": [
           "defense",
           "power_down"
-        ]
+        ],
+        "faction": "tactical_milspec"
       }
     },
     {
@@ -1418,7 +1439,8 @@
         "skill_roles": [
           "defense",
           "power_up"
-        ]
+        ],
+        "faction": "bosozoku_wild"
       }
     },
     {
@@ -1483,7 +1505,8 @@
         "skill_roles": [
           "attack",
           "statistic"
-        ]
+        ],
+        "faction": "idol_sparkle"
       }
     },
     {
@@ -1548,7 +1571,8 @@
         "skill_roles": [
           "power_down",
           "attack"
-        ]
+        ],
+        "faction": "tactical_milspec"
       }
     },
     {
@@ -1613,7 +1637,8 @@
         "skill_roles": [
           "defense",
           "combination"
-        ]
+        ],
+        "faction": "cyber_tech"
       }
     },
     {
@@ -1678,7 +1703,8 @@
         "skill_roles": [
           "combination",
           "power_up"
-        ]
+        ],
+        "faction": "shadow_magic"
       }
     },
     {
@@ -1743,7 +1769,8 @@
         "skill_roles": [
           "statistic",
           "attack"
-        ]
+        ],
+        "faction": "bosozoku_wild"
       }
     },
     {
@@ -1808,7 +1835,8 @@
         "skill_roles": [
           "power_up",
           "combination"
-        ]
+        ],
+        "faction": "idol_sparkle"
       }
     },
     {
@@ -1873,7 +1901,8 @@
         "skill_roles": [
           "attack",
           "statistic"
-        ]
+        ],
+        "faction": "cyber_tech"
       }
     },
     {
@@ -1938,9 +1967,11 @@
         "skill_roles": [
           "defense",
           "combination"
-        ]
+        ],
+        "faction": "tactical_milspec"
       }
     }
   ],
-  "identity_schema": "character_identity_v1"
+  "identity_schema": "character_identity_v1",
+  "faction_schema": "character_faction_v1"
 }
