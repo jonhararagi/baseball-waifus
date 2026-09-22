@@ -49,10 +49,11 @@
       "uniform_color": "#fff0dd",
       "accent": "#e4572e",
       "eye": "#633022"
-    }
+    },
+    "faction": "shadow_magic"
   },
   "pollinations": {
-    "base_prompt": "adult anime female baseball player, Momo Hoshino, SSR rarity, designated hitter, warm fire-element power hitter, curvy athletic adult woman, medium wavy terracotta-red hair, warm dark brown eyes, confident cheerful smile, classic anime baseball uniform, warm cream and vibrant orange-red palette, fiery accent details, polished anime mobile game character art, clean silhouette, centered three-quarter portrait, soft studio lighting, crisp linework, detailed eyes and hair, no text, no logo, no watermark",
+    "base_prompt": "adult anime female baseball player, Momo Hoshino, SSR rarity, designated hitter, warm fire-element power hitter, curvy athletic adult woman, medium wavy terracotta-red hair, warm dark brown eyes, confident cheerful smile, classic anime baseball uniform, warm cream and vibrant orange-red palette, fiery accent details, mature high-fanservice dark-fantasy sports anime aesthetic, elegant arcane styling, violet and black base colors with teal accents, mystical motifs, dramatic lighting, refined supernatural presence, faction palette primary #6C35B8, secondary #17121F, accent #22C7C7, glow #B996FF, polished anime mobile game character art, clean silhouette, centered three-quarter portrait, soft studio lighting, crisp linework, detailed eyes and hair, no text, no logo, no watermark",
     "negative_prompt": "child, teenager, loli, underage, young-looking, male, chibi, mascot proportions, duplicate character, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, blurry face, low detail, muddy colors, oversaturated neon, photorealistic, western comic style, 3d render, text, logo, watermark, cropped head, cropped face, broken anatomy, exaggerated body proportions",
     "expressions": {
       "neutral": "calm warm expression, relaxed posture, friendly approachable gaze, gentle smile",
@@ -60,7 +61,15 @@
       "focused": "intense batting concentration, determined fiery gaze, firm posture, narrowed eyes",
       "surprised": "surprised expression, wide brown eyes, raised eyebrows, mouth slightly open, expressive reaction",
       "disappointed": "disappointed posture, subtle frown, softened eyes, quiet frustration, dignified composure"
-    }
+    },
+    "faction": "shadow_magic",
+    "faction_palette": {
+      "primary": "#6C35B8",
+      "secondary": "#17121F",
+      "accent": "#22C7C7",
+      "glow": "#B996FF"
+    },
+    "faction_style": "mature high-fanservice dark-fantasy sports anime aesthetic, elegant arcane styling, violet and black base colors with teal accents, mystical motifs, dramatic lighting, refined supernatural presence"
   },
   "pixel_art_generator": {
     "sprite_resolution": "128x128",
@@ -138,10 +147,11 @@
           "uniform_color": "#f1f6ff",
           "accent": "#8ad9ff",
           "eye": "#304769"
-        }
+        },
+        "faction": "cyber_tech"
       },
       "pollinations": {
-        "base_prompt": "adult anime female baseball player, Fuyuki Aono, SR rarity, pitcher, reserved ice-element pitcher, slim adult woman, long cool blue hair, sharp refined face, blue-gray eyes, calm reserved expression, traditional baseball uniform, pale ice-blue and silver-white palette with cyan accents, polished anime mobile game character art, elegant clean silhouette, centered three-quarter portrait, crisp linework, refined shading, detailed eyes and hair, professional game key art, no text, no logo, no watermark",
+        "base_prompt": "adult anime female baseball player, Fuyuki Aono, SR rarity, pitcher, reserved ice-element pitcher, slim adult woman, long cool blue hair, sharp refined face, blue-gray eyes, calm reserved expression, traditional baseball uniform, pale ice-blue and silver-white palette with cyan accents, mature high-fanservice cyber-sports anime aesthetic, futuristic athletic gear, cyan and magenta neon interfaces, sleek technical trim, holographic accents, precise modern silhouette, faction palette primary #00E5FF, secondary #FF2BC2, accent #7A5CFF, glow #B8F8FF, polished anime mobile game character art, elegant clean silhouette, centered three-quarter portrait, crisp linework, refined shading, detailed eyes and hair, professional game key art, no text, no logo, no watermark",
         "negative_prompt": "child, teenager, loli, underage, young-looking, male, chibi, baby face, mascot proportions, duplicate character, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, bad anatomy, distorted body, blurry face, low detail, muddy colors, oversaturated neon, photorealistic, western comic style, 3d render, text, logo, watermark, cropped head, cropped face, broken uniform, exposed anatomy",
         "expressions": {
           "neutral": "calm reserved expression, composed gaze, relaxed shoulders, subtle closed-mouth expression",
@@ -149,7 +159,15 @@
           "focused": "intense pitching concentration, narrowed blue-gray eyes, firm posture, precise controlled expression",
           "surprised": "sudden surprise, widened eyes, raised eyebrows, slight open mouth, controlled but visible reaction",
           "disappointed": "subtle disappointed expression, lowered gaze, small frown, contained frustration, dignified posture"
-        }
+        },
+        "faction": "cyber_tech",
+        "faction_palette": {
+          "primary": "#00E5FF",
+          "secondary": "#FF2BC2",
+          "accent": "#7A5CFF",
+          "glow": "#B8F8FF"
+        },
+        "faction_style": "mature high-fanservice cyber-sports anime aesthetic, futuristic athletic gear, cyan and magenta neon interfaces, sleek technical trim, holographic accents, precise modern silhouette"
       },
       "pixel_art_generator": {
         "sprite_resolution": "128x128",
@@ -225,10 +243,11 @@
           "uniform_color": "#fff4da",
           "accent": "#f4ed9b",
           "eye": "#554018"
-        }
+        },
+        "faction": "idol_sparkle"
       },
       "pollinations": {
-        "base_prompt": "adult anime female baseball player, Yuzu Takahashi, R rarity, second baseman, light-element contact specialist, balanced adult woman, long golden honey-blonde hair, soft feminine face, warm brown eyes, cheerful tidy appearance, classic clean baseball uniform, cream and pale gold palette with luminous yellow accent, polished anime mobile game character art, elegant readable silhouette, centered three-quarter portrait, crisp linework, clean cel shading, detailed hair and eyes, no text, no logo, no watermark",
+        "base_prompt": "adult anime female baseball player, Yuzu Takahashi, R rarity, second baseman, light-element contact specialist, balanced adult woman, long golden honey-blonde hair, soft feminine face, warm brown eyes, cheerful tidy appearance, classic clean baseball uniform, cream and pale gold palette with luminous yellow accent, mature high-fanservice idol-sports anime aesthetic, polished stage glamour, sunshine yellow and hot pink accents, sparkle details, ribbon-like highlights, expressive confident presentation, faction palette primary #FFD84D, secondary #FF4F9A, accent #FFF1A8, glow #FFFFFF, polished anime mobile game character art, elegant readable silhouette, centered three-quarter portrait, crisp linework, clean cel shading, detailed hair and eyes, no text, no logo, no watermark",
         "negative_prompt": "child, teenager, loli, underage, young-looking, male, chibi, baby face, mascot proportions, duplicate character, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, bad anatomy, blurry face, low detail, muddy colors, oversaturated neon, photorealistic, western comic style, 3d render, text, logo, watermark, cropped head, cropped face, broken anatomy, distorted clothing",
         "expressions": {
           "neutral": "friendly composed expression, neat posture, soft attentive gaze, small polite smile",
@@ -236,7 +255,15 @@
           "focused": "concentrated contact-batting focus, narrowed eyes, precise stance, serious competitive expression",
           "surprised": "wide brown eyes, raised eyebrows, small open mouth, startled but expressive reaction",
           "disappointed": "gentle disappointed look, slight frown, lowered shoulders, restrained frustration"
-        }
+        },
+        "faction": "idol_sparkle",
+        "faction_palette": {
+          "primary": "#FFD84D",
+          "secondary": "#FF4F9A",
+          "accent": "#FFF1A8",
+          "glow": "#FFFFFF"
+        },
+        "faction_style": "mature high-fanservice idol-sports anime aesthetic, polished stage glamour, sunshine yellow and hot pink accents, sparkle details, ribbon-like highlights, expressive confident presentation"
       },
       "pixel_art_generator": {
         "sprite_resolution": "128x128",
@@ -314,10 +341,11 @@
           "uniform_color": "#eff5e3",
           "accent": "#4cae5f",
           "eye": "#304024"
-        }
+        },
+        "faction": "shadow_magic"
       },
       "pollinations": {
-        "base_prompt": "adult anime female baseball player, Koharu Nishiki, SR rarity, left fielder, nature-element defensive specialist, balanced adult woman, long moss-green hair, round friendly face, dark green eyes, visible freckles, relaxed casual athletic personality, sleeveless baseball uniform, forest green cream and leaf-green palette, polished anime mobile game character art, natural confident silhouette, centered three-quarter portrait, crisp linework, soft cel shading, detailed freckles hair and eyes, no text, no logo, no watermark",
+        "base_prompt": "adult anime female baseball player, Koharu Nishiki, SR rarity, left fielder, nature-element defensive specialist, balanced adult woman, long moss-green hair, round friendly face, dark green eyes, visible freckles, relaxed casual athletic personality, sleeveless baseball uniform, forest green cream and leaf-green palette, mature high-fanservice dark-fantasy sports anime aesthetic, elegant arcane styling, violet and black base colors with teal accents, mystical motifs, dramatic lighting, refined supernatural presence, faction palette primary #6C35B8, secondary #17121F, accent #22C7C7, glow #B996FF, polished anime mobile game character art, natural confident silhouette, centered three-quarter portrait, crisp linework, soft cel shading, detailed freckles hair and eyes, no text, no logo, no watermark",
         "negative_prompt": "child, teenager, loli, underage, young-looking, male, chibi, baby face, mascot proportions, duplicate character, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, bad anatomy, missing freckles, blurry face, low detail, muddy colors, oversaturated neon, photorealistic, western comic style, 3d render, text, logo, watermark, cropped head, cropped face, broken anatomy",
         "expressions": {
           "neutral": "relaxed friendly expression, easygoing gaze, subtle smile, calm field-ready posture",
@@ -325,7 +353,15 @@
           "focused": "sharp defensive concentration, alert eyes, ready-to-catch posture, serious expression",
           "surprised": "eyes widened, eyebrows raised, mouth slightly open, freckles clearly visible, startled reaction",
           "disappointed": "soft frown, thoughtful disappointed gaze, slight slouch, frustration kept understated"
-        }
+        },
+        "faction": "shadow_magic",
+        "faction_palette": {
+          "primary": "#6C35B8",
+          "secondary": "#17121F",
+          "accent": "#22C7C7",
+          "glow": "#B996FF"
+        },
+        "faction_style": "mature high-fanservice dark-fantasy sports anime aesthetic, elegant arcane styling, violet and black base colors with teal accents, mystical motifs, dramatic lighting, refined supernatural presence"
       },
       "pixel_art_generator": {
         "sprite_resolution": "128x128",
@@ -404,10 +440,11 @@
           "uniform_color": "#f1f0ed",
           "accent": "#f6d447",
           "eye": "#2d2a31"
-        }
+        },
+        "faction": "bosozoku_wild"
       },
       "pollinations": {
-        "base_prompt": "adult anime female baseball player, Chika Raikou, SSR rarity, right fielder, lightning-element athletic power hitter, muscular adult tomboy athlete, long charcoal-black hair, sharp confident face, dark eyes, bold competitive expression, modern baseball jacket uniform, graphite white and electric gold palette, subtle lightning motifs, polished anime mobile game character art, strong readable silhouette, centered three-quarter portrait, crisp linework, dynamic cel shading, detailed hair and eyes, high-end sports character key art, no text, no logo, no watermark",
+        "base_prompt": "adult anime female baseball player, Chika Raikou, SSR rarity, right fielder, lightning-element athletic power hitter, muscular adult tomboy athlete, long charcoal-black hair, sharp confident face, dark eyes, bold competitive expression, modern baseball jacket uniform, graphite white and electric gold palette, subtle lightning motifs, mature high-fanservice biker-gang sports anime aesthetic, rebellious street-racing attitude, red and black athletic trim, bold mechanical details, confident body language, faction palette primary #E53935, secondary #111111, accent #FF6D3A, glow #FFB300, polished anime mobile game character art, strong readable silhouette, centered three-quarter portrait, crisp linework, dynamic cel shading, detailed hair and eyes, high-end sports character key art, no text, no logo, no watermark",
         "negative_prompt": "child, teenager, loli, underage, young-looking, male, chibi, baby face, mascot proportions, duplicate character, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, bad anatomy, distorted muscles, blurry face, low detail, muddy colors, oversaturated neon, photorealistic, western comic style, 3d render, text, logo, watermark, cropped head, cropped face, broken anatomy, exaggerated sexual anatomy",
         "expressions": {
           "neutral": "confident neutral gaze, squared athletic posture, composed competitive attitude, closed-mouth expression",
@@ -415,7 +452,15 @@
           "focused": "intense power-hitting concentration, fierce eyes, strong jaw, grounded stance, maximum competitive focus",
           "surprised": "eyes widened, raised eyebrows, mouth slightly open, athletic posture interrupted by genuine surprise",
           "disappointed": "tight frown, narrowed eyes, controlled frustration, shoulders slightly lowered after a failed play"
-        }
+        },
+        "faction": "bosozoku_wild",
+        "faction_palette": {
+          "primary": "#E53935",
+          "secondary": "#111111",
+          "accent": "#FF6D3A",
+          "glow": "#FFB300"
+        },
+        "faction_style": "mature high-fanservice biker-gang sports anime aesthetic, rebellious street-racing attitude, red and black athletic trim, bold mechanical details, confident body language"
       },
       "pixel_art_generator": {
         "sprite_resolution": "128x128",
@@ -493,10 +538,11 @@
           "uniform_color": "#f2eafd",
           "accent": "#8b5cf6",
           "eye": "#342a4b"
-        }
+        },
+        "faction": "cyber_tech"
       },
       "pollinations": {
-        "base_prompt": "adult anime female baseball player, Shiori Amane, SR rarity, shortstop, darkness-element contact specialist, slim adult woman, long deep plum-black hair, sharp quiet face, dark violet eyes, introverted mysterious presence, subtle confident posture, elegant standard baseball uniform, lavender cream and deep violet palette, polished anime mobile game character art, clean silhouette, centered three-quarter portrait, crisp linework, restrained cinematic shading, detailed eyes and hair, premium sports collection game key art, no text, no logo, no watermark",
+        "base_prompt": "adult anime female baseball player, Shiori Amane, SR rarity, shortstop, darkness-element contact specialist, slim adult woman, long deep plum-black hair, sharp quiet face, dark violet eyes, introverted mysterious presence, subtle confident posture, elegant standard baseball uniform, lavender cream and deep violet palette, mature high-fanservice cyber-sports anime aesthetic, futuristic athletic gear, cyan and magenta neon interfaces, sleek technical trim, holographic accents, precise modern silhouette, faction palette primary #00E5FF, secondary #FF2BC2, accent #7A5CFF, glow #B8F8FF, polished anime mobile game character art, clean silhouette, centered three-quarter portrait, crisp linework, restrained cinematic shading, detailed eyes and hair, premium sports collection game key art, no text, no logo, no watermark",
         "negative_prompt": "child, teenager, loli, underage, young-looking, male, chibi, baby face, mascot proportions, duplicate character, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, bad anatomy, blurry face, low detail, muddy colors, oversaturated neon, photorealistic, western comic style, 3d render, text, logo, watermark, cropped head, cropped face, broken anatomy, distorted clothing, exaggerated sexual anatomy",
         "expressions": {
           "neutral": "quiet neutral expression, steady violet gaze, relaxed posture, reserved composure",
@@ -504,7 +550,15 @@
           "focused": "cold precise focus, narrowed eyes, alert shortstop posture, highly attentive expression",
           "surprised": "wide violet eyes, raised eyebrows, slight open mouth, visible break in composure",
           "disappointed": "downcast gaze, faint frown, quiet frustration, withdrawn but controlled posture"
-        }
+        },
+        "faction": "cyber_tech",
+        "faction_palette": {
+          "primary": "#00E5FF",
+          "secondary": "#FF2BC2",
+          "accent": "#7A5CFF",
+          "glow": "#B8F8FF"
+        },
+        "faction_style": "mature high-fanservice cyber-sports anime aesthetic, futuristic athletic gear, cyan and magenta neon interfaces, sleek technical trim, holographic accents, precise modern silhouette"
       },
       "pixel_art_generator": {
         "sprite_resolution": "128x128",
@@ -580,7 +634,8 @@
           "uniform_color": "#eefcff",
           "accent": "#3b82f6",
           "eye": "#244b57"
-        }
+        },
+        "faction": "tactical_milspec"
       },
       "pollinations": {
         "base_prompt": "adult anime female baseball player, Noa Mizuno, R rarity, C, water-element, catcher specialist, balanced adult woman, casual, easygoing, practical, catcher style, long hair in #2b6b78, round face, #244b57 eyes, uniform palette #eefcff with #3b82f6 accents, pitchout_trap, premium anime mobile sports game character key art, clean readable silhouette, centered three-quarter character portrait, professional cel shading, crisp linework, detailed eyes and hair, adult facial proportions, no text, no logo, no watermark",
@@ -591,7 +646,15 @@
           "focused": "serious catcher focus, alert eyes, firm jaw, precise game-calling posture, ready to receive the next pitch",
           "surprised": "wide teal eyes, raised eyebrows, slightly open mouth, quick genuine surprise while staying composed",
           "disappointed": "small disappointed frown, softened gaze, shoulders slightly lowered, controlled frustration after a missed call"
-        }
+        },
+        "faction": "tactical_milspec",
+        "faction_palette": {
+          "primary": "#3F5D45",
+          "secondary": "#1B2320",
+          "accent": "#D4BE7A",
+          "glow": "#E7D9A7"
+        },
+        "faction_style": "mature high-fanservice tactical sports anime aesthetic, elite unit presentation, olive and black utility styling, disciplined athletic posture, sand-colored equipment details, mission-ready silhouette"
       },
       "pixel_art_generator": {
         "sprite_resolution": "128x128",
@@ -686,7 +749,8 @@
           "uniform_color": "#eeeaff",
           "accent": "#8b5cf6",
           "eye": "#44355e"
-        }
+        },
+        "faction": "bosozoku_wild"
       },
       "pollinations": {
         "base_prompt": "adult anime female baseball player, Ayame Tsukino, SSR rarity, 1B, darkness-element, defender specialist, powerful athletic adult woman, muscular, tomboy, stoic, defender style, long hair in #3e2f58, sharp face, #44355e eyes, uniform palette #eeeaff with #8b5cf6 accents, drawn_in_defense, premium anime mobile sports game character key art, clean readable silhouette, centered three-quarter character portrait, professional cel shading, crisp linework, detailed eyes and hair, adult facial proportions, no text, no logo, no watermark",
@@ -697,7 +761,15 @@
           "focused": "intense first-base defensive focus, narrowed violet eyes, strong grounded posture, ready to scoop a difficult ball",
           "surprised": "eyes widened, raised eyebrows, mouth slightly open, powerful posture interrupted by surprise",
           "disappointed": "tight restrained frown, lowered gaze, controlled frustration, shoulders tense after a defensive mistake"
-        }
+        },
+        "faction": "bosozoku_wild",
+        "faction_palette": {
+          "primary": "#E53935",
+          "secondary": "#111111",
+          "accent": "#FF6D3A",
+          "glow": "#FFB300"
+        },
+        "faction_style": "mature high-fanservice biker-gang sports anime aesthetic, rebellious street-racing attitude, red and black athletic trim, bold mechanical details, confident body language"
       },
       "pixel_art_generator": {
         "sprite_resolution": "128x128",
@@ -792,7 +864,8 @@
           "uniform_color": "#eef6ff",
           "accent": "#f4ed9b",
           "eye": "#30486e"
-        }
+        },
+        "faction": "idol_sparkle"
       },
       "pollinations": {
         "base_prompt": "adult anime female baseball player, Towa Amami, SR rarity, CF, light-element, runner specialist, athletic adult woman, athletic, idolish, bright, runner style, long hair in #5b7bb1, soft face, #30486e eyes, uniform palette #eef6ff with #f4ed9b accents, steal_home_threat, premium anime mobile sports game character key art, clean readable silhouette, centered three-quarter character portrait, professional cel shading, crisp linework, detailed eyes and hair, adult facial proportions, no text, no logo, no watermark",
@@ -803,7 +876,15 @@
           "focused": "laser-focused baserunner concentration, narrowed eyes, forward lean, calculating the next base",
           "surprised": "wide eyes, raised eyebrows, open mouth, vivid expressive surprise with polished composure",
           "disappointed": "fallen smile, softened eyes, small frown, disappointed runner trying to stay upbeat"
-        }
+        },
+        "faction": "idol_sparkle",
+        "faction_palette": {
+          "primary": "#FFD84D",
+          "secondary": "#FF4F9A",
+          "accent": "#FFF1A8",
+          "glow": "#FFFFFF"
+        },
+        "faction_style": "mature high-fanservice idol-sports anime aesthetic, polished stage glamour, sunshine yellow and hot pink accents, sparkle details, ribbon-like highlights, expressive confident presentation"
       },
       "pixel_art_generator": {
         "sprite_resolution": "128x128",
@@ -898,7 +979,8 @@
           "uniform_color": "#fff0e6",
           "accent": "#e4572e",
           "eye": "#64251f"
-        }
+        },
+        "faction": "tactical_milspec"
       },
       "pollinations": {
         "base_prompt": "adult anime female baseball player, Nene Kagetsu, UR rarity, P, fire-element, pitcher specialist, powerful athletic adult woman, powerful, red, proud, pitcher style, long hair in #922f24, sharp face, #64251f eyes, uniform palette #fff0e6 with #e4572e accents, pressure_pitcher, premium anime mobile sports game character key art, clean readable silhouette, centered three-quarter character portrait, professional cel shading, crisp linework, detailed eyes and hair, adult facial proportions, no text, no logo, no watermark",
@@ -909,7 +991,15 @@
           "focused": "maximum pitching concentration, narrowed red eyes, firm posture, precise wind-up readiness, commanding focus",
           "surprised": "eyes widened, raised eyebrows, slight open mouth, a brief break in the ace's composure",
           "disappointed": "serious lowered gaze, tight frown, restrained frustration after an imperfect pitch"
-        }
+        },
+        "faction": "tactical_milspec",
+        "faction_palette": {
+          "primary": "#3F5D45",
+          "secondary": "#1B2320",
+          "accent": "#D4BE7A",
+          "glow": "#E7D9A7"
+        },
+        "faction_style": "mature high-fanservice tactical sports anime aesthetic, elite unit presentation, olive and black utility styling, disciplined athletic posture, sand-colored equipment details, mission-ready silhouette"
       },
       "pixel_art_generator": {
         "sprite_resolution": "128x128",
@@ -1004,7 +1094,8 @@
           "uniform_color": "#f1f0df",
           "accent": "#8ad9ff",
           "eye": "#514a35"
-        }
+        },
+        "faction": "cyber_tech"
       },
       "pollinations": {
         "base_prompt": "adult anime female baseball player, Itsuki Kogane, SR rarity, 2B, ice-element, defender specialist, athletic adult woman, athletic, earthy, quiet, defender style, long hair in #8b7f59, soft face, #514a35 eyes, uniform palette #f1f0df with #8ad9ff accents, fundamental_play, premium anime mobile sports game character key art, clean readable silhouette, centered three-quarter character portrait, professional cel shading, crisp linework, detailed eyes and hair, adult facial proportions, no text, no logo, no watermark",
@@ -1015,7 +1106,15 @@
           "focused": "fundamental defensive concentration, alert eyes, low second-base stance, precise ready posture",
           "surprised": "widened brown eyes, raised eyebrows, slight open mouth, understated but clear surprise",
           "disappointed": "subtle frown, lowered gaze, calm disappointment, shoulders slightly lowered after an error"
-        }
+        },
+        "faction": "cyber_tech",
+        "faction_palette": {
+          "primary": "#00E5FF",
+          "secondary": "#FF2BC2",
+          "accent": "#7A5CFF",
+          "glow": "#B8F8FF"
+        },
+        "faction_style": "mature high-fanservice cyber-sports anime aesthetic, futuristic athletic gear, cyan and magenta neon interfaces, sleek technical trim, holographic accents, precise modern silhouette"
       },
       "pixel_art_generator": {
         "sprite_resolution": "128x128",
@@ -1110,7 +1209,8 @@
           "uniform_color": "#eff5df",
           "accent": "#4cae5f",
           "eye": "#344327"
-        }
+        },
+        "faction": "shadow_magic"
       },
       "pollinations": {
         "base_prompt": "adult anime female baseball player, Ema Kuroyuri, SSR rarity, 3B, nature-element, contact specialist, curvy athletic adult woman, curvy, calm, botanical, contact style, long hair in #526b3e, round face, #344327 eyes, uniform palette #eff5df with #4cae5f accents, squeeze_specialist, premium anime mobile sports game character key art, clean readable silhouette, centered three-quarter character portrait, professional cel shading, crisp linework, detailed eyes and hair, adult facial proportions, no text, no logo, no watermark",
@@ -1121,7 +1221,15 @@
           "focused": "patient squeeze-play concentration, narrowed green eyes, compact batting stance, disciplined focus",
           "surprised": "wide green eyes, raised eyebrows, small open mouth, expressive but composed surprise",
           "disappointed": "soft frown, lowered gaze, quiet frustration, graceful composure after a missed opportunity"
-        }
+        },
+        "faction": "shadow_magic",
+        "faction_palette": {
+          "primary": "#6C35B8",
+          "secondary": "#17121F",
+          "accent": "#22C7C7",
+          "glow": "#B996FF"
+        },
+        "faction_style": "mature high-fanservice dark-fantasy sports anime aesthetic, elegant arcane styling, violet and black base colors with teal accents, mystical motifs, dramatic lighting, refined supernatural presence"
       },
       "pixel_art_generator": {
         "sprite_resolution": "128x128",
@@ -1216,7 +1324,8 @@
           "uniform_color": "#eef8f7",
           "accent": "#f6d447",
           "eye": "#23464a"
-        }
+        },
+        "faction": "bosozoku_wild"
       },
       "pollinations": {
         "base_prompt": "adult anime female baseball player, Hotaru Kazehaya, SR rarity, LF, lightning-element, contact specialist, balanced adult woman, casual, expressive, restless, contact style, long hair in #2b6d6f, soft face, #23464a eyes, uniform palette #eef8f7 with #f6d447 accents, two_strike_survivor, premium anime mobile sports game character key art, clean readable silhouette, centered three-quarter character portrait, professional cel shading, crisp linework, detailed eyes and hair, adult facial proportions, no text, no logo, no watermark",
@@ -1227,7 +1336,15 @@
           "focused": "two-strike concentration, alert eyes, compact batting stance, disciplined determination despite restless energy",
           "surprised": "very wide eyes, raised eyebrows, open mouth, highly expressive sudden reaction",
           "disappointed": "scrunched frustrated expression, softened eyes, shoulders slightly lowered, controlled annoyance after a foul"
-        }
+        },
+        "faction": "bosozoku_wild",
+        "faction_palette": {
+          "primary": "#E53935",
+          "secondary": "#111111",
+          "accent": "#FF6D3A",
+          "glow": "#FFB300"
+        },
+        "faction_style": "mature high-fanservice biker-gang sports anime aesthetic, rebellious street-racing attitude, red and black athletic trim, bold mechanical details, confident body language"
       },
       "pixel_art_generator": {
         "sprite_resolution": "128x128",
@@ -1322,7 +1439,8 @@
           "uniform_color": "#fff7e8",
           "accent": "#f4ed9b",
           "eye": "#674b22"
-        }
+        },
+        "faction": "idol_sparkle"
       },
       "pollinations": {
         "base_prompt": "adult anime female baseball player, Aria Solis, SSR rarity, RF, light-element, power specialist, curvy athletic adult woman, curvy, idol, polished, power style, long hair in #d9a35b, soft face, #674b22 eyes, uniform palette #fff7e8 with #f4ed9b accents, team_first_star, premium anime mobile sports game character key art, clean readable silhouette, centered three-quarter character portrait, professional cel shading, crisp linework, detailed eyes and hair, adult facial proportions, no text, no logo, no watermark",
@@ -1333,7 +1451,15 @@
           "focused": "team-first power-batting concentration, narrowed golden eyes, composed powerful stance, strategic focus",
           "surprised": "wide golden eyes, raised eyebrows, slightly open mouth, polished composure visibly breaking",
           "disappointed": "elegant restrained frown, softened gaze, lowered shoulders, quiet frustration after sacrificing power unsuccessfully"
-        }
+        },
+        "faction": "idol_sparkle",
+        "faction_palette": {
+          "primary": "#FFD84D",
+          "secondary": "#FF4F9A",
+          "accent": "#FFF1A8",
+          "glow": "#FFFFFF"
+        },
+        "faction_style": "mature high-fanservice idol-sports anime aesthetic, polished stage glamour, sunshine yellow and hot pink accents, sparkle details, ribbon-like highlights, expressive confident presentation"
       },
       "pixel_art_generator": {
         "sprite_resolution": "128x128",
@@ -1428,7 +1554,8 @@
           "uniform_color": "#e9ebf5",
           "accent": "#8b5cf6",
           "eye": "#282d49"
-        }
+        },
+        "faction": "cyber_tech"
       },
       "pollinations": {
         "base_prompt": "adult anime female baseball player, Sena Yoru, SR rarity, SS, darkness-element, runner specialist, athletic adult woman, athletic, hikikomori, messy, runner style, long hair in #202638, sharp face, #282d49 eyes, uniform palette #e9ebf5 with #8b5cf6 accents, sudden_aggression, premium anime mobile sports game character key art, clean readable silhouette, centered three-quarter character portrait, professional cel shading, crisp linework, detailed eyes and hair, adult facial proportions, no text, no logo, no watermark",
@@ -1439,7 +1566,15 @@
           "focused": "silent-steal concentration, narrowed eyes, low runner stance, hyper-alert body language",
           "surprised": "wide dark eyes, raised eyebrows, slight open mouth, startled reaction with visible discomfort",
           "disappointed": "downcast gaze, faint frown, shoulders curled slightly inward, quiet frustration without melodrama"
-        }
+        },
+        "faction": "cyber_tech",
+        "faction_palette": {
+          "primary": "#00E5FF",
+          "secondary": "#FF2BC2",
+          "accent": "#7A5CFF",
+          "glow": "#B8F8FF"
+        },
+        "faction_style": "mature high-fanservice cyber-sports anime aesthetic, futuristic athletic gear, cyan and magenta neon interfaces, sleek technical trim, holographic accents, precise modern silhouette"
       },
       "pixel_art_generator": {
         "sprite_resolution": "128x128",
@@ -1534,7 +1669,8 @@
           "uniform_color": "#fff0df",
           "accent": "#e4572e",
           "eye": "#62281f"
-        }
+        },
+        "faction": "tactical_milspec"
       },
       "pollinations": {
         "base_prompt": "adult anime female baseball player, Kagari Homura, UR rarity, C, fire-element, catcher specialist, powerful athletic adult woman, powerful, commanding, warm, catcher style, long hair in #8f3a26, round face, #62281f eyes, uniform palette #fff0df with #e4572e accents, rally_control, premium anime mobile sports game character key art, clean readable silhouette, centered three-quarter character portrait, professional cel shading, crisp linework, detailed eyes and hair, adult facial proportions, no text, no logo, no watermark",
@@ -1545,7 +1681,15 @@
           "focused": "elite catcher focus, narrowed red-brown eyes, firm posture, reading the pitcher with absolute attention",
           "surprised": "eyes widened, eyebrows raised, mouth slightly open, command presence briefly interrupted by surprise",
           "disappointed": "firm frown, lowered gaze, controlled frustration, steady leadership after a missed defensive read"
-        }
+        },
+        "faction": "tactical_milspec",
+        "faction_palette": {
+          "primary": "#3F5D45",
+          "secondary": "#1B2320",
+          "accent": "#D4BE7A",
+          "glow": "#E7D9A7"
+        },
+        "faction_style": "mature high-fanservice tactical sports anime aesthetic, elite unit presentation, olive and black utility styling, disciplined athletic posture, sand-colored equipment details, mission-ready silhouette"
       },
       "pixel_art_generator": {
         "sprite_resolution": "128x128",
