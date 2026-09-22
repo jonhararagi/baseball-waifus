@@ -1001,16 +1001,16 @@ export class CombatRenderer {
     const runResults = new Set(["RUN", "STEAL", "STEAL_BLOCKED", "SAFE", "HOME_RUN"]);
     const dangerResults = new Set(["OUT", "STRIKE", "FOUL", "FIELDING_ERROR"]);
     const timingBad = String(dto?.timing || "").toUpperCase() === "BAD";
-
-    if (timingBad) {
-      kind = "danger";
-    }
     const superResults = new Set(["HOME_RUN", "TRIPLE"]);
 
     let kind = "hit";
     if (runResults.has(result)) {
       kind = "run";
     } else if (dangerResults.has(result)) {
+      kind = "danger";
+    }
+
+    if (timingBad) {
       kind = "danger";
     }
 
