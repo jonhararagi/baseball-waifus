@@ -1,4 +1,5 @@
 import { buildSharePayload } from "./share_bridge.js";
+import { duplicateReward } from "./gacha_engine.js";
 const DEFAULT_SCHEMA_URL = "./data/game_schemas_recycled.json";
 const DEFAULT_QUEUE_URL = "./data/characters_queue.json";
 const DEFAULT_STORAGE_KEY = "baseball_waifus_gacha_v1";
@@ -216,7 +217,8 @@ export class GachaController {
       pulls_since_UR: 0,
       inventory: {},
       active_batter: null,
-      scavenger_scrap: 0
+      scavenger_scrap: 0,
+      fragment_bank: 0
     };
     this.ready = false;
     this.listeners = new Set();
@@ -305,6 +307,7 @@ export class GachaController {
       inventory_size: Object.keys(this.state.inventory || {}).length,
       active_batter: this.state.active_batter || null,
       scavenger_scrap: scrap,
+      fragments: Math.max(0, Number(this.state.fragment_bank) || 0),
       recruit_cost: SCAVENGER_SCRAP_COST,
       can_afford_recruit: scrap >= SCAVENGER_SCRAP_COST,
       ready: this.ready
@@ -359,6 +362,30 @@ export class GachaController {
     return this.state.scavenger_scrap;
   }
 
+  getFragments() {
+    return Math.max(0, Number(this.state.fragment_bank) || 0);
+  }
+
+  addFragments(amount) {
+    const delta = Math.max(0, Math.floor(Number(amount) || 0));
+    this.state.fragment_bank = this.getFragments() + delta;
+    this._saveState();
+    this._emit();
+    return this.state.fragment_bank;
+  }
+
+  spendScrapAndFragments({ scrap = 0, fragments = 0 } = {}) {
+    const scrapCost = Math.max(0, Math.floor(Number(scrap) || 0));
+    const fragmentCost = Math.max(0, Math.floor(Number(fragments) || 0));
+    if (this.getScavengerScrap() < scrapCost) throw new Error("Not enough Scavenger Scrap");
+    if (this.getFragments() < fragmentCost) throw new Error("Not enough Fragments");
+    this.state.scavenger_scrap = this.getScavengerScrap() - scrapCost;
+    this.state.fragment_bank = this.getFragments() - fragmentCost;
+    this._saveState();
+    this._emit();
+    return { scrap: this.state.scavenger_scrap, fragments: this.state.fragment_bank };
+  }
+
   _spendScrap(amount) {
     const cost = Math.max(0, Math.floor(Number(amount) || 0));
     const current = this.getScavengerScrap();
@@ -404,6 +431,12 @@ export class GachaController {
     previous.duplicate_count += 1;
     previous.last_obtained_at = this.now();
 
+    const duplicateRewardData = previous.duplicate_count > 1 ? duplicateReward(rarity) : { fragments: 0, scrap: 0 };
+    const duplicateFragmentReward = Math.max(0, Number(duplicateRewardData.fragments) || 0);
+    if (duplicateFragmentReward > 0) {
+      this.state.fragment_bank = this.getFragments() + duplicateFragmentReward;
+    }
+
     this.state.inventory[characterId] = previous;
     if (!this.state.active_batter) this.state.active_batter = characterId;
     this.state.pulls_since_UR = rarity === "UR" ? 0 : pullNumber;
@@ -415,12 +448,16 @@ export class GachaController {
       rarity,
       character,
       duplicate_count: previous.duplicate_count,
+      duplicate_fragment_reward: duplicateFragmentReward,
+      fragments: this.getFragments(),
       pulls_since_UR: this.state.pulls_since_UR,
       soft_pity_active: probabilities.soft_pity_active,
       hard_pity_triggered: hardPityTriggered,
       probabilities: clone(probabilities),
       share: this.getSharePayload(characterId, rarity)
     };
+
+    this._playAudio("gacha.reveal_" + String(rarity).toLowerCase());
 
     if (hardPityTriggered) {
       this._playAudio("gacha.pity_trigger");
@@ -460,6 +497,8 @@ export class GachaController {
     this.state.active_batter = activeBatter && this.state.inventory[activeBatter] ? activeBatter : null;
     const scrap = Number(parsed.scavenger_scrap);
     if (Number.isFinite(scrap) && scrap >= 0) this.state.scavenger_scrap = Math.floor(scrap);
+    const fragments = Number(parsed.fragment_bank);
+    if (Number.isFinite(fragments) && fragments >= 0) this.state.fragment_bank = Math.floor(fragments);
     return true;
   }
 
@@ -468,7 +507,8 @@ export class GachaController {
       pulls_since_UR: this.state.pulls_since_UR,
       inventory: this.state.inventory,
       active_batter: this.state.active_batter,
-      scavenger_scrap: this.state.scavenger_scrap
+      scavenger_scrap: this.state.scavenger_scrap,
+      fragment_bank: this.getFragments()
     });
   }
 
@@ -539,7 +579,9 @@ export function exposeGachaToWindow(controller) {
     getActiveBatter: () => controller.getActiveBatter(),
     setActiveBatter: (characterId) => controller.setActiveBatter(characterId),
     getScavengerScrap: () => controller.getScavengerScrap(),
+    getFragments: () => controller.getFragments(),
     addScrap: (amount) => controller.addScrap(amount),
+    spendScrapAndFragments: (currency) => controller.spendScrapAndFragments(currency),
     initialize: () => controller.initialize(),
     rollGacha: () => controller.rollGacha(),
     subscribe: (listener) => controller.subscribe(listener)
