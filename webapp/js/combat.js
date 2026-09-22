@@ -53,6 +53,26 @@ function assetUrl(path) {
   return new URL(path, window.location.href).toString();
 }
 
+function descriptorPath(descriptor, kind = "") {
+  if (!descriptor || typeof descriptor !== "object") {
+    return "";
+  }
+
+  if (kind === "card" && descriptor.card_hd_url) {
+    return String(descriptor.card_hd_url);
+  }
+
+  if (kind === "sprite" && descriptor.sprite_url) {
+    return String(descriptor.sprite_url);
+  }
+
+  if (descriptor.path) {
+    return String(descriptor.path);
+  }
+
+  return "";
+}
+
 class AssetBank {
   constructor() {
     this.images = new Map();
@@ -64,7 +84,8 @@ class AssetBank {
     const seen = new Set();
 
     for (const descriptor of descriptors) {
-      const path = typeof descriptor === "string" ? descriptor : descriptor?.path;
+      const kind = typeof descriptor === "string" ? "" : String(descriptor?.kind || "");
+      const path = typeof descriptor === "string" ? descriptor : descriptorPath(descriptor, kind);
       if (!path || seen.has(path)) {
         continue;
       }
@@ -184,14 +205,16 @@ export class CombatRenderer {
     const descriptors = [];
 
     for (const descriptor of manifest?.sprites || []) {
-      if (descriptor?.path) {
-        descriptors.push({ ...descriptor, kind: "sprite" });
+      const path = descriptorPath(descriptor, "sprite");
+      if (path) {
+        descriptors.push({ ...descriptor, path, kind: "sprite" });
       }
     }
 
     for (const descriptor of manifest?.cards || []) {
-      if (descriptor?.path) {
-        descriptors.push({ ...descriptor, kind: "card" });
+      const path = descriptorPath(descriptor, "card");
+      if (path) {
+        descriptors.push({ ...descriptor, path, kind: "card" });
       }
     }
 
@@ -210,8 +233,8 @@ export class CombatRenderer {
     this.ballTrail = [];
 
     await this.assetBank.preload([
-      ...(dto.assets?.sprites || []),
-      ...(dto.assets?.cards || [])
+      ...(dto.assets?.sprites || []).map((asset) => ({ ...asset, kind: "sprite" })),
+      ...(dto.assets?.cards || []).map((asset) => ({ ...asset, kind: "card" }))
     ]);
 
     this.onState?.(this.state);
@@ -235,8 +258,8 @@ export class CombatRenderer {
     };
 
     await this.assetBank.preload([
-      ...(dto.assets?.sprites || []),
-      ...(dto.assets?.cards || [])
+      ...(dto.assets?.sprites || []).map((asset) => ({ ...asset, kind: "sprite" })),
+      ...(dto.assets?.cards || []).map((asset) => ({ ...asset, kind: "card" }))
     ]);
 
     this._prepareBallTrail(dto);
@@ -436,29 +459,39 @@ export class CombatRenderer {
     ctx.save();
     ctx.translate(x, y);
 
-    ctx.fillStyle = "rgba(2, 6, 15, 0.72)";
-    ctx.beginPath();
-    ctx.ellipse(0, 0, 34, 44, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.ellipse(0, 0, 34, 44, 0, 0, Math.PI * 2);
-    ctx.stroke();
-
-    const cardId = String(player.card_id || "");
-    const descriptor = (this.state.assets?.cards || []).find((item) => item?.id === cardId);
-    const path = descriptor?.path || player.card_path || "";
+    const cardId = String(player?.card_id || player?.id || "");
+    const descriptor = (this.state?.assets?.sprites || []).find((item) => item?.id === cardId);
+    const path = descriptorPath(descriptor, "sprite") || String(player?.sprite_url || "");
     const image = this.assetBank.get(path);
 
     if (image) {
-      ctx.save();
+      const targetHeight = clamp(this.pixelHeight * 0.22, 86, 150);
+      const ratio = image.naturalWidth > 0 ? image.naturalHeight / image.naturalWidth : 1.5;
+      const targetWidth = targetHeight / ratio;
+
+      ctx.globalAlpha = 0.96;
+      ctx.shadowColor = "rgba(0,0,0,0.45)";
+      ctx.shadowBlur = 12;
+      ctx.drawImage(image, -targetWidth * 0.5, -targetHeight * 0.92, targetWidth, targetHeight);
+      ctx.shadowBlur = 0;
+
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.globalAlpha = 0.72;
       ctx.beginPath();
-      ctx.ellipse(0, 0, 26, 35, 0, 0, Math.PI * 2);
-      ctx.clip();
-      ctx.drawImage(image, -26, -35, 52, 70);
-      ctx.restore();
+      ctx.ellipse(0, 5, Math.max(24, targetWidth * 0.18), 6, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    } else {
+      ctx.fillStyle = "rgba(2, 6, 15, 0.72)";
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 34, 44, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 34, 44, 0, 0, Math.PI * 2);
+      ctx.stroke();
     }
 
     ctx.restore();
@@ -485,6 +518,34 @@ export class CombatRenderer {
         continue;
       }
 
+      const runner = this._runnerForBase(state, baseName);
+      if (runner) {
+        const cardId = String(runner.card_id || runner.id || "");
+        const descriptor = (this.state?.assets?.sprites || []).find((item) => item?.id === cardId);
+        const path = descriptorPath(descriptor, "sprite") || String(runner.sprite_url || "");
+        const image = this.assetBank.get(path);
+
+        if (image) {
+          const targetHeight = clamp(this.pixelHeight * 0.12, 42, 84);
+          const ratio = image.naturalWidth > 0 ? image.naturalHeight / image.naturalWidth : 1.5;
+          const targetWidth = targetHeight / ratio;
+
+          ctx.save();
+          ctx.globalAlpha = 0.98;
+          ctx.shadowColor = "rgba(0,0,0,0.42)";
+          ctx.shadowBlur = 8;
+          ctx.drawImage(
+            image,
+            point.x - targetWidth * 0.5,
+            point.y - targetHeight - 8,
+            targetWidth,
+            targetHeight
+          );
+          ctx.restore();
+          continue;
+        }
+      }
+
       ctx.save();
       ctx.fillStyle = "#ffcd66";
       ctx.strokeStyle = "#111827";
@@ -495,6 +556,15 @@ export class CombatRenderer {
       ctx.stroke();
       ctx.restore();
     }
+  }
+
+  _runnerForBase(state, baseName) {
+    const runners = state.runners || state.base_runners || {};
+    const runner = runners?.[baseName];
+    if (runner && typeof runner === "object") {
+      return runner;
+    }
+    return null;
   }
 
   _prepareBallTrail(dto) {
@@ -607,7 +677,8 @@ export class CombatRenderer {
     );
 
     const descriptor = (dto.assets?.cards || []).find((item) => item?.id === cardId);
-    const portraitPath = descriptor?.path || dto.animation?.cut_in_card_path || "";
+    const portraitPath = descriptorPath(descriptor, "card")
+      || String(dto.animation?.cut_in_card_hd_url || dto.animation?.cut_in_card_path || "");
     const portrait = this.assetBank.get(portraitPath);
 
     this.cutinEyebrow.textContent = dto.animation?.eyebrow || "GAME EVENT";
