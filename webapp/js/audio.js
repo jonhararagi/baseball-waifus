@@ -1,14 +1,16 @@
 import {
   AudioBridge,
   WebAudioSynthAdapter,
-  playScavengerSFX
+  playScavengerSFX,
+  SOUND_PROFILES
 } from "./audio_bridge.js";
 
 /** Public presentation-only audio facade. */
 export {
   AudioBridge,
   WebAudioSynthAdapter,
-  playScavengerSFX
+  playScavengerSFX,
+  SOUND_PROFILES
 };
 
 export function createAudioBridge({ adapter = null, audioContextFactory = null } = {}) {

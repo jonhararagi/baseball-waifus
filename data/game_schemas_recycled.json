@@ -35,22 +35,36 @@
   "stat_mapping": {
     "POWER": {
       "canonical_path": "stats.power",
-      "source_candidates": ["power", "bat_power", "bat_speed"],
+      "source_candidates": [
+        "power",
+        "bat_power",
+        "bat_speed"
+      ],
       "note": "Uses the existing Power statistic."
     },
     "CONTACT": {
       "canonical_path": "stats.contact",
-      "source_candidates": ["contact", "accuracy", "hit"],
+      "source_candidates": [
+        "contact",
+        "accuracy",
+        "hit"
+      ],
       "note": "Uses the existing Contact statistic."
     },
     "SPEED": {
       "canonical_path": "stats.speed",
-      "source_candidates": ["speed", "run_speed"],
+      "source_candidates": [
+        "speed",
+        "run_speed"
+      ],
       "note": "Uses the existing Speed statistic."
     },
     "DEFENSE": {
       "canonical_path": "stats.defense",
-      "source_candidates": ["defense", "fielding"],
+      "source_candidates": [
+        "defense",
+        "fielding"
+      ],
       "note": "Uses the existing Defense statistic."
     },
     "ARM": {
@@ -60,7 +74,10 @@
     },
     "STAMINA": {
       "canonical_path": "stats.stamina",
-      "source_candidates": ["stamina", "fatigue"],
+      "source_candidates": [
+        "stamina",
+        "fatigue"
+      ],
       "note": "Uses the existing Stamina statistic."
     },
     "PITCH_VELOCITY": {
@@ -70,7 +87,10 @@
     },
     "PITCH_CONTROL": {
       "canonical_path": "stats.control",
-      "source_candidates": ["control", "command"],
+      "source_candidates": [
+        "control",
+        "command"
+      ],
       "note": "Uses the existing Control statistic."
     }
   },
@@ -123,7 +143,12 @@
     }
   },
   "gacha": {
-    "rarity_pool": ["R", "SR", "SSR", "UR"],
+    "rarity_pool": [
+      "R",
+      "SR",
+      "SSR",
+      "UR"
+    ],
     "banner": {
       "id": "string",
       "name": "string",
@@ -137,30 +162,53 @@
       }
     },
     "rates": {
-      "status": "pending_canonical_game_table",
-      "R": null,
-      "SR": null,
-      "SSR": null,
-      "UR": null
+      "status": "active_canonical_game_table_v1",
+      "unit": "percent",
+      "R": 80,
+      "SR": 15,
+      "SSR": 4,
+      "UR": 1,
+      "sum_percent": 100,
+      "distribution_note": "Base banner rates. During soft pity, the additional UR probability is removed from R; SR and SSR base rates remain unchanged."
     },
     "pity": {
       "model": "per_banner_counter",
+      "reset_on_rarity": "UR",
+      "counter_semantics": "pulls_since_UR",
       "soft_pity": {
-        "enabled": false,
-        "start_pull": null,
-        "formula": null
+        "enabled": true,
+        "start_pull": 61,
+        "base_rate_percent": 1,
+        "increment_per_pull_percent": 0.5,
+        "first_affected_pull": 61,
+        "last_soft_pity_pull": 79,
+        "formula": "For pull_number 61..79, UR_rate = 1 + (pull_number - 60) * 0.5 percent. The delta is subtracted from R. Pull 80 bypasses this curve because hard pity guarantees UR.",
+        "reallocation": {
+          "target": "R",
+          "preserve": [
+            "SR",
+            "SSR"
+          ]
+        }
       },
       "hard_pity": {
-        "enabled": false,
-        "pull_limit": null,
-        "guaranteed_rarity": null
+        "enabled": true,
+        "pull_limit": 80,
+        "guaranteed_rarity": "UR",
+        "inclusive": true,
+        "formula": "If pull_number == 80 and no UR has been obtained since the previous UR reset, result rarity is UR."
       },
       "counters": {
         "pulls_since_SR_or_better": 0,
         "pulls_since_SSR_or_better": 0,
         "pulls_since_UR": 0
       },
-      "note": "The structure is recycled from open gacha implementations, but Baseball Waifus rates and pity thresholds are intentionally not activated here."
+      "balance_notes": [
+        "Base rates intentionally match the P0 requested canonical table: UR 1%, SSR 4%, SR 15%, R 80%.",
+        "Soft pity begins on pull 61 and increases UR by 0.5 percentage points per pull through pull 79.",
+        "Hard pity guarantees UR on pull 80.",
+        "Soft-pity UR gain is taken only from R to keep SR/SSR base rates stable."
+      ]
     },
     "reference_only": {
       "source": "ookamiiixd/Yoimiya",

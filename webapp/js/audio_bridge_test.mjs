@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import {
   AudioBridge,
   WebAudioSynthAdapter,
-  playScavengerSFX
+  playScavengerSFX,
+  SOUND_PROFILES
 } from "./audio.js";
 
 const calls = [];
@@ -14,6 +15,15 @@ const bridge = new AudioBridge({
     }
   }
 });
+
+for (const soundId of [
+  "ui.confirm",
+  "gacha.reveal_ssr",
+  "gacha.pity_trigger",
+  "bat.foul"
+]) {
+  assert.ok(SOUND_PROFILES[soundId], `missing sound profile: ${soundId}`);
+}
 
 assert.equal(bridge.play("bat.swing", { volume: 0.8 }), true);
 assert.deepEqual(calls, [
@@ -96,6 +106,31 @@ assert.equal(oscillatorState.waveform, "square");
 assert.equal(oscillatorState.frequency.start, 150);
 assert.equal(oscillatorState.started, true);
 assert.equal(oscillatorState.stopped, true);
+
+const noiseContext = {
+  ...fakeContext,
+  sampleRate: 44100,
+  createBuffer(_channels, length) {
+    const data = new Float32Array(length);
+    return { getChannelData() { return data; } };
+  },
+  createBufferSource() {
+    return {
+      buffer: null,
+      connect() {},
+      disconnect() {},
+      start() {},
+      stop() {},
+      onended: null
+    };
+  }
+};
+
+const noiseAdapter = new WebAudioSynthAdapter({
+  audioContextFactory: () => noiseContext
+});
+assert.equal(noiseAdapter.play("bat.foul"), true);
+assert.equal(noiseAdapter.play("gacha.reveal_ssr"), true);
 
 const adapter = new WebAudioSynthAdapter({
   audioContextFactory: () => fakeContext
