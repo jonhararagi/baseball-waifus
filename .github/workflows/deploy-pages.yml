@@ -102,6 +102,11 @@ jobs:
           test -s webapp/js/combat_effects.js
           test -s webapp/js/combat_effects_test.mjs
           test -s webapp/js/combat_hud.js
+          test -s webapp/js/gacha_engine.js
+          test -s webapp/js/gacha_engine_test.mjs
+          test -s webapp/js/waifu_dex.js
+          test -s webapp/js/waifu_dex_test.mjs
+          test -s webapp/js/card_renderer.js
           test -s webapp/js/share_bridge.js
           test -s webapp/js/economy.js
           test -s webapp/js/tma_bridge_test.mjs
@@ -141,6 +146,11 @@ jobs:
           node --experimental-default-type=module --check webapp/js/combat_effects.js
           node --experimental-default-type=module webapp/js/combat_effects_test.mjs
           node --experimental-default-type=module --check webapp/js/combat_hud.js
+          node --experimental-default-type=module --check webapp/js/gacha_engine.js
+          node --experimental-default-type=module webapp/js/gacha_engine_test.mjs
+          node --experimental-default-type=module --check webapp/js/waifu_dex.js
+          node --experimental-default-type=module webapp/js/waifu_dex_test.mjs
+          node --experimental-default-type=module --check webapp/js/card_renderer.js
           node --experimental-default-type=module --check webapp/js/share_bridge.js
           node --experimental-default-type=module --check webapp/js/economy.js
           node --experimental-default-type=module webapp/js/economy_test.mjs
