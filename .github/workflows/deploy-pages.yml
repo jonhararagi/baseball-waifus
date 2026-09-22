@@ -37,6 +37,8 @@ jobs:
           test -s webapp/js/api.js
           test -d assets/production/sprites
           test -d assets/production/cards
+          test -s assets/characters/generated/bw001.svg
+          test -s assets/characters/generated/bw002.svg
 
       - name: Validate JavaScript syntax
         shell: bash
@@ -58,6 +60,13 @@ jobs:
           mkdir -p site/assets/production/sprites site/assets/production/cards
           cp -R assets/production/sprites/. site/assets/production/sprites/ || true
           cp -R assets/production/cards/. site/assets/production/cards/ || true
+
+          # Local demo assets use the same canonical generated character art as the
+          # Godot presentation pipeline. They are shipped separately from the
+          # production manifest so the demo never becomes a gameplay authority.
+          mkdir -p site/assets/demo-characters
+          cp assets/characters/generated/bw001.svg site/assets/demo-characters/bw001.svg
+          cp assets/characters/generated/bw002.svg site/assets/demo-characters/bw002.svg
 
           python3 - <<'PY'
           import json
