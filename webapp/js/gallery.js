@@ -61,7 +61,8 @@ export class GalleryController {
     fetchImpl = typeof globalThis !== "undefined" ? globalThis.fetch?.bind(globalThis) : null,
     onActiveBatterChange = null,
     onShare = null,
-    onInspect = null
+    onInspect = null,
+    progressionProvider = null
   } = {}) {
     this.root = root;
     this.grid = grid;
@@ -74,6 +75,7 @@ export class GalleryController {
     this.onActiveBatterChange = onActiveBatterChange;
     this.onShare = onShare;
     this.onInspect = onInspect;
+    this.progressionProvider = progressionProvider;
     this.dex = new WaifuDex({
       root,
       grid,
@@ -84,7 +86,8 @@ export class GalleryController {
       storageKey,
       onSelect: (id) => this.selectActiveBatter(id),
       onShare: (unit) => this.onShare?.(unit),
-      onInspect: (unit) => this.onInspect?.(unit)
+      onInspect: (unit) => this.onInspect?.(unit),
+      progressionProvider: (characterId) => this.progressionProvider?.(characterId) || null
     });
     this.queue = [];
     this.manifest = null;
