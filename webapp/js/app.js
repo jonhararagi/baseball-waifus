@@ -90,25 +90,25 @@ function createDemoCombatInit() {
       cards: [
         {
           id: "bw001",
-          card_hd_url: "./assets/production/cards/bw001.svg",
-          path: "./assets/production/cards/bw001.svg"
+          card_hd_url: "./assets/production/cards/bw001--normal.jpg",
+          path: "./assets/production/cards/bw001--normal.jpg"
         },
         {
           id: "bw002",
-          card_hd_url: "./assets/production/cards/bw002.svg",
-          path: "./assets/production/cards/bw002.svg"
+          card_hd_url: "./assets/production/cards/bw002--normal.jpg",
+          path: "./assets/production/cards/bw002--normal.jpg"
         }
       ],
       sprites: [
         {
           id: "bw001",
-          sprite_url: "./assets/production/sprites/bw001.svg",
-          path: "./assets/production/sprites/bw001.svg"
+          sprite_url: "./assets/production/sprites/bw001_idle.png",
+          path: "./assets/production/sprites/bw001_idle.png"
         },
         {
           id: "bw002",
-          sprite_url: "./assets/production/sprites/bw002.svg",
-          path: "./assets/production/sprites/bw002.svg"
+          sprite_url: "./assets/production/sprites/bw002_idle.png",
+          path: "./assets/production/sprites/bw002_idle.png"
         }
       ]
     }
