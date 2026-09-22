@@ -53,6 +53,12 @@ jobs:
           test -s assets/production/cards/bw002--normal.jpg
           test -s assets/production/sprites/bw001_idle.png
           test -s assets/production/sprites/bw002_idle.png
+          for id in bw021 bw022 bw023 bw024 bw025 bw026 bw027 bw028 bw029 bw030; do
+            test -s "assets/production/cards/${id}--normal.jpg"
+            test -s "assets/production/sprites/${id}_idle.png"
+            test -s "assets/production/sprites/${id}_attack.png"
+            test -s "assets/production/sprites/${id}_hit.png"
+          done
           test ! -e assets/production/cards/bw001.svg
           test ! -e assets/production/cards/bw002.svg
           test ! -e assets/production/sprites/bw001.svg
@@ -87,6 +93,12 @@ jobs:
           test -s assets/production/cards/bw002--normal.jpg
           test -s assets/production/sprites/bw001_idle.png
           test -s assets/production/sprites/bw002_idle.png
+          for id in bw021 bw022 bw023 bw024 bw025 bw026 bw027 bw028 bw029 bw030; do
+            test -s "assets/production/cards/${id}--normal.jpg"
+            test -s "assets/production/sprites/${id}_idle.png"
+            test -s "assets/production/sprites/${id}_attack.png"
+            test -s "assets/production/sprites/${id}_hit.png"
+          done
           ! grep -R --fixed-strings "./assets/demo-characters/" webapp/js/app.js webapp/js/combat.js
 
       - name: Validate JavaScript syntax

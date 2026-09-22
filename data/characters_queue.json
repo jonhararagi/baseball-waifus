@@ -1632,6 +1632,496 @@
         "prompt": "adult anime female baseball player, Reina Kurose, full body, pitcher, Ice-element precision strategist, long deep navy hair, blue-gray eyes, sharp refined adult face, white standard baseball uniform with pale ice-blue and cyan accents, poised pitching-ready stance with glove and ball, polished anime mobile sports RPG sprite art, crisp cel shading, readable elegant silhouette, detailed hair and uniform, entire body visible from head to shoes, centered, solid pure chroma-key green background #00FF00, no floor, no scenery, no text, no logo, no watermark",
         "negative_prompt": "child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, 3d render, photorealistic, cropped feet, cropped head, extra limbs, extra fingers, malformed hands, broken anatomy, text, logo, watermark, scenery, grass, stadium, shadows on background"
       }
+    },
+    {
+      "character_id": "bw021",
+      "display_name": "Noa Mizuno",
+      "canonical_source": "game/characters/character_archetypes.json#bw021",
+      "seed": 82101,
+      "brand_palette": {
+        "primary": "#3b82f6",
+        "secondary": "#2b6b78",
+        "base": "#eefcff",
+        "skin": "#e4ae88",
+        "eye": "#244b57"
+      },
+      "card": {
+        "width": 1024,
+        "height": 1536,
+        "format": "jpg",
+        "prompt": "adult anime female baseball player, Noa Mizuno, R rarity, baseball C, water-element catcher specialist, adult woman, long teal-blue hair, deep teal eyes, easygoing practical confidence, standard cream-white catcher uniform with cool blue accents, premium anime mobile game collectible key art, catcher equipment, friendly three-quarter portrait, relaxed confident posture, polished hand-drawn 2D game key art, refined cel shading, subtle painterly finish, detailed eyes and hair, clean anatomy, realistic fabric folds, strong readable silhouette, stadium bokeh, soft rim lighting, adult facial proportions, no text, no logo, no watermark",
+        "negative_prompt": "child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform"
+      },
+      "sprite": {
+        "width": 512,
+        "height": 512,
+        "format": "png",
+        "output_resolution": "128x128",
+        "background": "#00FF00",
+        "prompt": "pixel art 128x128 sprite, Noa Mizuno, adult anime baseball player, balanced catcher stance, catcher glove ready near the chest, relaxed athletic posture, long teal hair settling behind the shoulders, standard baseball uniform, solid pure chroma-key green background #00FF00, no text, child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows",
+        "negative_prompt": "child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows",
+        "states": {
+          "idle": {
+            "fps": 6,
+            "frames": 2,
+            "loop": true,
+            "prompt": "pixel art 128x128 sprite, Noa Mizuno, adult anime baseball player, balanced catcher stance, catcher glove ready near the chest, relaxed athletic posture, long teal hair settling behind the shoulders, standard baseball uniform, solid pure chroma-key green background #00FF00, no text, child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows"
+          },
+          "attack": {
+            "fps": 12,
+            "frames": 4,
+            "loop": false,
+            "prompt": "pixel art 128x128 sprite, Noa Mizuno, adult anime baseball player, quick catcher throw toward second base, compact throwing motion, glove opening forward, decisive footwork, standard baseball uniform, solid pure chroma-key green background #00FF00, no text, child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows"
+          },
+          "hit": {
+            "fps": 10,
+            "frames": 3,
+            "loop": false,
+            "prompt": "pixel art 128x128 sprite, Noa Mizuno, adult anime baseball player, brief recoil after a difficult play, glove lowered, surprised impact reaction, stable footing, no injury, clean readable reaction silhouette, solid pure chroma-key green background #00FF00, no text, child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows"
+          }
+        }
+      }
+    },
+    {
+      "character_id": "bw022",
+      "display_name": "Ayame Tsukino",
+      "canonical_source": "game/characters/character_archetypes.json#bw022",
+      "seed": 82102,
+      "brand_palette": {
+        "primary": "#8b5cf6",
+        "secondary": "#3e2f58",
+        "base": "#eeeaff",
+        "skin": "#c98d69",
+        "eye": "#44355e"
+      },
+      "card": {
+        "width": 1024,
+        "height": 1536,
+        "format": "jpg",
+        "prompt": "adult anime female baseball player, Ayame Tsukino, SSR rarity, baseball 1B, darkness-element defender specialist, adult woman, long dark violet hair, deep violet eyes, stoic muscular confidence, sleeveless cream-white first-base uniform with violet accents, premium anime mobile game collectible key art, strong first baseman presence, powerful three-quarter portrait, imposing but elegant posture, polished hand-drawn 2D game key art, refined cel shading, subtle painterly finish, detailed eyes and hair, clean anatomy, realistic fabric folds, strong readable silhouette, stadium bokeh, soft rim lighting, adult facial proportions, no text, no logo, no watermark",
+        "negative_prompt": "child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform"
+      },
+      "sprite": {
+        "width": 512,
+        "height": 512,
+        "format": "png",
+        "output_resolution": "128x128",
+        "background": "#00FF00",
+        "prompt": "pixel art 128x128 sprite, Ayame Tsukino, adult anime baseball player, powerful first baseman ready stance, balanced lower body, glove hand forward, sleeveless uniform and long violet hair, sleeveless baseball uniform, solid pure chroma-key green background #00FF00, no text, child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows",
+        "negative_prompt": "child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows",
+        "states": {
+          "idle": {
+            "fps": 6,
+            "frames": 2,
+            "loop": true,
+            "prompt": "pixel art 128x128 sprite, Ayame Tsukino, adult anime baseball player, powerful first baseman ready stance, balanced lower body, glove hand forward, sleeveless uniform and long violet hair, sleeveless baseball uniform, solid pure chroma-key green background #00FF00, no text, child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows"
+          },
+          "attack": {
+            "fps": 12,
+            "frames": 4,
+            "loop": false,
+            "prompt": "pixel art 128x128 sprite, Ayame Tsukino, adult anime baseball player, fast first-base scoop and relay throw, strong athletic motion, glove tracking a low ball, decisive follow-through, sleeveless baseball uniform, solid pure chroma-key green background #00FF00, no text, child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows"
+          },
+          "hit": {
+            "fps": 10,
+            "frames": 3,
+            "loop": false,
+            "prompt": "pixel art 128x128 sprite, Ayame Tsukino, adult anime baseball player, short backward recoil after a hard play, glove hand protecting the body, frustrated but composed reaction, no injury, clean readable reaction silhouette, solid pure chroma-key green background #00FF00, no text, child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows"
+          }
+        }
+      }
+    },
+    {
+      "character_id": "bw023",
+      "display_name": "Towa Amami",
+      "canonical_source": "game/characters/character_archetypes.json#bw023",
+      "seed": 82103,
+      "brand_palette": {
+        "primary": "#f4ed9b",
+        "secondary": "#5b7bb1",
+        "base": "#eef6ff",
+        "skin": "#f0c8ac",
+        "eye": "#30486e"
+      },
+      "card": {
+        "width": 1024,
+        "height": 1536,
+        "format": "jpg",
+        "prompt": "adult anime female baseball player, Towa Amami, SR rarity, baseball CF, light-element runner specialist, adult woman, long soft blue hair, clear blue-gray eyes, bright energetic idol-like enthusiasm, sporty cream-white outfield uniform with pale gold accents, premium anime mobile game collectible key art, center fielder and speed specialist, lively three-quarter portrait, polished idol-sport presentation, polished hand-drawn 2D game key art, refined cel shading, subtle painterly finish, detailed eyes and hair, clean anatomy, realistic fabric folds, strong readable silhouette, stadium bokeh, soft rim lighting, adult facial proportions, no text, no logo, no watermark",
+        "negative_prompt": "child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform"
+      },
+      "sprite": {
+        "width": 512,
+        "height": 512,
+        "format": "png",
+        "output_resolution": "128x128",
+        "background": "#00FF00",
+        "prompt": "pixel art 128x128 sprite, Towa Amami, adult anime baseball player, athletic runner ready stance, slight forward lean, hands loose at the sides, long blue hair flowing lightly, sporty baseball uniform, solid pure chroma-key green background #00FF00, no text, child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows",
+        "negative_prompt": "child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows",
+        "states": {
+          "idle": {
+            "fps": 8,
+            "frames": 2,
+            "loop": true,
+            "prompt": "pixel art 128x128 sprite, Towa Amami, adult anime baseball player, athletic runner ready stance, slight forward lean, hands loose at the sides, long blue hair flowing lightly, sporty baseball uniform, solid pure chroma-key green background #00FF00, no text, child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows"
+          },
+          "attack": {
+            "fps": 14,
+            "frames": 5,
+            "loop": false,
+            "prompt": "pixel art 128x128 sprite, Towa Amami, adult anime baseball player, aggressive extra-base sprint, dynamic forward stride, arms driving, sharp change of direction toward the next base, sporty baseball uniform, solid pure chroma-key green background #00FF00, no text, child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows"
+          },
+          "hit": {
+            "fps": 10,
+            "frames": 3,
+            "loop": false,
+            "prompt": "pixel art 128x128 sprite, Towa Amami, adult anime baseball player, quick recoil after being checked on the bases, surprised expression, one hand raised for balance, no injury, clean readable reaction silhouette, solid pure chroma-key green background #00FF00, no text, child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows"
+          }
+        }
+      }
+    },
+    {
+      "character_id": "bw024",
+      "display_name": "Nene Kagetsu",
+      "canonical_source": "game/characters/character_archetypes.json#bw024",
+      "seed": 82104,
+      "brand_palette": {
+        "primary": "#e4572e",
+        "secondary": "#922f24",
+        "base": "#fff0e6",
+        "skin": "#e6ab83",
+        "eye": "#64251f"
+      },
+      "card": {
+        "width": 1024,
+        "height": 1536,
+        "format": "jpg",
+        "prompt": "adult anime female baseball player, Nene Kagetsu, UR rarity, baseball P, fire-element pitcher specialist, adult woman, long deep red hair, dark red eyes, proud focused ace confidence, classic white pitcher uniform with vivid orange-red fire accents, premium anime mobile game collectible key art, elite ace pitcher, dynamic three-quarter portrait, commanding mound-ready posture, polished hand-drawn 2D game key art, refined cel shading, subtle painterly finish, detailed eyes and hair, clean anatomy, realistic fabric folds, strong readable silhouette, stadium bokeh, soft rim lighting, adult facial proportions, no text, no logo, no watermark",
+        "negative_prompt": "child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform"
+      },
+      "sprite": {
+        "width": 512,
+        "height": 512,
+        "format": "png",
+        "output_resolution": "128x128",
+        "background": "#00FF00",
+        "prompt": "pixel art 128x128 sprite, Nene Kagetsu, adult anime baseball player, elite pitcher set position, glove held high, long red hair framing the face, strong balanced lower stance, standard baseball uniform, solid pure chroma-key green background #00FF00, no text, child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows",
+        "negative_prompt": "child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows",
+        "states": {
+          "idle": {
+            "fps": 6,
+            "frames": 2,
+            "loop": true,
+            "prompt": "pixel art 128x128 sprite, Nene Kagetsu, adult anime baseball player, elite pitcher set position, glove held high, long red hair framing the face, strong balanced lower stance, standard baseball uniform, solid pure chroma-key green background #00FF00, no text, child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows"
+          },
+          "attack": {
+            "fps": 14,
+            "frames": 6,
+            "loop": false,
+            "prompt": "pixel art 128x128 sprite, Nene Kagetsu, adult anime baseball player, high-intensity pitching release, powerful stride, throwing arm extended, glove hand pulled back, dramatic but clean sports motion, standard baseball uniform, solid pure chroma-key green background #00FF00, no text, child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows"
+          },
+          "hit": {
+            "fps": 10,
+            "frames": 3,
+            "loop": false,
+            "prompt": "pixel art 128x128 sprite, Nene Kagetsu, adult anime baseball player, pitcher recoil after a hard return toward the mound, glove raised defensively, surprised controlled reaction, no injury, clean readable reaction silhouette, solid pure chroma-key green background #00FF00, no text, child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows"
+          }
+        }
+      }
+    },
+    {
+      "character_id": "bw025",
+      "display_name": "Itsuki Kogane",
+      "canonical_source": "game/characters/character_archetypes.json#bw025",
+      "seed": 82105,
+      "brand_palette": {
+        "primary": "#8ad9ff",
+        "secondary": "#8b7f59",
+        "base": "#f1f0df",
+        "skin": "#d9b093",
+        "eye": "#514a35"
+      },
+      "card": {
+        "width": 1024,
+        "height": 1536,
+        "format": "jpg",
+        "prompt": "adult anime female baseball player, Itsuki Kogane, SR rarity, baseball 2B, ice-element defender specialist, adult woman, long muted golden-brown hair, warm olive-brown eyes, quiet disciplined composure, sleeveless cream-white second-base uniform with icy cyan accents, premium anime mobile game collectible key art, defensive infield specialist, efficient three-quarter portrait, understated athletic elegance, polished hand-drawn 2D game key art, refined cel shading, subtle painterly finish, detailed eyes and hair, clean anatomy, realistic fabric folds, strong readable silhouette, stadium bokeh, soft rim lighting, adult facial proportions, no text, no logo, no watermark",
+        "negative_prompt": "child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform"
+      },
+      "sprite": {
+        "width": 512,
+        "height": 512,
+        "format": "png",
+        "output_resolution": "128x128",
+        "background": "#00FF00",
+        "prompt": "pixel art 128x128 sprite, Itsuki Kogane, adult anime baseball player, compact second-base defensive stance, glove open, athletic balanced posture, long muted-gold hair, sleeveless baseball uniform, solid pure chroma-key green background #00FF00, no text, child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows",
+        "negative_prompt": "child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows",
+        "states": {
+          "idle": {
+            "fps": 6,
+            "frames": 2,
+            "loop": true,
+            "prompt": "pixel art 128x128 sprite, Itsuki Kogane, adult anime baseball player, compact second-base defensive stance, glove open, athletic balanced posture, long muted-gold hair, sleeveless baseball uniform, solid pure chroma-key green background #00FF00, no text, child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows"
+          },
+          "attack": {
+            "fps": 12,
+            "frames": 5,
+            "loop": false,
+            "prompt": "pixel art 128x128 sprite, Itsuki Kogane, adult anime baseball player, clean double-play pivot, quick glove transfer, short precise throw, efficient footwork, technically correct motion, sleeveless baseball uniform, solid pure chroma-key green background #00FF00, no text, child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows"
+          },
+          "hit": {
+            "fps": 10,
+            "frames": 3,
+            "loop": false,
+            "prompt": "pixel art 128x128 sprite, Itsuki Kogane, adult anime baseball player, brief recoil after a difficult fielding chance, glove pulled inward, disappointed but controlled reaction, no injury, clean readable reaction silhouette, solid pure chroma-key green background #00FF00, no text, child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows"
+          }
+        }
+      }
+    },
+    {
+      "character_id": "bw026",
+      "display_name": "Ema Kuroyuri",
+      "canonical_source": "game/characters/character_archetypes.json#bw026",
+      "seed": 82106,
+      "brand_palette": {
+        "primary": "#4cae5f",
+        "secondary": "#526b3e",
+        "base": "#eff5df",
+        "skin": "#e8b59a",
+        "eye": "#344327"
+      },
+      "card": {
+        "width": 1024,
+        "height": 1536,
+        "format": "jpg",
+        "prompt": "adult anime female baseball player, Ema Kuroyuri, SSR rarity, baseball 3B, nature-element contact specialist, adult woman, long moss-green hair, deep forest-green eyes, calm patient confidence, clean cream-white third-base uniform with leaf-green accents, premium anime mobile game collectible key art, curvy adult contact hitter, composed three-quarter portrait, botanical visual motifs kept subtle and sporty, polished hand-drawn 2D game key art, refined cel shading, subtle painterly finish, detailed eyes and hair, clean anatomy, realistic fabric folds, strong readable silhouette, stadium bokeh, soft rim lighting, adult facial proportions, no text, no logo, no watermark",
+        "negative_prompt": "child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform"
+      },
+      "sprite": {
+        "width": 512,
+        "height": 512,
+        "format": "png",
+        "output_resolution": "128x128",
+        "background": "#00FF00",
+        "prompt": "pixel art 128x128 sprite, Ema Kuroyuri, adult anime baseball player, curvy adult third baseman batting-ready stance, balanced feet, calm posture, long moss-green hair, standard baseball uniform, solid pure chroma-key green background #00FF00, no text, child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows",
+        "negative_prompt": "child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows",
+        "states": {
+          "idle": {
+            "fps": 6,
+            "frames": 2,
+            "loop": true,
+            "prompt": "pixel art 128x128 sprite, Ema Kuroyuri, adult anime baseball player, curvy adult third baseman batting-ready stance, balanced feet, calm posture, long moss-green hair, standard baseball uniform, solid pure chroma-key green background #00FF00, no text, child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows"
+          },
+          "attack": {
+            "fps": 12,
+            "frames": 5,
+            "loop": false,
+            "prompt": "pixel art 128x128 sprite, Ema Kuroyuri, adult anime baseball player, precise contact swing for a squeeze-play situation, compact bat path, controlled lower body, purposeful motion, standard baseball uniform, solid pure chroma-key green background #00FF00, no text, child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows"
+          },
+          "hit": {
+            "fps": 10,
+            "frames": 3,
+            "loop": false,
+            "prompt": "pixel art 128x128 sprite, Ema Kuroyuri, adult anime baseball player, small backward recoil after an inside pitch, bat lowered, disappointed but composed expression, no injury, clean readable reaction silhouette, solid pure chroma-key green background #00FF00, no text, child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows"
+          }
+        }
+      }
+    },
+    {
+      "character_id": "bw027",
+      "display_name": "Hotaru Kazehaya",
+      "canonical_source": "game/characters/character_archetypes.json#bw027",
+      "seed": 82107,
+      "brand_palette": {
+        "primary": "#f6d447",
+        "secondary": "#2b6d6f",
+        "base": "#eef8f7",
+        "skin": "#e9bb9e",
+        "eye": "#23464a"
+      },
+      "card": {
+        "width": 1024,
+        "height": 1536,
+        "format": "jpg",
+        "prompt": "adult anime female baseball player, Hotaru Kazehaya, SR rarity, baseball LF, lightning-element contact specialist, adult woman, long teal-green hair, dark teal eyes, restless expressive determination, classic cream-white left-field uniform with electric-gold accents, premium anime mobile game collectible key art, nimble contact hitter, expressive three-quarter portrait, energetic competitive attitude, polished hand-drawn 2D game key art, refined cel shading, subtle painterly finish, detailed eyes and hair, clean anatomy, realistic fabric folds, strong readable silhouette, stadium bokeh, soft rim lighting, adult facial proportions, no text, no logo, no watermark",
+        "negative_prompt": "child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform"
+      },
+      "sprite": {
+        "width": 512,
+        "height": 512,
+        "format": "png",
+        "output_resolution": "128x128",
+        "background": "#00FF00",
+        "prompt": "pixel art 128x128 sprite, Hotaru Kazehaya, adult anime baseball player, balanced left-fielder ready stance, light athletic posture, long teal hair with lively movement, standard baseball uniform, solid pure chroma-key green background #00FF00, no text, child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows",
+        "negative_prompt": "child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows",
+        "states": {
+          "idle": {
+            "fps": 8,
+            "frames": 2,
+            "loop": true,
+            "prompt": "pixel art 128x128 sprite, Hotaru Kazehaya, adult anime baseball player, balanced left-fielder ready stance, light athletic posture, long teal hair with lively movement, standard baseball uniform, solid pure chroma-key green background #00FF00, no text, child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows"
+          },
+          "attack": {
+            "fps": 14,
+            "frames": 5,
+            "loop": false,
+            "prompt": "pixel art 128x128 sprite, Hotaru Kazehaya, adult anime baseball player, quick two-strike contact swing, compact bat path, fast weight transfer, energetic follow-through, standard baseball uniform, solid pure chroma-key green background #00FF00, no text, child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows"
+          },
+          "hit": {
+            "fps": 10,
+            "frames": 3,
+            "loop": false,
+            "prompt": "pixel art 128x128 sprite, Hotaru Kazehaya, adult anime baseball player, brief exaggerated recoil after a difficult contact, surprised face, feet recovering into stance, no injury, clean readable reaction silhouette, solid pure chroma-key green background #00FF00, no text, child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows"
+          }
+        }
+      }
+    },
+    {
+      "character_id": "bw028",
+      "display_name": "Aria Solis",
+      "canonical_source": "game/characters/character_archetypes.json#bw028",
+      "seed": 82108,
+      "brand_palette": {
+        "primary": "#f4ed9b",
+        "secondary": "#d9a35b",
+        "base": "#fff7e8",
+        "skin": "#f0c7aa",
+        "eye": "#674b22"
+      },
+      "card": {
+        "width": 1024,
+        "height": 1536,
+        "format": "jpg",
+        "prompt": "adult anime female baseball player, Aria Solis, SSR rarity, baseball RF, light-element power specialist, adult woman, long warm golden hair, amber-brown eyes, polished social-star confidence, stylish cream-white right-field jacket uniform with pale gold accents, premium anime mobile game collectible key art, polished star right fielder, elegant three-quarter portrait, premium idol-athlete presentation, polished hand-drawn 2D game key art, refined cel shading, subtle painterly finish, detailed eyes and hair, clean anatomy, realistic fabric folds, strong readable silhouette, stadium bokeh, soft rim lighting, adult facial proportions, no text, no logo, no watermark",
+        "negative_prompt": "child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform"
+      },
+      "sprite": {
+        "width": 512,
+        "height": 512,
+        "format": "png",
+        "output_resolution": "128x128",
+        "background": "#00FF00",
+        "prompt": "pixel art 128x128 sprite, Aria Solis, adult anime baseball player, curvy adult right fielder in polished batting-ready stance, elegant posture, long golden hair, jacket uniform, jacket baseball uniform, solid pure chroma-key green background #00FF00, no text, child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows",
+        "negative_prompt": "child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows",
+        "states": {
+          "idle": {
+            "fps": 6,
+            "frames": 2,
+            "loop": true,
+            "prompt": "pixel art 128x128 sprite, Aria Solis, adult anime baseball player, curvy adult right fielder in polished batting-ready stance, elegant posture, long golden hair, jacket uniform, jacket baseball uniform, solid pure chroma-key green background #00FF00, no text, child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows"
+          },
+          "attack": {
+            "fps": 14,
+            "frames": 5,
+            "loop": false,
+            "prompt": "pixel art 128x128 sprite, Aria Solis, adult anime baseball player, team-first power swing with controlled follow-through, strong lower-body rotation, polished athletic form, jacket baseball uniform, solid pure chroma-key green background #00FF00, no text, child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows"
+          },
+          "hit": {
+            "fps": 10,
+            "frames": 3,
+            "loop": false,
+            "prompt": "pixel art 128x128 sprite, Aria Solis, adult anime baseball player, controlled recoil after a failed swing, bat lowered, surprised then disappointed expression, no injury, clean readable reaction silhouette, solid pure chroma-key green background #00FF00, no text, child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows"
+          }
+        }
+      }
+    },
+    {
+      "character_id": "bw029",
+      "display_name": "Sena Yoru",
+      "canonical_source": "game/characters/character_archetypes.json#bw029",
+      "seed": 82109,
+      "brand_palette": {
+        "primary": "#8b5cf6",
+        "secondary": "#202638",
+        "base": "#e9ebf5",
+        "skin": "#c58a6c",
+        "eye": "#282d49"
+      },
+      "card": {
+        "width": 1024,
+        "height": 1536,
+        "format": "jpg",
+        "prompt": "adult anime female baseball player, Sena Yoru, SR rarity, baseball SS, darkness-element runner specialist, adult woman, long dark blue-black hair with a deliberately messy finish, deep indigo eyes, quiet withdrawn intensity, practical sporty dark-accent shortstop uniform with violet highlights, premium anime mobile game collectible key art, fast shortstop runner, quiet three-quarter portrait, restrained expression, sudden athletic tension, polished hand-drawn 2D game key art, refined cel shading, subtle painterly finish, detailed eyes and hair, clean anatomy, realistic fabric folds, strong readable silhouette, stadium bokeh, soft rim lighting, adult facial proportions, no text, no logo, no watermark",
+        "negative_prompt": "child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform"
+      },
+      "sprite": {
+        "width": 512,
+        "height": 512,
+        "format": "png",
+        "output_resolution": "128x128",
+        "background": "#00FF00",
+        "prompt": "pixel art 128x128 sprite, Sena Yoru, adult anime baseball player, athletic shortstop ready stance, slightly messy long dark hair, low quiet posture, practical running shoes, sporty baseball uniform, solid pure chroma-key green background #00FF00, no text, child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows",
+        "negative_prompt": "child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows",
+        "states": {
+          "idle": {
+            "fps": 5,
+            "frames": 2,
+            "loop": true,
+            "prompt": "pixel art 128x128 sprite, Sena Yoru, adult anime baseball player, athletic shortstop ready stance, slightly messy long dark hair, low quiet posture, practical running shoes, sporty baseball uniform, solid pure chroma-key green background #00FF00, no text, child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows"
+          },
+          "attack": {
+            "fps": 15,
+            "frames": 6,
+            "loop": false,
+            "prompt": "pixel art 128x128 sprite, Sena Yoru, adult anime baseball player, silent steal launch from shortstop depth, sudden explosive first step, low sprint posture, controlled aggression, sporty baseball uniform, solid pure chroma-key green background #00FF00, no text, child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows"
+          },
+          "hit": {
+            "fps": 10,
+            "frames": 3,
+            "loop": false,
+            "prompt": "pixel art 128x128 sprite, Sena Yoru, adult anime baseball player, brief recoil after a failed steal attempt, body pulling inward, surprised then disappointed expression, no injury, clean readable reaction silhouette, solid pure chroma-key green background #00FF00, no text, child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows"
+          }
+        }
+      }
+    },
+    {
+      "character_id": "bw030",
+      "display_name": "Kagari Homura",
+      "canonical_source": "game/characters/character_archetypes.json#bw030",
+      "seed": 82110,
+      "brand_palette": {
+        "primary": "#e4572e",
+        "secondary": "#8f3a26",
+        "base": "#fff0df",
+        "skin": "#d89a70",
+        "eye": "#62281f"
+      },
+      "card": {
+        "width": 1024,
+        "height": 1536,
+        "format": "jpg",
+        "prompt": "adult anime female baseball player, Kagari Homura, UR rarity, baseball C, fire-element catcher specialist, adult woman, long dark red hair, deep ember-brown eyes, commanding warm leadership, classic cream-white catcher uniform with vivid orange-red accents, premium anime mobile game collectible key art, elite catcher leader, commanding three-quarter portrait, warm confident posture, premium captain presentation, polished hand-drawn 2D game key art, refined cel shading, subtle painterly finish, detailed eyes and hair, clean anatomy, realistic fabric folds, strong readable silhouette, stadium bokeh, soft rim lighting, adult facial proportions, no text, no logo, no watermark",
+        "negative_prompt": "child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform"
+      },
+      "sprite": {
+        "width": 512,
+        "height": 512,
+        "format": "png",
+        "output_resolution": "128x128",
+        "background": "#00FF00",
+        "prompt": "pixel art 128x128 sprite, Kagari Homura, adult anime baseball player, powerful catcher set position, glove centered, strong stable stance, long dark-red hair framing the shoulders, standard baseball uniform, solid pure chroma-key green background #00FF00, no text, child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows",
+        "negative_prompt": "child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows",
+        "states": {
+          "idle": {
+            "fps": 6,
+            "frames": 2,
+            "loop": true,
+            "prompt": "pixel art 128x128 sprite, Kagari Homura, adult anime baseball player, powerful catcher set position, glove centered, strong stable stance, long dark-red hair framing the shoulders, standard baseball uniform, solid pure chroma-key green background #00FF00, no text, child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows"
+          },
+          "attack": {
+            "fps": 14,
+            "frames": 5,
+            "loop": false,
+            "prompt": "pixel art 128x128 sprite, Kagari Homura, adult anime baseball player, commanding catcher throw to second base, strong hip rotation, precise glove-to-hand transfer, decisive follow-through, standard baseball uniform, solid pure chroma-key green background #00FF00, no text, child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows"
+          },
+          "hit": {
+            "fps": 10,
+            "frames": 3,
+            "loop": false,
+            "prompt": "pixel art 128x128 sprite, Kagari Homura, adult anime baseball player, short defensive recoil after a hard play, glove raised, surprised but composed reaction, no injury, clean readable reaction silhouette, solid pure chroma-key green background #00FF00, no text, child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character, injury, blood, distorted uniform, scenery, grass, stadium, floor, background shadows"
+          }
+        }
+      }
     }
   ]
 }

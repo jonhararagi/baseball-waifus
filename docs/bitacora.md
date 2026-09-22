@@ -8096,3 +8096,49 @@ Checks integrados: existencia de los cuatro archivos, ausencia de los cuatro SVG
 ### Avance aproximado
 
 **≈97% estructural del prototipo.** El porcentaje no representa porcentaje de arte final del roster completo.
+
+
+## Revisión 59: lote final bw021-bw030 y producción raster multiciclo
+
+**Fecha:** 2026-09-21  
+**Motivo:** cerrar la integración de producción del roster base bw021-bw030 sin duplicar estadísticas del maestro de gameplay. Las diez identidades ya existían en el catálogo y en la cola; esta revisión conecta formalmente sus artefactos al pipeline raster y fortalece la validación.
+
+### Qué existía antes
+
+- bw021-bw030 definidos en `game/characters/character_archetypes.json`.
+- bw021-bw030 presentes en `data/characters_queue.json` con canon, paleta, prompts, expresiones y estados de sprite.
+- El generador raster producía únicamente bw001/bw002.
+- El deploy verificaba únicamente bw001/bw002.
+- La prueba `scenes/bw021_bw030_generation_queue_test.gd` validaba la cola conceptual, pero no verificaba los objetivos de producción raster.
+
+### Decisión arquitectónica
+
+1. Se mantiene como autoridad el maestro actual de 8 estadísticas: `power`, `contact`, `speed`, `pitch`, `control`, `defense`, `critical`, `stamina`.
+2. No se agrega `ARM`, `PITCH_VELOCITY` ni `PITCH_CONTROL` como estadísticas independientes porque duplicarían responsabilidades ya cubiertas por `defense`, `pitch` y `control`. Las necesidades de producción visual no alteran el gameplay.
+3. Cada unidad 021-030 recibe un objetivo de producción con tarjeta HD 1024x1536, fuente de sprite 512x512, salida 128x128, chroma key #00FF00 y tres estados explícitos: idle, attack y hit.
+4. El generador produce los tres estados para bw021-bw030 y conserva retrocompatibilidad con bw001-bw002.
+5. El workflow de deploy verifica los 10 personajes y deja que el paso de generación actualice automáticamente el manifest estático de producción.
+
+### Archivos modificados
+
+- `data/characters_queue.json`
+- `tools/generate_production_artwork.py`
+- `scenes/bw021_bw030_generation_queue_test.gd`
+- `.github/workflows/deploy-pages.yml`
+- `docs/bitacora.md`
+
+### Pruebas
+
+- Revisión estructural de los 10 objetivos, paletas, prompts y estados.
+- Validación Godot preparada para los diez targets.
+- Verificación del pipeline para 10 JPG de tarjeta + 30 PNG de sprite del lote.
+- El contrato web existente sigue ejecutándose dentro de deploy-pages.
+- Runtime Godot local no se ejecutó en este entorno.
+
+### Estado
+
+**Implementado a nivel de código y CI/CD.** La generación real de imágenes depende del workflow y del servicio de generación configurado; no se considera generada una imagen hasta que el artefacto aparezca en CI.
+
+### Avance aproximado
+
+**≈95% estructural del prototipo.**

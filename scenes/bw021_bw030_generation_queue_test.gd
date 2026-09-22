@@ -3,6 +3,7 @@ extends Node
 const QUEUE_PATH := "res://data/characters_queue.json"
 const CATALOG_PATH := "res://game/characters/character_archetypes.json"
 const IDS := ["bw021", "bw022", "bw023", "bw024", "bw025", "bw026", "bw027", "bw028", "bw029", "bw030"]
+const PRODUCTION_TARGET_IDS := IDS
 const PALETTE_KEYS := ["skin", "hair_color", "uniform_color", "accent", "eye"]
 const EXPRESSIONS := ["neutral", "happy", "focused", "surprised", "disappointed"]
 const SPRITE_STATES := ["idle", "attack", "hit"]
@@ -99,6 +100,43 @@ func _ready() -> void:
 		assert((animation.get("parts", []) as Array).size() >= 7, character_id + " requires a production rig layer set.")
 		assert((animation.get("layer_order", []) as Array).size() >= 8, character_id + " requires an explicit cutout layer order.")
 		assert((animation.get("preset_animations", []) as Array).size() >= 4, character_id + " requires four presentation animations.")
+
+	var production_targets = queue.get("production_targets", [])
+	assert(production_targets is Array, "production_targets must be an array.")
+	var target_map := {}
+	for target_value in production_targets:
+		assert(target_value is Dictionary, "Each production target must be an object.")
+		var target: Dictionary = target_value
+		var target_id := str(target.get("character_id", ""))
+		if not PRODUCTION_TARGET_IDS.has(target_id):
+			continue
+		assert(not target_map.has(target_id), "Duplicate production target: " + target_id)
+		target_map[target_id] = target
+	assert(target_map.size() == PRODUCTION_TARGET_IDS.size(), "bw021-bw030 production targets must contain exactly ten unique targets.")
+
+	for character_id in PRODUCTION_TARGET_IDS:
+		var target: Dictionary = target_map[character_id]
+		assert(str(target.get("canonical_source", "")) == "game/characters/character_archetypes.json#" + character_id, character_id + " production canonical source mismatch.")
+		var palette: Dictionary = target.get("brand_palette", {})
+		for palette_key in ["primary", "secondary", "base", "skin", "eye"]:
+			var brand_color := str(palette.get(palette_key, ""))
+			assert(brand_color.begins_with("#"), character_id + " production palette must be hexadecimal: " + palette_key)
+			assert(brand_color.length() in [4, 7, 9], character_id + " production palette length invalid: " + palette_key)
+		var card: Dictionary = target.get("card", {})
+		assert(int(card.get("width", 0)) == 1024 and int(card.get("height", 0)) == 1536, character_id + " production card must be 1024x1536.")
+		assert(str(card.get("format", "")) == "jpg", character_id + " production card must be jpg.")
+		assert(str(card.get("prompt", "")).contains(str(canonical.get("display_name", ""))), character_id + " production card prompt must identify the character.")
+		var sprite: Dictionary = target.get("sprite", {})
+		assert(int(sprite.get("width", 0)) == 512 and int(sprite.get("height", 0)) == 512, character_id + " sprite source must be 512x512.")
+		assert(str(sprite.get("output_resolution", "")) == "128x128", character_id + " sprite output must be 128x128.")
+		assert(str(sprite.get("background", "")) == "#00FF00", character_id + " sprite must use pure chroma green.")
+		var sprite_states: Dictionary = sprite.get("states", {})
+		assert(sprite_states.size() == 3, character_id + " production sprite must define idle/attack/hit.")
+		for state_id in ["idle", "attack", "hit"]:
+			var state: Dictionary = sprite_states.get(state_id, {})
+			assert(str(state.get("prompt", "")).contains(str(canonical.get("display_name", ""))), character_id + " sprite state must identify the character: " + state_id)
+			assert(int(state.get("fps", 0)) > 0, character_id + " sprite state fps must be positive: " + state_id)
+			assert(int(state.get("frames", 0)) > 0, character_id + " sprite state frame count must be positive: " + state_id)
 
 	var serialized := FileAccess.get_file_as_string(QUEUE_PATH).to_lower()
 	assert(not serialized.contains("http://"), "generation queue must not embed HTTP URLs.")

@@ -22,7 +22,7 @@ QUEUE_PATH = ROOT / "data" / "characters_queue.json"
 CARDS_DIR = ROOT / "assets" / "production" / "cards"
 SPRITES_DIR = ROOT / "assets" / "production" / "sprites"
 
-TARGET_IDS = ("bw001", "bw002")
+TARGET_IDS = ("bw001", "bw002", "bw021", "bw022", "bw023", "bw024", "bw025", "bw026", "bw027", "bw028", "bw029", "bw030")
 POLLINATIONS_URL = "https://image.pollinations.ai/prompt"
 MAX_ATTEMPTS = 3
 REQUEST_TIMEOUT = 120
@@ -176,8 +176,6 @@ def process_target(target: dict) -> None:
     sprite_cfg = target["sprite"]
 
     card_output = CARDS_DIR / f"{char_id}--normal.jpg"
-    sprite_output = SPRITES_DIR / f"{char_id}_idle.png"
-
     card_image = download_image(
         str(card_cfg["prompt"]),
         int(card_cfg["width"]),
@@ -192,14 +190,21 @@ def process_target(target: dict) -> None:
         int(card_cfg["height"]),
     )
 
-    sprite_image = download_image(
-        str(sprite_cfg["prompt"]),
-        int(sprite_cfg["width"]),
-        int(sprite_cfg["height"]),
-        seed + 1000,
-        f"{char_id} sprite",
-    )
-    save_sprite(sprite_image, sprite_output)
+    states = sprite_cfg.get("states", {})
+    if not isinstance(states, dict) or not states:
+        states = {"idle": {"prompt": sprite_cfg["prompt"]}}
+
+    for state_id, state_cfg in states.items():
+        state_output = SPRITES_DIR / f"{char_id}_{state_id}.png"
+        state_prompt = str(state_cfg.get("prompt", sprite_cfg.get("prompt", "")))
+        sprite_image = download_image(
+            state_prompt,
+            int(sprite_cfg["width"]),
+            int(sprite_cfg["height"]),
+            seed + 1000 + sum(ord(ch) for ch in str(state_id)),
+            f"{char_id} sprite {state_id}",
+        )
+        save_sprite(sprite_image, state_output)
 
     for legacy in (
         CARDS_DIR / f"{char_id}.svg",
@@ -218,10 +223,15 @@ def main() -> int:
         process_target(target)
 
     required = [
-        CARDS_DIR / "bw001--normal.jpg",
-        CARDS_DIR / "bw002--normal.jpg",
+        CARDS_DIR / f"{char_id}--normal.jpg"
+        for char_id in TARGET_IDS
+    ] + [
         SPRITES_DIR / "bw001_idle.png",
         SPRITES_DIR / "bw002_idle.png",
+    ] + [
+        SPRITES_DIR / f"{char_id}_{state_id}.png"
+        for char_id in TARGET_IDS[2:]
+        for state_id in ("idle", "attack", "hit")
     ]
     for path in required:
         if not path.is_file() or path.stat().st_size <= 0:
