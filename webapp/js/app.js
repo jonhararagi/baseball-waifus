@@ -90,21 +90,25 @@ function createDemoCombatInit() {
       cards: [
         {
           id: "bw001",
-          path: "./assets/demo-characters/bw001.svg"
+          card_hd_url: "./assets/production/cards/bw001.svg",
+          path: "./assets/production/cards/bw001.svg"
         },
         {
           id: "bw002",
-          path: "./assets/demo-characters/bw002.svg"
+          card_hd_url: "./assets/production/cards/bw002.svg",
+          path: "./assets/production/cards/bw002.svg"
         }
       ],
       sprites: [
         {
           id: "bw001",
-          path: "./assets/demo-characters/bw001.svg"
+          sprite_url: "./assets/production/sprites/bw001.svg",
+          path: "./assets/production/sprites/bw001.svg"
         },
         {
           id: "bw002",
-          path: "./assets/demo-characters/bw002.svg"
+          sprite_url: "./assets/production/sprites/bw002.svg",
+          path: "./assets/production/sprites/bw002.svg"
         }
       ]
     }
