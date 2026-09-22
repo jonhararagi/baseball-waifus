@@ -20,6 +20,14 @@ const TIMING_COLORS = {
 };
 
 const MAX_DPR = 2.5;
+
+const SCRAP_REWARDS = Object.freeze({
+  HOME_RUN: 100, SINGLE: 10, DOUBLE: 10, TRIPLE: 10, HIT: 10, OUT: 0, FOUL: 0
+});
+
+export function getScrapRewardForResult(result) {
+  return Number(SCRAP_REWARDS[String(result || "").toUpperCase()]) || 0;
+}
 const DEFAULT_MANIFEST_URL = "./assets/production/manifest.json";
 
 function cloneDTO(value) {
@@ -138,7 +146,8 @@ export class CombatRenderer {
     cutInRoot = document.querySelector("#cutin"),
     manifestUrl = DEFAULT_MANIFEST_URL,
     onState = null,
-    audioBridge = null
+    audioBridge = null,
+    onScrapEarned = null
   } = {}) {
     if (!(canvas instanceof HTMLCanvasElement)) {
       throw new TypeError("CombatRenderer requires a canvas element");
@@ -165,7 +174,7 @@ export class CombatRenderer {
     this.manifestUrl = manifestUrl;
     this.onState = onState;
     this.audioBridge = audioBridge;
-
+    this.onScrapEarned = onScrapEarned;
 
     this.state = null;
     this.lastTurn = null;
@@ -180,6 +189,7 @@ export class CombatRenderer {
     this.cameraShakeDuration = 0.15;
     this.impactParticles = [];
     this.maxImpactParticles = 28;
+    this.scrapTurnIds = new Set();
     this.zanTimer = 0;
     this.zanDuration = 0.34;
     this.ballTrail = [];
@@ -329,6 +339,8 @@ export class CombatRenderer {
       home_team: dto.home_team || this.state.home_team,
       away_team: dto.away_team || this.state.away_team
     };
+
+    this._awardScrap(dto);
 
     await this.assetBank.preload([
       ...(dto.assets?.sprites || []).map((asset) => ({ ...asset, kind: "sprite" })),
@@ -1069,19 +1081,40 @@ export class CombatRenderer {
     }
   }
 
+  _awardScrap(dto) {
+    const amount = getScrapRewardForResult(dto?.result);
+    if (amount <= 0 || typeof this.onScrapEarned !== "function") return;
+    const turnId = String(dto?.turn_id || "");
+    if (turnId && this.scrapTurnIds.has(turnId)) return;
+    if (turnId) {
+      this.scrapTurnIds.add(turnId);
+      if (this.scrapTurnIds.size > 128) {
+        const oldest = this.scrapTurnIds.values().next().value;
+        this.scrapTurnIds.delete(oldest);
+      }
+    }
+    this.onScrapEarned({ amount, result: String(dto.result || ""), turn_id: turnId || null });
+  }
+
   _triggerCutIn(dto) {
     if (!this.cutinRoot) {
       return;
     }
 
+    const activeBatter = this.state?.batter || {};
     const cardId = String(
       dto.animation?.cut_in_card_id
       || dto.batter?.card_id
+      || activeBatter.card_id
       || dto.pitcher?.card_id
       || ""
     );
 
-    const descriptor = (dto.assets?.cards || []).find((item) => item?.id === cardId);
+    const cardAssets = [
+      ...(dto.assets?.cards || []),
+      ...(this.state?.assets?.cards || [])
+    ];
+    const descriptor = cardAssets.find((item) => item?.id === cardId);
     const portraitPath = descriptorPath(descriptor, "card")
       || String(dto.animation?.cut_in_card_hd_url || dto.animation?.cut_in_card_path || "");
     const portrait = this.assetBank.get(portraitPath);

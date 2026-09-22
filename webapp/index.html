@@ -25,10 +25,13 @@
           <div class="brand-subtitle">TACTICAL BASEBALL COLLECTION</div>
         </div>
       </div>
-      <div id="connection-state" class="connection-state" role="status" aria-live="polite">Preparing match</div>
+      <div class="topbar-actions">
+        <button id="nav-dex" class="topbar-nav" type="button" aria-controls="gallery-view">DEX / EQUIPO</button>
+        <div id="connection-state" class="connection-state" role="status" aria-live="polite">Preparing match</div>
+      </div>
     </header>
 
-    <section class="combat-shell" aria-label="Baseball combat presentation" data-render-layer="combat">
+    <section class="combat-shell combat-view-piece" aria-label="Baseball combat presentation" data-render-layer="combat">
       <canvas id="combat-canvas" class="combat-canvas" aria-label="Baseball Waifus match canvas"></canvas>
 
       <div id="cutin" class="cutin" aria-hidden="true">
@@ -51,7 +54,7 @@
       </div>
     </section>
 
-    <section class="match-strip" aria-label="Match information" data-hud="arcade">
+    <section class="match-strip combat-view-piece" aria-label="Match information" data-hud="arcade">
       <div class="match-block">
         <span class="match-label">INNING</span>
         <span id="match-inning" class="match-value">-</span>
@@ -71,17 +74,21 @@
       </div>
     </section>
 
-    <section class="action-panel" aria-label="Match actions" data-hud="controls">
+    <section class="action-panel combat-view-piece" aria-label="Match actions" data-hud="controls">
       <button id="action-bat" class="action-button action-primary" type="button">BATEAR</button>
       <button id="action-steal" class="action-button action-secondary" type="button">ROBAR</button>
-      <button id="action-gacha" class="action-button action-secondary" type="button">RECLUTAR x1</button>
+      <button id="action-gacha" class="action-button action-secondary" type="button">RECLUTAR x1 • 1000 SCRAP</button>
       <button id="action-sync" class="action-button action-quiet" type="button">ACTUALIZAR</button>
     </section>
 
-    <section class="match-strip" aria-label="Gacha status" data-hud="gacha">
+    <section class="match-strip combat-view-piece" aria-label="Gacha status" data-hud="gacha">
       <div class="match-block">
         <span class="match-label">GACHA</span>
         <span id="gacha-pull" class="match-value">0/80</span>
+      </div>
+      <div class="match-block">
+        <span class="match-label">SCRAP</span>
+        <span id="gacha-scrap" class="match-value">0</span>
       </div>
       <div class="match-block">
         <span class="match-label">DEX</span>
@@ -93,7 +100,21 @@
       </div>
     </section>
 
-    <footer class="footer">
+    <section id="gallery-view" class="gallery-view" aria-label="Waifu Dex and active roster" hidden>
+      <div class="gallery-headline">
+        <div>
+          <span class="gallery-kicker">SCAVENGER DATABASE</span>
+          <h2>WAIFU DEX</h2>
+        </div>
+        <div class="gallery-active-stack">
+          <span id="gallery-active-batter">ACTIVE BATTER // NONE SELECTED</span>
+          <span id="gallery-scrap-readout">SCRAP // 0</span>
+        </div>
+      </div>
+      <div id="gallery-grid" class="gallery-grid" aria-live="polite"></div>
+    </section>
+
+    <footer class="footer combat-view-piece">
       <span>Presentation client only. Combat result authority remains server-side or inside the Godot gameplay core.</span>
     </footer>
   </main>

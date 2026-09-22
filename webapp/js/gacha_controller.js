@@ -2,6 +2,7 @@ const DEFAULT_SCHEMA_URL = "./data/game_schemas_recycled.json";
 const DEFAULT_QUEUE_URL = "./data/characters_queue.json";
 const DEFAULT_STORAGE_KEY = "baseball_waifus_gacha_v1";
 const PULL_LIMIT = 80;
+export const SCAVENGER_SCRAP_COST = 1000;
 
 function isObject(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -179,7 +180,9 @@ export class GachaController {
     };
     this.state = {
       pulls_since_UR: 0,
-      inventory: {}
+      inventory: {},
+      active_batter: null,
+      scavenger_scrap: 0
     };
     this.ready = false;
     this.listeners = new Set();
@@ -238,11 +241,16 @@ export class GachaController {
 
   getStatus() {
     const pullsSinceUr = Number(this.state.pulls_since_UR) || 0;
+    const scrap = Math.max(0, Number(this.state.scavenger_scrap) || 0);
     return {
       pulls_since_UR: pullsSinceUr,
       next_pull: Math.min(PULL_LIMIT, pullsSinceUr + 1),
       hard_pity_in: Math.max(0, PULL_LIMIT - pullsSinceUr),
       inventory_size: Object.keys(this.state.inventory || {}).length,
+      active_batter: this.state.active_batter || null,
+      scavenger_scrap: scrap,
+      recruit_cost: SCAVENGER_SCRAP_COST,
+      can_afford_recruit: scrap >= SCAVENGER_SCRAP_COST,
       ready: this.ready
     };
   }
@@ -255,9 +263,50 @@ export class GachaController {
     return () => this.listeners.delete(listener);
   }
 
+  getCharacter(characterId) {
+    const id = String(characterId || "");
+    return clone(this.queue.find((unit) => unit.character_id === id) || null);
+  }
+
+  getActiveBatter() {
+    return this.state.active_batter || null;
+  }
+
+  setActiveBatter(characterId) {
+    const id = String(characterId || "");
+    if (!id || !this.state.inventory[id]) throw new Error("Active batter must be unlocked in the Waifu Dex");
+    this.state.active_batter = id;
+    this._saveState();
+    this._emit();
+    return id;
+  }
+
+  getScavengerScrap() {
+    return Math.max(0, Number(this.state.scavenger_scrap) || 0);
+  }
+
+  addScrap(amount) {
+    const delta = Math.max(0, Math.floor(Number(amount) || 0));
+    this.state.scavenger_scrap = this.getScavengerScrap() + delta;
+    this._saveState();
+    this._emit();
+    return this.state.scavenger_scrap;
+  }
+
+  _spendScrap(amount) {
+    const cost = Math.max(0, Math.floor(Number(amount) || 0));
+    const current = this.getScavengerScrap();
+    if (current < cost) throw new Error("Not enough Scavenger Scrap");
+    this.state.scavenger_scrap = current - cost;
+  }
+
   async rollGacha() {
     if (!this.ready) {
       throw new Error("GachaController is not initialized");
+    }
+
+    if (this.getScavengerScrap() < SCAVENGER_SCRAP_COST) {
+      throw new Error("Not enough Scavenger Scrap");
     }
 
     this._playAudio("ui.confirm");
@@ -289,7 +338,9 @@ export class GachaController {
     previous.last_obtained_at = this.now();
 
     this.state.inventory[characterId] = previous;
+    if (!this.state.active_batter) this.state.active_batter = characterId;
     this.state.pulls_since_UR = rarity === "UR" ? 0 : pullNumber;
+    this._spendScrap(SCAVENGER_SCRAP_COST);
     this._saveState();
 
     const result = {
@@ -345,10 +396,18 @@ export class GachaController {
       if (isObject(parsed.inventory)) {
         this.state.inventory = parsed.inventory;
       }
+
+      const activeBatter = String(parsed.active_batter || "");
+      if (activeBatter && this.state.inventory[activeBatter]) this.state.active_batter = activeBatter;
+
+      const scrap = Number(parsed.scavenger_scrap);
+      if (Number.isFinite(scrap) && scrap >= 0) this.state.scavenger_scrap = Math.floor(scrap);
     } catch {
       this.state = {
         pulls_since_UR: 0,
-        inventory: {}
+        inventory: {},
+        active_batter: null,
+        scavenger_scrap: 0
       };
     }
   }
@@ -363,7 +422,9 @@ export class GachaController {
         this.storageKey,
         JSON.stringify({
           pulls_since_UR: this.state.pulls_since_UR,
-          inventory: this.state.inventory
+          inventory: this.state.inventory,
+          active_batter: this.state.active_batter,
+          scavenger_scrap: this.state.scavenger_scrap
         })
       );
     } catch {
@@ -386,6 +447,10 @@ export function exposeGachaToWindow(controller) {
   const api = {
     getState: () => controller.getState(),
     getStatus: () => controller.getStatus(),
+    getActiveBatter: () => controller.getActiveBatter(),
+    setActiveBatter: (characterId) => controller.setActiveBatter(characterId),
+    getScavengerScrap: () => controller.getScavengerScrap(),
+    addScrap: (amount) => controller.addScrap(amount),
     initialize: () => controller.initialize(),
     rollGacha: () => controller.rollGacha(),
     subscribe: (listener) => controller.subscribe(listener)

@@ -10,59 +10,85 @@ import {
   GachaController,
   exposeGachaToWindow
 } from "./gacha_controller.js";
+import { GalleryController } from "./gallery.js";
 
 const telegram = new TelegramBridge();
 telegram.init();
-
 const api = new BaseballWaifusApi({ telegramBridge: telegram });
 const audioBridge = createAudioBridge();
-const renderer = new CombatRenderer(document.querySelector("#combat-canvas"), {
-  audioBridge
-});
 
 const connectionState = document.querySelector("#connection-state");
 const loadingState = document.querySelector("#loading-state");
 const loadingDetail = loadingState?.querySelector(".loading-detail");
-
 const inningValue = document.querySelector("#match-inning");
 const countValue = document.querySelector("#match-count");
 const outsValue = document.querySelector("#match-outs");
 const awayValue = document.querySelector("#match-away");
 const homeValue = document.querySelector("#match-home");
 const scoreValue = document.querySelector("#match-score");
-
 const batButton = document.querySelector("#action-bat");
 const stealButton = document.querySelector("#action-steal");
 const syncButton = document.querySelector("#action-sync");
 const gachaButton = document.querySelector("#action-gacha");
 const gachaPullValue = document.querySelector("#gacha-pull");
+const gachaScrapValue = document.querySelector("#gacha-scrap");
 const gachaDexValue = document.querySelector("#gacha-dex");
 const gachaStatusValue = document.querySelector("#gacha-status");
+const galleryScrapReadout = document.querySelector("#gallery-scrap-readout");
+const navDexButton = document.querySelector("#nav-dex");
+const galleryView = document.querySelector("#gallery-view");
+const combatViewPieces = [...document.querySelectorAll(".combat-view-piece")];
 
 let matchId = "";
 let actionPending = false;
+let gachaRolling = false;
 
-const gachaController = new GachaController({
+const gachaController = new GachaController({ audioBridge });
+
+function handleScrapEarned({ amount, result }) {
+  if (amount <= 0) return;
+  gachaController.addScrap(amount);
+  if (gachaStatusValue) {
+    gachaStatusValue.textContent = "+" + amount + " SCRAP // " + String(result).toUpperCase();
+  }
+}
+
+const renderer = new CombatRenderer(document.querySelector("#combat-canvas"), {
   audioBridge,
-  cutInRenderer: renderer
+  onScrapEarned: handleScrapEarned
+});
+gachaController.setCutInRenderer(renderer);
+
+const gallery = new GalleryController({
+  root: galleryView,
+  storage: gachaController.storage,
+  storageKey: gachaController.storageKey,
+  onActiveBatterChange: (characterId) => {
+    try {
+      gachaController.setActiveBatter(characterId);
+    } catch {
+      return;
+    }
+    if (renderer.state) {
+      void renderer.setCombatInit(applyActiveRoster(renderer.state));
+    }
+  }
 });
 exposeGachaToWindow(gachaController);
 
 function updateGachaHud(status, result = null) {
-  if (!status) {
-    return;
-  }
-
-  if (gachaPullValue) {
-    gachaPullValue.textContent = `${status.pulls_since_UR}/80`;
-  }
-  if (gachaDexValue) {
-    gachaDexValue.textContent = String(status.inventory_size);
-  }
+  if (!status) return;
+  if (gachaPullValue) gachaPullValue.textContent = status.pulls_since_UR + "/80";
+  if (gachaScrapValue) gachaScrapValue.textContent = String(status.scavenger_scrap);
+  if (galleryScrapReadout) galleryScrapReadout.textContent = "SCRAP // " + status.scavenger_scrap;
+  if (gachaDexValue) gachaDexValue.textContent = String(status.inventory_size);
   if (gachaStatusValue) {
     gachaStatusValue.textContent = result
-      ? `${result.rarity} • ${result.character.canonical?.display_name || result.character.character_id}`
-      : (status.ready ? "READY" : "LOADING");
+      ? result.rarity + " • " + (result.character.canonical?.display_name || result.character.character_id)
+      : (status.ready ? (status.can_afford_recruit ? "READY" : "NEED SCRAP") : "LOADING");
+  }
+  if (gachaButton && !gachaRolling) {
+    gachaButton.disabled = !status.ready || !status.can_afford_recruit;
   }
 }
 
@@ -77,9 +103,52 @@ function setConnection(text, tone = "neutral") {
 
 function setLoading(visible, detail = "") {
   loadingState.hidden = !visible;
-  if (loadingDetail && detail) {
-    loadingDetail.textContent = detail;
-  }
+  if (loadingDetail && detail) loadingDetail.textContent = detail;
+}
+
+function activeAssetDescriptors(characterId) {
+  const id = String(characterId || "");
+  return {
+    card: { id, card_hd_url: "./assets/production/cards/" + id + "--normal.jpg", path: "./assets/production/cards/" + id + "--normal.jpg" },
+    sprite: { id, sprite_url: "./assets/production/sprites/" + id + "_idle.png", path: "./assets/production/sprites/" + id + "_idle.png" }
+  };
+}
+
+function applyActiveRoster(dto) {
+  const active = gallery.getActiveBatter();
+  if (!active) return dto;
+  const canonical = active.canonical || {};
+  const assets = activeAssetDescriptors(active.character_id);
+  const existingCards = Array.isArray(dto.assets?.cards) ? dto.assets.cards : [];
+  const existingSprites = Array.isArray(dto.assets?.sprites) ? dto.assets.sprites : [];
+  return {
+    ...dto,
+    batter: {
+      ...(dto.batter || {}),
+      id: active.character_id,
+      name: canonical.display_name || active.character_id,
+      card_id: active.character_id,
+      element: canonical.element,
+      rarity: canonical.rarity,
+      faction: canonical.faction,
+      position: canonical.position,
+      specialization: canonical.specialization,
+      stats: canonical.stats || {},
+      sprite_url: assets.sprite.sprite_url,
+      card_hd_url: assets.card.card_hd_url
+    },
+    active_batter: {
+      character_id: active.character_id,
+      stats: canonical.stats || {},
+      card_hd_url: assets.card.card_hd_url,
+      sprite_url: assets.sprite.sprite_url
+    },
+    assets: {
+      ...(dto.assets || {}),
+      cards: [...existingCards.filter((asset) => asset?.id !== active.character_id), assets.card],
+      sprites: [...existingSprites.filter((asset) => asset?.id !== active.character_id), assets.sprite]
+    }
+  };
 }
 
 function createDemoCombatInit() {
@@ -92,73 +161,34 @@ function createDemoCombatInit() {
       outs: 0,
       balls: 0,
       strikes: 0,
-      bases: {
-        first: false,
-        second: false,
-        third: false
-      }
+      bases: { first: false, second: false, third: false }
     },
-    home_team: {
-      id: "demo-home",
-      name: "Kurose Eleven",
-      score: 0
-    },
-    away_team: {
-      id: "demo-away",
-      name: "Hanamori Stars",
-      score: 0
-    },
+    home_team: { id: "demo-home", name: "Kurose Eleven", score: 0 },
+    away_team: { id: "demo-away", name: "Hanamori Stars", score: 0 },
     batter: {
-      id: "bw001",
-      name: "Aiko Hanamori",
-      card_id: "bw001",
-      element: "fire",
-      rarity: "R",
-      faction: "bosozoku_wild"
+      id: "bw001", name: "Aiko Hanamori", card_id: "bw001",
+      element: "fire", rarity: "R", faction: "bosozoku_wild"
     },
     pitcher: {
-      id: "bw002",
-      name: "Reina Kurose",
-      card_id: "bw002",
-      element: "ice",
-      rarity: "SSR",
-      faction: "shadow_magic"
+      id: "bw002", name: "Reina Kurose", card_id: "bw002",
+      element: "ice", rarity: "SSR", faction: "shadow_magic"
     },
     assets: {
       cards: [
-        {
-          id: "bw001",
-          card_hd_url: "./assets/production/cards/bw001--normal.jpg",
-          path: "./assets/production/cards/bw001--normal.jpg"
-        },
-        {
-          id: "bw002",
-          card_hd_url: "./assets/production/cards/bw002--normal.jpg",
-          path: "./assets/production/cards/bw002--normal.jpg"
-        }
+        { id: "bw001", card_hd_url: "./assets/production/cards/bw001--normal.jpg", path: "./assets/production/cards/bw001--normal.jpg" },
+        { id: "bw002", card_hd_url: "./assets/production/cards/bw002--normal.jpg", path: "./assets/production/cards/bw002--normal.jpg" }
       ],
       sprites: [
-        {
-          id: "bw001",
-          sprite_url: "./assets/production/sprites/bw001_idle.png",
-          path: "./assets/production/sprites/bw001_idle.png"
-        },
-        {
-          id: "bw002",
-          sprite_url: "./assets/production/sprites/bw002_idle.png",
-          path: "./assets/production/sprites/bw002_idle.png"
-        }
+        { id: "bw001", sprite_url: "./assets/production/sprites/bw001_idle.png", path: "./assets/production/sprites/bw001_idle.png" },
+        { id: "bw002", sprite_url: "./assets/production/sprites/bw002_idle.png", path: "./assets/production/sprites/bw002_idle.png" }
       ]
     }
   };
 }
 
 async function initializeDefaultDemo() {
-  if (api.configured() || renderer.matchReady) {
-    return false;
-  }
-
-  const demoInitDTO = createDemoCombatInit();
+  if (api.configured() || renderer.matchReady) return false;
+  const demoInitDTO = applyActiveRoster(createDemoCombatInit());
   await renderer.setCombatInit(demoInitDTO);
   updateHud(demoInitDTO);
   batButton.disabled = true;
@@ -179,13 +209,12 @@ function updateHud(state) {
   const awayTeam = state?.away_team?.name || "AWAY";
   const homeScore = Number(state?.home_team?.score ?? 0);
   const awayScore = Number(state?.away_team?.score ?? 0);
-
-  inningValue.textContent = half ? `${inning} • ${half}` : String(inning);
-  countValue.textContent = `${balls}-${strikes}`;
+  inningValue.textContent = half ? inning + " • " + half : String(inning);
+  countValue.textContent = balls + "-" + strikes;
   outsValue.textContent = String(outs);
   awayValue.textContent = awayTeam;
   homeValue.textContent = homeTeam;
-  scoreValue.textContent = `${awayScore} - ${homeScore}`;
+  scoreValue.textContent = awayScore + " - " + homeScore;
 }
 
 function setActionPending(pending) {
@@ -196,35 +225,24 @@ function setActionPending(pending) {
 
 async function syncCombat() {
   if (!api.configured()) {
-    setConnection(
-      telegram.isAvailable() ? "Telegram connected" : "Web client ready",
-      "ok"
-    );
+    setConnection(telegram.isAvailable() ? "Telegram connected" : "Web client ready", "ok");
     setLoading(true, "Waiting for an authoritative combat payload.");
     return;
   }
-
   if (!matchId) {
     setConnection("Match not selected");
     setLoading(true, "Open the Mini App with a match identifier.");
     return;
   }
-
   setConnection("Syncing match");
   setLoading(true, "Loading authoritative combat state.");
-
   try {
     const payload = await api.getCombatInit(matchId);
-    if (!isCombatInitDTO(payload)) {
-      throw new Error("Server returned an invalid CombatInitDTO");
-    }
-
-    await renderer.setCombatInit(payload);
-    updateHud(payload);
-    setConnection(
-      telegram.isAvailable() ? "Telegram connected" : "Web client ready",
-      "ok"
-    );
+    if (!isCombatInitDTO(payload)) throw new Error("Server returned an invalid CombatInitDTO");
+    const rosterPayload = applyActiveRoster(payload);
+    await renderer.setCombatInit(rosterPayload);
+    updateHud(rosterPayload);
+    setConnection(telegram.isAvailable() ? "Telegram connected" : "Web client ready", "ok");
     setLoading(false);
   } catch (error) {
     setConnection("Combat sync failed", "error");
@@ -233,22 +251,11 @@ async function syncCombat() {
 }
 
 async function sendAction(actionType) {
-  if (!api.configured() || !matchId || actionPending) {
-    return;
-  }
-
+  if (!api.configured() || !matchId || actionPending) return;
   setActionPending(true);
-
   try {
-    const payload = await api.submitTurnAction(matchId, {
-      type: actionType,
-      client_time_ms: Date.now()
-    });
-
-    if (!isTurnResultDTO(payload)) {
-      throw new Error("Server returned an invalid TurnResultDTO");
-    }
-
+    const payload = await api.submitTurnAction(matchId, { type: actionType, client_time_ms: Date.now() });
+    if (!isTurnResultDTO(payload)) throw new Error("Server returned an invalid TurnResultDTO");
     await renderer.applyTurnResult(payload);
     updateHud({
       ...renderer.state,
@@ -256,7 +263,7 @@ async function sendAction(actionType) {
       home_team: payload.home_team || renderer.state.home_team,
       away_team: payload.away_team || renderer.state.away_team
     });
-  } catch (error) {
+  } catch {
     setConnection("Action rejected", "error");
   } finally {
     setActionPending(false);
@@ -268,64 +275,77 @@ stealButton.addEventListener("click", () => sendAction("STEAL"));
 syncButton.addEventListener("click", syncCombat);
 
 gachaButton?.addEventListener("click", async () => {
-  if (!gachaController.ready) {
-    return;
-  }
-
+  if (!gachaController.ready || gachaRolling) return;
+  gachaRolling = true;
   gachaButton.disabled = true;
   try {
     const result = await gachaController.rollGacha();
+    gallery.refresh();
     updateGachaHud(gachaController.getStatus(), result);
   } catch (error) {
-    if (gachaStatusValue) {
-      gachaStatusValue.textContent = "ERROR";
-    }
-    setConnection("Gacha failed", "error");
+    if (gachaStatusValue) gachaStatusValue.textContent = String(error.message || error).toUpperCase();
+    setConnection("Gacha unavailable", "error");
   } finally {
-    gachaButton.disabled = false;
+    gachaRolling = false;
+    updateGachaHud(gachaController.getStatus());
   }
 });
 
 gachaController.subscribe((status, result) => {
   updateGachaHud(status, result);
+  gallery.refresh();
+});
+
+function setView(view) {
+  const showGallery = view === "gallery";
+  if (galleryView) galleryView.hidden = !showGallery;
+  for (const element of combatViewPieces) element.hidden = showGallery;
+  if (navDexButton) navDexButton.textContent = showGallery ? "VOLVER AL CAMPO" : "DEX / EQUIPO";
+  if (showGallery) gallery.refresh();
+}
+
+navDexButton?.addEventListener("click", () => {
+  setView(galleryView?.hidden ? "gallery" : "combat");
 });
 
 window.addEventListener("message", async (event) => {
   const payload = event.data;
-
   if (isCombatInitDTO(payload)) {
-    await renderer.setCombatInit(payload);
-    updateHud(payload);
+    const rosterPayload = applyActiveRoster(payload);
+    await renderer.setCombatInit(rosterPayload);
+    updateHud(rosterPayload);
     setConnection("Embedded match ready", "ok");
     setLoading(false);
     return;
   }
-
   if (isTurnResultDTO(payload)) {
     await renderer.applyTurnResult(payload);
-    updateHud({
-      ...renderer.state,
-      state: payload.state
-    });
+    updateHud({ ...renderer.state, state: payload.state });
     setConnection("Turn received", "ok");
     setLoading(false);
   }
 });
 
+async function initializeGallery() {
+  try {
+    await gallery.initialize();
+  } catch {
+    gallery.refresh();
+  }
+}
+
 async function bootstrap() {
   const query = new URLSearchParams(window.location.search);
   matchId = query.get("match") || "";
-
   try {
     await gachaController.initialize();
     updateGachaHud(gachaController.getStatus());
-  } catch (error) {
+    await initializeGallery();
+  } catch {
     gachaButton.disabled = true;
-    if (gachaStatusValue) {
-      gachaStatusValue.textContent = "OFFLINE";
-    }
+    if (gachaStatusValue) gachaStatusValue.textContent = "OFFLINE";
+    await initializeGallery();
   }
-
   if (!api.configured()) {
     try {
       await initializeDefaultDemo();
@@ -335,7 +355,6 @@ async function bootstrap() {
     }
     return;
   }
-
   syncCombat();
 }
 

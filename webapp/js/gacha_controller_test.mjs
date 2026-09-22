@@ -104,14 +104,21 @@ assert.deepEqual(controller.getStatus(), {
   next_pull: 1,
   hard_pity_in: 80,
   inventory_size: 0,
+  active_batter: null,
+  scavenger_scrap: 0,
+  recruit_cost: 1000,
+  can_afford_recruit: false,
   ready: true
 });
+controller.addScrap(3000);
 
 const first = await controller.rollGacha();
 assert.equal(first.pull_number, 1);
 assert.equal(first.rarity, "R");
 assert.equal(controller.getStatus().pulls_since_UR, 1);
 assert.equal(controller.getStatus().inventory_size, 1);
+assert.equal(controller.getStatus().scavenger_scrap, 2000);
+assert.equal(controller.getActiveBatter(), "bw017");
 assert.deepEqual(audioCalls, ["ui.confirm"]);
 assert.equal(rendererCalls.length, 0);
 
@@ -122,6 +129,7 @@ assert.equal(soft.soft_pity_active, true);
 
 controller.state.pulls_since_UR = 60;
 rngValues.push(0.99, 0);
+controller.addScrap(1000);
 const softPull = await controller.rollGacha();
 assert.equal(softPull.pull_number, 61);
 assert.equal(softPull.rarity, "UR");
@@ -132,6 +140,7 @@ assert.deepEqual(audioCalls.slice(-2), ["ui.confirm", "gacha.reveal_ssr"]);
 
 controller.state.pulls_since_UR = 79;
 rngValues.push(0);
+controller.addScrap(1000);
 const hard = await controller.rollGacha();
 assert.equal(hard.pull_number, 80);
 assert.equal(hard.rarity, "UR");
