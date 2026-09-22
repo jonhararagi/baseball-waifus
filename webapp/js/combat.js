@@ -225,6 +225,17 @@ export class CombatRenderer {
     this.hapticsBridge = hapticsBridge || null;
   }
 
+  async setArea(areaId) {
+    const theme = this.themeManager.setArea(areaId);
+    await this.themeManager.preloadTheme(theme);
+    this._renderStaticLayer();
+    return theme;
+  }
+
+  getAreaTheme() {
+    return this.themeManager.getCurrentTheme();
+  }
+
   setAudioBridge(audioBridge) {
     this.audioBridge = audioBridge || null;
   }
@@ -323,14 +334,13 @@ export class CombatRenderer {
     }
 
     this.state = cloneDTO(dto);
-    const theme = this.themeManager.setArea(
+    await this.setArea(
       dto.area_id
       || dto.area?.id
       || dto.theme_id
       || dto.theme?.id
       || "cyberpunk"
     );
-    await this.themeManager.preloadTheme(theme);
     this.lastTurn = null;
     this.matchReady = true;
     this.resultPulse = 0;
@@ -356,8 +366,7 @@ export class CombatRenderer {
     this.lastTurn = cloneDTO(dto);
     const areaId = dto.area_id || dto.area?.id || dto.theme_id || dto.theme?.id || dto.state?.area_id;
     if (areaId) {
-      const theme = this.themeManager.setArea(areaId);
-      await this.themeManager.preloadTheme(theme);
+      await this.setArea(areaId);
     }
     this.state = {
       ...this.state,
