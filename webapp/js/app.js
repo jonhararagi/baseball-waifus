@@ -224,6 +224,8 @@ function applyActiveRoster(dto) {
   const active = teamManager.getActiveWaifu();
   if (!active) return teamManager.applyCombatModifiers(dto);
   const canonical = active.canonical || {};
+  const progression = upgradeSystem.getProgression(active.character_id);
+  const effectiveStats = progression?.stats || canonical.stats || {};
   const assets = activeAssetDescriptors(active.character_id);
   const existingCards = Array.isArray(dto.assets?.cards) ? dto.assets.cards : [];
   const existingSprites = Array.isArray(dto.assets?.sprites) ? dto.assets.sprites : [];
@@ -239,13 +241,15 @@ function applyActiveRoster(dto) {
       faction: canonical.faction,
       position: canonical.position,
       specialization: canonical.specialization,
-      stats: canonical.stats || {},
+      stats: effectiveStats,
+      progression: progression || null,
       sprite_url: assets.sprite.sprite_url,
       card_hd_url: assets.card.card_hd_url
     },
     active_batter: {
       character_id: active.character_id,
-      stats: canonical.stats || {},
+      stats: effectiveStats,
+      progression: progression || null,
       card_hd_url: assets.card.card_hd_url,
       sprite_url: assets.sprite.sprite_url
     },
