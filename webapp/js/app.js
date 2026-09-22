@@ -12,6 +12,8 @@ import {
 } from "./gacha_controller.js";
 import { GalleryController } from "./gallery.js";
 import { createHapticsBridge } from "./haptics_bridge.js";
+import { buildSharePayload, shareWaifu } from "./share_bridge.js";
+import { requestScrapPurchase } from "./economy.js";
 
 function initializeTelegramNativeShell() {
   const webApp = window.Telegram?.WebApp || null;
@@ -53,6 +55,7 @@ const gachaScrapValue = document.querySelector("#gacha-scrap");
 const gachaDexValue = document.querySelector("#gacha-dex");
 const gachaStatusValue = document.querySelector("#gacha-status");
 const galleryScrapReadout = document.querySelector("#gallery-scrap-readout");
+const shareButton = document.querySelector("#action-share");
 const navDexButton = document.querySelector("#nav-dex");
 const galleryView = document.querySelector("#gallery-view");
 const combatShell = document.querySelector(".combat-shell");
@@ -61,6 +64,7 @@ const combatViewPieces = [...document.querySelectorAll(".combat-view-piece")];
 let matchId = "";
 let actionPending = false;
 let gachaRolling = false;
+let sharePayload = null;
 
 const gachaController = new GachaController({
   audioBridge,
@@ -87,6 +91,12 @@ const gallery = new GalleryController({
   root: galleryView,
   storage: gachaController.storage,
   storageKey: gachaController.storageKey,
+  onShare: (unit) => {
+    const payload = buildSharePayload(unit, null, window.location.href);
+    sharePayload = payload;
+    if (shareButton) shareButton.hidden = false;
+    void shareWaifu(payload, { webApp: telegramWebApp });
+  },
   onActiveBatterChange: (characterId) => {
     hapticsBridge.handleGameEvent("ui_confirm");
     try {
@@ -100,6 +110,11 @@ const gallery = new GalleryController({
   }
 });
 exposeGachaToWindow(gachaController);
+
+function setShareTarget(payload = null) {
+  sharePayload = payload?.message ? payload : null;
+  if (shareButton) shareButton.hidden = !sharePayload;
+}
 
 function updateGachaHud(status, result = null) {
   if (!status) return;
@@ -305,6 +320,11 @@ gachaButton?.addEventListener("click", async () => {
   gachaButton.disabled = true;
   try {
     const result = await gachaController.rollGacha();
+    setShareTarget(
+      result?.rarity === "SSR" || result?.rarity === "UR"
+        ? result.share
+        : null
+    );
     gallery.refresh();
     updateGachaHud(gachaController.getStatus(), result);
   } catch (error) {
@@ -317,9 +337,23 @@ gachaButton?.addEventListener("click", async () => {
 });
 
 gachaController.subscribe((status, result) => {
+  if (result && (result.rarity === "SSR" || result.rarity === "UR")) {
+    setShareTarget(result.share);
+  }
   updateGachaHud(status, result);
   gallery.refresh();
 });
+
+function setTelegramBackButton(visible) {
+  const backButton = telegramWebApp?.BackButton;
+  if (!backButton) return;
+  try {
+    if (visible) backButton.show?.();
+    else backButton.hide?.();
+  } catch {
+    // Browser/older Telegram clients may expose a partial BackButton surface.
+  }
+}
 
 function setView(view) {
   const showGallery = view === "gallery";
@@ -327,11 +361,54 @@ function setView(view) {
   if (combatShell) combatShell.hidden = showGallery;
   for (const element of combatViewPieces) element.hidden = showGallery;
   if (navDexButton) navDexButton.textContent = showGallery ? "VOLVER AL CAMPO" : "DEX / EQUIPO";
-  if (showGallery) gallery.refresh();
+  setTelegramBackButton(showGallery);
+  if (showGallery) {
+    setShareTarget(null);
+    gallery.refresh();
+  }
+}
+
+function handleTelegramBackButton() {
+  setView("combat");
 }
 
 navDexButton?.addEventListener("click", () => {
   setView(galleryView?.hidden ? "gallery" : "combat");
+});
+
+telegramWebApp?.BackButton?.onClick?.(handleTelegramBackButton);
+
+shareButton?.addEventListener("click", async () => {
+  if (!sharePayload) return;
+  const result = await shareWaifu(sharePayload, { webApp: telegramWebApp });
+  if (gachaStatusValue) {
+    gachaStatusValue.textContent = result.ok
+      ? "SHARED // " + sharePayload.rarity
+      : "SHARE UNAVAILABLE";
+  }
+});
+
+function syncAudioLifecycle() {
+  const hidden = document.visibilityState === "hidden";
+  const telegramCollapsed = Boolean(
+    telegramWebApp
+    && "isExpanded" in telegramWebApp
+    && telegramWebApp.isExpanded === false
+  );
+  if (hidden || telegramCollapsed) {
+    void audioBridge.suspend?.();
+  } else {
+    void audioBridge.resume?.();
+  }
+}
+
+document.addEventListener("visibilitychange", syncAudioLifecycle);
+telegramWebApp?.onEvent?.("viewportChanged", syncAudioLifecycle);
+syncAudioLifecycle();
+
+window.requestScrapPurchase = (amount, options = {}) => requestScrapPurchase(amount, {
+  webApp: telegramWebApp,
+  ...options
 });
 
 window.addEventListener("message", async (event) => {
