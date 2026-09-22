@@ -382,11 +382,7 @@ export class CombatRenderer {
     if (this.cutinRoot?.classList.contains("visible")) {
       const age = performance.now() - this.cutInStartedAt;
       if (age >= this.cutInDurationMs) {
-        if (dto.animation?.event === "CUT_IN" || dto.animation?.camera_shake === true) {
-      this._startCameraShake();
-    }
-
-    this.cutinRoot.classList.remove("visible");
+        this.cutinRoot.classList.remove("visible");
       }
     }
   }
@@ -990,6 +986,10 @@ export class CombatRenderer {
     } else {
       this.cutinPortrait.removeAttribute("src");
       this.cutinPortrait.style.opacity = "0";
+    }
+
+    if (dto.animation?.event === "CUT_IN" || dto.animation?.camera_shake === true) {
+      this._startCameraShake();
     }
 
     this.cutinRoot.classList.remove("visible");
