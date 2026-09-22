@@ -1,4 +1,5 @@
 import { isCombatInitDTO, isTurnResultDTO } from "./api.js";
+import { AreaThemeManager } from "./area_theme_manager.js";
 
 const RESULT_COLORS = {
   STRIKE: "#8ca8ff",
@@ -177,6 +178,7 @@ export class CombatRenderer {
     this.audioBridge = audioBridge;
     this.onScrapEarned = onScrapEarned;
     this.hapticsBridge = hapticsBridge || null;
+    this.themeManager = new AreaThemeManager("cyberpunk");
 
     this.state = null;
     this.lastTurn = null;
@@ -321,6 +323,14 @@ export class CombatRenderer {
     }
 
     this.state = cloneDTO(dto);
+    const theme = this.themeManager.setArea(
+      dto.area_id
+      || dto.area?.id
+      || dto.theme_id
+      || dto.theme?.id
+      || "cyberpunk"
+    );
+    await this.themeManager.preloadTheme(theme);
     this.lastTurn = null;
     this.matchReady = true;
     this.resultPulse = 0;
@@ -344,11 +354,17 @@ export class CombatRenderer {
     }
 
     this.lastTurn = cloneDTO(dto);
+    const areaId = dto.area_id || dto.area?.id || dto.theme_id || dto.theme?.id || dto.state?.area_id;
+    if (areaId) {
+      const theme = this.themeManager.setArea(areaId);
+      await this.themeManager.preloadTheme(theme);
+    }
     this.state = {
       ...this.state,
       state: cloneDTO(dto.state),
       home_team: dto.home_team || this.state.home_team,
-      away_team: dto.away_team || this.state.away_team
+      away_team: dto.away_team || this.state.away_team,
+      ...(areaId ? { area_id: areaId } : {})
     };
 
     this._awardScrap(dto);
@@ -553,15 +569,11 @@ export class CombatRenderer {
   }
 
   _drawBackground(ctx, w, h) {
-    const gradient = ctx.createLinearGradient(0, 0, 0, h);
-    gradient.addColorStop(0, "#0b1020");
-    gradient.addColorStop(0.55, "#111934");
-    gradient.addColorStop(1, "#071019");
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, w, h);
+    this.themeManager.renderBackground(ctx, w, h, 0);
   }
 
   _drawStadium(ctx, w, h) {
+    this.themeManager.renderGround(ctx, w, h, 0);
     ctx.save();
     ctx.globalAlpha = 0.2;
     ctx.strokeStyle = "#7f8db1";
@@ -628,7 +640,14 @@ export class CombatRenderer {
     const pitcher = this.state.pitcher || {};
 
     this._drawPlayerMarker(ctx, batter, w * 0.2, h * 0.72, "#ffcd66");
-    this._drawPlayerMarker(ctx, pitcher, w * 0.8, h * 0.26, "#65d8ff");
+    this.themeManager.renderPitcher(
+      ctx,
+      w * 0.8,
+      h * 0.26,
+      clamp(w * 0.16, 64, 104),
+      clamp(h * 0.22, 96, 138)
+    );
+    this._drawStrikeZone(ctx, w, h);
 
     ctx.font = "800 11px system-ui, sans-serif";
     ctx.fillStyle = "#dfe7f6";
@@ -692,6 +711,27 @@ export class CombatRenderer {
       ctx.stroke();
     }
 
+    ctx.restore();
+  }
+
+  _drawStrikeZone(ctx, w, h) {
+    const color = this.themeManager.getStrikeZoneColor();
+    const x = w * 0.35;
+    const y = h * 0.39;
+    const zoneWidth = w * 0.3;
+    const zoneHeight = h * 0.22;
+
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 10;
+    ctx.globalAlpha = 0.78;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x, y, zoneWidth, zoneHeight);
+
+    ctx.globalAlpha = 0.16;
+    ctx.fillStyle = color;
+    ctx.fillRect(x, y, zoneWidth, zoneHeight);
     ctx.restore();
   }
 
@@ -891,7 +931,7 @@ export class CombatRenderer {
         age: 0,
         life: 0.24 + Math.random() * 0.22,
         size: 1.5 + Math.random() * 2.5,
-        color: colors[index % colors.length]
+        color: this.themeManager.getParticleColor()
       });
     }
   }
