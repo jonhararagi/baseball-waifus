@@ -182,12 +182,14 @@ export class GachaEngine {
       const guaranteed = pickByRarity(normalizedPool, "SR", this.rng);
       if (guaranteed) {
         const previous = results[replacementIndex];
+        const guaranteedId = String(guaranteed.character_id || guaranteed.id || "");
+        const guaranteedDuplicate = Boolean(inventory?.[guaranteedId]);
         results[replacementIndex] = {
           rarity: "SR",
           character: guaranteed,
-          duplicate: Boolean(inventory?.[String(guaranteed.character_id || guaranteed.id || "")]),
+          duplicate: guaranteedDuplicate,
           pity_triggered: "TEN_PULL_SR_GUARANTEE",
-          reward: duplicate
+          reward: guaranteedDuplicate
             ? duplicateReward("SR")
             : { fragments: 0, scrap: 0 },
           pity: this.getPityState()
