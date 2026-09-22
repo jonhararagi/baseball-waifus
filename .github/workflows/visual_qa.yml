@@ -538,7 +538,7 @@ jobs:
         run: |
           set -euo pipefail
           for file in             webapp/js/audio_engine.js             webapp/js/upgrade_system.js             webapp/js/team_manager.js             webapp/js/gacha_controller.js             webapp/js/waifu_dex.js             webapp/js/gallery.js             webapp/js/combat.js             webapp/js/app.js; do
-            node --check "$file"
+            node --experimental-default-type=module --check "$file"
           done
       - name: P8 audio engine test
         run: node webapp/js/audio_engine_test.mjs
