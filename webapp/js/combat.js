@@ -137,7 +137,8 @@ export class CombatRenderer {
   constructor(canvas, {
     cutInRoot = document.querySelector("#cutin"),
     manifestUrl = DEFAULT_MANIFEST_URL,
-    onState = null
+    onState = null,
+    audioBridge = null
   } = {}) {
     if (!(canvas instanceof HTMLCanvasElement)) {
       throw new TypeError("CombatRenderer requires a canvas element");
@@ -163,6 +164,8 @@ export class CombatRenderer {
     this.assetBank = new AssetBank();
     this.manifestUrl = manifestUrl;
     this.onState = onState;
+    this.audioBridge = audioBridge;
+
 
     this.state = null;
     this.lastTurn = null;
@@ -196,6 +199,17 @@ export class CombatRenderer {
 
     this.resize();
     this.frameHandle = requestAnimationFrame((time) => this.frame(time));
+  }
+
+  setAudioBridge(audioBridge) {
+    this.audioBridge = audioBridge || null;
+  }
+
+  _playAudio(soundId, options = {}) {
+    if (!this.audioBridge || typeof this.audioBridge.play !== "function") {
+      return false;
+    }
+    return Boolean(this.audioBridge.play(soundId, options));
   }
 
   async initialize() {
