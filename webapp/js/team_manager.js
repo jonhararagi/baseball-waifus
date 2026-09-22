@@ -34,6 +34,10 @@ export class TeamManager {
     this.state = this._load();
     this._sanitizeState();
   }
+  sync() {
+    this._sanitizeState();
+    return this.getRoster();
+  }
   getRoster() {
     return { active_batter: this.state.active_batter, supports: [...this.state.supports] };
   }
