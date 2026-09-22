@@ -1,3 +1,4 @@
+import { buildSharePayload } from "./share_bridge.js";
 const DEFAULT_SCHEMA_URL = "./data/game_schemas_recycled.json";
 const DEFAULT_QUEUE_URL = "./data/characters_queue.json";
 const DEFAULT_STORAGE_KEY = "baseball_waifus_gacha_v1";
@@ -327,6 +328,16 @@ export class GachaController {
     return this.state.active_batter || null;
   }
 
+  getSharePayload(characterId, rarityOverride = null) {
+    const character = this.getCharacter(characterId);
+    if (!character) return null;
+    return buildSharePayload(
+      character,
+      rarityOverride || character.canonical?.rarity || "R",
+      typeof window !== "undefined" ? window.location.href : null
+    );
+  }
+
   setActiveBatter(characterId) {
     const id = String(characterId || "");
     if (!id || !this.state.inventory[id]) throw new Error("Active batter must be unlocked in the Waifu Dex");
@@ -407,7 +418,8 @@ export class GachaController {
       pulls_since_UR: this.state.pulls_since_UR,
       soft_pity_active: probabilities.soft_pity_active,
       hard_pity_triggered: hardPityTriggered,
-      probabilities: clone(probabilities)
+      probabilities: clone(probabilities),
+      share: this.getSharePayload(characterId, rarity)
     };
 
     if (hardPityTriggered) {
