@@ -208,14 +208,20 @@ export class WaifuDex {
       ? "DUPLICATES ×" + Math.max(1, Number(this.state.inventory[id]?.duplicate_count) || 1)
       : "LOCKED PROFILE";
 
-    const stats = deriveStats(unit);
+    const progression = unlocked ? this.progressionProvider?.(id) : null;
+    const stats = progression?.stats || deriveStats(unit);
+    const progressionLabel = document.createElement("div");
+    progressionLabel.className = "dex-position";
+    progressionLabel.textContent = unlocked && progression
+      ? "LVL " + String(progression.level).padStart(2, "0") + " • STAR " + progression.star_rank
+      : "PROGRESSION // LOCKED";
     const statLine = document.createElement("div");
     statLine.className = "dex-position";
     statLine.textContent = unlocked
       ? "PWR " + stats.swingPower + " • TWIN " + stats.timingWindow.toFixed(2) + " • SCRAP ×" + stats.scrapMultiplier.toFixed(2)
       : "ACCESS // LOCKED";
 
-    meta.append(name, rarity, roleLabel, factionLabel, areaLabel, duplicate, statLine);
+    meta.append(name, rarity, roleLabel, factionLabel, areaLabel, duplicate, progressionLabel, statLine);
 
     if (unlocked) {
       const actions = document.createElement("div");
