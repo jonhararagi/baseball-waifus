@@ -1,5 +1,13 @@
 extends Node
 
+const CHARACTER_FACTIONS := {
+	"bosozoku_wild": true,
+	"cyber_tech": true,
+	"idol_sparkle": true,
+	"tactical_milspec": true,
+	"shadow_magic": true
+}
+
 const CATALOG_PATH := "res://game/characters/character_archetypes.json"
 
 func _ready() -> void:
@@ -25,6 +33,7 @@ func _ready() -> void:
 		assert(str(identity.get("archetype", "")) != "", "Missing archetype: " + id)
 		assert(identity.get("style_tags", []) is Array, "Style tags must be an array: " + id)
 		assert(str(identity.get("play_identity", "")) != "", "Missing play identity: " + id)
+		assert(CHARACTER_FACTIONS.has(str(identity.get("faction", ""))), "Missing or invalid faction: " + id)
 		assert(identity.get("skill_roles", []) is Array and identity.get("skill_roles", []).size() >= 1, "Missing skill roles: " + id)
 
 		var rarity := str(character.get("rarity", "R"))
