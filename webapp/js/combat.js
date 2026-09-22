@@ -180,6 +180,8 @@ export class CombatRenderer {
     this.cameraShakeDuration = 0.15;
     this.impactParticles = [];
     this.maxImpactParticles = 28;
+    this.zanTimer = 0;
+    this.zanDuration = 0.34;
     this.ballTrail = [];
     this.staticCanvas = document.createElement("canvas");
     this.staticCtx = this.staticCanvas.getContext("2d", { alpha: false });
@@ -358,6 +360,7 @@ export class CombatRenderer {
     this.resultPulse = Math.max(0, this.resultPulse - delta * 2.1);
     this.impactTimer = Math.max(0, this.impactTimer - delta);
     this.cameraShakeTimer = Math.max(0, this.cameraShakeTimer - delta);
+    this.zanTimer = Math.max(0, this.zanTimer - delta);
 
     for (const particle of this.impactParticles) {
       particle.age += delta;
@@ -445,6 +448,10 @@ export class CombatRenderer {
 
     if (this.resultPulse > 0 && this.lastTurn) {
       this._drawResultPulse(target, w, h);
+    }
+
+    if (this.zanTimer > 0) {
+      this._drawZanSlash(target, w, h);
     }
 
     target.restore();
@@ -853,6 +860,48 @@ export class CombatRenderer {
     ctx.restore();
   }
 
+
+  _triggerZanSlash() {
+    this.zanTimer = Math.max(this.zanTimer, this.zanDuration);
+  }
+
+  _drawZanSlash(ctx, w, h) {
+    const strength = clamp(this.zanTimer / this.zanDuration, 0, 1);
+    const fade = this.zanTimer < 0.11
+      ? clamp(this.zanTimer / 0.11, 0, 1)
+      : 1;
+
+    ctx.save();
+    ctx.translate(w * 0.5, h * 0.52);
+    ctx.rotate(-Math.PI / 3);
+    ctx.globalCompositeOperation = "lighter";
+    ctx.globalAlpha = fade * 0.9;
+
+    const slashLength = Math.hypot(w, h) * 1.25;
+    const slashHeight = 5 + strength * 10;
+    const gradient = ctx.createLinearGradient(-slashLength * 0.5, 0, slashLength * 0.5, 0);
+    gradient.addColorStop(0, "rgba(0,240,255,0)");
+    gradient.addColorStop(0.16, "rgba(0,240,255,0.65)");
+    gradient.addColorStop(0.5, "rgba(255,255,255,0.98)");
+    gradient.addColorStop(0.78, "rgba(255,0,85,0.7)");
+    gradient.addColorStop(1, "rgba(255,0,85,0)");
+
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = "#00f0ff";
+    ctx.fillStyle = gradient;
+    ctx.fillRect(-slashLength * 0.5, -slashHeight * 0.5, slashLength, slashHeight);
+
+    ctx.globalAlpha = fade * 0.96;
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = "#ff0055";
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = "900 46px system-ui, sans-serif";
+    ctx.fillText("ZAN!", 0, -20);
+    ctx.restore();
+  }
+
   _triggerAudioForTurn(dto) {
     const result = String(dto?.result || "").toUpperCase();
     const event = String(
@@ -918,15 +967,24 @@ export class CombatRenderer {
       ? 0.42
       : (isSwingEvent || hitResults.has(result) || runResults.has(result) || dangerResults.has(result) ? 0.24 : 0);
 
-    const criticalImpact = superResults.has(result);
+    const criticalImpact = Boolean(
+      dto?.critical === true
+      || dto?.animation?.critical === true
+      || result === "HOME_RUN"
+    );
+    const cutInImpact = dto?.animation?.event === "CUT_IN";
     const hasImpactPresentation = Boolean(
       dto?.animation?.camera_shake === true
-      || dto?.animation?.event === "CUT_IN"
+      || cutInImpact
       || criticalImpact
     );
 
     if (hasImpactPresentation) {
       this._startCameraShake();
+    }
+
+    if (criticalImpact || cutInImpact) {
+      this._triggerZanSlash();
     }
 
     if (hitResults.has(result) || superResults.has(result) || isSwingEvent) {

@@ -5,15 +5,13 @@ import {
   isTurnResultDTO
 } from "./api.js";
 import { CombatRenderer } from "./combat.js";
-import { AudioBridge, WebAudioSynthAdapter } from "./audio_bridge.js";
+import { createAudioBridge } from "./audio.js";
 
 const telegram = new TelegramBridge();
 telegram.init();
 
 const api = new BaseballWaifusApi({ telegramBridge: telegram });
-const audioBridge = new AudioBridge({
-  adapter: new WebAudioSynthAdapter()
-});
+const audioBridge = createAudioBridge();
 const renderer = new CombatRenderer(document.querySelector("#combat-canvas"), {
   audioBridge
 });

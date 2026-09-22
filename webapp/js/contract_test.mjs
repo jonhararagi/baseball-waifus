@@ -108,15 +108,22 @@ assert.equal(
 );
 
 const audioBridgeJs = await fs.readFile(new URL("./audio_bridge.js", import.meta.url), "utf8");
+const audioJs = await fs.readFile(new URL("./audio.js", import.meta.url), "utf8");
 assert.match(audioBridgeJs, /class WebAudioSynthAdapter/);
 assert.match(audioBridgeJs, /function playScavengerSFX/);
 assert.match(audioBridgeJs, /"bat\.swing"/);
 assert.match(audioBridgeJs, /"result\.home_run"/);
 assert.doesNotMatch(audioBridgeJs, /Tone\.js|zzfx|jsfxr/i);
+assert.match(audioJs, /export function createAudioBridge/);
+assert.match(audioJs, /AudioBridge/);
 
 assert.match(combatJs, /cameraShakeTimer/);
+assert.match(combatJs, /cameraShakeDuration = 0\.15/);
 assert.match(combatJs, /Math\.random\(\) \* 6 - 3/);
 assert.match(combatJs, /globalCompositeOperation = "lighter"/);
 assert.match(combatJs, /_drawNeonParticles\(target\)/);
+assert.match(combatJs, /_triggerZanSlash\(\)/);
+assert.match(combatJs, /rotate\(-Math\.PI \/ 3\)/);
+assert.match(combatJs, /fillText\("ZAN!", 0, -20\)/);
 
 console.log("[webapp-contract] audio and impact presentation contract passed");

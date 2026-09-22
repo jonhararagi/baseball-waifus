@@ -8377,3 +8377,49 @@ La ejecución CI de `deploy-pages.yml` queda como validación final de sintaxis,
 ### Avance aproximado
 
 **≈96% estructural del prototipo.** El porcentaje no representa audio final, arte final completo, backend comercial ni validación física Android.
+
+
+## Revisión 80: Scavenger Map, fachada AudioBridge y corte de impacto ZAN
+
+**Fecha:** 2026-09-21  
+**Tipo:** Frontend web auxiliar / audio / VFX / CI-CD / procedencia de recursos.
+
+### Implementación
+
+Creados:
+- docs/scavenger_map.md
+- webapp/js/audio.js
+
+Modificados:
+- docs/audio_scavenger_stack.md
+- webapp/js/app.js
+- webapp/js/audio_bridge_test.mjs
+- webapp/js/contract_test.mjs
+- webapp/js/combat.js
+- .github/workflows/deploy-pages.yml
+- docs/bitacora.md
+
+### Decisiones
+
+1. AudioBridge.play(soundId, options) continúa como contrato público.
+2. audio.js es una fachada; audio_bridge.js conserva la implementación interna existente.
+3. Stack #1 utiliza WebAudio API con envolvente tipo ZzFX y cero dependencias externas. No se incorpora la librería ZzFX.
+4. CombatRenderer añade ZAN! en un corte diagonal de 60 grados con composición lighter. Es presentación posterior al resultado.
+5. El shake se conserva en 150 ms para impactos críticos y Cut-In.
+6. Las partículas permanecen acotadas y no participan en gameplay.
+7. Las canteras sin licencia verificable quedan en cuarentena y no se copian al runtime.
+8. El workflow de GitHub Pages continúa desplegando automáticamente cambios de webapp en main.
+
+### QA
+
+Se ampliaron los contratos para verificar audio.js, sintaxis, la integración de la fachada, shake de 150 ms, partículas aditivas y corte ZAN.
+
+No se declara ejecución local del navegador antes del commit. La validación Node y el despliegue quedan delegados al workflow de GitHub Actions después del push.
+
+### Estado
+
+Implementado sin modificar gameplay, IA, economía, resolvers ni autoridad deportiva.
+
+### Porcentaje aproximado
+
+**≈96% estructural del prototipo.**

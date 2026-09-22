@@ -3,7 +3,7 @@ import {
   AudioBridge,
   WebAudioSynthAdapter,
   playScavengerSFX
-} from "./audio_bridge.js";
+} from "./audio.js";
 
 const calls = [];
 const bridge = new AudioBridge({
@@ -105,4 +105,14 @@ assert.equal(adapter.play("result.home_run"), true);
 assert.equal(oscillatorState.waveform, "sawtooth");
 assert.equal(oscillatorState.frequency.start, 880);
 
-console.log("[audio-bridge] synthesized SFX validation passed");
+const facade = (await import("./audio.js")).createAudioBridge({
+  adapter: {
+    play(soundId) {
+      return soundId === "bat.swing";
+    }
+  }
+});
+assert.equal(facade.play("bat.swing"), true);
+assert.equal(facade.play("unknown.sound"), false);
+
+console.log("[audio-bridge] synthesized SFX and facade validation passed");

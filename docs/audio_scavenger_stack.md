@@ -113,3 +113,17 @@ El coste de código externo es **0 KB**. El `AudioContext` se crea de forma dife
 ### Licencia
 
 No se incorpora código de terceros. La implementación es propia sobre API estándar del navegador.
+
+
+## Stack #1 reforzado: fachada pública
+
+Se mantiene Stack #1 como WebAudio API / ZzFX Synthesizer en el sentido de un sintetizador nativo con envolventes cortas y coste externo cero. No se incorpora el paquete ZzFX ni código externo.
+
+Entrada pública:
+- webapp/js/audio.js expone AudioBridge, WebAudioSynthAdapter, playScavengerSFX y createAudioBridge().
+- webapp/js/app.js consume la fachada para evitar acoplar la aplicación al adapter interno.
+- webapp/js/audio_bridge.js continúa como implementación inferior compatible con integraciones anteriores.
+
+Los IDs de voz voice.comment_01 ... voice.comment_10 quedan definidos como contrato futuro. No se incorporan clips de anime, canciones de fans ni voces extraídas sin derechos explícitos de redistribución.
+
+Regla de seguridad: los eventos de audio son un efecto posterior al resultado. No pueden crear, cambiar, retrasar ni repetir una resolución deportiva.
