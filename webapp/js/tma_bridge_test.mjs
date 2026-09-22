@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { createHapticsBridge } from "./haptics_bridge.js";
 import { GachaController } from "./gacha_controller.js";
+import { buildShareMessage, buildSharePayload, shareWaifu } from "./share_bridge.js";
 
 const calls = [];
 const haptics = createHapticsBridge({
@@ -23,6 +24,39 @@ assert.deepEqual(calls, [
   ["notification", "error"]
 ]);
 assert.equal(createHapticsBridge(null).handleGameEvent("home_run"), false);
+
+const shareCharacter = {
+  character_id: "bw024",
+  canonical: { display_name: "Nene Kagetsu", rarity: "UR" }
+};
+const expectedShareMessage = "¡Acabo de reclutar a Nene Kagetsu (UR) en Baseball Waifus! ⚾✨ ¿Puedes superar mi equipo?";
+assert.equal(buildShareMessage(shareCharacter), expectedShareMessage);
+const sharePayload = buildSharePayload(shareCharacter, "UR", "https://baseball-waifus.example");
+assert.equal(sharePayload.message, expectedShareMessage);
+assert.match(sharePayload.telegram_url, /Nene%20Kagetsu/);
+
+const shareCalls = [];
+const telegramShare = {
+  switchInlineQuery(query) { shareCalls.push(query); }
+};
+const shareResult = await shareWaifu(sharePayload, { webApp: telegramShare });
+assert.equal(shareResult.ok, true);
+assert.equal(shareResult.mode, "telegram_inline_query");
+assert.deepEqual(shareCalls, [expectedShareMessage]);
+
+const clipboardWrites = [];
+const browserShareResult = await shareWaifu(sharePayload, {
+  webApp: null,
+  navigatorRef: {
+    clipboard: {
+      async writeText(value) { clipboardWrites.push(value); }
+    }
+  }
+});
+assert.equal(browserShareResult.ok, true);
+assert.equal(browserShareResult.mode, "clipboard");
+assert.deepEqual(clipboardWrites, [expectedShareMessage]);
+
 
 const schema = {
   gacha: {
