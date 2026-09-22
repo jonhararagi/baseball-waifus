@@ -5,7 +5,7 @@ import {
   isTurnResultDTO
 } from "./api.js";
 import { CombatRenderer } from "./combat.js";
-import { createAudioBridge } from "./audio.js";
+import { AudioEngine } from "./audio_engine.js";
 import {
   GachaController,
   exposeGachaToWindow
@@ -15,6 +15,8 @@ import { createHapticsBridge } from "./haptics_bridge.js";
 import { buildSharePayload, shareWaifu } from "./share_bridge.js";
 import { requestScrapPurchase } from "./economy.js";
 import { CardRenderer } from "./card_renderer.js";
+import { UpgradeSystem } from "./upgrade_system.js";
+import { TeamManager } from "./team_manager.js";
 
 function initializeTelegramNativeShell() {
   const webApp = window.Telegram?.WebApp || null;
@@ -36,7 +38,7 @@ telegram.init();
 const api = new BaseballWaifusApi({ telegramBridge: telegram });
 const hapticsBridge = createHapticsBridge(telegramWebApp);
 const cloudStorage = telegramWebApp?.CloudStorage || null;
-const audioBridge = createAudioBridge();
+const audioBridge = new AudioEngine();
 
 const connectionState = document.querySelector("#connection-state");
 const loadingState = document.querySelector("#loading-state");
@@ -55,6 +57,9 @@ const gachaPullValue = document.querySelector("#gacha-pull");
 const gachaScrapValue = document.querySelector("#gacha-scrap");
 const gachaDexValue = document.querySelector("#gacha-dex");
 const gachaStatusValue = document.querySelector("#gacha-status");
+const gachaFragmentsValue = document.querySelector("#gacha-fragments");
+const audioMuteButton = document.querySelector("#audio-mute");
+const audioVolumeSlider = document.querySelector("#audio-volume");
 const galleryScrapReadout = document.querySelector("#gallery-scrap-readout");
 const shareButton = document.querySelector("#action-share");
 const navDexButton = document.querySelector("#nav-dex");
@@ -77,6 +82,25 @@ const gachaController = new GachaController({
   audioBridge,
   hapticsBridge,
   cloudStorage
+});
+
+const teamManager = new TeamManager({
+  storage: gachaController.storage,
+  getCharacter: (id) => gachaController.getCharacter(id),
+  getInventory: () => gachaController.getState().inventory,
+  getExternalActive: () => gachaController.getActiveBatter(),
+  persistActiveBatter: (id) => gachaController.setActiveBatter(id)
+});
+
+const upgradeSystem = new UpgradeSystem({
+  storage: gachaController.storage,
+  getWaifu: (id) => gachaController.getCharacter(id),
+  getInventoryEntry: (id) => gachaController.getState().inventory?.[id] || null,
+  getCurrencies: () => ({
+    scrap: gachaController.getScavengerScrap(),
+    fragments: gachaController.getFragments()
+  }),
+  consumeCurrencies: (cost) => gachaController.spendScrapAndFragments(cost)
 });
 
 function handleScrapEarned({ amount, result }) {
@@ -104,6 +128,7 @@ const gallery = new GalleryController({
   root: galleryView,
   storage: gachaController.storage,
   storageKey: gachaController.storageKey,
+  progressionProvider: (characterId) => upgradeSystem.getProgression(characterId),
   onInspect: (unit) => {
     if (dexInspector) dexInspector.hidden = false;
     if (dexInspectorName) {
@@ -125,7 +150,7 @@ const gallery = new GalleryController({
   onActiveBatterChange: (characterId) => {
     hapticsBridge.handleGameEvent("ui_confirm");
     try {
-      gachaController.setActiveBatter(characterId);
+      teamManager.setActiveBatter(characterId);
     } catch {
       return;
     }
@@ -135,6 +160,21 @@ const gallery = new GalleryController({
   }
 });
 exposeGachaToWindow(gachaController);
+window.BaseballWaifusTeam = {
+  getRoster: () => teamManager.getRoster(),
+  getActiveBatter: () => teamManager.getActiveWaifu(),
+  setActiveBatter: (id) => teamManager.setActiveBatter(id),
+  setSupport: (slot, id) => teamManager.setSupport(slot, id),
+  clearSupport: (slot) => teamManager.clearSupport(slot),
+  getTimingWindowMultiplier: (area) => teamManager.getTimingWindowMultiplier(area)
+};
+window.BaseballWaifusUpgrades = {
+  getProgression: (id) => upgradeSystem.getProgression(id),
+  getUpgradeCost: (id) => upgradeSystem.getUpgradeCost(id),
+  canUpgrade: (id) => upgradeSystem.canUpgrade(id),
+  upgradeWaifu: (id) => upgradeSystem.upgradeWaifu(id),
+  getAllProgression: () => upgradeSystem.getAllProgression()
+};
 
 function setShareTarget(payload = null) {
   sharePayload = payload?.message ? payload : null;
@@ -145,6 +185,7 @@ function updateGachaHud(status, result = null) {
   if (!status) return;
   if (gachaPullValue) gachaPullValue.textContent = status.pulls_since_UR + "/80";
   if (gachaScrapValue) gachaScrapValue.textContent = String(status.scavenger_scrap);
+  if (gachaFragmentsValue) gachaFragmentsValue.textContent = String(status.fragments ?? gachaController.getFragments());
   if (galleryScrapReadout) galleryScrapReadout.textContent = "SCRAP // " + status.scavenger_scrap;
   if (gachaDexValue) gachaDexValue.textContent = String(status.inventory_size);
   if (gachaStatusValue) {
@@ -180,13 +221,13 @@ function activeAssetDescriptors(characterId) {
 }
 
 function applyActiveRoster(dto) {
-  const active = gallery.getActiveBatter();
-  if (!active) return dto;
+  const active = teamManager.getActiveWaifu();
+  if (!active) return teamManager.applyCombatModifiers(dto);
   const canonical = active.canonical || {};
   const assets = activeAssetDescriptors(active.character_id);
   const existingCards = Array.isArray(dto.assets?.cards) ? dto.assets.cards : [];
   const existingSprites = Array.isArray(dto.assets?.sprites) ? dto.assets.sprites : [];
-  return {
+  return teamManager.applyCombatModifiers({
     ...dto,
     batter: {
       ...(dto.batter || {}),
@@ -213,7 +254,7 @@ function applyActiveRoster(dto) {
       cards: [...existingCards.filter((asset) => asset?.id !== active.character_id), assets.card],
       sprites: [...existingSprites.filter((asset) => asset?.id !== active.character_id), assets.sprite]
     }
-  };
+  });
 }
 
 function createDemoCombatInit() {
@@ -432,6 +473,24 @@ shareButton?.addEventListener("click", async () => {
   }
 });
 
+function syncAudioControls() {
+  const settings = audioBridge.getSettings();
+  if (audioVolumeSlider) audioVolumeSlider.value = String(settings.volume);
+  if (audioMuteButton) {
+    audioMuteButton.textContent = settings.muted ? "AUDIO // OFF" : "AUDIO // ON";
+    audioMuteButton.setAttribute("aria-pressed", settings.muted ? "true" : "false");
+  }
+}
+audioVolumeSlider?.addEventListener("input", () => {
+  audioBridge.setVolume(audioVolumeSlider.value);
+  syncAudioControls();
+});
+audioMuteButton?.addEventListener("click", () => {
+  audioBridge.toggleMute();
+  syncAudioControls();
+});
+syncAudioControls();
+
 function syncAudioLifecycle() {
   const hidden = document.visibilityState === "hidden";
   const telegramCollapsed = Boolean(
@@ -486,6 +545,7 @@ async function bootstrap() {
   matchId = query.get("match") || "";
   try {
     await gachaController.initialize();
+    teamManager.sync();
     updateGachaHud(gachaController.getStatus());
     await initializeGallery();
   } catch {
