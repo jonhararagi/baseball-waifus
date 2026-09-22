@@ -37,6 +37,7 @@ const gachaStatusValue = document.querySelector("#gacha-status");
 const galleryScrapReadout = document.querySelector("#gallery-scrap-readout");
 const navDexButton = document.querySelector("#nav-dex");
 const galleryView = document.querySelector("#gallery-view");
+const combatShell = document.querySelector(".combat-shell");
 const combatViewPieces = [...document.querySelectorAll(".combat-view-piece")];
 
 let matchId = "";
@@ -299,6 +300,7 @@ gachaController.subscribe((status, result) => {
 function setView(view) {
   const showGallery = view === "gallery";
   if (galleryView) galleryView.hidden = !showGallery;
+  if (combatShell) combatShell.hidden = showGallery;
   for (const element of combatViewPieces) element.hidden = showGallery;
   if (navDexButton) navDexButton.textContent = showGallery ? "VOLVER AL CAMPO" : "DEX / EQUIPO";
   if (showGallery) gallery.refresh();
