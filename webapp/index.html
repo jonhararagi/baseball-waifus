@@ -74,7 +74,23 @@
     <section class="action-panel" aria-label="Match actions" data-hud="controls">
       <button id="action-bat" class="action-button action-primary" type="button">BATEAR</button>
       <button id="action-steal" class="action-button action-secondary" type="button">ROBAR</button>
+      <button id="action-gacha" class="action-button action-secondary" type="button">RECLUTAR x1</button>
       <button id="action-sync" class="action-button action-quiet" type="button">ACTUALIZAR</button>
+    </section>
+
+    <section class="match-strip" aria-label="Gacha status" data-hud="gacha">
+      <div class="match-block">
+        <span class="match-label">GACHA</span>
+        <span id="gacha-pull" class="match-value">0/80</span>
+      </div>
+      <div class="match-block">
+        <span class="match-label">DEX</span>
+        <span id="gacha-dex" class="match-value">0</span>
+      </div>
+      <div class="match-block">
+        <span class="match-label">STATE</span>
+        <span id="gacha-status" class="match-value">LOADING</span>
+      </div>
     </section>
 
     <footer class="footer">

@@ -211,6 +211,48 @@ export class CombatRenderer {
     this.audioBridge = audioBridge || null;
   }
 
+  async showGachaCutIn({ rarity, character } = {}) {
+    const id = String(character?.character_id || "");
+    const name = String(character?.canonical?.display_name || id || "UNKNOWN");
+    const cardPath = String(
+      character?.canonical?.visual?.card_hd_url
+      || `./assets/production/cards/${id}--normal.jpg`
+    );
+
+    if (!this.cutinRoot || !id) {
+      return false;
+    }
+
+    await this.assetBank.preload([{
+      id,
+      kind: "card",
+      card_hd_url: cardPath,
+      path: cardPath
+    }]);
+
+    this._triggerCutIn({
+      result: String(rarity || "SSR") === "UR" ? "UR_REVEAL" : "SSR_REVEAL",
+      timing: "",
+      assets: {
+        cards: [{
+          id,
+          card_hd_url: cardPath,
+          path: cardPath
+        }]
+      },
+      animation: {
+        event: "CUT_IN",
+        eyebrow: "WAIFU ACQUIRED",
+        detail: `${rarity || "SSR"} • ${name}`,
+        cut_in_card_id: id,
+        cut_in_card_hd_url: cardPath,
+        camera_shake: true
+      }
+    });
+
+    return true;
+  }
+
   _playAudio(soundId, options = {}) {
     if (!this.audioBridge || typeof this.audioBridge.play !== "function") {
       return false;
@@ -904,6 +946,11 @@ export class CombatRenderer {
 
   _triggerAudioForTurn(dto) {
     const result = String(dto?.result || "").toUpperCase();
+    const timing = String(dto?.timing || "").toUpperCase();
+
+    if (result === "FOUL" || timing === "BAD") {
+      this._playAudio("bat.foul");
+    }
     const event = String(
       dto?.event
       || dto?.animation?.event
@@ -952,7 +999,12 @@ export class CombatRenderer {
     const isSwingEvent = event === "SWING" || event === "HIT";
     const hitResults = new Set(["SINGLE", "DOUBLE", "TRIPLE", "FIELDING_ERROR", "HIT"]);
     const runResults = new Set(["RUN", "STEAL", "STEAL_BLOCKED", "SAFE", "HOME_RUN"]);
-    const dangerResults = new Set(["OUT", "STRIKE", "FIELDING_ERROR"]);
+    const dangerResults = new Set(["OUT", "STRIKE", "FOUL", "FIELDING_ERROR"]);
+    const timingBad = String(dto?.timing || "").toUpperCase() === "BAD";
+
+    if (timingBad) {
+      kind = "danger";
+    }
     const superResults = new Set(["HOME_RUN", "TRIPLE"]);
 
     let kind = "hit";
@@ -977,6 +1029,7 @@ export class CombatRenderer {
       dto?.animation?.camera_shake === true
       || cutInImpact
       || criticalImpact
+      || timingBad
     );
 
     if (hasImpactPresentation) {
@@ -993,7 +1046,10 @@ export class CombatRenderer {
 
     this._triggerAudioForTurn(dto);
 
-    if (!this.combatShell || (!hitResults.has(result) && !runResults.has(result) && !dangerResults.has(result))) {
+    if (
+      !this.combatShell
+      || (!hitResults.has(result) && !runResults.has(result) && !dangerResults.has(result) && !timingBad)
+    ) {
       return;
     }
 

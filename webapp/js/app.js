@@ -6,6 +6,10 @@ import {
 } from "./api.js";
 import { CombatRenderer } from "./combat.js";
 import { createAudioBridge } from "./audio.js";
+import {
+  GachaController,
+  exposeGachaToWindow
+} from "./gacha_controller.js";
 
 const telegram = new TelegramBridge();
 telegram.init();
@@ -30,9 +34,37 @@ const scoreValue = document.querySelector("#match-score");
 const batButton = document.querySelector("#action-bat");
 const stealButton = document.querySelector("#action-steal");
 const syncButton = document.querySelector("#action-sync");
+const gachaButton = document.querySelector("#action-gacha");
+const gachaPullValue = document.querySelector("#gacha-pull");
+const gachaDexValue = document.querySelector("#gacha-dex");
+const gachaStatusValue = document.querySelector("#gacha-status");
 
 let matchId = "";
 let actionPending = false;
+
+const gachaController = new GachaController({
+  audioBridge,
+  cutInRenderer: renderer
+});
+exposeGachaToWindow(gachaController);
+
+function updateGachaHud(status, result = null) {
+  if (!status) {
+    return;
+  }
+
+  if (gachaPullValue) {
+    gachaPullValue.textContent = `${status.pulls_since_UR}/80`;
+  }
+  if (gachaDexValue) {
+    gachaDexValue.textContent = String(status.inventory_size);
+  }
+  if (gachaStatusValue) {
+    gachaStatusValue.textContent = result
+      ? `${result.rarity} • ${result.character.canonical?.display_name || result.character.character_id}`
+      : (status.ready ? "READY" : "LOADING");
+  }
+}
 
 function setConnection(text, tone = "neutral") {
   connectionState.textContent = text;
@@ -235,6 +267,29 @@ batButton.addEventListener("click", () => sendAction("BAT"));
 stealButton.addEventListener("click", () => sendAction("STEAL"));
 syncButton.addEventListener("click", syncCombat);
 
+gachaButton?.addEventListener("click", async () => {
+  if (!gachaController.ready) {
+    return;
+  }
+
+  gachaButton.disabled = true;
+  try {
+    const result = await gachaController.rollGacha();
+    updateGachaHud(gachaController.getStatus(), result);
+  } catch (error) {
+    if (gachaStatusValue) {
+      gachaStatusValue.textContent = "ERROR";
+    }
+    setConnection("Gacha failed", "error");
+  } finally {
+    gachaButton.disabled = false;
+  }
+});
+
+gachaController.subscribe((status, result) => {
+  updateGachaHud(status, result);
+});
+
 window.addEventListener("message", async (event) => {
   const payload = event.data;
 
@@ -260,6 +315,16 @@ window.addEventListener("message", async (event) => {
 async function bootstrap() {
   const query = new URLSearchParams(window.location.search);
   matchId = query.get("match") || "";
+
+  try {
+    await gachaController.initialize();
+    updateGachaHud(gachaController.getStatus());
+  } catch (error) {
+    gachaButton.disabled = true;
+    if (gachaStatusValue) {
+      gachaStatusValue.textContent = "OFFLINE";
+    }
+  }
 
   if (!api.configured()) {
     try {
