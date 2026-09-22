@@ -26,6 +26,10 @@
         </div>
       </div>
       <div class="topbar-actions">
+        <button id="audio-mute" class="topbar-nav" type="button" aria-pressed="false">AUDIO // ON</button>
+        <label class="audio-volume-control">VOL
+          <input id="audio-volume" type="range" min="0" max="1" step="0.05" value="0.8" aria-label="Master audio volume">
+        </label>
         <button id="nav-dex" class="topbar-nav" type="button" aria-controls="gallery-view">DEX / EQUIPO</button>
         <div id="connection-state" class="connection-state" role="status" aria-live="polite">Preparing match</div>
       </div>
@@ -94,6 +98,10 @@
       <div class="match-block">
         <span class="match-label">DEX</span>
         <span id="gacha-dex" class="match-value">0</span>
+      </div>
+      <div class="match-block">
+        <span class="match-label">FRAG</span>
+        <span id="gacha-fragments" class="match-value">0</span>
       </div>
       <div class="match-block">
         <span class="match-label">STATE</span>
