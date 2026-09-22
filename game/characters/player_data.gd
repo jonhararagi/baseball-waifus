@@ -7,6 +7,7 @@ extends Resource
 @export var element := "neutral"
 @export var position := "CF"
 @export var specialization := "contact"
+@export var faction := ""
 @export var skill_roles: Array[String] = []
 @export var level := 1
 @export var potential := 3
