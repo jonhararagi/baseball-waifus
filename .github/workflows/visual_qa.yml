@@ -524,7 +524,7 @@ jobs:
           set -euo pipefail
           timeout --signal=TERM 15s "godot/Godot_v${GODOT_VERSION}_linux.x86_64" --headless --path . res://scenes/bw016_bw020_generation_queue_test.tscn
 
-  webapp-p8-unit-tests:
+  webapp-p1-p9-unit-tests:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
@@ -537,12 +537,31 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for file in             webapp/js/audio_engine.js             webapp/js/upgrade_system.js             webapp/js/team_manager.js             webapp/js/gacha_controller.js             webapp/js/waifu_dex.js             webapp/js/gallery.js             webapp/js/combat.js             webapp/js/app.js; do
+          find webapp/js -maxdepth 1 -name "*.js" -print0 | while IFS= read -r -d "" file; do
             node --experimental-default-type=module --check "$file"
           done
-      - name: P8 audio engine test
-        run: node --experimental-default-type=module webapp/js/audio_engine_test.mjs
-      - name: P8 upgrade system test
-        run: node --experimental-default-type=module webapp/js/upgrade_system_test.mjs
-      - name: P8 team manager test
-        run: node --experimental-default-type=module webapp/js/team_manager_test.mjs
+      - name: Run accumulated frontend unit tests P1-P9
+        shell: bash
+        run: |
+          set -euo pipefail
+          tests=(
+            webapp/js/area_theme_test.mjs
+            webapp/js/audio_bridge_test.mjs
+            webapp/js/audio_engine_test.mjs
+            webapp/js/batter_renderer_test.mjs
+            webapp/js/combat_effects_test.mjs
+            webapp/js/contract_test.mjs
+            webapp/js/economy_test.mjs
+            webapp/js/gacha_controller_test.mjs
+            webapp/js/gacha_engine_test.mjs
+            webapp/js/game_modes_test.mjs
+            webapp/js/save_system_test.mjs
+            webapp/js/team_manager_test.mjs
+            webapp/js/tma_bridge_test.mjs
+            webapp/js/upgrade_system_test.mjs
+            webapp/js/waifu_dex_test.mjs
+          )
+          for test_file in "${tests[@]}"; do
+            echo "==> ${test_file}"
+            node --experimental-default-type=module "${test_file}"
+          done
