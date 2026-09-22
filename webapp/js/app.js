@@ -19,7 +19,9 @@ import { UpgradeSystem } from "./upgrade_system.js";
 import { TeamManager } from "./team_manager.js";
 import { SaveSystem } from "./save_system.js";
 import { GameModeManager } from "./game_modes.js";
-import { MainMenu } from "./main_menu.js";
+import { MainMenu, VIEWS } from "./main_menu.js";
+import { MobileHaptics } from "./mobile_haptics.js";
+import { PerformanceAdapter } from "./performance_adapter.js";
 
 function initializeTelegramNativeShell() {
   const webApp = window.Telegram?.WebApp || null;
@@ -42,6 +44,8 @@ const api = new BaseballWaifusApi({ telegramBridge: telegram });
 const hapticsBridge = createHapticsBridge(telegramWebApp);
 const cloudStorage = telegramWebApp?.CloudStorage || null;
 const audioBridge = new AudioEngine();
+const mobileHaptics = new MobileHaptics();
+const performanceAdapter = new PerformanceAdapter();
 
 const connectionState = document.querySelector("#connection-state");
 const loadingState = document.querySelector("#loading-state");
@@ -203,6 +207,7 @@ const renderer = new CombatRenderer(document.querySelector("#combat-canvas"), {
   audioBridge,
   hapticsBridge,
   onScrapEarned: handleScrapEarned,
+  performanceAdapter,
   getHudResources: () => ({
     scrap: gachaController.getScavengerScrap(),
     energy: renderer?.state?.energy
@@ -758,6 +763,30 @@ audioMuteButton?.addEventListener("click", () => {
 });
 syncAudioControls();
 
+async function registerOfflineShell() {
+  if (!("serviceWorker" in navigator)) return false;
+  try {
+    const registration = await navigator.serviceWorker.register("./sw.js", { scope: "./" });
+    registration.update?.();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function installMobileGestures() {
+  mobileHaptics.bindTapFeedback(batButton);
+  mobileHaptics.bindSwipe(mainMenuRoot, ({ direction }) => {
+    const currentIndex = VIEWS.indexOf(mainMenu.activeView);
+    if (currentIndex < 0) return;
+    if (direction === "left") {
+      mainMenu.nextView();
+    } else {
+      mainMenu.previousView();
+    }
+  });
+}
+
 function syncAudioLifecycle() {
   const hidden = document.visibilityState === "hidden";
   const telegramCollapsed = Boolean(
@@ -844,5 +873,7 @@ async function bootstrap() {
 
 renderer.initialize();
 mainMenu.mount();
+installMobileGestures();
+void registerOfflineShell();
 startGameMode("PRACTICE", "cyberpunk");
 bootstrap();
