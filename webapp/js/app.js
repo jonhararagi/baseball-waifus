@@ -46,6 +46,86 @@ function setLoading(visible, detail = "") {
   }
 }
 
+function createDemoCombatInit() {
+  return {
+    type: "CombatInitDTO",
+    match_id: "demo-bw001-vs-bw002",
+    state: {
+      inning: 1,
+      half: "TOP",
+      outs: 0,
+      balls: 0,
+      strikes: 0,
+      bases: {
+        first: false,
+        second: false,
+        third: false
+      }
+    },
+    home_team: {
+      id: "demo-home",
+      name: "Kurose Eleven",
+      score: 0
+    },
+    away_team: {
+      id: "demo-away",
+      name: "Hanamori Stars",
+      score: 0
+    },
+    batter: {
+      id: "bw001",
+      name: "Aiko Hanamori",
+      card_id: "bw001",
+      element: "fire",
+      rarity: "R"
+    },
+    pitcher: {
+      id: "bw002",
+      name: "Reina Kurose",
+      card_id: "bw002",
+      element: "ice",
+      rarity: "SSR"
+    },
+    assets: {
+      cards: [
+        {
+          id: "bw001",
+          path: "./assets/demo-characters/bw001.svg"
+        },
+        {
+          id: "bw002",
+          path: "./assets/demo-characters/bw002.svg"
+        }
+      ],
+      sprites: [
+        {
+          id: "bw001",
+          path: "./assets/demo-characters/bw001.svg"
+        },
+        {
+          id: "bw002",
+          path: "./assets/demo-characters/bw002.svg"
+        }
+      ]
+    }
+  };
+}
+
+async function initializeDefaultDemo() {
+  if (api.configured() || renderer.matchReady) {
+    return false;
+  }
+
+  const demoInitDTO = createDemoCombatInit();
+  await renderer.setCombatInit(demoInitDTO);
+  updateHud(demoInitDTO);
+  batButton.disabled = true;
+  stealButton.disabled = true;
+  setConnection("Local demo match", "ok");
+  setLoading(false);
+  return true;
+}
+
 function updateHud(state) {
   const matchState = state?.state || {};
   const inning = matchState.inning ?? "-";
@@ -167,17 +247,22 @@ window.addEventListener("message", async (event) => {
   }
 });
 
-renderer.initialize();
+async function bootstrap() {
+  const query = new URLSearchParams(window.location.search);
+  matchId = query.get("match") || "";
 
-const query = new URLSearchParams(window.location.search);
-matchId = query.get("match") || "";
+  if (!api.configured()) {
+    try {
+      await initializeDefaultDemo();
+    } catch (error) {
+      setConnection("Demo initialization failed", "error");
+      setLoading(true, String(error.message || error));
+    }
+    return;
+  }
 
-if (!api.configured()) {
-  setConnection(
-    telegram.isAvailable() ? "Telegram connected" : "Web client ready",
-    "ok"
-  );
-  setLoading(true, "Waiting for an authoritative combat payload.");
-} else {
   syncCombat();
 }
+
+renderer.initialize();
+bootstrap();
