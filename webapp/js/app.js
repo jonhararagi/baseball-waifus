@@ -14,6 +14,7 @@ import { GalleryController } from "./gallery.js";
 import { createHapticsBridge } from "./haptics_bridge.js";
 import { buildSharePayload, shareWaifu } from "./share_bridge.js";
 import { requestScrapPurchase } from "./economy.js";
+import { CardRenderer } from "./card_renderer.js";
 
 function initializeTelegramNativeShell() {
   const webApp = window.Telegram?.WebApp || null;
@@ -58,6 +59,12 @@ const galleryScrapReadout = document.querySelector("#gallery-scrap-readout");
 const shareButton = document.querySelector("#action-share");
 const navDexButton = document.querySelector("#nav-dex");
 const galleryView = document.querySelector("#gallery-view");
+const dexInspector = document.querySelector("#dex-card-inspector");
+const dexInspectorName = document.querySelector("#dex-inspector-name");
+const dexInspectorClose = document.querySelector("#dex-inspector-close");
+const cardRenderer = new CardRenderer({
+  root: document.querySelector("#dex-card-stage")
+});
 const combatShell = document.querySelector(".combat-shell");
 const combatViewPieces = [...document.querySelectorAll(".combat-view-piece")];
 
@@ -97,6 +104,18 @@ const gallery = new GalleryController({
   root: galleryView,
   storage: gachaController.storage,
   storageKey: gachaController.storageKey,
+  onInspect: (unit) => {
+    if (dexInspector) dexInspector.hidden = false;
+    if (dexInspectorName) {
+      dexInspectorName.textContent = unit?.canonical?.display_name || unit?.character_id || "UNKNOWN WAIFU";
+    }
+    cardRenderer.mount(unit, {
+      assets: {
+        card_hd_url: "./assets/production/cards/" + String(unit?.character_id || "") + "--normal.jpg"
+      },
+      themeColor: unit?.canonical?.visual?.accent || null
+    });
+  },
   onShare: (unit) => {
     const payload = buildSharePayload(unit, null, window.location.href);
     sharePayload = payload;
@@ -378,6 +397,7 @@ function setView(view) {
   const showGallery = view === "gallery";
   if (galleryView) galleryView.hidden = !showGallery;
   if (combatShell) combatShell.hidden = showGallery;
+  if (!showGallery && dexInspector) dexInspector.hidden = true;
   for (const element of combatViewPieces) element.hidden = showGallery;
   if (navDexButton) navDexButton.textContent = showGallery ? "VOLVER AL CAMPO" : "DEX / EQUIPO";
   setTelegramBackButton(showGallery);
@@ -393,6 +413,11 @@ function handleTelegramBackButton() {
 
 navDexButton?.addEventListener("click", () => {
   setView(galleryView?.hidden ? "gallery" : "combat");
+});
+
+dexInspectorClose?.addEventListener("click", () => {
+  if (dexInspector) dexInspector.hidden = true;
+  cardRenderer.unmount();
 });
 
 telegramWebApp?.BackButton?.onClick?.(handleTelegramBackButton);
