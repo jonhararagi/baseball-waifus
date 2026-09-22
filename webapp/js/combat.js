@@ -148,15 +148,19 @@ export class CombatRenderer {
     this.ballTrail = [];
     this.lastFrame = performance.now();
 
+    this.handleViewportResize = () => this.resize();
+
     this.resizeObserver = typeof ResizeObserver === "function"
-      ? new ResizeObserver(() => this.resize())
+      ? new ResizeObserver(this.handleViewportResize)
       : null;
 
     if (this.resizeObserver) {
       this.resizeObserver.observe(this.canvas.parentElement || this.canvas);
-    } else {
-      window.addEventListener("resize", () => this.resize(), { passive: true });
     }
+
+    window.addEventListener("resize", this.handleViewportResize, { passive: true });
+    window.visualViewport?.addEventListener("resize", this.handleViewportResize, { passive: true });
+    window.visualViewport?.addEventListener("scroll", this.handleViewportResize, { passive: true });
 
     this.resize();
     this.frameHandle = requestAnimationFrame((time) => this.frame(time));
@@ -242,20 +246,35 @@ export class CombatRenderer {
   }
 
   resize() {
-    const rect = this.canvas.getBoundingClientRect();
+    const container = this.canvas.parentElement || this.canvas;
+    const rect = container.getBoundingClientRect();
+
+    const viewport = window.visualViewport;
+    const viewportWidth = safeNumber(viewport?.width, window.innerWidth);
+    const viewportHeight = safeNumber(viewport?.height, window.innerHeight);
+
+    const cssWidth = Math.max(1, safeNumber(rect.width, viewportWidth));
+    const cssHeight = Math.max(1, safeNumber(rect.height, viewportHeight));
     const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
 
-    this.canvas.width = Math.max(1, Math.round(rect.width * dpr));
-    this.canvas.height = Math.max(1, Math.round(rect.height * dpr));
+    this.canvas.width = Math.max(1, Math.round(cssWidth * dpr));
+    this.canvas.height = Math.max(1, Math.round(cssHeight * dpr));
+    this.canvas.style.width = `${cssWidth}px`;
+    this.canvas.style.height = `${cssHeight}px`;
 
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    this.pixelWidth = rect.width;
-    this.pixelHeight = rect.height;
+    this.pixelWidth = cssWidth;
+    this.pixelHeight = cssHeight;
+    this.viewportWidth = viewportWidth;
+    this.viewportHeight = viewportHeight;
   }
 
   dispose() {
     cancelAnimationFrame(this.frameHandle);
     this.resizeObserver?.disconnect();
+    window.removeEventListener("resize", this.handleViewportResize);
+    window.visualViewport?.removeEventListener("resize", this.handleViewportResize);
+    window.visualViewport?.removeEventListener("scroll", this.handleViewportResize);
   }
 
   frame(time) {
