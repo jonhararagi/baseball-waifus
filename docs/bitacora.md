@@ -8478,3 +8478,49 @@ No se ejecutaron Node ni Godot runtime directamente en este entorno. El workflow
 ### Avance aproximado
 
 **≈95% estructural del prototipo.**
+
+## Revisión 81: Data Scavenging de contratos de juego
+
+**Fecha:** 2026-09-22  
+**Tipo:** Datos / contratos JSON / investigación OSS / compatibilidad web.
+
+### Motivo
+
+Reciclar estructuras abiertas existentes para inventario/colección, gacha/pity y estado de partido, evitando crear desde cero un nuevo sistema de balance o una nueva autoridad de gameplay.
+
+### Sistemas afectados
+
+- contrato de datos de colección;
+- contrato de gacha;
+- contrato de partido/frontend;
+- documentación de investigación OSS.
+
+### Archivos creados
+
+- `data/game_schemas_recycled.json`
+- `docs/research/data-scavenging-schemas-v1.md`
+
+### Decisiones arquitectónicas
+
+1. El archivo JSON es configuración/transport contract y no sustituye PlayerProgressStore, CharacterRosterStore, RewardTransactionService, Baseball Game State ni los resolvers existentes.
+2. Se recicla el patrón `definition + instance` para personajes poseídos, incluyendo duplicados, breakthrough rank, nivel y lock state.
+3. Se recicla la separación `banner + rarity pool + pity state` para gacha.
+4. Las rarezas expuestas son R/SR/SSR/UR, pero las tasas propias de Baseball Waifus permanecen `null` hasta existir una tabla canónica de balance. Las tasas de Yoimiya se conservan solamente en `reference_only`.
+5. Los alias `ARM` y `PITCH_VELOCITY` no crean estadísticas nuevas: se proyectan sobre `Defense` y `Pitch`, respectivamente. `PITCH_CONTROL` utiliza `Control`.
+6. El contrato de partido reutiliza la forma ya establecida por `CombatInitDTO` y añade una representación explícita de jugadoras en campo sin conceder autoridad al frontend.
+7. No se copia código de terceros ni se incorporan assets externos. Las referencias se registran con sus licencias y solo se reutiliza su estructura conceptual.
+
+### QA
+
+- Validación sintáctica local del JSON generado antes de escribirlo en GitHub.
+- Comprobación estructural de que contiene inventario/Dex, gacha/pity y CombatInitDTO.
+- Revisión de licencias de las tres referencias seleccionadas.
+- No se ejecutó Node, aiohttp ni Godot runtime localmente en este entorno.
+
+### Estado
+
+**Implementado en `main` como contrato de datos; pendiente de integración futura con un consumidor aiohttp real y de activación de tasas canónicas de gacha.**
+
+### Porcentaje aproximado
+
+**≈96% estructural del prototipo.**
