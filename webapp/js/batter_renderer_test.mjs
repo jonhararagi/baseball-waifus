@@ -28,6 +28,8 @@ renderer.update(0.08);
 renderer.update(0.08);
 renderer.update(0.08);
 renderer.update(0.08);
+renderer.update(0.08);
+renderer.update(0.08);
 assert.equal(renderer.getState(), BATTER_STATES.IDLE);
 
 assert.throws(
