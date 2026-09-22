@@ -8247,3 +8247,69 @@ No se declara ejecución local del navegador en esta revisión. El workflow de G
 ### Porcentaje aproximado
 
 **≈96% estructural del prototipo.** La revisión mejora presentación y rendimiento del frontend, no añade contenido de gameplay.
+
+
+## Revisión 78: registro modular de Audio Scavenger Stack
+
+**Fecha:** 2026-09-21  
+**Tipo:** Presentación web / arquitectura de audio / registro de candidatos / QA estructural.
+
+### Motivo
+
+Crear una bitácora específica para registrar tecnologías, generadores y fuentes de SFX que puedan evaluarse para Baseball Waifus sin convertir accidentalmente una prueba de audio en una dependencia definitiva.
+
+### Decisión arquitectónica
+
+Se adopta un contrato mínimo y reemplazable: `AudioBridge.play(soundId, options)`.
+
+El frontend puede recibir un bridge sin proveedor real. El bridge inerte devuelve `false`, por lo que ausencia de audio no bloquea la presentación ni modifica el gameplay.
+
+`CombatRenderer` solo conoce la interfaz `play`; no importa Tone.js, ZzFX, jsfxr, WebAudio helper libraries ni repositorios de SFX.
+
+### Implementación
+
+Creados:
+- `docs/audio_scavenger_stack.md`
+- `webapp/js/audio_bridge.js`
+- `webapp/js/audio_bridge_test.mjs`
+
+Modificados:
+- `webapp/js/combat.js`: inyección opcional de `audioBridge` y helper aislado `_playAudio()`; sin proveedor concreto.
+- `webapp/js/app.js`: crea el bridge neutral y lo inyecta en `CombatRenderer`.
+
+### Stack registrado
+
+Se registran como candidatos, no como dependencias finales:
+- Web Audio API nativa.
+- HTML5 Audio / pool.
+- ZzFX.
+- jsfxr.
+- Tone.js.
+- Fuentes externas de SFX 8-bit/arcade sujetas a verificación de licencia.
+- Voces extraídas de anime/fan works: no adoptables sin derechos explícitos de redistribución.
+
+Los pesos de las librerías se documentan como estimaciones preliminares y deben medirse antes de cualquier adopción.
+
+### Reglas de descarte
+
+Una pila descartada debe poder eliminarse sin modificar `combat.js`, gameplay, DTOs ni resolvers. Los IDs de sonido son contratos de presentación y no tienen autoridad sobre resultados deportivos.
+
+### QA
+
+Creado `webapp/js/audio_bridge_test.mjs` para comprobar:
+- ejecución mediante adapter;
+- propagación de `soundId`;
+- retorno `false` cuando no existe proveedor;
+- rechazo de IDs vacíos o inválidos.
+
+No se ejecutó Node runtime en este entorno. La prueba queda preparada para CI.
+
+No se ejecutó navegador/Telegram runtime ni Godot runtime.
+
+### Estado
+
+**Implementado a nivel estructural. No existe todavía proveedor de audio productivo. El stack permanece deliberadamente abierto y purgable.**
+
+### Avance aproximado
+
+**≈96% estructural del prototipo.** El porcentaje no representa arte final, audio final, validación física Android ni contenido completo.
