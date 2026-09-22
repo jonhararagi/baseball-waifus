@@ -3,6 +3,7 @@ import { AreaThemeManager } from "./area_theme_manager.js";
 import { BatterRenderer } from "./batter_renderer.js";
 import { CombatEffects } from "./combat_effects.js";
 import { CombatHUD } from "./combat_hud.js";
+import { PerformanceAdapter } from "./performance_adapter.js";
 
 const RESULT_COLORS = {
   STRIKE: "#8ca8ff",
@@ -153,7 +154,8 @@ export class CombatRenderer {
     audioBridge = null,
     onScrapEarned = null,
     hapticsBridge = null,
-    getHudResources = null
+    getHudResources = null,
+    performanceAdapter = null
   } = {}) {
     if (!(canvas instanceof HTMLCanvasElement)) {
       throw new TypeError("CombatRenderer requires a canvas element");
@@ -182,6 +184,7 @@ export class CombatRenderer {
     this.audioBridge = audioBridge;
     this.onScrapEarned = onScrapEarned;
     this.hapticsBridge = hapticsBridge || null;
+    this.performanceAdapter = performanceAdapter || new PerformanceAdapter();
     this.themeManager = new AreaThemeManager("cyberpunk");
     this.batterRenderer = new BatterRenderer({
       imageResolver: (path) => this.assetBank.get(path),
@@ -202,7 +205,7 @@ export class CombatRenderer {
     this.cameraShakeTimer = 0;
     this.cameraShakeDuration = 0.15;
     this.impactParticles = [];
-    this.maxImpactParticles = 28;
+    this.maxImpactParticles = this.performanceAdapter.getParticleBudget(28);
     this.scrapTurnIds = new Set();
     this.zanTimer = 0;
     this.zanDuration = 0.34;
@@ -233,6 +236,12 @@ export class CombatRenderer {
 
   setHapticsBridge(hapticsBridge) {
     this.hapticsBridge = hapticsBridge || null;
+  }
+
+  setPerformanceAdapter(performanceAdapter) {
+    this.performanceAdapter = performanceAdapter || new PerformanceAdapter();
+    this.maxImpactParticles = this.performanceAdapter.getParticleBudget(28);
+    return this.performanceAdapter;
   }
 
   async setArea(areaId) {
@@ -488,7 +497,9 @@ export class CombatRenderer {
     this.lastFrame = time;
 
     this._update(delta);
-    this._render(time);
+    if (this.performanceAdapter.shouldRender(time)) {
+      this._render(time);
+    }
 
     this.frameHandle = requestAnimationFrame((next) => this.frame(next));
   }
@@ -1095,6 +1106,7 @@ export class CombatRenderer {
 
     if (event === "SWING") {
       this._playAudio("bat.swing");
+      this._playHaptics("swing");
     }
 
     if (result === "FOUL" || (timing === "BAD" && !hitResults.includes(result))) {
@@ -1105,7 +1117,7 @@ export class CombatRenderer {
 
     if (result === "MISS") {
       this._playAudio("result.miss");
-      this._playHaptics("combat_error");
+      this._playHaptics("miss");
       return;
     }
 
@@ -1118,10 +1130,11 @@ export class CombatRenderer {
     if (hitResults.includes(result) || event === "HIT") {
       if (timing === "PERFECT") {
         this._playAudio("result.perfect");
+        this._playHaptics("perfect");
       } else {
         this._playAudio("result.hit");
+        this._playHaptics("good");
       }
-      this._playHaptics(result === "SINGLE" || result === "HIT" ? "single_hit" : "hit");
     }
   }
 

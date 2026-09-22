@@ -52,6 +52,16 @@ export class MainMenu {
     return this.biome;
   }
 
+  nextView() {
+    const index = VIEWS.indexOf(this.activeView);
+    return this.navigate(VIEWS[(index + 1) % VIEWS.length]);
+  }
+
+  previousView() {
+    const index = VIEWS.indexOf(this.activeView);
+    return this.navigate(VIEWS[(index - 1 + VIEWS.length) % VIEWS.length]);
+  }
+
   _renderActive() {
     const buttons = this.root?.querySelectorAll?.("[data-view]") || [];
     for (const button of buttons) {
