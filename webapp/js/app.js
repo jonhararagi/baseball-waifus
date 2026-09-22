@@ -17,6 +17,9 @@ import { requestScrapPurchase } from "./economy.js";
 import { CardRenderer } from "./card_renderer.js";
 import { UpgradeSystem } from "./upgrade_system.js";
 import { TeamManager } from "./team_manager.js";
+import { SaveSystem } from "./save_system.js";
+import { GameModeManager } from "./game_modes.js";
+import { MainMenu } from "./main_menu.js";
 
 function initializeTelegramNativeShell() {
   const webApp = window.Telegram?.WebApp || null;
@@ -60,6 +63,24 @@ const gachaStatusValue = document.querySelector("#gacha-status");
 const gachaFragmentsValue = document.querySelector("#gacha-fragments");
 const audioMuteButton = document.querySelector("#audio-mute");
 const audioVolumeSlider = document.querySelector("#audio-volume");
+const gachaTenButton = document.querySelector("#action-gacha-ten");
+const mainMenuRoot = document.querySelector("#main-menu");
+const rosterView = document.querySelector("#roster-view");
+const settingsView = document.querySelector("#settings-view");
+const rosterActiveSelect = document.querySelector("#roster-active-select");
+const rosterSupport0 = document.querySelector("#roster-support-0");
+const rosterSupport1 = document.querySelector("#roster-support-1");
+const rosterApplyButton = document.querySelector("#roster-apply");
+const rosterSummary = document.querySelector("#roster-summary");
+const settingsQuality = document.querySelector("#settings-quality");
+const settingsSaveStatus = document.querySelector("#settings-save-status");
+const saveExportButton = document.querySelector("#save-export");
+const saveImportInput = document.querySelector("#save-import");
+const saveResetButton = document.querySelector("#save-reset");
+const playModeSelect = document.querySelector("#play-mode");
+const playBiomeSelect = document.querySelector("#play-biome");
+const playScore = document.querySelector("#play-score");
+const playSpeed = document.querySelector("#play-speed");
 const galleryScrapReadout = document.querySelector("#gallery-scrap-readout");
 const shareButton = document.querySelector("#action-share");
 const navDexButton = document.querySelector("#nav-dex");
@@ -110,6 +131,73 @@ function handleScrapEarned({ amount, result }) {
     gachaStatusValue.textContent = "+" + amount + " SCRAP // " + String(result).toUpperCase();
   }
 }
+
+let qualitySetting = "auto";
+let savedRecords = {};
+
+const saveSystem = new SaveSystem({
+  providers: {
+    gachaState: () => gachaController.getState(),
+    teamRoster: () => teamManager.getRoster(),
+    progression: () => upgradeSystem.getAllProgression(),
+    audioSettings: () => audioBridge.getSettings(),
+    quality: () => qualitySetting,
+    records: () => savedRecords
+  },
+  appliers: {
+    gacha: (state) => {
+      if (!state?.economy) return;
+      gachaController.state = {
+        ...gachaController.state,
+        pulls_since_UR: state.gacha?.pity?.pulls_since_UR ?? gachaController.state.pulls_since_UR,
+        inventory: state.inventory || gachaController.state.inventory,
+        active_batter: state.roster?.active_batter || gachaController.state.active_batter,
+        scavenger_scrap: state.economy.scrap,
+        fragment_bank: state.economy.fragments
+      };
+      gachaController._saveState?.();
+    },
+    team: (state) => {
+      teamManager.state = {
+        active_batter: state.roster?.active_batter || null,
+        supports: Array.isArray(state.roster?.supports)
+          ? [state.roster.supports[0] || null, state.roster.supports[1] || null]
+          : [null, null]
+      };
+      teamManager.sync();
+    },
+    progression: (state) => {
+      upgradeSystem.progression = state.progression || {};
+      upgradeSystem._save?.();
+    },
+    audio: (settings) => {
+      audioBridge.setVolume(settings.volume);
+      audioBridge.setMuted(settings.muted);
+    },
+    quality: (quality) => {
+      qualitySetting = quality || "auto";
+      document.documentElement.dataset.quality = qualitySetting;
+      if (settingsQuality) settingsQuality.value = qualitySetting;
+    },
+    records: (records) => {
+      savedRecords = records || {};
+    }
+  }
+});
+
+const gameModes = new GameModeManager({
+  recordSink: (biome, record) => {
+    savedRecords = { ...savedRecords, [biome]: { ...(savedRecords[biome] || {}), ...record } };
+    saveSystem.updateRecord(biome, record);
+  }
+});
+
+const mainMenu = new MainMenu({
+  root: mainMenuRoot,
+  onNavigate: (view) => setMainMenuView(view),
+  onModeChange: (mode) => startGameMode(mode, playBiomeSelect?.value || "cyberpunk"),
+  onBiomeChange: (biome) => startGameMode(playModeSelect?.value || "PRACTICE", biome)
+});
 
 const renderer = new CombatRenderer(document.querySelector("#combat-canvas"), {
   audioBridge,
@@ -309,6 +397,79 @@ async function initializeDefaultDemo() {
   return true;
 }
 
+function updatePlayHud() {
+  const state = gameModes.getState();
+  if (playScore) playScore.textContent = "SCORE // " + state.score;
+  if (playSpeed) playSpeed.textContent = "PITCH ×" + Number(state.pitch_speed_multiplier || 1).toFixed(2);
+}
+
+function syncRosterControls() {
+  if (!rosterActiveSelect || !rosterSupport0 || !rosterSupport1) return;
+  const characters = gachaController.getCharacters().filter((unit) => gachaController.getState().inventory?.[unit.character_id]);
+  const addOptions = (select, selected, allowEmpty = false) => {
+    select.replaceChildren();
+    if (allowEmpty) {
+      const empty = document.createElement("option");
+      empty.value = "";
+      empty.textContent = "NONE";
+      select.appendChild(empty);
+    }
+    for (const unit of characters) {
+      const option = document.createElement("option");
+      option.value = unit.character_id;
+      option.textContent = unit.canonical?.display_name || unit.character_id;
+      option.selected = unit.character_id === selected;
+      select.appendChild(option);
+    }
+  };
+  const roster = teamManager.getRoster();
+  addOptions(rosterActiveSelect, roster.active_batter, false);
+  addOptions(rosterSupport0, roster.supports[0], true);
+  addOptions(rosterSupport1, roster.supports[1], true);
+  if (rosterSummary) {
+    const active = teamManager.getActiveWaifu();
+    rosterSummary.textContent = "BATTER // " + (active?.canonical?.display_name || "NONE")
+      + " • SUPPORT // " + teamManager.getSupportIds().filter(Boolean).length + "/2";
+  }
+}
+
+function startGameMode(mode, biome) {
+  const state = gameModes.start(mode, biome);
+  playModeSelect && (playModeSelect.value = state.mode);
+  playBiomeSelect && (playBiomeSelect.value = state.biome);
+  updatePlayHud();
+  void renderer.setArea(state.biome);
+  return state;
+}
+
+function simulateLocalTurn() {
+  const state = gameModes.getState();
+  const roll = Math.random();
+  const result = state.mode === "ENDLESS"
+    ? (roll < 0.08 ? "HOME_RUN" : roll < 0.45 ? "SINGLE" : roll < 0.68 ? "DOUBLE" : roll < 0.78 ? "TRIPLE" : "OUT")
+    : (roll < 0.06 ? "HOME_RUN" : roll < 0.48 ? "SINGLE" : roll < 0.7 ? "DOUBLE" : roll < 0.8 ? "TRIPLE" : "OUT");
+
+  const current = renderer.state?.state || {};
+  const dto = {
+    type: "TurnResultDTO",
+    turn_id: "local-" + Date.now() + "-" + Math.random().toString(16).slice(2),
+    result,
+    timing: result === "OUT" ? "BAD" : result === "HOME_RUN" ? "PERFECT" : "GOOD",
+    event: result === "OUT" ? "SWING" : "HIT",
+    area_id: state.biome,
+    state: {
+      ...current,
+      balls: result === "OUT" ? Math.min(3, Number(current.balls || 0) + 1) : 0,
+      strikes: result === "OUT" ? Math.min(2, Number(current.strikes || 0) + 1) : 0
+    }
+  };
+  void renderer.applyTurnResult(dto).then(() => {
+    gameModes.registerResult(result);
+    updatePlayHud();
+    saveSystem.save();
+  });
+}
+
 function updateHud(state) {
   const matchState = state?.state || {};
   const inning = matchState.inning ?? "-";
@@ -362,7 +523,12 @@ async function syncCombat() {
 }
 
 async function sendAction(actionType) {
-  if (!api.configured() || !matchId || actionPending) return;
+  if (!api.configured() || !matchId || actionPending) {
+    if (!api.configured() && actionType === "BAT") {
+      simulateLocalTurn();
+    }
+    return;
+  }
   setActionPending(true);
   try {
     const payload = await api.submitTurnAction(matchId, { type: actionType, client_time_ms: Date.now() });
@@ -387,6 +553,27 @@ batButton.addEventListener("click", () => {
 });
 stealButton.addEventListener("click", () => sendAction("STEAL"));
 syncButton.addEventListener("click", syncCombat);
+
+gachaTenButton?.addEventListener("click", async () => {
+  if (!gachaController.ready || gachaRolling) return;
+  gachaRolling = true;
+  gachaTenButton.disabled = true;
+  try {
+    const result = await gachaController.rollGachaTen();
+    gallery.refresh();
+    updateGachaHud(gachaController.getStatus());
+    syncRosterControls();
+    if (gachaStatusValue) gachaStatusValue.textContent = "10X // " + Object.entries(result.totals).map(([rarity, count]) => rarity + "×" + count).join(" • ");
+    saveSystem.save();
+  } catch (error) {
+    if (gachaStatusValue) gachaStatusValue.textContent = String(error.message || error).toUpperCase();
+    setConnection("Gacha unavailable", "error");
+  } finally {
+    gachaRolling = false;
+    updateGachaHud(gachaController.getStatus());
+    gachaTenButton.disabled = false;
+  }
+});
 
 gachaButton?.addEventListener("click", async () => {
   if (!gachaController.ready || gachaRolling) return;
@@ -425,6 +612,8 @@ gachaController.subscribe((status, result) => {
   }
   updateGachaHud(status, result);
   gallery.refresh();
+  syncRosterControls();
+  saveSystem.save();
 });
 
 function setTelegramBackButton(visible) {
@@ -438,18 +627,27 @@ function setTelegramBackButton(visible) {
   }
 }
 
-function setView(view) {
-  const showGallery = view === "gallery";
+function setMainMenuView(view) {
+  const active = String(view || "combat");
+  const showGallery = active === "dex";
+  const showRoster = active === "roster";
+  const showSettings = active === "settings";
+  if (combatShell) combatShell.hidden = !(!showGallery && !showRoster && !showSettings);
   if (galleryView) galleryView.hidden = !showGallery;
-  if (combatShell) combatShell.hidden = showGallery;
-  if (!showGallery && dexInspector) dexInspector.hidden = true;
-  for (const element of combatViewPieces) element.hidden = showGallery;
-  if (navDexButton) navDexButton.textContent = showGallery ? "VOLVER AL CAMPO" : "DEX / EQUIPO";
-  setTelegramBackButton(showGallery);
-  if (showGallery) {
-    setShareTarget(null);
-    gallery.refresh();
+  if (rosterView) rosterView.hidden = !showRoster;
+  if (settingsView) settingsView.hidden = !showSettings;
+  for (const element of combatViewPieces) element.hidden = showGallery || showRoster || showSettings;
+  if (active === "gacha") {
+    const target = document.querySelector("#action-gacha");
+    target?.scrollIntoView?.({ behavior: "smooth", block: "center" });
   }
+  if (active === "roster") syncRosterControls();
+  if (active === "dex") gallery.refresh();
+  setTelegramBackButton(showGallery || showRoster || showSettings);
+}
+
+function setView(view) {
+  setMainMenuView(view === "gallery" ? "dex" : view);
 }
 
 function handleTelegramBackButton() {
@@ -476,6 +674,63 @@ shareButton?.addEventListener("click", async () => {
       : "SHARE UNAVAILABLE";
   }
 });
+
+rosterApplyButton?.addEventListener("click", () => {
+  try {
+    const active = rosterActiveSelect?.value;
+    const support0 = rosterSupport0?.value || null;
+    const support1 = rosterSupport1?.value || null;
+    teamManager.setActiveBatter(active);
+    teamManager.setSupport(0, support0);
+    teamManager.setSupport(1, support1);
+    syncRosterControls();
+    if (renderer.state) void renderer.setCombatInit(applyActiveRoster(renderer.state));
+    saveSystem.save();
+    if (settingsSaveStatus) settingsSaveStatus.textContent = "ROSTER // SAVED";
+  } catch (error) {
+    if (settingsSaveStatus) settingsSaveStatus.textContent = String(error.message || error).toUpperCase();
+  }
+});
+
+settingsQuality?.addEventListener("change", () => {
+  qualitySetting = settingsQuality.value;
+  document.documentElement.dataset.quality = qualitySetting;
+  saveSystem.save();
+  if (settingsSaveStatus) settingsSaveStatus.textContent = "SETTINGS // SAVED";
+});
+
+saveExportButton?.addEventListener("click", async () => {
+  await saveSystem.exportFile();
+  if (settingsSaveStatus) settingsSaveStatus.textContent = "SAVE // EXPORTED";
+});
+
+saveImportInput?.addEventListener("change", async () => {
+  const file = saveImportInput.files?.[0];
+  if (!file) return;
+  try {
+    await saveSystem.importFile(file);
+    gallery.refresh();
+    syncRosterControls();
+    updateGachaHud(gachaController.getStatus());
+    if (settingsSaveStatus) settingsSaveStatus.textContent = "SAVE // IMPORTED";
+  } catch (error) {
+    if (settingsSaveStatus) settingsSaveStatus.textContent = "IMPORT ERROR // " + String(error.message || error);
+  } finally {
+    saveImportInput.value = "";
+  }
+});
+
+saveResetButton?.addEventListener("click", () => {
+  saveSystem.reset();
+  gachaController.storage?.removeItem?.(gachaController.storageKey);
+  teamManager.storage?.removeItem?.(teamManager.storageKey);
+  upgradeSystem.storage?.removeItem?.(upgradeSystem.storageKey);
+  window.localStorage?.removeItem?.("baseball_waifus_audio_v1");
+  window.location.reload();
+});
+
+playModeSelect?.addEventListener("change", () => startGameMode(playModeSelect.value, playBiomeSelect?.value || "cyberpunk"));
+playBiomeSelect?.addEventListener("change", () => startGameMode(playModeSelect?.value || "PRACTICE", playBiomeSelect.value));
 
 function syncAudioControls() {
   const settings = audioBridge.getSettings();
@@ -550,7 +805,13 @@ async function bootstrap() {
   try {
     await gachaController.initialize();
     teamManager.sync();
+    if (saveSystem.storage?.getItem?.(saveSystem.storageKey)) {
+      saveSystem.load();
+    } else {
+      saveSystem.save();
+    }
     updateGachaHud(gachaController.getStatus());
+    syncRosterControls();
     await initializeGallery();
   } catch {
     gachaButton.disabled = true;
@@ -570,4 +831,6 @@ async function bootstrap() {
 }
 
 renderer.initialize();
+mainMenu.mount();
+startGameMode("PRACTICE", "cyberpunk");
 bootstrap();
