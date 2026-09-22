@@ -8313,3 +8313,67 @@ No se ejecutó navegador/Telegram runtime ni Godot runtime.
 ### Avance aproximado
 
 **≈96% estructural del prototipo.** El porcentaje no representa arte final, audio final, validación física Android ni contenido completo.
+
+
+## Revisión 79: Stack de Audio #1 y respuesta de impacto en Canvas
+
+**Fecha:** 2026-09-21  
+**Tipo:** Frontend / WebAudio / Canvas2D / presentación / QA.
+
+### Motivo
+
+Activar el primer stack de audio sintetizado sin introducir archivos de sonido estáticos ni acoplar el renderer a una librería externa. Complementariamente se añade respuesta visual breve para impactos críticos.
+
+### Implementación
+
+Modificados:
+- `webapp/js/audio_bridge.js`
+  - añade `playScavengerSFX()`;
+  - añade `WebAudioSynthAdapter`;
+  - reutiliza un único `AudioContext`;
+  - perfila `bat.swing`, `result.hit` y `result.home_run`.
+- `webapp/js/app.js`
+  - inyecta `WebAudioSynthAdapter` en `AudioBridge`.
+- `webapp/js/combat.js`
+  - reproduce SFX por evento/resolución;
+  - añade shake de cámara de 150 ms;
+  - limita las partículas a 28 por impacto;
+  - utiliza composición `lighter` para chispas cian/rojo/magenta;
+  - mantiene todos los efectos como presentación, después del resultado autoritativo.
+- `webapp/js/audio_bridge_test.mjs`
+  - añade pruebas con contexto WebAudio falso, sin depender del navegador.
+- `webapp/js/contract_test.mjs`
+  - fija la presencia del sintetizador, IDs de sonido, shake, composición aditiva y loop de partículas.
+
+### Decisiones técnicas
+
+1. Stack #1 utiliza Web Audio API nativa y **0 KB de dependencias externas**.
+2. El nombre "ZzFX Lightweight" describe el objetivo de tamaño/envolvente, no la incorporación de código ZzFX.
+3. El contexto de audio se crea bajo demanda y se reutiliza para evitar crear un `AudioContext` por SFX.
+4. Si WebAudio no está disponible o el contexto no puede iniciarse, el juego continúa sin audio.
+5. El shake utiliza `Math.random() * 6 - 3` con un máximo temporal de 150 ms.
+6. Las partículas son Canvas2D, se limitan a 28 y no participan en gameplay.
+7. Ningún efecto visual o sonoro cambia DTOs, estadísticas, RNG, rewards ni resultados.
+
+### QA
+
+Se amplían los tests estructurales para validar:
+- sintaxis y contrato del bridge;
+- configuración de perfiles de audio;
+- funcionamiento del sintetizador contra un contexto falso;
+- presencia del shake de 150 ms;
+- composición `lighter`;
+- límite de partículas;
+- ausencia de dependencias Tone.js/ZzFX/jsfxr dentro del bridge.
+
+No se declara runtime de navegador/Telegram en este entorno.
+
+La ejecución CI de `deploy-pages.yml` queda como validación final de sintaxis, contrato y publicación.
+
+### Estado
+
+**Implementado en `main`; pendiente de validación CI/deploy efectivo.**
+
+### Avance aproximado
+
+**≈96% estructural del prototipo.** El porcentaje no representa audio final, arte final completo, backend comercial ni validación física Android.
