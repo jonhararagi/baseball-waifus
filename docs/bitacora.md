@@ -8054,3 +8054,45 @@ Validación estructural realizada mediante revisión del contenido actualizado. 
 ### Avance aproximado
 
 **≈97% estructural del prototipo.** El porcentaje no representa porcentaje de arte final del roster completo, balance definitivo, backend comercial ni validación física en dispositivos Android.
+
+## Revisión 77: reemplazo de producción vectorial por artwork raster generado
+
+**Fecha:** 2026-09-21  
+**Tipo:** Pipeline de arte / frontend web / GitHub Pages / CI.
+
+### Motivo
+
+Los SVG de transición de `bw001` y `bw002` no cumplían el objetivo de utilizar ilustraciones anime rasterizadas como arte de producción.
+
+### Decisión
+
+La unidad de producción para estos dos personajes queda separada en card HD JPEG 1024x1536 y sprite PNG RGBA 128x128. La generación ocurre fuera del runtime mediante Pollinations y la normalización local se realiza con Pillow.
+
+### Implementación
+
+- `data/characters_queue.json`: agrega objetivos explícitos de producción para `bw001` y `bw002`, con prompt, negative prompt, seed y resolución.
+- `tools/generate_production_artwork.py`: descarga las imágenes, normaliza las cards a JPEG, convierte los sprites a PNG transparente mediante chroma key y elimina los SVG anteriores de esas unidades.
+- `webapp/js/app.js`: el `CombatInitDTO` demo apunta a `bw001--normal.jpg`, `bw002--normal.jpg`, `bw001_idle.png` y `bw002_idle.png`.
+- `webapp/js/contract_test.mjs`: fija el contrato a las nuevas extensiones.
+- `webapp/js/combat.js`: rechaza SVG dentro de `assets/production/` para evitar regresiones silenciosas.
+- `.github/workflows/deploy-pages.yml`: ejecuta el generador antes del staging, verifica los cuatro archivos raster, hace commit automático de los binarios generados y despliega GitHub Pages con el mismo conjunto de assets.
+
+### Arquitectura
+
+CharacterArchetypeCatalog -> production queue -> Pollinations -> raster normalization -> assets/production -> CombatInitDTO -> CombatRenderer.
+
+No se modifica gameplay, estadísticas, IA ni economía.
+
+### QA
+
+Checks integrados: existencia de los cuatro archivos, ausencia de los cuatro SVG, sintaxis JS, contrato de CombatInitDTO, dimensiones y transparencia verificadas por el generador y seeds deterministas por unidad.
+
+**Runtime local:** no ejecutado. La generación real y el despliegue se ejecutan en GitHub Actions.
+
+### Estado
+
+**Implementación integrada en `main`; la materialización de los binarios y el deploy efectivo dependen de la ejecución de GitHub Actions.**
+
+### Avance aproximado
+
+**≈97% estructural del prototipo.** El porcentaje no representa porcentaje de arte final del roster completo.
