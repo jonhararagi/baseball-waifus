@@ -2,10 +2,10 @@ extends Node
 
 const QUEUE_PATH := "res://data/characters_queue.json"
 const CATALOG_PATH := "res://game/characters/character_archetypes.json"
-
-const IDS := ["bw016", "bw017", "bw018", "bw019", "bw020"]
+const IDS := ["bw021", "bw022", "bw023", "bw024", "bw025", "bw026", "bw027", "bw028", "bw029", "bw030"]
 const PALETTE_KEYS := ["skin", "hair_color", "uniform_color", "accent", "eye"]
 const EXPRESSIONS := ["neutral", "happy", "focused", "surprised", "disappointed"]
+const SPRITE_STATES := ["idle", "attack", "hit"]
 
 func _ready() -> void:
 	var queue_file := FileAccess.open(QUEUE_PATH, FileAccess.READ)
@@ -16,7 +16,6 @@ func _ready() -> void:
 
 	var batch = queue.get("batch_units", [])
 	assert(batch is Array, "batch_units must be an array.")
-	assert(batch.size() >= IDS.size(), "bw016-bw020 batch entries must remain present.")
 
 	var catalog_file := FileAccess.open(CATALOG_PATH, FileAccess.READ)
 	assert(catalog_file != null, "canonical character catalog must exist.")
@@ -27,15 +26,16 @@ func _ready() -> void:
 	var selected := {}
 	for unit_value in batch:
 		assert(unit_value is Dictionary, "Each batch unit must be an object.")
-		var candidate: Dictionary = unit_value
-		var candidate_id := str(candidate.get("character_id", ""))
-		if not IDS.has(candidate_id):
+		var unit: Dictionary = unit_value
+		var character_id := str(unit.get("character_id", ""))
+		if not IDS.has(character_id):
 			continue
-		assert(not selected.has(candidate_id), "Duplicate bw016-bw020 character: " + candidate_id)
-		selected[candidate_id] = candidate
+		assert(not selected.has(character_id), "Duplicate bw021-bw030 character: " + character_id)
+		selected[character_id] = unit
+
+	assert(selected.size() == IDS.size(), "bw021-bw030 batch must contain exactly ten unique units.")
 
 	for character_id in IDS:
-		assert(selected.has(character_id), "Missing bw016-bw020 character: " + character_id)
 		var unit: Dictionary = selected[character_id]
 		assert(int(unit.get("schema_version", 0)) == 1, character_id + " schema_version must be 1.")
 
@@ -79,6 +79,7 @@ func _ready() -> void:
 		for forbidden in ["child", "teenager", "underage", "loli", "young-looking"]:
 			assert(negative_prompt.contains(forbidden), character_id + " negative prompt must contain " + forbidden)
 		var expressions: Dictionary = pollinations.get("expressions", {})
+		assert(expressions.size() == EXPRESSIONS.size(), character_id + " must contain exactly five facial expression prompts.")
 		for expression_id in EXPRESSIONS:
 			assert(str(expressions.get(expression_id, "")).strip_edges() != "", character_id + " missing expression prompt: " + expression_id)
 
@@ -86,16 +87,22 @@ func _ready() -> void:
 		assert(str(sprite.get("sprite_resolution", "")) == "128x128", character_id + " sprite resolution must be 128x128.")
 		assert(str(sprite.get("style", "")).contains("transparent background"), character_id + " sprite must use transparent background.")
 		assert(str(sprite.get("prompt_sprite", "")).contains(str(canonical.get("display_name", ""))), character_id + " sprite prompt must identify the character.")
+		var states: Dictionary = sprite.get("states", {})
+		assert(states.size() == SPRITE_STATES.size(), character_id + " must contain idle/attack/hit sprite specs.")
+		for state_id in SPRITE_STATES:
+			assert(str(states.get(state_id, "")).strip_edges() != "", character_id + " missing sprite state: " + state_id)
+			assert(str(states.get(state_id, "")).contains(str(canonical.get("display_name", ""))), character_id + " sprite state must identify the character: " + state_id)
 
 		var animation: Dictionary = unit.get("animation_layers", {})
 		assert(str(animation.get("type", "")) == "2D_cutout_node_system", character_id + " animation type mismatch.")
 		assert(str(animation.get("root_node", "")) != "", character_id + " rig root missing.")
 		assert((animation.get("parts", []) as Array).size() >= 7, character_id + " requires a production rig layer set.")
+		assert((animation.get("layer_order", []) as Array).size() >= 8, character_id + " requires an explicit cutout layer order.")
 		assert((animation.get("preset_animations", []) as Array).size() >= 4, character_id + " requires four presentation animations.")
 
 	var serialized := FileAccess.get_file_as_string(QUEUE_PATH).to_lower()
 	assert(not serialized.contains("http://"), "generation queue must not embed HTTP URLs.")
 	assert(not serialized.contains("https://"), "generation queue must not embed HTTPS URLs.")
 
-	print("bw016-bw020 generation queue QA passed.")
+	print("bw021-bw030 generation queue QA passed.")
 	get_tree().quit(0)

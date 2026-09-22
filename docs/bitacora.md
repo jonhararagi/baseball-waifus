@@ -7862,3 +7862,72 @@ webapp/js/api.js sustituye el timeout basado solamente en Promise.race por Abort
 
 No cambia el contrato DTO ni la autoridad del combate.
 
+
+
+## Revisión 74: Lote final de cola visual bw021-bw030
+
+**Fecha:** 2026-09-21  
+**Tipo:** Pipeline artístico data-first / lote final de roster / QA estructural / CI.
+
+### Motivo
+
+Completar la cola base de generación visual del roster de 30 personajes con bw021-bw030, manteniendo una única autoridad canónica en `game/characters/character_archetypes.json` y sin mezclar prompts o metadata visual con el gameplay.
+
+### Unidades
+
+- **bw021 Noa Mizuno:** R, C, Water, catcher, `blue_casual_catcher`, paleta teal/azul hielo.
+- **bw022 Ayame Tsukino:** SSR, 1B, Darkness, defender, `dark_powerhouse_firstbase`, paleta violeta/blanco.
+- **bw023 Towa Amami:** SR, CF, Light, runner, `bright_athletic_show_runner`, paleta azul claro/oro.
+- **bw024 Nene Kagetsu:** UR, P, Fire, pitcher, `fiery_red_ace`, paleta rojo fuego/crema.
+- **bw025 Itsuki Kogane:** SR, 2B, Ice, defender, `golden_ice_defensive_worker`, paleta oro apagado/hielo.
+- **bw026 Ema Kuroyuri:** SSR, 3B, Nature, contact, `forest_curvy_contact_gardener`, paleta verde bosque/crema.
+- **bw027 Hotaru Kazehaya:** SR, LF, Lightning, contact, `teal_lightning_contact_spark`, paleta teal/oro eléctrico.
+- **bw028 Aria Solis:** SSR, RF, Light, power, `golden_light_social_star`, paleta dorado/crema.
+- **bw029 Sena Yoru:** SR, SS, Darkness, runner, `dark_fast_hikikomori_runner`, paleta grafito/violeta.
+- **bw030 Kagari Homura:** UR, C, Fire, catcher, `fire_command_catcher`, paleta rojo oscuro/crema.
+
+### Implementado
+
+- Extensión de `data/characters_queue.json` con diez unidades adicionales, derivadas del catálogo canónico.
+- Cinco prompts faciales por personaje: neutral, happy, focused, surprised, disappointed.
+- Negative prompts con blindaje explícito de edad, anatomía y artefactos comunes de generación.
+- Especificación pixel-art 128x128 con estados `idle`, `attack` y `hit` para sprites de batalla.
+- Estructura de rig 2D cutout por capas con orden de composición y cuatro animaciones base por personaje.
+- Actualización del test bw016-bw020 para tolerar extensiones posteriores de la cola sin perder la validación de sus cinco unidades.
+- `scenes/bw021_bw030_generation_queue_test.gd` y `.tscn`.
+- Nuevo job `bw021-030-generation-queue-qa` en `.github/workflows/visual_qa.yml`.
+
+### Decisiones arquitectónicas
+
+1. `CharacterArchetypeCatalog` continúa siendo la fuente canónica de nombre, rareza, posición, elemento, especialización, potencial, estadísticas e identidad.
+2. `data/characters_queue.json` es una cola de generación visual y no adquiere autoridad sobre gameplay.
+3. El lote conserva el esquema raíz existente y extiende `batch_units`; no se introduce una nueva fuente de datos paralela.
+4. Los prompts y estados de sprite permanecen separados del runtime de resolución deportiva.
+5. La estructura 2D cutout prepara una sustitución futura por arte final sin alterar PlayerData, resolvers ni economía.
+6. La validación CI verifica exactamente las diez unidades nuevas y su sincronización con el catálogo.
+
+### Pruebas
+
+Se preparó una prueba Godot headless que valida:
+- diez IDs exactos y únicos;
+- sincronización canónica de atributos, estadísticas, identidad y paleta hexadecimal;
+- cinco expresiones faciales por unidad;
+- prompts adult-only y de anatomía segura;
+- resolución 128x128 y estados idle/attack/hit;
+- rig 2D con capas explícitas y cuatro animaciones;
+- ausencia de URLs remotas dentro de la cola.
+
+**Runtime local:** no ejecutado en este entorno. La validación runtime queda delegada al workflow de GitHub Actions.
+
+### CI/CD y GitHub Pages
+
+El push a `main` continúa disparando el workflow existente de GitHub Pages. Su `manifest.json` se genera a partir de assets reales en `assets/production/`; esta revisión agrega metadata de generación y no inventa assets finales. Por ello el deploy se ejecutará normalmente, pero el manifest no listará nuevas cards/sprites hasta que esos archivos de producción existan.
+
+### Estado
+
+**Lote de datos, QA estructural y CI integrados en un único commit. Generación/render final de assets y cualquier incorporación posterior al manifest de producción quedan como siguiente etapa.**
+
+### Avance aproximado
+
+**≈96% estructural del prototipo.** El porcentaje no representa porcentaje de arte final, balance definitivo, validación Android local ni contenido completo.
+

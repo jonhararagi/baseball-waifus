@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource path="res://scenes/bw021_bw030_generation_queue_test.gd" type="Script" id="1"]
+
+[node name="BW021BW030GenerationQueueTest" type="Node"]
+script = ExtResource("1")

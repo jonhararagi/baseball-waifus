@@ -531,6 +531,1063 @@
           "late_reaction_runner"
         ]
       }
+    },
+    {
+      "schema_version": 1,
+      "character_id": "bw021",
+      "canonical": {
+        "display_name": "Noa Mizuno",
+        "adult": true,
+        "rarity": "R",
+        "position": "C",
+        "element": "water",
+        "specialization": "catcher",
+        "potential": 3,
+        "stats": {
+          "power": 62,
+          "contact": 61,
+          "speed": 51,
+          "pitch": 58,
+          "control": 65,
+          "defense": 84,
+          "critical": 8,
+          "stamina": 79
+        },
+        "identity": {
+          "archetype": "blue_casual_catcher",
+          "style_tags": [
+            "casual",
+            "easygoing",
+            "practical",
+            "catcher"
+          ],
+          "play_identity": "pitchout_trap",
+          "story_status": "none",
+          "signature_action_ids": [],
+          "skill_roles": [
+            "defense",
+            "power_down"
+          ]
+        },
+        "visual": {
+          "body_preset": "balanced",
+          "height": 1,
+          "face_style": "round",
+          "skin": "#e4ae88",
+          "hair_color": "#2b6b78",
+          "hair_style": "long",
+          "uniform_style": "standard",
+          "uniform_color": "#eefcff",
+          "accent": "#3b82f6",
+          "eye": "#244b57"
+        }
+      },
+      "pollinations": {
+        "base_prompt": "adult anime female baseball player, Noa Mizuno, R rarity, C, water-element, catcher specialist, balanced adult woman, casual, easygoing, practical, catcher style, long hair in #2b6b78, round face, #244b57 eyes, uniform palette #eefcff with #3b82f6 accents, pitchout_trap, premium anime mobile sports game character key art, clean readable silhouette, centered three-quarter character portrait, professional cel shading, crisp linework, detailed eyes and hair, adult facial proportions, no text, no logo, no watermark",
+        "negative_prompt": "child, teenager, loli, underage, young-looking, minor-coded, childlike proportions, baby face, schoolgirl, male, chibi, mascot proportions, duplicate character, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, bad anatomy, broken anatomy, distorted proportions, blurry face, low detail, muddy colors, oversaturated neon, photorealistic, western comic style, 3d render, text, logo, watermark, cropped head, cropped face, missing limbs, deformed clothing",
+        "expressions": {
+          "neutral": "relaxed friendly expression, calm teal gaze, easygoing closed-mouth smile, practical catcher composure",
+          "happy": "warm open smile, bright teal eyes, relaxed shoulders, cheerful catcher enjoying a clean defensive play",
+          "focused": "serious catcher focus, alert eyes, firm jaw, precise game-calling posture, ready to receive the next pitch",
+          "surprised": "wide teal eyes, raised eyebrows, slightly open mouth, quick genuine surprise while staying composed",
+          "disappointed": "small disappointed frown, softened gaze, shoulders slightly lowered, controlled frustration after a missed call"
+        }
+      },
+      "pixel_art_generator": {
+        "sprite_resolution": "128x128",
+        "style": "16-bit anime sports RPG sprite, clean pixel grid, sharp outlines, #3b82f6 accent highlights, limited character palette, readable silhouette, transparent background",
+        "prompt_sprite": "pixel art 128x128 sprite, Noa Mizuno, adult anime baseball player, C, water-element, balanced catcher stance, catcher glove ready near the chest, relaxed athletic posture, long teal hair settling behind the shoulders, character colors from canonical palette, transparent background, no text",
+        "states": {
+          "idle": "pixel art 128x128 sprite, Noa Mizuno, adult anime baseball player, balanced catcher stance, catcher glove ready near the chest, relaxed athletic posture, long teal hair settling behind the shoulders, standard baseball uniform, transparent background, no text",
+          "attack": "pixel art 128x128 sprite, Noa Mizuno, adult anime baseball player, quick catcher throw toward second base, compact throwing motion, glove opening forward, decisive footwork, standard baseball uniform, transparent background, no text",
+          "hit": "pixel art 128x128 sprite, Noa Mizuno, adult anime baseball player, brief recoil after a difficult play, glove lowered, surprised impact reaction, stable footing, no injury, clean readable reaction silhouette, transparent background, no text"
+        }
+      },
+      "animation_layers": {
+        "type": "2D_cutout_node_system",
+        "root_node": "NoaMizuno_Rig",
+        "parts": [
+          "head_neutral",
+          "hair_back",
+          "hair_front",
+          "torso_catcher",
+          "catcher_glove",
+          "throwing_arm",
+          "legs_catcher_stance",
+          "baseball_element_accent"
+        ],
+        "layer_order": [
+          "legs",
+          "torso",
+          "arms_back",
+          "head",
+          "hair_back",
+          "hair_front",
+          "arms_front",
+          "equipment",
+          "effect"
+        ],
+        "preset_animations": [
+          "idle_breathing",
+          "catcher_ready_loop",
+          "catcher_throw",
+          "hit_reaction"
+        ]
+      }
+    },
+    {
+      "schema_version": 1,
+      "character_id": "bw022",
+      "canonical": {
+        "display_name": "Ayame Tsukino",
+        "adult": true,
+        "rarity": "SSR",
+        "position": "1B",
+        "element": "darkness",
+        "specialization": "defender",
+        "potential": 5,
+        "stats": {
+          "power": 67,
+          "contact": 63,
+          "speed": 56,
+          "pitch": 54,
+          "control": 65,
+          "defense": 89,
+          "critical": 12,
+          "stamina": 84
+        },
+        "identity": {
+          "archetype": "dark_powerhouse_firstbase",
+          "style_tags": [
+            "muscular",
+            "tomboy",
+            "stoic",
+            "defender"
+          ],
+          "play_identity": "drawn_in_defense",
+          "story_status": "story_seed",
+          "story_hook": "Su fuerza defensiva la llevó a aceptar una idea incómoda: acercarse al plato puede crear el hueco que teme.",
+          "signature_action_ids": [
+            "drawn_in_infield"
+          ],
+          "skill_roles": [
+            "defense",
+            "power_up"
+          ]
+        },
+        "visual": {
+          "body_preset": "power",
+          "height": 1,
+          "face_style": "sharp",
+          "skin": "#c98d69",
+          "hair_color": "#3e2f58",
+          "hair_style": "long",
+          "uniform_style": "sleeveless",
+          "uniform_color": "#eeeaff",
+          "accent": "#8b5cf6",
+          "eye": "#44355e"
+        }
+      },
+      "pollinations": {
+        "base_prompt": "adult anime female baseball player, Ayame Tsukino, SSR rarity, 1B, darkness-element, defender specialist, powerful athletic adult woman, muscular, tomboy, stoic, defender style, long hair in #3e2f58, sharp face, #44355e eyes, uniform palette #eeeaff with #8b5cf6 accents, drawn_in_defense, premium anime mobile sports game character key art, clean readable silhouette, centered three-quarter character portrait, professional cel shading, crisp linework, detailed eyes and hair, adult facial proportions, no text, no logo, no watermark",
+        "negative_prompt": "child, teenager, loli, underage, young-looking, minor-coded, childlike proportions, baby face, schoolgirl, male, chibi, mascot proportions, duplicate character, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, bad anatomy, broken anatomy, distorted proportions, blurry face, low detail, muddy colors, oversaturated neon, photorealistic, western comic style, 3d render, text, logo, watermark, cropped head, cropped face, missing limbs, deformed clothing",
+        "expressions": {
+          "neutral": "stoic confident expression, sharp violet gaze, squared shoulders, controlled first-baseman presence",
+          "happy": "rare but genuine victory smile, bright violet eyes, proud upright posture after a defensive stop",
+          "focused": "intense first-base defensive focus, narrowed violet eyes, strong grounded posture, ready to scoop a difficult ball",
+          "surprised": "eyes widened, raised eyebrows, mouth slightly open, powerful posture interrupted by surprise",
+          "disappointed": "tight restrained frown, lowered gaze, controlled frustration, shoulders tense after a defensive mistake"
+        }
+      },
+      "pixel_art_generator": {
+        "sprite_resolution": "128x128",
+        "style": "16-bit anime sports RPG sprite, clean pixel grid, sharp outlines, #8b5cf6 accent highlights, limited character palette, readable silhouette, transparent background",
+        "prompt_sprite": "pixel art 128x128 sprite, Ayame Tsukino, adult anime baseball player, 1B, darkness-element, powerful first baseman ready stance, balanced lower body, glove hand forward, sleeveless uniform and long violet hair, character colors from canonical palette, transparent background, no text",
+        "states": {
+          "idle": "pixel art 128x128 sprite, Ayame Tsukino, adult anime baseball player, powerful first baseman ready stance, balanced lower body, glove hand forward, sleeveless uniform and long violet hair, sleeveless baseball uniform, transparent background, no text",
+          "attack": "pixel art 128x128 sprite, Ayame Tsukino, adult anime baseball player, fast first-base scoop and relay throw, strong athletic motion, glove tracking a low ball, decisive follow-through, sleeveless baseball uniform, transparent background, no text",
+          "hit": "pixel art 128x128 sprite, Ayame Tsukino, adult anime baseball player, short backward recoil after a hard play, glove hand protecting the body, frustrated but composed reaction, no injury, clean readable reaction silhouette, transparent background, no text"
+        }
+      },
+      "animation_layers": {
+        "type": "2D_cutout_node_system",
+        "root_node": "AyameTsukino_Rig",
+        "parts": [
+          "head_neutral",
+          "hair_back",
+          "hair_front",
+          "torso_defender",
+          "glove_arm",
+          "throwing_arm",
+          "legs_defensive_stance",
+          "field_ball_accent"
+        ],
+        "layer_order": [
+          "legs",
+          "torso",
+          "arms_back",
+          "head",
+          "hair_back",
+          "hair_front",
+          "arms_front",
+          "equipment",
+          "effect"
+        ],
+        "preset_animations": [
+          "idle_breathing",
+          "fielding_ready_loop",
+          "defensive_throw",
+          "hit_reaction"
+        ]
+      }
+    },
+    {
+      "schema_version": 1,
+      "character_id": "bw023",
+      "canonical": {
+        "display_name": "Towa Amami",
+        "adult": true,
+        "rarity": "SR",
+        "position": "CF",
+        "element": "light",
+        "specialization": "runner",
+        "potential": 4,
+        "stats": {
+          "power": 57,
+          "contact": 73,
+          "speed": 91,
+          "pitch": 50,
+          "control": 59,
+          "defense": 80,
+          "critical": 10,
+          "stamina": 78
+        },
+        "identity": {
+          "archetype": "bright_athletic_show_runner",
+          "style_tags": [
+            "athletic",
+            "idolish",
+            "bright",
+            "runner"
+          ],
+          "play_identity": "steal_home_threat",
+          "story_status": "story_seed",
+          "story_hook": "Su entusiasmo escénico la hace disfrutar del momento de mayor riesgo: decidir si avanzar una base extra.",
+          "signature_action_ids": [
+            "aggressive_extra_base"
+          ],
+          "skill_roles": [
+            "attack",
+            "statistic"
+          ]
+        },
+        "visual": {
+          "body_preset": "athletic",
+          "height": 1.02,
+          "face_style": "soft",
+          "skin": "#f0c8ac",
+          "hair_color": "#5b7bb1",
+          "hair_style": "long",
+          "uniform_style": "sporty",
+          "uniform_color": "#eef6ff",
+          "accent": "#f4ed9b",
+          "eye": "#30486e"
+        }
+      },
+      "pollinations": {
+        "base_prompt": "adult anime female baseball player, Towa Amami, SR rarity, CF, light-element, runner specialist, athletic adult woman, athletic, idolish, bright, runner style, long hair in #5b7bb1, soft face, #30486e eyes, uniform palette #eef6ff with #f4ed9b accents, steal_home_threat, premium anime mobile sports game character key art, clean readable silhouette, centered three-quarter character portrait, professional cel shading, crisp linework, detailed eyes and hair, adult facial proportions, no text, no logo, no watermark",
+        "negative_prompt": "child, teenager, loli, underage, young-looking, minor-coded, childlike proportions, baby face, schoolgirl, male, chibi, mascot proportions, duplicate character, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, bad anatomy, broken anatomy, distorted proportions, blurry face, low detail, muddy colors, oversaturated neon, photorealistic, western comic style, 3d render, text, logo, watermark, cropped head, cropped face, missing limbs, deformed clothing",
+        "expressions": {
+          "neutral": "bright polished expression, attentive light-brown gaze, poised smile, energetic idol-like composure",
+          "happy": "radiant stage-ready smile, sparkling eyes, celebratory runner energy, lively confident expression",
+          "focused": "laser-focused baserunner concentration, narrowed eyes, forward lean, calculating the next base",
+          "surprised": "wide eyes, raised eyebrows, open mouth, vivid expressive surprise with polished composure",
+          "disappointed": "fallen smile, softened eyes, small frown, disappointed runner trying to stay upbeat"
+        }
+      },
+      "pixel_art_generator": {
+        "sprite_resolution": "128x128",
+        "style": "16-bit anime sports RPG sprite, clean pixel grid, sharp outlines, #f4ed9b accent highlights, limited character palette, readable silhouette, transparent background",
+        "prompt_sprite": "pixel art 128x128 sprite, Towa Amami, adult anime baseball player, CF, light-element, athletic runner ready stance, slight forward lean, hands loose at the sides, long blue hair flowing lightly, character colors from canonical palette, transparent background, no text",
+        "states": {
+          "idle": "pixel art 128x128 sprite, Towa Amami, adult anime baseball player, athletic runner ready stance, slight forward lean, hands loose at the sides, long blue hair flowing lightly, sporty baseball uniform, transparent background, no text",
+          "attack": "pixel art 128x128 sprite, Towa Amami, adult anime baseball player, aggressive extra-base sprint, dynamic forward stride, arms driving, sharp change of direction toward the next base, sporty baseball uniform, transparent background, no text",
+          "hit": "pixel art 128x128 sprite, Towa Amami, adult anime baseball player, quick recoil after being checked on the bases, surprised expression, one hand raised for balance, no injury, clean readable reaction silhouette, transparent background, no text"
+        }
+      },
+      "animation_layers": {
+        "type": "2D_cutout_node_system",
+        "root_node": "TowaAmami_Rig",
+        "parts": [
+          "head_neutral",
+          "hair_back",
+          "hair_front",
+          "torso_runner",
+          "arm_back",
+          "arm_front",
+          "legs_sprint_stance",
+          "runner_ball_accent"
+        ],
+        "layer_order": [
+          "legs",
+          "torso",
+          "arms_back",
+          "head",
+          "hair_back",
+          "hair_front",
+          "arms_front",
+          "equipment",
+          "effect"
+        ],
+        "preset_animations": [
+          "idle_breathing",
+          "running_ready_loop",
+          "steal_launch",
+          "hit_reaction"
+        ]
+      }
+    },
+    {
+      "schema_version": 1,
+      "character_id": "bw024",
+      "canonical": {
+        "display_name": "Nene Kagetsu",
+        "adult": true,
+        "rarity": "UR",
+        "position": "P",
+        "element": "fire",
+        "specialization": "pitcher",
+        "potential": 5,
+        "stats": {
+          "power": 61,
+          "contact": 60,
+          "speed": 55,
+          "pitch": 86,
+          "control": 88,
+          "defense": 72,
+          "critical": 19,
+          "stamina": 90
+        },
+        "identity": {
+          "archetype": "fiery_red_ace",
+          "style_tags": [
+            "powerful",
+            "red",
+            "proud",
+            "pitcher"
+          ],
+          "play_identity": "pressure_pitcher",
+          "story_status": "story_seed",
+          "story_hook": "Una pitcher estrella descubre que dominar el partido no significa lanzar siempre al máximo.",
+          "signature_action_ids": [
+            "pressure_sequence"
+          ],
+          "skill_roles": [
+            "power_down",
+            "attack"
+          ]
+        },
+        "visual": {
+          "body_preset": "power",
+          "height": 1,
+          "face_style": "sharp",
+          "skin": "#e6ab83",
+          "hair_color": "#922f24",
+          "hair_style": "long",
+          "uniform_style": "standard",
+          "uniform_color": "#fff0e6",
+          "accent": "#e4572e",
+          "eye": "#64251f"
+        }
+      },
+      "pollinations": {
+        "base_prompt": "adult anime female baseball player, Nene Kagetsu, UR rarity, P, fire-element, pitcher specialist, powerful athletic adult woman, powerful, red, proud, pitcher style, long hair in #922f24, sharp face, #64251f eyes, uniform palette #fff0e6 with #e4572e accents, pressure_pitcher, premium anime mobile sports game character key art, clean readable silhouette, centered three-quarter character portrait, professional cel shading, crisp linework, detailed eyes and hair, adult facial proportions, no text, no logo, no watermark",
+        "negative_prompt": "child, teenager, loli, underage, young-looking, minor-coded, childlike proportions, baby face, schoolgirl, male, chibi, mascot proportions, duplicate character, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, bad anatomy, broken anatomy, distorted proportions, blurry face, low detail, muddy colors, oversaturated neon, photorealistic, western comic style, 3d render, text, logo, watermark, cropped head, cropped face, missing limbs, deformed clothing",
+        "expressions": {
+          "neutral": "proud composed ace expression, deep red gaze, upright posture, restrained confidence",
+          "happy": "rare victorious smile, bright red eyes, controlled celebration, confident ace presence",
+          "focused": "maximum pitching concentration, narrowed red eyes, firm posture, precise wind-up readiness, commanding focus",
+          "surprised": "eyes widened, raised eyebrows, slight open mouth, a brief break in the ace's composure",
+          "disappointed": "serious lowered gaze, tight frown, restrained frustration after an imperfect pitch"
+        }
+      },
+      "pixel_art_generator": {
+        "sprite_resolution": "128x128",
+        "style": "16-bit anime sports RPG sprite, clean pixel grid, sharp outlines, #e4572e accent highlights, limited character palette, readable silhouette, transparent background",
+        "prompt_sprite": "pixel art 128x128 sprite, Nene Kagetsu, adult anime baseball player, P, fire-element, elite pitcher set position, glove held high, long red hair framing the face, strong balanced lower stance, character colors from canonical palette, transparent background, no text",
+        "states": {
+          "idle": "pixel art 128x128 sprite, Nene Kagetsu, adult anime baseball player, elite pitcher set position, glove held high, long red hair framing the face, strong balanced lower stance, standard baseball uniform, transparent background, no text",
+          "attack": "pixel art 128x128 sprite, Nene Kagetsu, adult anime baseball player, high-intensity pitching release, powerful stride, throwing arm extended, glove hand pulled back, dramatic but clean sports motion, standard baseball uniform, transparent background, no text",
+          "hit": "pixel art 128x128 sprite, Nene Kagetsu, adult anime baseball player, pitcher recoil after a hard return toward the mound, glove raised defensively, surprised controlled reaction, no injury, clean readable reaction silhouette, transparent background, no text"
+        }
+      },
+      "animation_layers": {
+        "type": "2D_cutout_node_system",
+        "root_node": "NeneKagetsu_Rig",
+        "parts": [
+          "head_neutral",
+          "hair_back",
+          "hair_front",
+          "torso_pitcher",
+          "glove_hand",
+          "throwing_arm",
+          "legs_pitcher_stance",
+          "baseball_element_accent"
+        ],
+        "layer_order": [
+          "legs",
+          "torso",
+          "arms_back",
+          "head",
+          "hair_back",
+          "hair_front",
+          "arms_front",
+          "equipment",
+          "effect"
+        ],
+        "preset_animations": [
+          "idle_breathing",
+          "pitching_set_loop",
+          "pitch_release",
+          "hit_reaction"
+        ]
+      }
+    },
+    {
+      "schema_version": 1,
+      "character_id": "bw025",
+      "canonical": {
+        "display_name": "Itsuki Kogane",
+        "adult": true,
+        "rarity": "SR",
+        "position": "2B",
+        "element": "ice",
+        "specialization": "defender",
+        "potential": 4,
+        "stats": {
+          "power": 60,
+          "contact": 67,
+          "speed": 73,
+          "pitch": 50,
+          "control": 60,
+          "defense": 87,
+          "critical": 10,
+          "stamina": 81
+        },
+        "identity": {
+          "archetype": "golden_ice_defensive_worker",
+          "style_tags": [
+            "athletic",
+            "earthy",
+            "quiet",
+            "defender"
+          ],
+          "play_identity": "fundamental_play",
+          "story_status": "story_seed",
+          "story_hook": "No busca la jugada espectacular: busca que ninguna jugada básica falle.",
+          "signature_action_ids": [
+            "fundamental_double_play"
+          ],
+          "skill_roles": [
+            "defense",
+            "combination"
+          ]
+        },
+        "visual": {
+          "body_preset": "athletic",
+          "height": 1.02,
+          "face_style": "soft",
+          "skin": "#d9b093",
+          "hair_color": "#8b7f59",
+          "hair_style": "long",
+          "uniform_style": "sleeveless",
+          "uniform_color": "#f1f0df",
+          "accent": "#8ad9ff",
+          "eye": "#514a35"
+        }
+      },
+      "pollinations": {
+        "base_prompt": "adult anime female baseball player, Itsuki Kogane, SR rarity, 2B, ice-element, defender specialist, athletic adult woman, athletic, earthy, quiet, defender style, long hair in #8b7f59, soft face, #514a35 eyes, uniform palette #f1f0df with #8ad9ff accents, fundamental_play, premium anime mobile sports game character key art, clean readable silhouette, centered three-quarter character portrait, professional cel shading, crisp linework, detailed eyes and hair, adult facial proportions, no text, no logo, no watermark",
+        "negative_prompt": "child, teenager, loli, underage, young-looking, minor-coded, childlike proportions, baby face, schoolgirl, male, chibi, mascot proportions, duplicate character, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, bad anatomy, broken anatomy, distorted proportions, blurry face, low detail, muddy colors, oversaturated neon, photorealistic, western comic style, 3d render, text, logo, watermark, cropped head, cropped face, missing limbs, deformed clothing",
+        "expressions": {
+          "neutral": "quiet practical expression, warm brown gaze, restrained smile, dependable defensive composure",
+          "happy": "soft genuine smile, bright eyes, modest celebration, calm satisfaction after a clean defensive play",
+          "focused": "fundamental defensive concentration, alert eyes, low second-base stance, precise ready posture",
+          "surprised": "widened brown eyes, raised eyebrows, slight open mouth, understated but clear surprise",
+          "disappointed": "subtle frown, lowered gaze, calm disappointment, shoulders slightly lowered after an error"
+        }
+      },
+      "pixel_art_generator": {
+        "sprite_resolution": "128x128",
+        "style": "16-bit anime sports RPG sprite, clean pixel grid, sharp outlines, #8ad9ff accent highlights, limited character palette, readable silhouette, transparent background",
+        "prompt_sprite": "pixel art 128x128 sprite, Itsuki Kogane, adult anime baseball player, 2B, ice-element, compact second-base defensive stance, glove open, athletic balanced posture, long muted-gold hair, character colors from canonical palette, transparent background, no text",
+        "states": {
+          "idle": "pixel art 128x128 sprite, Itsuki Kogane, adult anime baseball player, compact second-base defensive stance, glove open, athletic balanced posture, long muted-gold hair, sleeveless baseball uniform, transparent background, no text",
+          "attack": "pixel art 128x128 sprite, Itsuki Kogane, adult anime baseball player, clean double-play pivot, quick glove transfer, short precise throw, efficient footwork, technically correct motion, sleeveless baseball uniform, transparent background, no text",
+          "hit": "pixel art 128x128 sprite, Itsuki Kogane, adult anime baseball player, brief recoil after a difficult fielding chance, glove pulled inward, disappointed but controlled reaction, no injury, clean readable reaction silhouette, transparent background, no text"
+        }
+      },
+      "animation_layers": {
+        "type": "2D_cutout_node_system",
+        "root_node": "ItsukiKogane_Rig",
+        "parts": [
+          "head_neutral",
+          "hair_back",
+          "hair_front",
+          "torso_defender",
+          "glove_arm",
+          "throwing_arm",
+          "legs_defensive_stance",
+          "field_ball_accent"
+        ],
+        "layer_order": [
+          "legs",
+          "torso",
+          "arms_back",
+          "head",
+          "hair_back",
+          "hair_front",
+          "arms_front",
+          "equipment",
+          "effect"
+        ],
+        "preset_animations": [
+          "idle_breathing",
+          "fielding_ready_loop",
+          "defensive_throw",
+          "hit_reaction"
+        ]
+      }
+    },
+    {
+      "schema_version": 1,
+      "character_id": "bw026",
+      "canonical": {
+        "display_name": "Ema Kuroyuri",
+        "adult": true,
+        "rarity": "SSR",
+        "position": "3B",
+        "element": "nature",
+        "specialization": "contact",
+        "potential": 5,
+        "stats": {
+          "power": 64,
+          "contact": 81,
+          "speed": 67,
+          "pitch": 56,
+          "control": 71,
+          "defense": 78,
+          "critical": 15,
+          "stamina": 80
+        },
+        "identity": {
+          "archetype": "forest_curvy_contact_gardener",
+          "style_tags": [
+            "curvy",
+            "calm",
+            "botanical",
+            "contact"
+          ],
+          "play_identity": "squeeze_specialist",
+          "story_status": "story_seed",
+          "story_hook": "Su paciencia con las plantas se refleja en una paciencia deportiva poco intuitiva para una bateadora de contacto.",
+          "signature_action_ids": [
+            "squeeze_play"
+          ],
+          "skill_roles": [
+            "combination",
+            "power_up"
+          ]
+        },
+        "visual": {
+          "body_preset": "curvy",
+          "height": 0.98,
+          "face_style": "round",
+          "skin": "#e8b59a",
+          "hair_color": "#526b3e",
+          "hair_style": "long",
+          "uniform_style": "standard",
+          "uniform_color": "#eff5df",
+          "accent": "#4cae5f",
+          "eye": "#344327"
+        }
+      },
+      "pollinations": {
+        "base_prompt": "adult anime female baseball player, Ema Kuroyuri, SSR rarity, 3B, nature-element, contact specialist, curvy athletic adult woman, curvy, calm, botanical, contact style, long hair in #526b3e, round face, #344327 eyes, uniform palette #eff5df with #4cae5f accents, squeeze_specialist, premium anime mobile sports game character key art, clean readable silhouette, centered three-quarter character portrait, professional cel shading, crisp linework, detailed eyes and hair, adult facial proportions, no text, no logo, no watermark",
+        "negative_prompt": "child, teenager, loli, underage, young-looking, minor-coded, childlike proportions, baby face, schoolgirl, male, chibi, mascot proportions, duplicate character, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, bad anatomy, broken anatomy, distorted proportions, blurry face, low detail, muddy colors, oversaturated neon, photorealistic, western comic style, 3d render, text, logo, watermark, cropped head, cropped face, missing limbs, deformed clothing",
+        "expressions": {
+          "neutral": "calm serene expression, moss-green gaze, gentle smile, patient contact-batter composure",
+          "happy": "warm peaceful smile, bright green eyes, calm celebration, soft confident happiness",
+          "focused": "patient squeeze-play concentration, narrowed green eyes, compact batting stance, disciplined focus",
+          "surprised": "wide green eyes, raised eyebrows, small open mouth, expressive but composed surprise",
+          "disappointed": "soft frown, lowered gaze, quiet frustration, graceful composure after a missed opportunity"
+        }
+      },
+      "pixel_art_generator": {
+        "sprite_resolution": "128x128",
+        "style": "16-bit anime sports RPG sprite, clean pixel grid, sharp outlines, #4cae5f accent highlights, limited character palette, readable silhouette, transparent background",
+        "prompt_sprite": "pixel art 128x128 sprite, Ema Kuroyuri, adult anime baseball player, 3B, nature-element, curvy adult third baseman batting-ready stance, balanced feet, calm posture, long moss-green hair, character colors from canonical palette, transparent background, no text",
+        "states": {
+          "idle": "pixel art 128x128 sprite, Ema Kuroyuri, adult anime baseball player, curvy adult third baseman batting-ready stance, balanced feet, calm posture, long moss-green hair, standard baseball uniform, transparent background, no text",
+          "attack": "pixel art 128x128 sprite, Ema Kuroyuri, adult anime baseball player, precise contact swing for a squeeze-play situation, compact bat path, controlled lower body, purposeful motion, standard baseball uniform, transparent background, no text",
+          "hit": "pixel art 128x128 sprite, Ema Kuroyuri, adult anime baseball player, small backward recoil after an inside pitch, bat lowered, disappointed but composed expression, no injury, clean readable reaction silhouette, transparent background, no text"
+        }
+      },
+      "animation_layers": {
+        "type": "2D_cutout_node_system",
+        "root_node": "EmaKuroyuri_Rig",
+        "parts": [
+          "head_neutral",
+          "hair_back",
+          "hair_front",
+          "torso_batter",
+          "arm_left_bat_grip",
+          "arm_right_bat_grip",
+          "legs_batter_stance",
+          "baseball_bat_element"
+        ],
+        "layer_order": [
+          "legs",
+          "torso",
+          "arms_back",
+          "head",
+          "hair_back",
+          "hair_front",
+          "arms_front",
+          "equipment",
+          "effect"
+        ],
+        "preset_animations": [
+          "idle_breathing",
+          "batting_ready_loop",
+          "contact_swing",
+          "hit_reaction"
+        ]
+      }
+    },
+    {
+      "schema_version": 1,
+      "character_id": "bw027",
+      "canonical": {
+        "display_name": "Hotaru Kazehaya",
+        "adult": true,
+        "rarity": "SR",
+        "position": "LF",
+        "element": "lightning",
+        "specialization": "contact",
+        "potential": 4,
+        "stats": {
+          "power": 57,
+          "contact": 78,
+          "speed": 76,
+          "pitch": 51,
+          "control": 63,
+          "defense": 76,
+          "critical": 18,
+          "stamina": 74
+        },
+        "identity": {
+          "archetype": "teal_lightning_contact_spark",
+          "style_tags": [
+            "casual",
+            "expressive",
+            "restless",
+            "contact"
+          ],
+          "play_identity": "two_strike_survivor",
+          "story_status": "story_seed",
+          "story_hook": "Su impaciencia la obliga a aprender a sobrevivir con dos strikes sin regalar el turno.",
+          "signature_action_ids": [
+            "two_strike_foul_control"
+          ],
+          "skill_roles": [
+            "statistic",
+            "attack"
+          ]
+        },
+        "visual": {
+          "body_preset": "balanced",
+          "height": 1,
+          "face_style": "soft",
+          "skin": "#e9bb9e",
+          "hair_color": "#2b6d6f",
+          "hair_style": "long",
+          "uniform_style": "standard",
+          "uniform_color": "#eef8f7",
+          "accent": "#f6d447",
+          "eye": "#23464a"
+        }
+      },
+      "pollinations": {
+        "base_prompt": "adult anime female baseball player, Hotaru Kazehaya, SR rarity, LF, lightning-element, contact specialist, balanced adult woman, casual, expressive, restless, contact style, long hair in #2b6d6f, soft face, #23464a eyes, uniform palette #eef8f7 with #f6d447 accents, two_strike_survivor, premium anime mobile sports game character key art, clean readable silhouette, centered three-quarter character portrait, professional cel shading, crisp linework, detailed eyes and hair, adult facial proportions, no text, no logo, no watermark",
+        "negative_prompt": "child, teenager, loli, underage, young-looking, minor-coded, childlike proportions, baby face, schoolgirl, male, chibi, mascot proportions, duplicate character, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, bad anatomy, broken anatomy, distorted proportions, blurry face, low detail, muddy colors, oversaturated neon, photorealistic, western comic style, 3d render, text, logo, watermark, cropped head, cropped face, missing limbs, deformed clothing",
+        "expressions": {
+          "neutral": "restless friendly expression, expressive teal eyes, slightly raised eyebrows, casual energetic posture",
+          "happy": "wide playful grin, sparkling teal eyes, lively celebratory energy, animated expression",
+          "focused": "two-strike concentration, alert eyes, compact batting stance, disciplined determination despite restless energy",
+          "surprised": "very wide eyes, raised eyebrows, open mouth, highly expressive sudden reaction",
+          "disappointed": "scrunched frustrated expression, softened eyes, shoulders slightly lowered, controlled annoyance after a foul"
+        }
+      },
+      "pixel_art_generator": {
+        "sprite_resolution": "128x128",
+        "style": "16-bit anime sports RPG sprite, clean pixel grid, sharp outlines, #f6d447 accent highlights, limited character palette, readable silhouette, transparent background",
+        "prompt_sprite": "pixel art 128x128 sprite, Hotaru Kazehaya, adult anime baseball player, LF, lightning-element, balanced left-fielder ready stance, light athletic posture, long teal hair with lively movement, character colors from canonical palette, transparent background, no text",
+        "states": {
+          "idle": "pixel art 128x128 sprite, Hotaru Kazehaya, adult anime baseball player, balanced left-fielder ready stance, light athletic posture, long teal hair with lively movement, standard baseball uniform, transparent background, no text",
+          "attack": "pixel art 128x128 sprite, Hotaru Kazehaya, adult anime baseball player, quick two-strike contact swing, compact bat path, fast weight transfer, energetic follow-through, standard baseball uniform, transparent background, no text",
+          "hit": "pixel art 128x128 sprite, Hotaru Kazehaya, adult anime baseball player, brief exaggerated recoil after a difficult contact, surprised face, feet recovering into stance, no injury, clean readable reaction silhouette, transparent background, no text"
+        }
+      },
+      "animation_layers": {
+        "type": "2D_cutout_node_system",
+        "root_node": "HotaruKazehaya_Rig",
+        "parts": [
+          "head_neutral",
+          "hair_back",
+          "hair_front",
+          "torso_batter",
+          "arm_left_bat_grip",
+          "arm_right_bat_grip",
+          "legs_batter_stance",
+          "baseball_bat_element"
+        ],
+        "layer_order": [
+          "legs",
+          "torso",
+          "arms_back",
+          "head",
+          "hair_back",
+          "hair_front",
+          "arms_front",
+          "equipment",
+          "effect"
+        ],
+        "preset_animations": [
+          "idle_breathing",
+          "batting_ready_loop",
+          "contact_swing",
+          "hit_reaction"
+        ]
+      }
+    },
+    {
+      "schema_version": 1,
+      "character_id": "bw028",
+      "canonical": {
+        "display_name": "Aria Solis",
+        "adult": true,
+        "rarity": "SSR",
+        "position": "RF",
+        "element": "light",
+        "specialization": "power",
+        "potential": 5,
+        "stats": {
+          "power": 73,
+          "contact": 68,
+          "speed": 59,
+          "pitch": 61,
+          "control": 75,
+          "defense": 69,
+          "critical": 16,
+          "stamina": 82
+        },
+        "identity": {
+          "archetype": "golden_light_social_star",
+          "style_tags": [
+            "curvy",
+            "idol",
+            "polished",
+            "power"
+          ],
+          "play_identity": "team_first_star",
+          "story_status": "story_seed",
+          "story_hook": "Su imagen de estrella pública choca con la realidad de que una jugada correcta puede dejarla sin estadísticas llamativas.",
+          "signature_action_ids": [
+            "team_first_hit"
+          ],
+          "skill_roles": [
+            "power_up",
+            "combination"
+          ]
+        },
+        "visual": {
+          "body_preset": "curvy",
+          "height": 0.98,
+          "face_style": "soft",
+          "skin": "#f0c7aa",
+          "hair_color": "#d9a35b",
+          "hair_style": "long",
+          "uniform_style": "jacket",
+          "uniform_color": "#fff7e8",
+          "accent": "#f4ed9b",
+          "eye": "#674b22"
+        }
+      },
+      "pollinations": {
+        "base_prompt": "adult anime female baseball player, Aria Solis, SSR rarity, RF, light-element, power specialist, curvy athletic adult woman, curvy, idol, polished, power style, long hair in #d9a35b, soft face, #674b22 eyes, uniform palette #fff7e8 with #f4ed9b accents, team_first_star, premium anime mobile sports game character key art, clean readable silhouette, centered three-quarter character portrait, professional cel shading, crisp linework, detailed eyes and hair, adult facial proportions, no text, no logo, no watermark",
+        "negative_prompt": "child, teenager, loli, underage, young-looking, minor-coded, childlike proportions, baby face, schoolgirl, male, chibi, mascot proportions, duplicate character, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, bad anatomy, broken anatomy, distorted proportions, blurry face, low detail, muddy colors, oversaturated neon, photorealistic, western comic style, 3d render, text, logo, watermark, cropped head, cropped face, missing limbs, deformed clothing",
+        "expressions": {
+          "neutral": "polished star expression, warm golden gaze, elegant smile, confident idol presence",
+          "happy": "radiant superstar smile, sparkling eyes, poised celebratory expression, glamorous but athletic confidence",
+          "focused": "team-first power-batting concentration, narrowed golden eyes, composed powerful stance, strategic focus",
+          "surprised": "wide golden eyes, raised eyebrows, slightly open mouth, polished composure visibly breaking",
+          "disappointed": "elegant restrained frown, softened gaze, lowered shoulders, quiet frustration after sacrificing power unsuccessfully"
+        }
+      },
+      "pixel_art_generator": {
+        "sprite_resolution": "128x128",
+        "style": "16-bit anime sports RPG sprite, clean pixel grid, sharp outlines, #f4ed9b accent highlights, limited character palette, readable silhouette, transparent background",
+        "prompt_sprite": "pixel art 128x128 sprite, Aria Solis, adult anime baseball player, RF, light-element, curvy adult right fielder in polished batting-ready stance, elegant posture, long golden hair, jacket uniform, character colors from canonical palette, transparent background, no text",
+        "states": {
+          "idle": "pixel art 128x128 sprite, Aria Solis, adult anime baseball player, curvy adult right fielder in polished batting-ready stance, elegant posture, long golden hair, jacket uniform, jacket baseball uniform, transparent background, no text",
+          "attack": "pixel art 128x128 sprite, Aria Solis, adult anime baseball player, team-first power swing with controlled follow-through, strong lower-body rotation, polished athletic form, jacket baseball uniform, transparent background, no text",
+          "hit": "pixel art 128x128 sprite, Aria Solis, adult anime baseball player, controlled recoil after a failed swing, bat lowered, surprised then disappointed expression, no injury, clean readable reaction silhouette, transparent background, no text"
+        }
+      },
+      "animation_layers": {
+        "type": "2D_cutout_node_system",
+        "root_node": "AriaSolis_Rig",
+        "parts": [
+          "head_neutral",
+          "hair_back",
+          "hair_front",
+          "torso_batter",
+          "arm_left_bat_grip",
+          "arm_right_bat_grip",
+          "legs_batter_stance",
+          "baseball_bat_element"
+        ],
+        "layer_order": [
+          "legs",
+          "torso",
+          "arms_back",
+          "head",
+          "hair_back",
+          "hair_front",
+          "arms_front",
+          "equipment",
+          "effect"
+        ],
+        "preset_animations": [
+          "idle_breathing",
+          "batting_ready_loop",
+          "power_swing_execution",
+          "hit_reaction"
+        ]
+      }
+    },
+    {
+      "schema_version": 1,
+      "character_id": "bw029",
+      "canonical": {
+        "display_name": "Sena Yoru",
+        "adult": true,
+        "rarity": "SR",
+        "position": "SS",
+        "element": "darkness",
+        "specialization": "runner",
+        "potential": 4,
+        "stats": {
+          "power": 58,
+          "contact": 72,
+          "speed": 89,
+          "pitch": 48,
+          "control": 59,
+          "defense": 81,
+          "critical": 12,
+          "stamina": 77
+        },
+        "identity": {
+          "archetype": "dark_fast_hikikomori_runner",
+          "style_tags": [
+            "athletic",
+            "hikikomori",
+            "messy",
+            "runner"
+          ],
+          "play_identity": "sudden_aggression",
+          "story_status": "story_seed",
+          "story_hook": "Fuera del campo evita a todo el mundo; en las bases descubre una forma de expresarse sin hablar.",
+          "signature_action_ids": [
+            "silent_steal"
+          ],
+          "skill_roles": [
+            "attack",
+            "statistic"
+          ]
+        },
+        "visual": {
+          "body_preset": "athletic",
+          "height": 1.02,
+          "face_style": "sharp",
+          "skin": "#c58a6c",
+          "hair_color": "#202638",
+          "hair_style": "long",
+          "uniform_style": "sporty",
+          "uniform_color": "#e9ebf5",
+          "accent": "#8b5cf6",
+          "eye": "#282d49"
+        }
+      },
+      "pollinations": {
+        "base_prompt": "adult anime female baseball player, Sena Yoru, SR rarity, SS, darkness-element, runner specialist, athletic adult woman, athletic, hikikomori, messy, runner style, long hair in #202638, sharp face, #282d49 eyes, uniform palette #e9ebf5 with #8b5cf6 accents, sudden_aggression, premium anime mobile sports game character key art, clean readable silhouette, centered three-quarter character portrait, professional cel shading, crisp linework, detailed eyes and hair, adult facial proportions, no text, no logo, no watermark",
+        "negative_prompt": "child, teenager, loli, underage, young-looking, minor-coded, childlike proportions, baby face, schoolgirl, male, chibi, mascot proportions, duplicate character, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, bad anatomy, broken anatomy, distorted proportions, blurry face, low detail, muddy colors, oversaturated neon, photorealistic, western comic style, 3d render, text, logo, watermark, cropped head, cropped face, missing limbs, deformed clothing",
+        "expressions": {
+          "neutral": "tired reserved expression, dark blue gaze, slightly messy hair, quiet withdrawn adult composure",
+          "happy": "small unexpected smile, softened eyes, subtle private satisfaction, restrained celebration",
+          "focused": "silent-steal concentration, narrowed eyes, low runner stance, hyper-alert body language",
+          "surprised": "wide dark eyes, raised eyebrows, slight open mouth, startled reaction with visible discomfort",
+          "disappointed": "downcast gaze, faint frown, shoulders curled slightly inward, quiet frustration without melodrama"
+        }
+      },
+      "pixel_art_generator": {
+        "sprite_resolution": "128x128",
+        "style": "16-bit anime sports RPG sprite, clean pixel grid, sharp outlines, #8b5cf6 accent highlights, limited character palette, readable silhouette, transparent background",
+        "prompt_sprite": "pixel art 128x128 sprite, Sena Yoru, adult anime baseball player, SS, darkness-element, athletic shortstop ready stance, slightly messy long dark hair, low quiet posture, practical running shoes, character colors from canonical palette, transparent background, no text",
+        "states": {
+          "idle": "pixel art 128x128 sprite, Sena Yoru, adult anime baseball player, athletic shortstop ready stance, slightly messy long dark hair, low quiet posture, practical running shoes, sporty baseball uniform, transparent background, no text",
+          "attack": "pixel art 128x128 sprite, Sena Yoru, adult anime baseball player, silent steal launch from shortstop depth, sudden explosive first step, low sprint posture, controlled aggression, sporty baseball uniform, transparent background, no text",
+          "hit": "pixel art 128x128 sprite, Sena Yoru, adult anime baseball player, brief recoil after a failed steal attempt, body pulling inward, surprised then disappointed expression, no injury, clean readable reaction silhouette, transparent background, no text"
+        }
+      },
+      "animation_layers": {
+        "type": "2D_cutout_node_system",
+        "root_node": "SenaYoru_Rig",
+        "parts": [
+          "head_neutral",
+          "hair_back",
+          "hair_front",
+          "torso_runner",
+          "arm_back",
+          "arm_front",
+          "legs_sprint_stance",
+          "runner_ball_accent"
+        ],
+        "layer_order": [
+          "legs",
+          "torso",
+          "arms_back",
+          "head",
+          "hair_back",
+          "hair_front",
+          "arms_front",
+          "equipment",
+          "effect"
+        ],
+        "preset_animations": [
+          "idle_breathing",
+          "running_ready_loop",
+          "steal_launch",
+          "hit_reaction"
+        ]
+      }
+    },
+    {
+      "schema_version": 1,
+      "character_id": "bw030",
+      "canonical": {
+        "display_name": "Kagari Homura",
+        "adult": true,
+        "rarity": "UR",
+        "position": "C",
+        "element": "fire",
+        "specialization": "catcher",
+        "potential": 5,
+        "stats": {
+          "power": 68,
+          "contact": 65,
+          "speed": 55,
+          "pitch": 69,
+          "control": 74,
+          "defense": 91,
+          "critical": 19,
+          "stamina": 88
+        },
+        "identity": {
+          "archetype": "fire_command_catcher",
+          "style_tags": [
+            "powerful",
+            "commanding",
+            "warm",
+            "catcher"
+          ],
+          "play_identity": "rally_control",
+          "story_status": "story_seed",
+          "story_hook": "Como receptora, aprende que liderar no consiste en ordenar cada jugada, sino en leer a su pitcher.",
+          "signature_action_ids": [
+            "catcher_read"
+          ],
+          "skill_roles": [
+            "defense",
+            "combination"
+          ]
+        },
+        "visual": {
+          "body_preset": "power",
+          "height": 1,
+          "face_style": "round",
+          "skin": "#d89a70",
+          "hair_color": "#8f3a26",
+          "hair_style": "long",
+          "uniform_style": "standard",
+          "uniform_color": "#fff0df",
+          "accent": "#e4572e",
+          "eye": "#62281f"
+        }
+      },
+      "pollinations": {
+        "base_prompt": "adult anime female baseball player, Kagari Homura, UR rarity, C, fire-element, catcher specialist, powerful athletic adult woman, powerful, commanding, warm, catcher style, long hair in #8f3a26, round face, #62281f eyes, uniform palette #fff0df with #e4572e accents, rally_control, premium anime mobile sports game character key art, clean readable silhouette, centered three-quarter character portrait, professional cel shading, crisp linework, detailed eyes and hair, adult facial proportions, no text, no logo, no watermark",
+        "negative_prompt": "child, teenager, loli, underage, young-looking, minor-coded, childlike proportions, baby face, schoolgirl, male, chibi, mascot proportions, duplicate character, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, bad anatomy, broken anatomy, distorted proportions, blurry face, low detail, muddy colors, oversaturated neon, photorealistic, western comic style, 3d render, text, logo, watermark, cropped head, cropped face, missing limbs, deformed clothing",
+        "expressions": {
+          "neutral": "commanding warm expression, deep red-brown gaze, confident closed-mouth smile, composed catcher leadership",
+          "happy": "bright proud smile, warm eyes, confident team celebration, protective catcher energy",
+          "focused": "elite catcher focus, narrowed red-brown eyes, firm posture, reading the pitcher with absolute attention",
+          "surprised": "eyes widened, eyebrows raised, mouth slightly open, command presence briefly interrupted by surprise",
+          "disappointed": "firm frown, lowered gaze, controlled frustration, steady leadership after a missed defensive read"
+        }
+      },
+      "pixel_art_generator": {
+        "sprite_resolution": "128x128",
+        "style": "16-bit anime sports RPG sprite, clean pixel grid, sharp outlines, #e4572e accent highlights, limited character palette, readable silhouette, transparent background",
+        "prompt_sprite": "pixel art 128x128 sprite, Kagari Homura, adult anime baseball player, C, fire-element, powerful catcher set position, glove centered, strong stable stance, long dark-red hair framing the shoulders, character colors from canonical palette, transparent background, no text",
+        "states": {
+          "idle": "pixel art 128x128 sprite, Kagari Homura, adult anime baseball player, powerful catcher set position, glove centered, strong stable stance, long dark-red hair framing the shoulders, standard baseball uniform, transparent background, no text",
+          "attack": "pixel art 128x128 sprite, Kagari Homura, adult anime baseball player, commanding catcher throw to second base, strong hip rotation, precise glove-to-hand transfer, decisive follow-through, standard baseball uniform, transparent background, no text",
+          "hit": "pixel art 128x128 sprite, Kagari Homura, adult anime baseball player, short defensive recoil after a hard play, glove raised, surprised but composed reaction, no injury, clean readable reaction silhouette, transparent background, no text"
+        }
+      },
+      "animation_layers": {
+        "type": "2D_cutout_node_system",
+        "root_node": "KagariHomura_Rig",
+        "parts": [
+          "head_neutral",
+          "hair_back",
+          "hair_front",
+          "torso_catcher",
+          "catcher_glove",
+          "throwing_arm",
+          "legs_catcher_stance",
+          "baseball_element_accent"
+        ],
+        "layer_order": [
+          "legs",
+          "torso",
+          "arms_back",
+          "head",
+          "hair_back",
+          "hair_front",
+          "arms_front",
+          "equipment",
+          "effect"
+        ],
+        "preset_animations": [
+          "idle_breathing",
+          "catcher_ready_loop",
+          "catcher_throw",
+          "hit_reaction"
+        ]
+      }
     }
   ]
 }
