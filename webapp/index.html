@@ -112,7 +112,42 @@
           <span id="gallery-scrap-readout">SCRAP // 0</span>
         </div>
       </div>
+      <div class="dex-filters" aria-label="Waifu Dex filters">
+        <label>RARITY
+          <select id="dex-filter-rarity">
+            <option value="ALL">TODAS</option>
+            <option value="N">N</option>
+            <option value="R">R</option>
+            <option value="SR">SR</option>
+            <option value="SSR">SSR</option>
+            <option value="UR">UR</option>
+          </select>
+        </label>
+        <label>ROLE
+          <select id="dex-filter-role">
+            <option value="ALL">TODAS</option>
+            <option value="Slugger">SLUGGER</option>
+            <option value="Pitcher">PITCHER</option>
+            <option value="Outfielder">OUTFIELDER</option>
+          </select>
+        </label>
+        <label>AREA
+          <select id="dex-filter-area">
+            <option value="ALL">TODAS</option>
+          </select>
+        </label>
+      </div>
       <div id="gallery-grid" class="gallery-grid" aria-live="polite"></div>
+      <section id="dex-card-inspector" class="dex-card-inspector" hidden aria-label="Waifu card inspector">
+        <div class="dex-inspector-header">
+          <div>
+            <span class="gallery-kicker">CARD INSPECTOR</span>
+            <div id="dex-inspector-name">UNKNOWN WAIFU</div>
+          </div>
+          <button id="dex-inspector-close" class="dex-inspector-close" type="button">CLOSE</button>
+        </div>
+        <div id="dex-card-stage" class="dex-card-stage"></div>
+      </section>
     </section>
 
     <footer class="footer combat-view-piece">
