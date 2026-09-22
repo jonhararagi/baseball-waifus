@@ -222,8 +222,17 @@ export class GachaController {
   }
 
   async initialize() {
-    this._loadState();
-    await this._restoreCloudState();
+    this.state = {
+      pulls_since_UR: 0,
+      inventory: {},
+      active_batter: null,
+      scavenger_scrap: 0
+    };
+
+    const restoredFromCloud = await this._restoreCloudState();
+    if (!restoredFromCloud) {
+      this._loadState();
+    }
 
     if (typeof this.fetchImpl !== "function") {
       throw new Error("GachaController requires fetch");
