@@ -541,8 +541,8 @@ jobs:
             node --experimental-default-type=module --check "$file"
           done
       - name: P8 audio engine test
-        run: node webapp/js/audio_engine_test.mjs
+        run: node --experimental-default-type=module webapp/js/audio_engine_test.mjs
       - name: P8 upgrade system test
-        run: node webapp/js/upgrade_system_test.mjs
+        run: node --experimental-default-type=module webapp/js/upgrade_system_test.mjs
       - name: P8 team manager test
-        run: node webapp/js/team_manager_test.mjs
+        run: node --experimental-default-type=module webapp/js/team_manager_test.mjs
