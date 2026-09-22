@@ -1,5 +1,8 @@
 import { isCombatInitDTO, isTurnResultDTO } from "./api.js";
 import { AreaThemeManager } from "./area_theme_manager.js";
+import { BatterRenderer } from "./batter_renderer.js";
+import { CombatEffects } from "./combat_effects.js";
+import { CombatHUD } from "./combat_hud.js";
 
 const RESULT_COLORS = {
   STRIKE: "#8ca8ff",
@@ -149,7 +152,8 @@ export class CombatRenderer {
     onState = null,
     audioBridge = null,
     onScrapEarned = null,
-    hapticsBridge = null
+    hapticsBridge = null,
+    getHudResources = null
   } = {}) {
     if (!(canvas instanceof HTMLCanvasElement)) {
       throw new TypeError("CombatRenderer requires a canvas element");
@@ -179,6 +183,12 @@ export class CombatRenderer {
     this.onScrapEarned = onScrapEarned;
     this.hapticsBridge = hapticsBridge || null;
     this.themeManager = new AreaThemeManager("cyberpunk");
+    this.batterRenderer = new BatterRenderer({
+      imageResolver: (path) => this.assetBank.get(path),
+      getSpritePath: (batter) => this._spritePathForCharacter(batter)
+    });
+    this.combatEffects = new CombatEffects();
+    this.combatHud = new CombatHUD({ getResources: getHudResources });
 
     this.state = null;
     this.lastTurn = null;
@@ -234,6 +244,24 @@ export class CombatRenderer {
 
   getAreaTheme() {
     return this.themeManager.getCurrentTheme();
+  }
+
+  beginBatterWindup() {
+    return this.batterRenderer.beginWindup();
+  }
+
+  beginBatterSwing() {
+    return this.batterRenderer.beginSwing();
+  }
+
+  showHudBanner(title, detail = "", options = {}) {
+    this.combatHud.showBanner(title, detail, options);
+  }
+
+  _spritePathForCharacter(character) {
+    const id = String(character?.card_id || character?.id || "");
+    const descriptor = (this.state?.assets?.sprites || []).find((item) => item?.id === id);
+    return descriptorPath(descriptor, "sprite") || String(character?.sprite_url || "");
   }
 
   setAudioBridge(audioBridge) {
@@ -351,6 +379,7 @@ export class CombatRenderer {
       ...(dto.assets?.cards || []).map((asset) => ({ ...asset, kind: "card" }))
     ]);
 
+    this.batterRenderer.setBatter(dto.batter);
     this.onState?.(this.state);
   }
 
@@ -382,6 +411,23 @@ export class CombatRenderer {
       ...(dto.assets?.sprites || []).map((asset) => ({ ...asset, kind: "sprite" })),
       ...(dto.assets?.cards || []).map((asset) => ({ ...asset, kind: "card" }))
     ]);
+
+    this.batterRenderer.setBatter(this.state.batter);
+    const turnEvent = String(
+      dto?.event
+      || dto?.animation?.event
+      || dto?.action
+      || ""
+    ).toUpperCase();
+    if (turnEvent === "PITCH" || turnEvent === "PITCHER_THROW" || turnEvent === "THROW") {
+      this.batterRenderer.beginWindup();
+    } else if (
+      turnEvent === "SWING"
+      || turnEvent === "HIT"
+      || dto?.result
+    ) {
+      this.batterRenderer.beginSwing();
+    }
 
     this._prepareBallTrail(dto);
     this._triggerCutIn(dto);
@@ -447,6 +493,13 @@ export class CombatRenderer {
   }
 
   _update(delta) {
+    this.batterRenderer.update(delta);
+    this.combatEffects.update(
+      delta,
+      this.batterRenderer.lastBatPose
+    );
+    this.combatHud.update(delta);
+
     this.resultPulse = Math.max(0, this.resultPulse - delta * 2.1);
     this.impactTimer = Math.max(0, this.impactTimer - delta);
     this.cameraShakeTimer = Math.max(0, this.cameraShakeTimer - delta);
@@ -507,13 +560,14 @@ export class CombatRenderer {
     target.save();
     target.clearRect(0, 0, w, h);
 
-    const shake = this.cameraShakeTimer > 0
+    const legacyShake = this.cameraShakeTimer > 0
       ? clamp(this.cameraShakeTimer / this.cameraShakeDuration, 0, 1)
       : 0;
-    if (shake > 0) {
+    const effectShake = this.combatEffects.getCameraOffset();
+    if (legacyShake > 0 || effectShake.x !== 0 || effectShake.y !== 0) {
       target.translate(
-        (Math.random() * 6 - 3) * shake,
-        (Math.random() * 6 - 3) * shake
+        (Math.random() * 6 - 3) * legacyShake + effectShake.x,
+        (Math.random() * 6 - 3) * legacyShake + effectShake.y
       );
     }
 
@@ -532,6 +586,9 @@ export class CombatRenderer {
       this._drawMatchState(target, w, h);
     }
 
+    this.combatEffects.renderBatTrail(target);
+    this.combatEffects.renderFlash(target, w, h);
+
     if (this.ballTrail.length > 0) {
       this._drawBallTrail(target, time);
     }
@@ -543,6 +600,8 @@ export class CombatRenderer {
     if (this.zanTimer > 0) {
       this._drawZanSlash(target, w, h);
     }
+
+    this.combatHud.render(target, w, h, this.state, this.lastTurn);
 
     target.restore();
 
@@ -648,7 +707,11 @@ export class CombatRenderer {
     const batter = this.state.batter || {};
     const pitcher = this.state.pitcher || {};
 
-    this._drawPlayerMarker(ctx, batter, w * 0.2, h * 0.72, "#ffcd66");
+    const theme = this.themeManager.getCurrentTheme();
+    this.batterRenderer.draw(ctx, w, h, {
+      accentColor: theme.strikeZoneColor,
+      scale: 1
+    });
     this.themeManager.renderPitcher(
       ctx,
       w * 0.8,
@@ -1065,6 +1128,24 @@ export class CombatRenderer {
 
   _triggerVisualImpact(dto) {
     const result = String(dto?.result || "").toUpperCase();
+    const timing = String(dto?.timing || "").toUpperCase();
+    const theme = this.themeManager.getCurrentTheme();
+    const effectQuality = result === "HOME_RUN"
+      ? "HOME_RUN"
+      : timing === "PERFECT"
+        ? "PERFECT"
+        : timing === "GOOD"
+          ? "GOOD"
+          : result === "FOUL"
+            ? "FOUL"
+            : result === "MISS"
+              ? "MISS"
+              : "HIT";
+
+    this.combatEffects.trigger(effectQuality, {
+      color: theme.strikeZoneColor,
+      result
+    });
     const event = String(
       dto?.event
       || dto?.animation?.event
