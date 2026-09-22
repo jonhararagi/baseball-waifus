@@ -561,6 +561,7 @@ jobs:
             webapp/js/gacha_controller_test.mjs
             webapp/js/gacha_engine_test.mjs
             webapp/js/game_modes_test.mjs
+            webapp/js/mobile_haptics_test.mjs
             webapp/js/performance_adapter_test.mjs
             webapp/js/save_system_test.mjs
             webapp/js/team_manager_test.mjs
