@@ -1,9 +1,8 @@
 /**
  * Presentation-only audio contract and lightweight synthesized SFX adapter.
  *
- * Stack #1 uses the browser-native Web Audio API. It intentionally follows
- * the small-envelope design goal of ZzFX-style arcade SFX without importing
- * ZzFX or any third-party runtime dependency.
+ * Stack #1 uses the browser-native Web Audio API with compact synthesized
+ * envelopes and no third-party runtime dependency.
  */
 export const SOUND_PROFILES = Object.freeze({
   "bat.swing": {
