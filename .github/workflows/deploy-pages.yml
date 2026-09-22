@@ -4,10 +4,16 @@ on:
   push:
     branches:
       - main
+    paths:
+      - "data/characters_queue.json"
+      - "tools/generate_production_artwork.py"
+      - "webapp/**"
+      - "assets/production/**"
+      - ".github/workflows/deploy-pages.yml"
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -26,6 +32,46 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install artwork processing dependency
+        run: python -m pip install --disable-pip-version-check --no-input Pillow
+
+      - name: Generate production anime artwork
+        env:
+          PYTHONUNBUFFERED: "1"
+        run: python tools/generate_production_artwork.py
+
+      - name: Verify raster production assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s assets/production/cards/bw001--normal.jpg
+          test -s assets/production/cards/bw002--normal.jpg
+          test -s assets/production/sprites/bw001_idle.png
+          test -s assets/production/sprites/bw002_idle.png
+          test ! -e assets/production/cards/bw001.svg
+          test ! -e assets/production/cards/bw002.svg
+          test ! -e assets/production/sprites/bw001.svg
+          test ! -e assets/production/sprites/bw002.svg
+
+      - name: Commit generated production artwork
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/production/cards assets/production/sprites
+          if git diff --cached --quiet; then
+            echo "No production artwork changes to commit."
+          else
+            git commit -m "art: replace bw001 and bw002 production vectors with raster anime assets"
+            git push origin HEAD:main
+          fi
+
       - name: Validate required frontend structure
         shell: bash
         run: |
@@ -37,10 +83,10 @@ jobs:
           test -s webapp/js/api.js
           test -d assets/production/sprites
           test -d assets/production/cards
-          test -s assets/production/cards/bw001.svg
-          test -s assets/production/cards/bw002.svg
-          test -s assets/production/sprites/bw001.svg
-          test -s assets/production/sprites/bw002.svg
+          test -s assets/production/cards/bw001--normal.jpg
+          test -s assets/production/cards/bw002--normal.jpg
+          test -s assets/production/sprites/bw001_idle.png
+          test -s assets/production/sprites/bw002_idle.png
           ! grep -R --fixed-strings "./assets/demo-characters/" webapp/js/app.js webapp/js/combat.js
 
       - name: Validate JavaScript syntax
@@ -69,21 +115,26 @@ jobs:
           from pathlib import Path
 
           root = Path("site/assets/production")
-          allowed = {".png", ".jpg", ".jpeg", ".webp", ".avif", ".svg"}
+          allowed = {".png", ".jpg", ".jpeg", ".webp", ".avif"}
 
           def collect(folder):
               items = []
               base = root / folder
               for path in sorted(base.rglob("*")):
                   if path.is_file() and path.suffix.lower() in allowed:
-                      items.append({
+                      descriptor = {
                           "id": path.stem,
                           "path": "./assets/production/%s" % path.relative_to(root).as_posix()
-                      })
+                      }
+                      if folder == "cards":
+                          descriptor["card_hd_url"] = descriptor["path"]
+                      else:
+                          descriptor["sprite_url"] = descriptor["path"]
+                      items.append(descriptor)
               return items
 
           manifest = {
-              "version": 1,
+              "version": 2,
               "sprites": collect("sprites"),
               "cards": collect("cards")
           }
