@@ -147,7 +147,8 @@ export class CombatRenderer {
     manifestUrl = DEFAULT_MANIFEST_URL,
     onState = null,
     audioBridge = null,
-    onScrapEarned = null
+    onScrapEarned = null,
+    hapticsBridge = null
   } = {}) {
     if (!(canvas instanceof HTMLCanvasElement)) {
       throw new TypeError("CombatRenderer requires a canvas element");
@@ -175,6 +176,7 @@ export class CombatRenderer {
     this.onState = onState;
     this.audioBridge = audioBridge;
     this.onScrapEarned = onScrapEarned;
+    this.hapticsBridge = hapticsBridge || null;
 
     this.state = null;
     this.lastTurn = null;
@@ -215,6 +217,10 @@ export class CombatRenderer {
 
     this.resize();
     this.frameHandle = requestAnimationFrame((time) => this.frame(time));
+  }
+
+  setHapticsBridge(hapticsBridge) {
+    this.hapticsBridge = hapticsBridge || null;
   }
 
   setAudioBridge(audioBridge) {
@@ -261,6 +267,11 @@ export class CombatRenderer {
     });
 
     return true;
+  }
+
+  _playHaptics(event) {
+    if (!this.hapticsBridge || typeof this.hapticsBridge.handleGameEvent !== "function") return false;
+    return Boolean(this.hapticsBridge.handleGameEvent(event));
   }
 
   _playAudio(soundId, options = {}) {
@@ -962,6 +973,8 @@ export class CombatRenderer {
 
     if (result === "FOUL" || timing === "BAD") {
       this._playAudio("bat.foul");
+      this._playHaptics("combat_error");
+      return;
     }
     const event = String(
       dto?.event
@@ -985,6 +998,7 @@ export class CombatRenderer {
         waveform: "sawtooth",
         duration: 0.15
       });
+      this._playHaptics("home_run");
       return;
     }
 
@@ -997,6 +1011,7 @@ export class CombatRenderer {
         waveform: "sawtooth",
         duration: 0.12
       });
+      this._playHaptics(result === "SINGLE" || result === "HIT" ? "single_hit" : "hit");
     }
   }
 

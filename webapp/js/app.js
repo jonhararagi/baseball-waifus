@@ -11,10 +11,28 @@ import {
   exposeGachaToWindow
 } from "./gacha_controller.js";
 import { GalleryController } from "./gallery.js";
+import { createHapticsBridge } from "./haptics_bridge.js";
 
-const telegram = new TelegramBridge();
+function initializeTelegramNativeShell() {
+  const webApp = window.Telegram?.WebApp || null;
+  if (!webApp) return null;
+  try {
+    webApp.ready?.();
+    webApp.expand?.();
+    webApp.setHeaderColor?.("#0b0b0f");
+    webApp.setBackgroundColor?.("#0b0b0f");
+  } catch {
+    // Partial Telegram WebApp surfaces remain a supported fallback.
+  }
+  return webApp;
+}
+
+const telegramWebApp = initializeTelegramNativeShell();
+const telegram = new TelegramBridge(window.Telegram);
 telegram.init();
 const api = new BaseballWaifusApi({ telegramBridge: telegram });
+const hapticsBridge = createHapticsBridge(telegramWebApp);
+const cloudStorage = telegramWebApp?.CloudStorage || null;
 const audioBridge = createAudioBridge();
 
 const connectionState = document.querySelector("#connection-state");
@@ -44,7 +62,11 @@ let matchId = "";
 let actionPending = false;
 let gachaRolling = false;
 
-const gachaController = new GachaController({ audioBridge });
+const gachaController = new GachaController({
+  audioBridge,
+  hapticsBridge,
+  cloudStorage
+});
 
 function handleScrapEarned({ amount, result }) {
   if (amount <= 0) return;
@@ -56,6 +78,7 @@ function handleScrapEarned({ amount, result }) {
 
 const renderer = new CombatRenderer(document.querySelector("#combat-canvas"), {
   audioBridge,
+  hapticsBridge,
   onScrapEarned: handleScrapEarned
 });
 gachaController.setCutInRenderer(renderer);
@@ -65,6 +88,7 @@ const gallery = new GalleryController({
   storage: gachaController.storage,
   storageKey: gachaController.storageKey,
   onActiveBatterChange: (characterId) => {
+    hapticsBridge.handleGameEvent("ui_confirm");
     try {
       gachaController.setActiveBatter(characterId);
     } catch {

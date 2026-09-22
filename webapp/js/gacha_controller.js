@@ -4,6 +4,34 @@ const DEFAULT_STORAGE_KEY = "baseball_waifus_gacha_v1";
 const PULL_LIMIT = 80;
 export const SCAVENGER_SCRAP_COST = 1000;
 
+const TELEGRAM_CLOUD_KEY = "waifu_dex_state";
+
+function callCloudMethod(cloudStorage, methodName, args = []) {
+  return new Promise((resolve, reject) => {
+    if (!cloudStorage || typeof cloudStorage[methodName] !== "function") {
+      reject(new Error("Telegram CloudStorage unavailable"));
+      return;
+    }
+    let settled = false;
+    const finish = (error, value) => {
+      if (settled) return;
+      settled = true;
+      if (error) reject(error instanceof Error ? error : new Error(String(error || "CloudStorage error")));
+      else resolve(value);
+    };
+    try {
+      const result = cloudStorage[methodName](...args, finish);
+      if (result && typeof result.then === "function") {
+        result.then((value) => finish(null, value)).catch(finish);
+      } else if (result !== undefined && cloudStorage[methodName].length <= args.length) {
+        finish(null, result);
+      }
+    } catch (error) {
+      finish(error);
+    }
+  });
+}
+
 function isObject(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
@@ -157,6 +185,8 @@ export class GachaController {
     fetchImpl = typeof globalThis !== "undefined" ? globalThis.fetch?.bind(globalThis) : null,
     audioBridge = null,
     cutInRenderer = null,
+    hapticsBridge = null,
+    cloudStorage = null,
     rng = Math.random,
     now = () => Date.now()
   } = {}) {
@@ -167,6 +197,9 @@ export class GachaController {
     this.fetchImpl = fetchImpl;
     this.audioBridge = audioBridge;
     this.cutInRenderer = cutInRenderer;
+    this.hapticsBridge = hapticsBridge || null;
+    this.cloudStorage = cloudStorage || null;
+    this.cloudWritePromise = Promise.resolve(false);
     this.rng = rng;
     this.now = now;
 
@@ -190,6 +223,7 @@ export class GachaController {
 
   async initialize() {
     this._loadState();
+    await this._restoreCloudState();
 
     if (typeof this.fetchImpl !== "function") {
       throw new Error("GachaController requires fetch");
@@ -225,6 +259,18 @@ export class GachaController {
     this.ready = true;
     this._emit();
     return this;
+  }
+
+  setHapticsBridge(hapticsBridge) {
+    this.hapticsBridge = hapticsBridge || null;
+  }
+
+  setCloudStorage(cloudStorage) {
+    this.cloudStorage = cloudStorage || null;
+  }
+
+  async flushPersistence() {
+    return this.cloudWritePromise;
   }
 
   setAudioBridge(audioBridge) {
@@ -310,6 +356,7 @@ export class GachaController {
     }
 
     this._playAudio("ui.confirm");
+    this._playHaptics("ui_confirm");
 
     const pullNumber = Math.min(PULL_LIMIT, this.state.pulls_since_UR + 1);
     const probabilities = calculateGachaProbabilities(this.schema, pullNumber);
@@ -359,6 +406,7 @@ export class GachaController {
     }
 
     if (rarity === "SSR" || rarity === "UR") {
+      this._playHaptics("gacha_ssr");
       this._playAudio("gacha.reveal_ssr");
       await this.cutInRenderer?.showGachaCutIn?.({
         rarity,
@@ -370,6 +418,11 @@ export class GachaController {
     return result;
   }
 
+  _playHaptics(event) {
+    if (!this.hapticsBridge || typeof this.hapticsBridge.handleGameEvent !== "function") return false;
+    return Boolean(this.hapticsBridge.handleGameEvent(event));
+  }
+
   _playAudio(soundId) {
     if (!this.audioBridge || typeof this.audioBridge.play !== "function") {
       return false;
@@ -377,59 +430,74 @@ export class GachaController {
     return Boolean(this.audioBridge.play(soundId));
   }
 
+  _applyPersistedState(parsed) {
+    if (!isObject(parsed)) return false;
+    const pulls = Number(parsed.pulls_since_UR);
+    if (Number.isFinite(pulls) && pulls >= 0) this.state.pulls_since_UR = Math.min(PULL_LIMIT - 1, Math.floor(pulls));
+    if (isObject(parsed.inventory)) this.state.inventory = parsed.inventory;
+    const activeBatter = String(parsed.active_batter || "");
+    this.state.active_batter = activeBatter && this.state.inventory[activeBatter] ? activeBatter : null;
+    const scrap = Number(parsed.scavenger_scrap);
+    if (Number.isFinite(scrap) && scrap >= 0) this.state.scavenger_scrap = Math.floor(scrap);
+    return true;
+  }
+
+  _serializeState() {
+    return JSON.stringify({
+      pulls_since_UR: this.state.pulls_since_UR,
+      inventory: this.state.inventory,
+      active_batter: this.state.active_batter,
+      scavenger_scrap: this.state.scavenger_scrap
+    });
+  }
+
   _loadState() {
-    if (!this.storage || typeof this.storage.getItem !== "function") {
-      return;
-    }
-
+    if (!this.storage || typeof this.storage.getItem !== "function") return;
     try {
-      const parsed = JSON.parse(this.storage.getItem(this.storageKey) || "{}");
-      if (!isObject(parsed)) {
-        return;
-      }
-
-      const pulls = Number(parsed.pulls_since_UR);
-      if (Number.isFinite(pulls) && pulls >= 0) {
-        this.state.pulls_since_UR = Math.min(PULL_LIMIT - 1, Math.floor(pulls));
-      }
-
-      if (isObject(parsed.inventory)) {
-        this.state.inventory = parsed.inventory;
-      }
-
-      const activeBatter = String(parsed.active_batter || "");
-      if (activeBatter && this.state.inventory[activeBatter]) this.state.active_batter = activeBatter;
-
-      const scrap = Number(parsed.scavenger_scrap);
-      if (Number.isFinite(scrap) && scrap >= 0) this.state.scavenger_scrap = Math.floor(scrap);
+      const raw = this.storage.getItem(this.storageKey);
+      if (raw) this._applyPersistedState(JSON.parse(raw));
     } catch {
-      this.state = {
-        pulls_since_UR: 0,
-        inventory: {},
-        active_batter: null,
-        scavenger_scrap: 0
-      };
+      this.state = { pulls_since_UR: 0, inventory: {}, active_batter: null, scavenger_scrap: 0 };
     }
   }
 
-  _saveState() {
-    if (!this.storage || typeof this.storage.setItem !== "function") {
-      return;
-    }
-
+  _writeLocalState() {
+    if (!this.storage || typeof this.storage.setItem !== "function") return false;
     try {
-      this.storage.setItem(
-        this.storageKey,
-        JSON.stringify({
-          pulls_since_UR: this.state.pulls_since_UR,
-          inventory: this.state.inventory,
-          active_batter: this.state.active_batter,
-          scavenger_scrap: this.state.scavenger_scrap
-        })
-      );
+      this.storage.setItem(this.storageKey, this._serializeState());
+      return true;
     } catch {
-      // Stateless mode remains playable when localStorage is unavailable.
+      return false;
     }
+  }
+
+  async _restoreCloudState() {
+    if (!this.cloudStorage) return false;
+    try {
+      const raw = await callCloudMethod(this.cloudStorage, "getItem", [TELEGRAM_CLOUD_KEY]);
+      if (typeof raw !== "string" || raw.trim() === "") return false;
+      const parsed = JSON.parse(raw);
+      if (!isObject(parsed)) return false;
+      this._applyPersistedState(parsed);
+      this._writeLocalState();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  _pushCloudState(snapshot) {
+    if (!this.cloudStorage) return;
+    this.cloudWritePromise = this.cloudWritePromise
+      .catch(() => false)
+      .then(() => callCloudMethod(this.cloudStorage, "setItem", [TELEGRAM_CLOUD_KEY, snapshot]))
+      .catch(() => false);
+  }
+
+  _saveState() {
+    const snapshot = this._serializeState();
+    this._writeLocalState();
+    this._pushCloudState(snapshot);
   }
 
   _emit(payload = null) {
