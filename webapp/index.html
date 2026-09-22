@@ -35,6 +35,8 @@
       </div>
     </header>
 
+    <nav id="main-menu" class="main-menu-nav" aria-label="Main navigation"></nav>
+
     <section class="combat-shell" aria-label="Baseball combat presentation" data-render-layer="combat">
       <canvas id="combat-canvas" class="combat-canvas" aria-label="Baseball Waifus match canvas"></canvas>
 
@@ -82,6 +84,7 @@
       <button id="action-bat" class="action-button action-primary" type="button">BATEAR</button>
       <button id="action-steal" class="action-button action-secondary" type="button">ROBAR</button>
       <button id="action-gacha" class="action-button action-secondary" type="button">RECLUTAR x1 • 1000 SCRAP</button>
+      <button id="action-gacha-ten" class="action-button action-secondary" type="button">RECLUTAR x10 • 10000 SCRAP</button>
       <button id="action-share" class="action-button action-secondary" type="button" hidden>COMPARTIR / PRESUMIR</button>
       <button id="action-sync" class="action-button action-quiet" type="button">ACTUALIZAR</button>
     </section>
@@ -156,6 +159,57 @@
         </div>
         <div id="dex-card-stage" class="dex-card-stage"></div>
       </section>
+    </section>
+
+    <section id="roster-view" class="menu-view" hidden aria-label="Active roster">
+      <div class="gallery-headline">
+        <div>
+          <span class="gallery-kicker">ACTIVE LINEUP</span>
+          <h2>ROSTER</h2>
+        </div>
+        <div class="gallery-active-stack">
+          <span id="roster-summary">BATTER // NONE</span>
+        </div>
+      </div>
+      <div class="roster-controls">
+        <label>BATTER
+          <select id="roster-active-select"></select>
+        </label>
+        <label>SUPPORT 01
+          <select id="roster-support-0"></select>
+        </label>
+        <label>SUPPORT 02
+          <select id="roster-support-1"></select>
+        </label>
+        <button id="roster-apply" class="action-button action-primary" type="button">EQUIP ROSTER</button>
+      </div>
+    </section>
+
+    <section id="settings-view" class="menu-view" hidden aria-label="Game settings">
+      <div class="gallery-headline">
+        <div>
+          <span class="gallery-kicker">SYSTEM CONTROL</span>
+          <h2>SETTINGS</h2>
+        </div>
+        <div class="gallery-active-stack">
+          <span id="settings-save-status">SAVE // READY</span>
+        </div>
+      </div>
+      <div class="settings-controls">
+        <label>QUALITY
+          <select id="settings-quality">
+            <option value="auto">AUTO</option>
+            <option value="low">LOW</option>
+            <option value="medium">MEDIUM</option>
+            <option value="high">HIGH</option>
+          </select>
+        </label>
+        <button id="save-export" class="action-button action-secondary" type="button">EXPORT SAVE</button>
+        <label class="file-button">IMPORT SAVE
+          <input id="save-import" type="file" accept="application/json">
+        </label>
+        <button id="save-reset" class="action-button action-secondary" type="button">RESET DATA</button>
+      </div>
     </section>
 
     <footer class="footer combat-view-piece">
