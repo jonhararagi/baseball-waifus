@@ -1,5 +1,25 @@
 const DEFAULT_TIMEOUT_MS = 8000;
 
+export const CHARACTER_FACTIONS = Object.freeze([
+  "bosozoku_wild",
+  "cyber_tech",
+  "idol_sparkle",
+  "tactical_milspec",
+  "shadow_magic"
+]);
+
+function isCharacterRefDTO(value) {
+  return Boolean(
+    isObject(value)
+    && typeof value.id === "string"
+    && value.id.length > 0
+    && typeof value.card_id === "string"
+    && value.card_id.length > 0
+    && typeof value.faction === "string"
+    && CHARACTER_FACTIONS.includes(value.faction)
+  );
+}
+
 async function requestWithTimeout(url, options = {}, timeoutMs = DEFAULT_TIMEOUT_MS) {
   const controller = new AbortController();
   const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
@@ -157,6 +177,8 @@ export function isCombatInitDTO(payload) {
     && isObject(payload.state)
     && isObject(payload.home_team)
     && isObject(payload.away_team)
+    && isCharacterRefDTO(payload.batter)
+    && isCharacterRefDTO(payload.pitcher)
   );
 }
 
