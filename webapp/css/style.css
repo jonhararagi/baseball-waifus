@@ -1008,6 +1008,10 @@ body::after {
 .dex-duplicates { color: var(--scv-accent); }
 .dex-select { min-height: 32px; margin-top: 4px; border: 1px solid rgba(0, 240, 255, 0.26); border-radius: 2px; color: var(--scv-cyan); background: rgba(0, 240, 255, 0.06); font: 900 8px/1 var(--scv-font); letter-spacing: 0.1em; cursor: pointer; }
 .dex-select:hover { background: rgba(0, 240, 255, 0.11); }
+.dex-actions { display: grid; gap: 4px; margin-top: 4px; }
+.dex-actions .dex-select, .dex-actions .dex-share { margin-top: 0; min-height: 30px; }
+.dex-share { border: 1px solid rgba(255, 0, 85, 0.26); border-radius: 2px; color: var(--scv-accent); background: rgba(255, 0, 85, 0.06); font: 900 8px/1 var(--scv-font); letter-spacing: 0.08em; cursor: pointer; }
+.dex-share:hover { background: rgba(255, 0, 85, 0.12); }
 .dex-lock { min-height: 32px; display: grid; place-items: center; margin-top: 4px; border: 1px dashed rgba(255, 255, 255, 0.09); color: rgba(255, 255, 255, 0.32); font: 900 8px/1 var(--scv-font); letter-spacing: 0.14em; }
 @media (max-width: 640px) {
   .topbar-actions { align-items: stretch; flex-direction: column-reverse; gap: 5px; }
