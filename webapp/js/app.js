@@ -284,6 +284,9 @@ function updateGachaHud(status, result = null) {
   if (gachaButton && !gachaRolling) {
     gachaButton.disabled = !status.ready || !status.can_afford_recruit;
   }
+  if (gachaTenButton && !gachaRolling) {
+    gachaTenButton.disabled = !status.ready || Number(status.scavenger_scrap) < 10000;
+  }
 }
 
 function setConnection(text, tone = "neutral") {
@@ -390,7 +393,7 @@ async function initializeDefaultDemo() {
   const demoInitDTO = applyActiveRoster(createDemoCombatInit());
   await renderer.setCombatInit(demoInitDTO);
   updateHud(demoInitDTO);
-  batButton.disabled = true;
+  batButton.disabled = false;
   stealButton.disabled = true;
   setConnection("Local demo match", "ok");
   setLoading(false);
@@ -534,6 +537,9 @@ async function sendAction(actionType) {
     const payload = await api.submitTurnAction(matchId, { type: actionType, client_time_ms: Date.now() });
     if (!isTurnResultDTO(payload)) throw new Error("Server returned an invalid TurnResultDTO");
     await renderer.applyTurnResult(payload);
+    gameModes.registerResult(payload.result);
+    updatePlayHud();
+    saveSystem.save();
     updateHud({
       ...renderer.state,
       state: payload.state,
@@ -712,6 +718,8 @@ saveImportInput?.addEventListener("change", async () => {
     gallery.refresh();
     syncRosterControls();
     updateGachaHud(gachaController.getStatus());
+    syncAudioControls();
+    updatePlayHud();
     if (settingsSaveStatus) settingsSaveStatus.textContent = "SAVE // IMPORTED";
   } catch (error) {
     if (settingsSaveStatus) settingsSaveStatus.textContent = "IMPORT ERROR // " + String(error.message || error);
@@ -785,6 +793,9 @@ window.addEventListener("message", async (event) => {
   }
   if (isTurnResultDTO(payload)) {
     await renderer.applyTurnResult(payload);
+    gameModes.registerResult(payload.result);
+    updatePlayHud();
+    saveSystem.save();
     updateHud({ ...renderer.state, state: payload.state });
     setConnection("Turn received", "ok");
     setLoading(false);
