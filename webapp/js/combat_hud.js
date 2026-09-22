@@ -13,6 +13,7 @@ export class CombatHUD {
     this.bannerTimer = 0;
     this.bannerDuration = 1.45;
     this.time = 0;
+    this.lastBannerTurnId = "";
   }
 
   update(delta = 0) {
@@ -43,7 +44,14 @@ export class CombatHUD {
     this.renderTopBar(ctx, width, height, matchState, energy, scrap);
 
     const turnResult = String(lastTurn?.result || "").toUpperCase();
-    if (turnResult === "HOME_RUN" && this.bannerTimer <= 0) {
+    const turnId = String(lastTurn?.turn_id || "");
+    if (
+      turnResult === "HOME_RUN"
+      && this.bannerTimer <= 0
+      && turnId
+      && turnId !== this.lastBannerTurnId
+    ) {
+      this.lastBannerTurnId = turnId;
       this.showBanner("HOME RUN!", "PERFECT IMPACT", { accent: "#ff8b5c" });
     }
 
