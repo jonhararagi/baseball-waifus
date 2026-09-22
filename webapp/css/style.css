@@ -1058,3 +1058,84 @@ body::after {
   .dex-filters { grid-template-columns: 1fr; }
   .dex-card-stage { min-height: 380px; }
 }
+
+
+.main-menu-nav,
+.play-controls,
+.roster-controls,
+.settings-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.main-menu-nav {
+  padding: 0.55rem 0.75rem;
+  border-top: 1px solid rgba(255,255,255,.08);
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  background: rgba(5,9,18,.84);
+}
+
+.main-menu-button,
+.play-controls select,
+.roster-controls select,
+.settings-controls select,
+.settings-controls input[type="file"] {
+  border: 1px solid rgba(126,207,255,.25);
+  background: rgba(9,18,34,.9);
+  color: #dfe7f6;
+  border-radius: 0.5rem;
+  padding: 0.45rem 0.65rem;
+}
+
+.main-menu-button.is-active {
+  border-color: rgba(126,207,255,.8);
+  box-shadow: 0 0 18px rgba(0,240,255,.14);
+}
+
+.play-controls {
+  padding: 0.5rem 0.75rem;
+  justify-content: flex-start;
+}
+
+.play-controls label,
+.roster-controls label,
+.settings-controls label {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.68rem;
+  letter-spacing: .08em;
+  color: #9ca8bf;
+}
+
+.play-controls span {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  color: #ffcd66;
+}
+
+.menu-view {
+  padding: 0.75rem;
+}
+
+.file-button {
+  display: inline-flex !important;
+  align-items: center;
+  cursor: pointer;
+  border: 1px solid rgba(126,207,255,.25);
+  background: rgba(9,18,34,.9);
+  color: #dfe7f6;
+  border-radius: 0.5rem;
+  padding: 0.45rem 0.65rem;
+}
+
+.file-button input {
+  display: none;
+}
+
+:root[data-quality="low"] .card-stage,
+:root[data-quality="low"] .cutin {
+  filter: none;
+}
