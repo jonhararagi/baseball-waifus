@@ -229,7 +229,8 @@ export class GachaController {
       pulls_since_UR: 0,
       inventory: {},
       active_batter: null,
-      scavenger_scrap: 0
+      scavenger_scrap: 0,
+      fragment_bank: 0
     };
 
     const restoredFromCloud = await this._restoreCloudState();
@@ -465,7 +466,6 @@ export class GachaController {
 
     if (rarity === "SSR" || rarity === "UR") {
       this._playHaptics("gacha_ssr");
-      this._playAudio("gacha.reveal_ssr");
       await this.cutInRenderer?.showGachaCutIn?.({
         rarity,
         character
@@ -518,7 +518,7 @@ export class GachaController {
       const raw = this.storage.getItem(this.storageKey);
       if (raw) this._applyPersistedState(JSON.parse(raw));
     } catch {
-      this.state = { pulls_since_UR: 0, inventory: {}, active_batter: null, scavenger_scrap: 0 };
+      this.state = { pulls_since_UR: 0, inventory: {}, active_batter: null, scavenger_scrap: 0, fragment_bank: 0 };
     }
   }
 
