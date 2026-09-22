@@ -1732,3 +1732,20 @@ La interfaz debe aumentar progresivamente su calidad mediante:
 - adaptación móvil.
 
 No se incorporan assets de terceros sin verificar derechos de redistribución.
+
+
+## Facciones visuales y de colección v1
+
+La identidad de facción es un dato de catálogo y presentación, no una estadística.
+
+| ID | Identidad | Paleta |
+|---|---|---|
+| bosozoku_wild | Las Salvajes / Moteras | #E53935 / #111111 |
+| cyber_tech | Las Tecnológicas | #00E5FF / #FF2BC2 |
+| idol_sparkle | Las Idols | #FFD84D / #FF4F9A |
+| tactical_milspec | Las Militares | #3F5D45 / #1B2320 |
+| shadow_magic | Las Místicas | #6C35B8 / #17121F |
+
+Las facciones modifican solamente identidad artística, composición de prompts, paletas y futuras agrupaciones de colección. No modifican estadísticas, RNG, drops, recompensas ni resultados deportivos.
+
+La fuente de configuración es `data/factions.json`. El catálogo de 30 personajes registra la facción en `character_identity.faction`; la cola de generación registra la misma identidad y la paleta de Pollinations.
