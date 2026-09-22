@@ -1589,5 +1589,49 @@
         ]
       }
     }
+  ],
+  "production_targets": [
+    {
+      "character_id": "bw001",
+      "display_name": "Aiko Hanamori",
+      "canonical_source": "game/characters/character_archetypes.json#bw001",
+      "seed": 81001,
+      "card": {
+        "width": 1024,
+        "height": 1536,
+        "format": "jpg",
+        "prompt": "adult anime female baseball player, Aiko Hanamori, R rarity, third baseman, Fire-element power hitter, athletic adult woman, warm brown long hair, warm brown eyes, round expressive face, confident cheerful competitive personality, cream baseball jacket uniform with vivid orange-red accents, premium anime mobile game character key art, three-quarter portrait, polished hand-drawn 2D illustration, refined cel shading, subtle painterly rendering, detailed eyes, individual hair strands, realistic fabric folds, clean silhouette, dynamic readable pose, warm stadium bokeh lighting, soft rim light, high-end collectible game artwork, adult facial proportions, no text, no logo, no watermark",
+        "negative_prompt": "child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character"
+      },
+      "sprite": {
+        "width": 512,
+        "height": 512,
+        "format": "png",
+        "background": "#00FF00",
+        "prompt": "adult anime female baseball player, Aiko Hanamori, full body, third baseman, Fire-element power hitter, warm brown long hair, brown eyes, round expressive adult face, cream baseball jacket uniform with orange-red accents, athletic adult woman, clean idle baseball stance holding a glove, polished anime mobile sports RPG sprite art, crisp cel shading, readable silhouette, detailed hair and uniform, entire body visible from head to shoes, centered, solid pure chroma-key green background #00FF00, no floor, no scenery, no text, no logo, no watermark",
+        "negative_prompt": "child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, 3d render, photorealistic, cropped feet, cropped head, extra limbs, extra fingers, malformed hands, broken anatomy, text, logo, watermark, scenery, grass, stadium, shadows on background"
+      }
+    },
+    {
+      "character_id": "bw002",
+      "display_name": "Reina Kurose",
+      "canonical_source": "game/characters/character_archetypes.json#bw002",
+      "seed": 81002,
+      "card": {
+        "width": 1024,
+        "height": 1536,
+        "format": "jpg",
+        "prompt": "adult anime female baseball player, Reina Kurose, SSR rarity, pitcher, Ice-element precision strategist, athletic adult woman, long deep navy hair, blue-gray eyes, sharp refined face, elegant controlled expression, standard white baseball uniform with pale ice-blue and cyan accents, premium anime mobile game character key art, three-quarter portrait, polished hand-drawn 2D illustration, refined cel shading, subtle painterly rendering, detailed eyes, individual hair strands, realistic fabric folds, clean elegant silhouette, precise poised posture, cool stadium bokeh lighting, soft cyan rim light, high-end collectible game artwork, adult facial proportions, no text, no logo, no watermark",
+        "negative_prompt": "child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, mascot proportions, 3d render, photorealistic, western comic, extra limbs, extra fingers, malformed hands, deformed face, asymmetrical eyes, broken anatomy, blurry, low detail, muddy colors, oversaturated neon, text, logo, watermark, cropped head, cropped face, duplicated character"
+      },
+      "sprite": {
+        "width": 512,
+        "height": 512,
+        "format": "png",
+        "background": "#00FF00",
+        "prompt": "adult anime female baseball player, Reina Kurose, full body, pitcher, Ice-element precision strategist, long deep navy hair, blue-gray eyes, sharp refined adult face, white standard baseball uniform with pale ice-blue and cyan accents, poised pitching-ready stance with glove and ball, polished anime mobile sports RPG sprite art, crisp cel shading, readable elegant silhouette, detailed hair and uniform, entire body visible from head to shoes, centered, solid pure chroma-key green background #00FF00, no floor, no scenery, no text, no logo, no watermark",
+        "negative_prompt": "child, teenager, loli, underage, young-looking, schoolgirl, male, chibi, baby face, 3d render, photorealistic, cropped feet, cropped head, extra limbs, extra fingers, malformed hands, broken anatomy, text, logo, watermark, scenery, grass, stadium, shadows on background"
+      }
+    }
   ]
 }
