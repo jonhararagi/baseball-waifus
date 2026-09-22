@@ -821,6 +821,7 @@ async function bootstrap() {
     } else {
       saveSystem.save();
     }
+    syncAudioControls();
     updateGachaHud(gachaController.getStatus());
     syncRosterControls();
     await initializeGallery();
