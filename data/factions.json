@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "purpose": "Visual and collection identity only. Factions do not modify gameplay stats, RNG, rewards, or baseball results.",
+  "factions": {
+    "bosozoku_wild": {
+      "display_name": "Las Salvajes / Moteras",
+      "prompt_style": "mature high-fanservice biker-gang sports anime aesthetic, rebellious street-racing attitude, red and black athletic trim, bold mechanical details, confident body language",
+      "palette": {
+        "primary": "#E53935",
+        "secondary": "#111111",
+        "accent": "#FF6D3A",
+        "glow": "#FFB300"
+      },
+      "tags": [
+        "bosozoku",
+        "wild",
+        "street",
+        "motorcycle",
+        "rebellious"
+      ]
+    },
+    "cyber_tech": {
+      "display_name": "Las Tecnológicas",
+      "prompt_style": "mature high-fanservice cyber-sports anime aesthetic, futuristic athletic gear, cyan and magenta neon interfaces, sleek technical trim, holographic accents, precise modern silhouette",
+      "palette": {
+        "primary": "#00E5FF",
+        "secondary": "#FF2BC2",
+        "accent": "#7A5CFF",
+        "glow": "#B8F8FF"
+      },
+      "tags": [
+        "cyber",
+        "tech",
+        "neon",
+        "futuristic",
+        "precision"
+      ]
+    },
+    "idol_sparkle": {
+      "display_name": "Las Idols",
+      "prompt_style": "mature high-fanservice idol-sports anime aesthetic, polished stage glamour, sunshine yellow and hot pink accents, sparkle details, ribbon-like highlights, expressive confident presentation",
+      "palette": {
+        "primary": "#FFD84D",
+        "secondary": "#FF4F9A",
+        "accent": "#FFF1A8",
+        "glow": "#FFFFFF"
+      },
+      "tags": [
+        "idol",
+        "sparkle",
+        "stage",
+        "glamour",
+        "social"
+      ]
+    },
+    "tactical_milspec": {
+      "display_name": "Las Militares",
+      "prompt_style": "mature high-fanservice tactical sports anime aesthetic, elite unit presentation, olive and black utility styling, disciplined athletic posture, sand-colored equipment details, mission-ready silhouette",
+      "palette": {
+        "primary": "#3F5D45",
+        "secondary": "#1B2320",
+        "accent": "#D4BE7A",
+        "glow": "#E7D9A7"
+      },
+      "tags": [
+        "tactical",
+        "milspec",
+        "utility",
+        "elite",
+        "disciplined"
+      ]
+    },
+    "shadow_magic": {
+      "display_name": "Las Místicas",
+      "prompt_style": "mature high-fanservice dark-fantasy sports anime aesthetic, elegant arcane styling, violet and black base colors with teal accents, mystical motifs, dramatic lighting, refined supernatural presence",
+      "palette": {
+        "primary": "#6C35B8",
+        "secondary": "#17121F",
+        "accent": "#22C7C7",
+        "glow": "#B996FF"
+      },
+      "tags": [
+        "shadow",
+        "magic",
+        "arcane",
+        "mystic",
+        "dramatic"
+      ]
+    }
+  }
+}
