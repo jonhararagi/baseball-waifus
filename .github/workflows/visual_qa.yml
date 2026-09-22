@@ -524,7 +524,7 @@ jobs:
           set -euo pipefail
           timeout --signal=TERM 15s "godot/Godot_v${GODOT_VERSION}_linux.x86_64" --headless --path . res://scenes/bw016_bw020_generation_queue_test.tscn
 
-  webapp-p1-p9-unit-tests:
+  webapp-p1-p10-unit-tests:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
@@ -533,6 +533,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Validate PWA manifest and service worker syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          node -e 'JSON.parse(require("fs").readFileSync("webapp/manifest.json", "utf8")); console.log("manifest.json: ok")'
+          node --check webapp/sw.js
       - name: Node syntax checks
         shell: bash
         run: |
@@ -540,7 +546,7 @@ jobs:
           find webapp/js -maxdepth 1 -name "*.js" -print0 | while IFS= read -r -d "" file; do
             node --experimental-default-type=module --check "$file"
           done
-      - name: Run accumulated frontend unit tests P1-P9
+      - name: Run accumulated frontend unit tests P1-P10
         shell: bash
         run: |
           set -euo pipefail
@@ -555,13 +561,22 @@ jobs:
             webapp/js/gacha_controller_test.mjs
             webapp/js/gacha_engine_test.mjs
             webapp/js/game_modes_test.mjs
+            webapp/js/performance_adapter_test.mjs
             webapp/js/save_system_test.mjs
             webapp/js/team_manager_test.mjs
             webapp/js/tma_bridge_test.mjs
             webapp/js/upgrade_system_test.mjs
             webapp/js/waifu_dex_test.mjs
+            webapp/js/e2e_smoke_test.mjs
           )
           for test_file in "${tests[@]}"; do
             echo "==> ${test_file}"
             node --experimental-default-type=module "${test_file}"
           done
+
+  p10-release-gate:
+    needs: webapp-p1-p10-unit-tests
+    runs-on: ubuntu-22.04
+    steps:
+      - name: RC1 release gate
+        run: echo "P10 frontend validation passed; release may proceed to GitHub Pages."
