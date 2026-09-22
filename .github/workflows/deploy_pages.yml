@@ -1,0 +1,94 @@
+name: Deploy WebApp to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  test-and-validate:
+    name: Run P1-P10 CI Release Gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Validate PWA manifest and service worker
+        shell: bash
+        run: |
+          set -euo pipefail
+          node -e 'JSON.parse(require("fs").readFileSync("webapp/manifest.json", "utf8")); console.log("manifest.json: ok")'
+          node --check webapp/sw.js
+
+      - name: ESM syntax checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          find webapp/js -maxdepth 1 -name "*.js" -print0 | while IFS= read -r -d "" file; do
+            node --experimental-default-type=module --check "$file"
+          done
+
+      - name: Run P1-P10 frontend test suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          tests=(
+            webapp/js/area_theme_test.mjs
+            webapp/js/audio_bridge_test.mjs
+            webapp/js/audio_engine_test.mjs
+            webapp/js/batter_renderer_test.mjs
+            webapp/js/combat_effects_test.mjs
+            webapp/js/contract_test.mjs
+            webapp/js/economy_test.mjs
+            webapp/js/gacha_controller_test.mjs
+            webapp/js/gacha_engine_test.mjs
+            webapp/js/game_modes_test.mjs
+            webapp/js/mobile_haptics_test.mjs
+            webapp/js/performance_adapter_test.mjs
+            webapp/js/save_system_test.mjs
+            webapp/js/team_manager_test.mjs
+            webapp/js/tma_bridge_test.mjs
+            webapp/js/upgrade_system_test.mjs
+            webapp/js/waifu_dex_test.mjs
+            webapp/js/e2e_smoke_test.mjs
+          )
+          for test_file in "${tests[@]}"; do
+            echo "==> ${test_file}"
+            node --experimental-default-type=module "${test_file}"
+          done
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: test-and-validate
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "webapp/"
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
