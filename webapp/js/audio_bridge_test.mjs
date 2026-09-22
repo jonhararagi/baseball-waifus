@@ -140,6 +140,22 @@ assert.equal(adapter.play("result.home_run"), true);
 assert.equal(oscillatorState.waveform, "sawtooth");
 assert.equal(oscillatorState.frequency.start, 880);
 
+let lifecycleState = "running";
+const lifecycleContext = {
+  state: lifecycleState,
+  suspend() { lifecycleState = "suspended"; this.state = lifecycleState; return Promise.resolve(); },
+  resume() { lifecycleState = "running"; this.state = lifecycleState; return Promise.resolve(); },
+  ...fakeContext
+};
+const lifecycleAdapter = new WebAudioSynthAdapter({
+  audioContextFactory: () => lifecycleContext
+});
+assert.equal(lifecycleAdapter.play("ui.confirm"), true);
+assert.equal(await lifecycleAdapter.suspend(), true);
+assert.equal(lifecycleContext.state, "suspended");
+assert.equal(await lifecycleAdapter.resume(), true);
+assert.equal(lifecycleContext.state, "running");
+
 const facade = (await import("./audio.js")).createAudioBridge({
   adapter: {
     play(soundId) {
