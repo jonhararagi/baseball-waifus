@@ -23,6 +23,10 @@ func _ready() -> void:
 	var catalog = JSON.parse_string(catalog_file.get_as_text())
 	assert(catalog is Dictionary)
 	var characters: Array = catalog.get("characters", [])
+	var catalog_by_id := {}
+	for candidate in characters:
+		if candidate is Dictionary:
+			catalog_by_id[str(candidate.get("id", ""))] = candidate
 
 	var selected := {}
 	for unit_value in batch:
@@ -43,11 +47,7 @@ func _ready() -> void:
 		var canonical: Dictionary = unit.get("canonical", {})
 		assert(bool(canonical.get("adult", false)), character_id + " must remain adult-only.")
 
-		var catalog_entry: Dictionary = {}
-		for candidate in characters:
-			if str(candidate.get("id", "")) == character_id:
-				catalog_entry = candidate
-				break
+		var catalog_entry: Dictionary = catalog_by_id.get(character_id, {})
 		assert(not catalog_entry.is_empty(), character_id + " missing from canonical roster.")
 
 		for key in ["display_name", "rarity", "position", "element", "specialization"]:
@@ -75,7 +75,7 @@ func _ready() -> void:
 		var pollinations: Dictionary = unit.get("pollinations", {})
 		var base_prompt := str(pollinations.get("base_prompt", ""))
 		var negative_prompt := str(pollinations.get("negative_prompt", "")).to_lower()
-		assert(base_prompt.contains(str(production_catalog_entry.get("display_name", ""))), character_id + " base prompt must identify the character.")
+		assert(base_prompt.contains(str(canonical.get("display_name", ""))), character_id + " base prompt must identify the character.")
 		assert(base_prompt.contains("adult anime female baseball player"), character_id + " base prompt must enforce adult baseball identity.")
 		for forbidden in ["child", "teenager", "underage", "loli", "young-looking"]:
 			assert(negative_prompt.contains(forbidden), character_id + " negative prompt must contain " + forbidden)
@@ -87,12 +87,12 @@ func _ready() -> void:
 		var sprite: Dictionary = unit.get("pixel_art_generator", {})
 		assert(str(sprite.get("sprite_resolution", "")) == "128x128", character_id + " sprite resolution must be 128x128.")
 		assert(str(sprite.get("style", "")).contains("transparent background"), character_id + " sprite must use transparent background.")
-		assert(str(sprite.get("prompt_sprite", "")).contains(str(production_catalog_entry.get("display_name", ""))), character_id + " sprite prompt must identify the character.")
+		assert(str(sprite.get("prompt_sprite", "")).contains(str(canonical.get("display_name", ""))), character_id + " sprite prompt must identify the character.")
 		var states: Dictionary = sprite.get("states", {})
 		assert(states.size() == SPRITE_STATES.size(), character_id + " must contain idle/attack/hit sprite specs.")
 		for state_id in SPRITE_STATES:
 			assert(str(states.get(state_id, "")).strip_edges() != "", character_id + " missing sprite state: " + state_id)
-			assert(str(states.get(state_id, "")).contains(str(production_catalog_entry.get("display_name", ""))), character_id + " sprite state must identify the character: " + state_id)
+			assert(str(states.get(state_id, "")).contains(str(canonical.get("display_name", ""))), character_id + " sprite state must identify the character: " + state_id)
 
 		var animation: Dictionary = unit.get("animation_layers", {})
 		assert(str(animation.get("type", "")) == "2D_cutout_node_system", character_id + " animation type mismatch.")
@@ -116,11 +116,7 @@ func _ready() -> void:
 
 	for character_id in PRODUCTION_TARGET_IDS:
 		var target: Dictionary = target_map[character_id]
-		var production_catalog_entry: Dictionary = {}
-		for candidate in characters:
-			if str(candidate.get("id", "")) == character_id:
-				production_catalog_entry = candidate
-				break
+		var production_catalog_entry: Dictionary = catalog_by_id.get(character_id, {})
 		assert(not production_catalog_entry.is_empty(), character_id + " production target missing from canonical roster.")
 		assert(str(target.get("canonical_source", "")) == "game/characters/character_archetypes.json#" + character_id, character_id + " production canonical source mismatch.")
 		var palette: Dictionary = target.get("brand_palette", {})

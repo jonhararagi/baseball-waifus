@@ -8177,3 +8177,21 @@ El fallo fue reproducido en GitHub Actions y queda corregido en código. La nuev
 ### Avance aproximado
 
 **≈95% estructural del prototipo.**
+
+
+## Revisión 62: corrección final de scope del QA bw021-bw030
+
+**Fecha:** 2026-09-21  
+**Motivo:** el segundo CI confirmó que el primer fix todavía había reemplazado referencias en el bloque canónico original.
+
+### Corrección
+
+El test ahora construye `catalog_by_id` una sola vez y utiliza:
+- `canonical` exclusivamente dentro de la validación de cada unidad de cola;
+- `production_catalog_entry` exclusivamente dentro de la validación de cada objetivo de producción.
+
+Con esto se eliminan referencias cruzadas entre ambos ámbitos.
+
+### Estado
+
+**Corregido a nivel de código; pendiente de nueva ejecución CI.**
