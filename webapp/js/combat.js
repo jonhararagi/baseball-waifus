@@ -67,7 +67,11 @@ function descriptorPath(descriptor, kind = "") {
   }
 
   if (descriptor.path) {
-    return String(descriptor.path);
+    const path = String(descriptor.path);
+    if (path.includes("/assets/production/") && /\\.svg$/i.test(path)) {
+      return "";
+    }
+    return path;
   }
 
   return "";
