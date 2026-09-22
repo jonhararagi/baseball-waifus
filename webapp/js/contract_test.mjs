@@ -73,6 +73,24 @@ assert.equal(isTurnResultDTO(null), false);
 
 console.log("[webapp-contract] DTO validation passed");
 
+const fs = await import("node:fs/promises");
+const indexHtml = await fs.readFile(new URL("../index.html", import.meta.url), "utf8");
+const styleCss = await fs.readFile(new URL("../css/style.css", import.meta.url), "utf8");
+const combatJs = await fs.readFile(new URL("./combat.js", import.meta.url), "utf8");
+
+assert.match(indexHtml, /data-ui-skin="scavenger"/);
+assert.match(indexHtml, /class="combat-shell"/);
+assert.match(styleCss, /SCAVENGER FRONTEND SKIN/);
+assert.match(styleCss, /\.combat-shell::before/);
+assert.match(styleCss, /@keyframes scv-glitch-slice/);
+assert.match(styleCss, /repeating-linear-gradient/);
+assert.match(combatJs, /_triggerVisualImpact\(dto\)/);
+assert.match(combatJs, /ctx\.filter = "contrast\(1\.10\) saturate\(1\.16\)"/);
+assert.match(combatJs, /impact-(hit|run|danger|super)/);
+
+console.log("[webapp-contract] scavenger presentation contract passed");
+
+
 
 assert.equal(combatInit.assets.cards.every(
   (asset) => asset.card_hd_url.includes("/assets/production/cards/")
