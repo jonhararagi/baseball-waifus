@@ -323,9 +323,54 @@ export class GachaController {
     return () => this.listeners.delete(listener);
   }
 
+  getCharacters() {
+    return clone(this.queue);
+  }
+
   getCharacter(characterId) {
     const id = String(characterId || "");
     return clone(this.queue.find((unit) => unit.character_id === id) || null);
+  }
+
+  async rollGachaTen() {
+    if (!this.ready) throw new Error("GachaController is not initialized");
+    if (this.getScavengerScrap() < SCAVENGER_SCRAP_COST * 10) {
+      throw new Error("Not enough Scavenger Scrap for a 10x recruit");
+    }
+
+    const results = [];
+    let lastStateBeforePull = null;
+    for (let index = 0; index < 10; index += 1) {
+      lastStateBeforePull = clone(this.state);
+      results.push(await this.rollGacha());
+    }
+
+    const hasSrOrHigher = results.some((result) => ["SR", "SSR", "UR"].includes(result.rarity));
+    if (!hasSrOrHigher) {
+      this.state = lastStateBeforePull;
+      const originalRng = this.rng;
+      let rollCall = 0;
+      this.rng = () => {
+        rollCall += 1;
+        return rollCall === 1 ? 0.8 : originalRng();
+      };
+      try {
+        results[results.length - 1] = await this.rollGacha();
+      } finally {
+        this.rng = originalRng;
+      }
+      results[results.length - 1].ten_pull_guarantee = "SR";
+    }
+
+    return {
+      count: 10,
+      results,
+      totals: results.reduce((summary, result) => {
+        summary[result.rarity] = (summary[result.rarity] || 0) + 1;
+        return summary;
+      }, {}),
+      state: this.getStatus()
+    };
   }
 
   getActiveBatter() {
@@ -584,6 +629,8 @@ export function exposeGachaToWindow(controller) {
     spendScrapAndFragments: (currency) => controller.spendScrapAndFragments(currency),
     initialize: () => controller.initialize(),
     rollGacha: () => controller.rollGacha(),
+    rollGachaTen: () => controller.rollGachaTen(),
+    getCharacters: () => controller.getCharacters(),
     subscribe: (listener) => controller.subscribe(listener)
   };
 
