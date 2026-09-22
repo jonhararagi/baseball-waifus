@@ -81,14 +81,16 @@ function createDemoCombatInit() {
       name: "Aiko Hanamori",
       card_id: "bw001",
       element: "fire",
-      rarity: "R"
+      rarity: "R",
+      faction: "bosozoku_wild"
     },
     pitcher: {
       id: "bw002",
       name: "Reina Kurose",
       card_id: "bw002",
       element: "ice",
-      rarity: "SSR"
+      rarity: "SSR",
+      faction: "shadow_magic"
     },
     assets: {
       cards: [
