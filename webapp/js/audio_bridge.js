@@ -274,6 +274,30 @@ export class WebAudioSynthAdapter {
 
     return playSoundProfile(audioContext, profile, options);
   }
+
+  getAudioContext() {
+    return this.audioContext;
+  }
+
+  async suspend() {
+    if (!this.audioContext || typeof this.audioContext.suspend !== "function") return false;
+    try {
+      await this.audioContext.suspend();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async resume() {
+    if (!this.audioContext || typeof this.audioContext.resume !== "function") return false;
+    try {
+      await this.audioContext.resume();
+      return true;
+    } catch {
+      return false;
+    }
+  }
 }
 
 export class AudioBridge {
@@ -291,5 +315,17 @@ export class AudioBridge {
     }
 
     return false;
+  }
+
+  suspend() {
+    return this.adapter && typeof this.adapter.suspend === "function"
+      ? this.adapter.suspend()
+      : false;
+  }
+
+  resume() {
+    return this.adapter && typeof this.adapter.resume === "function"
+      ? this.adapter.resume()
+      : false;
   }
 }
