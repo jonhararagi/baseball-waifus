@@ -8142,3 +8142,38 @@ Checks integrados: existencia de los cuatro archivos, ausencia de los cuatro SVG
 ### Avance aproximado
 
 **≈95% estructural del prototipo.**
+
+
+## Revisión 60: corrección del test de cola bw021-bw030
+
+**Fecha:** 2026-09-21  
+**Motivo:** corregir un error de alcance detectado por GitHub Actions en la nueva prueba de producción del lote bw021-bw030.
+
+### Problema encontrado
+
+El primer CI del commit `08fc75896ad91372c67d4fdd0d756e2a21531d3f` consiguió importar Godot y llegó a ejecutar `bw021_bw030_generation_queue_test.tscn`, pero el script no compiló porque las aserciones de `production_targets` referenciaban la variable local `canonical` fuera de su bucle original.
+
+### Corrección
+
+La validación de producción ahora resuelve explícitamente la entrada canónica correspondiente dentro del propio bucle de objetivos y compara prompts con esa fuente.
+
+No se modifican:
+- personajes;
+- estadísticas;
+- prompts canónicos;
+- seeds;
+- generador raster;
+- workflow de producción;
+- autoridad del gameplay.
+
+### QA
+
+El fallo fue reproducido en GitHub Actions y queda corregido en código. La nueva ejecución de CI será la validación de esta corrección.
+
+### Estado
+
+**Corregido a nivel de código.**
+
+### Avance aproximado
+
+**≈95% estructural del prototipo.**

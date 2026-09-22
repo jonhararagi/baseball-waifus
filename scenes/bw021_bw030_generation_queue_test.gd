@@ -75,7 +75,7 @@ func _ready() -> void:
 		var pollinations: Dictionary = unit.get("pollinations", {})
 		var base_prompt := str(pollinations.get("base_prompt", ""))
 		var negative_prompt := str(pollinations.get("negative_prompt", "")).to_lower()
-		assert(base_prompt.contains(str(canonical.get("display_name", ""))), character_id + " base prompt must identify the character.")
+		assert(base_prompt.contains(str(production_catalog_entry.get("display_name", ""))), character_id + " base prompt must identify the character.")
 		assert(base_prompt.contains("adult anime female baseball player"), character_id + " base prompt must enforce adult baseball identity.")
 		for forbidden in ["child", "teenager", "underage", "loli", "young-looking"]:
 			assert(negative_prompt.contains(forbidden), character_id + " negative prompt must contain " + forbidden)
@@ -87,12 +87,12 @@ func _ready() -> void:
 		var sprite: Dictionary = unit.get("pixel_art_generator", {})
 		assert(str(sprite.get("sprite_resolution", "")) == "128x128", character_id + " sprite resolution must be 128x128.")
 		assert(str(sprite.get("style", "")).contains("transparent background"), character_id + " sprite must use transparent background.")
-		assert(str(sprite.get("prompt_sprite", "")).contains(str(canonical.get("display_name", ""))), character_id + " sprite prompt must identify the character.")
+		assert(str(sprite.get("prompt_sprite", "")).contains(str(production_catalog_entry.get("display_name", ""))), character_id + " sprite prompt must identify the character.")
 		var states: Dictionary = sprite.get("states", {})
 		assert(states.size() == SPRITE_STATES.size(), character_id + " must contain idle/attack/hit sprite specs.")
 		for state_id in SPRITE_STATES:
 			assert(str(states.get(state_id, "")).strip_edges() != "", character_id + " missing sprite state: " + state_id)
-			assert(str(states.get(state_id, "")).contains(str(canonical.get("display_name", ""))), character_id + " sprite state must identify the character: " + state_id)
+			assert(str(states.get(state_id, "")).contains(str(production_catalog_entry.get("display_name", ""))), character_id + " sprite state must identify the character: " + state_id)
 
 		var animation: Dictionary = unit.get("animation_layers", {})
 		assert(str(animation.get("type", "")) == "2D_cutout_node_system", character_id + " animation type mismatch.")
@@ -116,6 +116,12 @@ func _ready() -> void:
 
 	for character_id in PRODUCTION_TARGET_IDS:
 		var target: Dictionary = target_map[character_id]
+		var production_catalog_entry: Dictionary = {}
+		for candidate in characters:
+			if str(candidate.get("id", "")) == character_id:
+				production_catalog_entry = candidate
+				break
+		assert(not production_catalog_entry.is_empty(), character_id + " production target missing from canonical roster.")
 		assert(str(target.get("canonical_source", "")) == "game/characters/character_archetypes.json#" + character_id, character_id + " production canonical source mismatch.")
 		var palette: Dictionary = target.get("brand_palette", {})
 		for palette_key in ["primary", "secondary", "base", "skin", "eye"]:
@@ -125,7 +131,7 @@ func _ready() -> void:
 		var card: Dictionary = target.get("card", {})
 		assert(int(card.get("width", 0)) == 1024 and int(card.get("height", 0)) == 1536, character_id + " production card must be 1024x1536.")
 		assert(str(card.get("format", "")) == "jpg", character_id + " production card must be jpg.")
-		assert(str(card.get("prompt", "")).contains(str(canonical.get("display_name", ""))), character_id + " production card prompt must identify the character.")
+		assert(str(card.get("prompt", "")).contains(str(production_catalog_entry.get("display_name", ""))), character_id + " production card prompt must identify the character.")
 		var sprite: Dictionary = target.get("sprite", {})
 		assert(int(sprite.get("width", 0)) == 512 and int(sprite.get("height", 0)) == 512, character_id + " sprite source must be 512x512.")
 		assert(str(sprite.get("output_resolution", "")) == "128x128", character_id + " sprite output must be 128x128.")
@@ -134,7 +140,7 @@ func _ready() -> void:
 		assert(sprite_states.size() == 3, character_id + " production sprite must define idle/attack/hit.")
 		for state_id in ["idle", "attack", "hit"]:
 			var state: Dictionary = sprite_states.get(state_id, {})
-			assert(str(state.get("prompt", "")).contains(str(canonical.get("display_name", ""))), character_id + " sprite state must identify the character: " + state_id)
+			assert(str(state.get("prompt", "")).contains(str(production_catalog_entry.get("display_name", ""))), character_id + " sprite state must identify the character: " + state_id)
 			assert(int(state.get("fps", 0)) > 0, character_id + " sprite state fps must be positive: " + state_id)
 			assert(int(state.get("frames", 0)) > 0, character_id + " sprite state frame count must be positive: " + state_id)
 
