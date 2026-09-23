@@ -566,7 +566,7 @@ jobs:
             webapp/js/gacha_controller_test.mjs
             webapp/js/gacha_engine_test.mjs
             webapp/js/game_modes_test.mjs
-      webapp/js/locker_room_test.mjs
+            webapp/js/locker_room_test.mjs
             webapp/js/mobile_haptics_test.mjs
             webapp/js/performance_adapter_test.mjs
             webapp/js/save_system_test.mjs
@@ -575,7 +575,7 @@ jobs:
             webapp/js/tma_bridge_test.mjs
             webapp/js/upgrade_system_test.mjs
             webapp/js/voice_system_test.mjs
-      webapp/js/waifu_dex_test.mjs
+            webapp/js/waifu_dex_test.mjs
             webapp/js/e2e_smoke_test.mjs
           )
           for test_file in "${tests[@]}"; do
