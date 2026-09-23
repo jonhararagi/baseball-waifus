@@ -1,4 +1,4 @@
-name: Deploy WebApp to GitHub Pages
+name: Deploy Team Problemas de Capibara to GitHub Pages
 
 on:
   push:
@@ -15,33 +15,31 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test-and-validate:
-    name: Run P1-P15 CI Release Gate
+  validate-and-deploy:
+    name: P16 PWA validation and GitHub Pages deploy
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: '20'
 
-      - name: Validate PWA manifest and service worker
-        shell: bash
-        run: |
-          set -euo pipefail
-          node -e 'JSON.parse(require("fs").readFileSync("webapp/manifest.json", "utf8")); JSON.parse(require("fs").readFileSync("webapp/data/waifus_config.json", "utf8")); console.log("PWA/config JSON: ok")'
-          node --check webapp/sw.js
-
-      - name: ESM syntax checks
+      - name: ESM Syntax Verification
         shell: bash
         run: |
           set -euo pipefail
           find webapp/js -maxdepth 1 -name "*.js" -print0 | while IFS= read -r -d "" file; do
             node --experimental-default-type=module --check "$file"
           done
+          node --check webapp/sw.js
 
-      - name: Run P1-P15 frontend test suite
+      - name: Run Test Suites (P1-P16)
         shell: bash
         run: |
           set -euo pipefail
@@ -61,6 +59,7 @@ jobs:
             webapp/js/locker_room_test.mjs
             webapp/js/mobile_haptics_test.mjs
             webapp/js/performance_adapter_test.mjs
+            webapp/js/pwa_sw_test.mjs
             webapp/js/save_system_test.mjs
             webapp/js/super_swing_cutin_test.mjs
             webapp/js/team_manager_test.mjs
@@ -76,24 +75,20 @@ jobs:
             node --experimental-default-type=module "${test_file}"
           done
 
-  deploy:
-    name: Deploy to GitHub Pages
-    needs: test-and-validate
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Prepare Pages Artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          touch webapp/.nojekyll
+          echo "build_timestamp=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" > webapp/build_info.txt
 
       - name: Setup Pages
-        uses: actions/configure-pages@v4
+        uses: actions/configure-pages@v5
 
-      - name: Upload artifact
+      - name: Upload Artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "webapp/"
+          path: './webapp'
 
       - name: Deploy to GitHub Pages
         id: deployment
