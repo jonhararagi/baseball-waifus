@@ -412,14 +412,14 @@ function applyActiveRoster(dto) {
       faction: canonical.faction,
       position: canonical.position,
       specialization: canonical.specialization,
-      stats: effectiveStats,
+      stats: modifiedStats,
       progression: progression || null,
       sprite_url: assets.sprite.sprite_url,
       card_hd_url: assets.card.card_hd_url
     },
     active_batter: {
       character_id: active.character_id,
-      stats: effectiveStats,
+      stats: modifiedStats,
       progression: progression || null,
       card_hd_url: assets.card.card_hd_url,
       sprite_url: assets.sprite.sprite_url
@@ -617,6 +617,12 @@ async function sendAction(actionType) {
     const payload = await api.submitTurnAction(matchId, { type: actionType, client_time_ms: Date.now() });
     if (!isTurnResultDTO(payload)) throw new Error("Server returned an invalid TurnResultDTO");
     await renderer.applyTurnResult(payload);
+    if (payload.super_swing === true || payload.animation?.super_swing === true || payload.animation?.event === "SUPER_SWING") {
+      lockerRoom.handleEvent("ON_SUPER_SWING", getActiveLockerWaifu());
+    }
+    if (payload.result === "VICTORY" || payload.match_end === true || payload.state?.match_complete === true) {
+      lockerRoom.handleEvent("ON_VICTORY", getActiveLockerWaifu());
+    }
     gameModes.registerResult(payload.result);
     updatePlayHud();
     saveSystem.save();
@@ -931,6 +937,12 @@ window.addEventListener("message", async (event) => {
   }
   if (isTurnResultDTO(payload)) {
     await renderer.applyTurnResult(payload);
+    if (payload.super_swing === true || payload.animation?.super_swing === true || payload.animation?.event === "SUPER_SWING") {
+      lockerRoom.handleEvent("ON_SUPER_SWING", getActiveLockerWaifu());
+    }
+    if (payload.result === "VICTORY" || payload.match_end === true || payload.state?.match_complete === true) {
+      lockerRoom.handleEvent("ON_VICTORY", getActiveLockerWaifu());
+    }
     gameModes.registerResult(payload.result);
     updatePlayHud();
     saveSystem.save();
