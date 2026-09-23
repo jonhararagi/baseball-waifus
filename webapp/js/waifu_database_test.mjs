@@ -1,8 +1,14 @@
 import assert from "node:assert/strict";
+import fs from "node:fs/promises";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 import {
   WAIFU_DATABASE,
   getWaifuAssets,
-  getArchetypeColor
+  getArchetypeColor,
+  getWaifuConfigSource,
+  initializeWaifuDatabase,
+  resetWaifuDatabaseToMemory
 } from "./waifu_database.js";
 import {
   AssetLoader,
@@ -10,7 +16,30 @@ import {
   isHttpsUrl
 } from "./asset_loader.js";
 
-console.log("🧪 Ejecutando pruebas unitarias de P13...");
+console.log("🧪 Ejecutando pruebas unitarias de P13/P15...");
+
+const webappDir = dirname(dirname(fileURLToPath(import.meta.url)));
+const configPath = join(webappDir, "data", "waifus_config.json");
+const configJson = await fs.readFile(configPath, "utf8").then(JSON.parse);
+
+await initializeWaifuDatabase({
+  fetchImpl: async () => ({
+    ok: true,
+    async json() {
+      return configJson;
+    }
+  }),
+  storage: null
+});
+
+assert.equal(getWaifuConfigSource(), "json");
+assert.equal(Object.keys(WAIFU_DATABASE).length, 7);
+assert.equal(WAIFU_DATABASE.cari.name, "Cari");
+assert.equal(WAIFU_DATABASE.fenrir.name, "Fenrir");
+
+resetWaifuDatabaseToMemory();
+
+
 
 const requiredKeys = ["avatarUrl", "cardArtUrl", "spriteSheetUrl"];
 for (const [id, waifu] of Object.entries(WAIFU_DATABASE)) {

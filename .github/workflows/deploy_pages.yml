@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   test-and-validate:
-    name: Run P1-P13 CI Release Gate
+    name: Run P1-P15 CI Release Gate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -30,7 +30,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          node -e 'JSON.parse(require("fs").readFileSync("webapp/manifest.json", "utf8")); console.log("manifest.json: ok")'
+          node -e 'JSON.parse(require("fs").readFileSync("webapp/manifest.json", "utf8")); JSON.parse(require("fs").readFileSync("webapp/data/waifus_config.json", "utf8")); console.log("PWA/config JSON: ok")'
           node --check webapp/sw.js
 
       - name: ESM syntax checks
@@ -41,11 +41,12 @@ jobs:
             node --experimental-default-type=module --check "$file"
           done
 
-      - name: Run P1-P13 frontend test suite
+      - name: Run P1-P15 frontend test suite
         shell: bash
         run: |
           set -euo pipefail
           tests=(
+            webapp/js/admin_panel_test.mjs
             webapp/js/area_theme_test.mjs
             webapp/js/audio_bridge_test.mjs
             webapp/js/audio_engine_test.mjs

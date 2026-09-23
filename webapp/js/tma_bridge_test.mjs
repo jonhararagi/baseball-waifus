@@ -14,7 +14,7 @@ const haptics = createHapticsBridge({
 assert.equal(haptics.handleGameEvent("ui_confirm"), true);
 assert.equal(haptics.handleGameEvent("single_hit"), true);
 assert.equal(haptics.handleGameEvent("home_run"), true);
-assert.equal(haptics.handleGameEvent("gacha_ssr"), true);
+assert.equal(haptics.handleGameEvent("perfect"), true);
 assert.equal(haptics.handleGameEvent("timing_bad"), true);
 assert.deepEqual(calls, [
   ["selection"],
@@ -33,7 +33,7 @@ const expectedShareMessage = "¡Acabo de reclutar a Nene Kagetsu (UR) en Basebal
 assert.equal(buildShareMessage(shareCharacter), expectedShareMessage);
 const sharePayload = buildSharePayload(shareCharacter, "UR", "https://baseball-waifus.example");
 assert.equal(sharePayload.message, expectedShareMessage);
-assert.match(sharePayload.telegram_url, /Nene%20Kagetsu/);
+assert.equal(new URL(sharePayload.telegram_url).searchParams.get("text"), expectedShareMessage);
 
 const shareCalls = [];
 const telegramShare = {

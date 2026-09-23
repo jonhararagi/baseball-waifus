@@ -22,9 +22,14 @@ import { GameModeManager } from "./game_modes.js";
 import { MainMenu, VIEWS } from "./main_menu.js";
 import { MobileHaptics } from "./mobile_haptics.js";
 import { PerformanceAdapter } from "./performance_adapter.js";
-import { getWaifuAssets } from "./waifu_database.js";
+import {
+  getWaifuAssets,
+  getWaifu,
+  initializeWaifuDatabase
+} from "./waifu_database.js";
 import { LockerRoom } from "./locker_room.js";
 import { VoiceSystem } from "./voice_system.js";
+import { AdminPanel, INFINITE_SCRAP_VALUE } from "./admin_panel.js";
 
 function initializeTelegramNativeShell() {
   const webApp = window.Telegram?.WebApp || null;
@@ -115,6 +120,8 @@ let matchId = "";
 let actionPending = false;
 let gachaRolling = false;
 let sharePayload = null;
+let adminPanel = null;
+let finiteScrapBeforeInfinite = null;
 
 const gachaController = new GachaController({
   audioBridge,
@@ -172,7 +179,8 @@ const saveSystem = new SaveSystem({
     audioSettings: () => audioBridge.getSettings(),
     quality: () => qualitySetting,
     records: () => savedRecords,
-    lockerRoom: () => lockerRoom.getPersistence()
+    lockerRoom: () => lockerRoom.getPersistence(),
+    adminPanel: () => adminPanel?.getPersistence() || { version: 1, waifu_config: null, infinite_scrap: false }
   },
   appliers: {
     gacha: (state) => {
@@ -214,6 +222,9 @@ const saveSystem = new SaveSystem({
     },
     lockerRoom: (state) => {
       lockerRoom.applyPersistence(state || {});
+    },
+    adminPanel: (state) => {
+      adminPanel?.applyPersistence(state || {});
     }
   }
 });
@@ -247,6 +258,62 @@ const renderer = new CombatRenderer(document.querySelector("#combat-canvas"), {
   })
 });
 gachaController.setCutInRenderer(renderer);
+
+function applyAdminInfiniteScrap(enabled, fromPersistence = false) {
+  const current = gachaController.getScavengerScrap();
+
+  if (enabled) {
+    if (!fromPersistence && finiteScrapBeforeInfinite === null) {
+      finiteScrapBeforeInfinite = current;
+    }
+    gachaController.state.scavenger_scrap = INFINITE_SCRAP_VALUE;
+  } else if (finiteScrapBeforeInfinite !== null) {
+    gachaController.state.scavenger_scrap = finiteScrapBeforeInfinite;
+    finiteScrapBeforeInfinite = null;
+  }
+
+  gachaController._saveState?.();
+  updateGachaHud(gachaController.getStatus());
+}
+
+function handleAdminCharacterUpdated(character) {
+  const id = String(character?.id || "");
+  if (!id) return;
+
+  const active = teamManager.getActiveWaifu();
+  if (String(active?.character_id || active?.id || "") === id && renderer.state) {
+    void renderer.refreshWaifuAssets(id);
+  }
+
+  if (!dexInspector?.hidden) {
+    const unit = gachaController.getCharacter(id);
+    if (unit) {
+      cardRenderer.mount(unit, {
+        themeColor: unit?.canonical?.visual?.accent || null
+      });
+    }
+  }
+
+  gallery.refresh();
+  refreshLockerRoom();
+  saveSystem.save();
+}
+
+function getAdminCharacter(id) {
+  const configCharacter = getWaifu(id);
+  if (configCharacter) return configCharacter;
+  return gachaController.getCharacter(id) || null;
+}
+
+adminPanel = new AdminPanel({
+  root: document.body,
+  saveSystem,
+  getCharacter: getAdminCharacter,
+  onCharacterUpdated: handleAdminCharacterUpdated,
+  onInfiniteScrapChange: applyAdminInfiniteScrap,
+  onSuperSwingTest: (character) => renderer.triggerSuperSwingDemo(character),
+  onVoiceTest: (character) => voiceSystem.emit("ON_TAP", character)
+});
 
 function getActiveLockerWaifu() {
   return teamManager.getActiveWaifu()
@@ -975,6 +1042,7 @@ async function bootstrap() {
   const query = new URLSearchParams(window.location.search);
   matchId = query.get("match") || "";
   try {
+    await initializeWaifuDatabase();
     await gachaController.initialize();
     teamManager.sync();
     if (saveSystem.storage?.getItem?.(saveSystem.storageKey)) {

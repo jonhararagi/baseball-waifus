@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "team": "Team Problemas de Capibara",
+  "characters": [
+    {
+      "id": "cari",
+      "name": "Cari",
+      "species": "capybara",
+      "archetype": "POWER",
+      "role": "Slugger",
+      "stats": { "power": 82, "contact": 74, "speed": 78, "eye": 62 },
+      "assets": {
+        "avatar": "https://api.dicebear.com/9.x/lorelei/png?seed=Cari-Capybara&size=512&backgroundColor=0b0b14",
+        "card_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Cari-Capybara-Card&size=1024&backgroundColor=0b0b14",
+        "cutin_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Cari-Capybara-Cutin&size=1024&backgroundColor=0b0b14",
+        "sprite": "https://api.dicebear.com/9.x/lorelei/png?seed=Cari-Capybara-Sprite&size=256&backgroundColor=0b0b14"
+      }
+    },
+    {
+      "id": "cami",
+      "name": "Cami",
+      "species": "capybara",
+      "archetype": "EYE",
+      "role": "Strategist",
+      "stats": { "power": 62, "contact": 76, "speed": 61, "eye": 91 },
+      "assets": {
+        "avatar": "https://api.dicebear.com/9.x/lorelei/png?seed=Cami-Capybara&size=512&backgroundColor=0b0b14",
+        "card_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Cami-Capybara-Card&size=1024&backgroundColor=0b0b14",
+        "cutin_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Cami-Capybara-Cutin&size=1024&backgroundColor=0b0b14",
+        "sprite": "https://api.dicebear.com/9.x/lorelei/png?seed=Cami-Capybara-Sprite&size=256&backgroundColor=0b0b14"
+      }
+    },
+    {
+      "id": "sunna",
+      "name": "Sunna",
+      "species": "serpent",
+      "archetype": "POWER",
+      "role": "Vanguard",
+      "stats": { "power": 79, "contact": 66, "speed": 69, "eye": 72 },
+      "assets": {
+        "avatar": "https://api.dicebear.com/9.x/lorelei/png?seed=Sunna-Serpent&size=512&backgroundColor=0b0b14",
+        "card_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Sunna-Serpent-Card&size=1024&backgroundColor=0b0b14",
+        "cutin_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Sunna-Serpent-Cutin&size=1024&backgroundColor=0b0b14",
+        "sprite": "https://api.dicebear.com/9.x/lorelei/png?seed=Sunna-Serpent-Sprite&size=256&backgroundColor=0b0b14"
+      }
+    },
+    {
+      "id": "chie",
+      "name": "Chie",
+      "species": "mouse",
+      "archetype": "CONTACT",
+      "role": "Contact",
+      "stats": { "power": 58, "contact": 89, "speed": 84, "eye": 76 },
+      "assets": {
+        "avatar": "https://api.dicebear.com/9.x/lorelei/png?seed=Chie-Mouse&size=512&backgroundColor=0b0b14",
+        "card_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Chie-Mouse-Card&size=1024&backgroundColor=0b0b14",
+        "cutin_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Chie-Mouse-Cutin&size=1024&backgroundColor=0b0b14",
+        "sprite": "https://api.dicebear.com/9.x/lorelei/png?seed=Chie-Mouse-Sprite&size=256&backgroundColor=0b0b14"
+      }
+    },
+    {
+      "id": "scarlet",
+      "name": "Scarlet",
+      "species": "fruit_bat",
+      "archetype": "POWER",
+      "role": "Slugger",
+      "stats": { "power": 86, "contact": 71, "speed": 67, "eye": 73 },
+      "assets": {
+        "avatar": "https://api.dicebear.com/9.x/lorelei/png?seed=Scarlet-Bat&size=512&backgroundColor=0b0b14",
+        "card_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Scarlet-Bat-Card&size=1024&backgroundColor=0b0b14",
+        "cutin_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Scarlet-Bat-Cutin&size=1024&backgroundColor=0b0b14",
+        "sprite": "https://api.dicebear.com/9.x/lorelei/png?seed=Scarlet-Bat-Sprite&size=256&backgroundColor=0b0b14"
+      }
+    },
+    {
+      "id": "chloe",
+      "name": "Chloe",
+      "species": "fruit_bat",
+      "archetype": "SPEED",
+      "role": "Support",
+      "stats": { "power": 59, "contact": 72, "speed": 93, "eye": 79 },
+      "assets": {
+        "avatar": "https://api.dicebear.com/9.x/lorelei/png?seed=Chloe-Bat&size=512&backgroundColor=0b0b14",
+        "card_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Chloe-Bat-Card&size=1024&backgroundColor=0b0b14",
+        "cutin_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Chloe-Bat-Cutin&size=1024&backgroundColor=0b0b14",
+        "sprite": "https://api.dicebear.com/9.x/lorelei/png?seed=Chloe-Bat-Sprite&size=256&backgroundColor=0b0b14"
+      }
+    },
+    {
+      "id": "fenrir",
+      "name": "Fenrir",
+      "species": "wolf",
+      "archetype": "SPEED",
+      "role": "Runner",
+      "stats": { "power": 72, "contact": 68, "speed": 96, "eye": 70 },
+      "assets": {
+        "avatar": "https://api.dicebear.com/9.x/lorelei/png?seed=Fenrir-Wolf&size=512&backgroundColor=0b0b14",
+        "card_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Fenrir-Wolf-Card&size=1024&backgroundColor=0b0b14",
+        "cutin_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Fenrir-Wolf-Cutin&size=1024&backgroundColor=0b0b14",
+        "sprite": "https://api.dicebear.com/9.x/lorelei/png?seed=Fenrir-Wolf-Sprite&size=256&backgroundColor=0b0b14"
+      }
+    }
+  ]
+}

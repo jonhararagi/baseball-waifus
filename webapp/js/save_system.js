@@ -16,6 +16,11 @@ export const SAVE_DEFAULTS = Object.freeze({
     active_waifu_id: null,
     rapport: {},
     daily: { date: "", taps: 0 }
+  }),
+  admin: Object.freeze({
+    version: 1,
+    waifu_config: null,
+    infinite_scrap: false
   })
 });
 
@@ -73,6 +78,7 @@ export function migrateSaveState(input = {}) {
     : {
         pulls_since_UR: source.pulls_since_UR
       };
+
   const settings = isObject(source.settings) ? source.settings : {};
 
   const locker = isObject(source.locker) ? source.locker : {};
@@ -100,6 +106,11 @@ export function migrateSaveState(input = {}) {
   }
 
   const lockerDate = String(locker.daily?.date || "");
+
+  const admin = isObject(source.admin) ? source.admin : {};
+  const adminWaifuConfig = isObject(admin.waifu_config) && Array.isArray(admin.waifu_config.characters)
+    ? clone(admin.waifu_config)
+    : null;
   const todayTaps = Math.min(50, nonNegative(locker.daily?.taps));
 
   const migratedInventory = {};
@@ -125,7 +136,14 @@ export function migrateSaveState(input = {}) {
     progression: clone(progression),
     gacha: {
       pity: {
-        pulls_since_UR: Math.min(79, nonNegative(gacha.pulls_since_UR))
+        pulls_since_UR: Math.min(
+        79,
+        nonNegative(
+          gacha.pity?.pulls_since_UR
+            ?? gacha.pulls_since_UR
+            ?? source.pulls_since_UR
+        )
+      )
       }
     },
     roster: {
@@ -149,6 +167,11 @@ export function migrateSaveState(input = {}) {
         date: lockerDate,
         taps: todayTaps
       }
+    },
+    admin: {
+      version: Math.max(1, nonNegative(admin.version, 1)),
+      waifu_config: adminWaifuConfig,
+      infinite_scrap: Boolean(admin.infinite_scrap)
     }
   };
 }
@@ -184,6 +207,7 @@ export class SaveSystem {
     const progression = this.providers.progression?.() || {};
     const records = this.providers.records?.() || this.state.records;
     const lockerRoom = this.providers.lockerRoom?.() || this.state.locker;
+    const adminPanel = this.providers.adminPanel?.() || this.state.admin;
 
     const inventory = {};
     for (const [id, entry] of Object.entries(gachaState.inventory || {})) {
@@ -221,7 +245,8 @@ export class SaveSystem {
         quality: this.providers.quality?.() || "auto"
       },
       records,
-      locker: lockerRoom
+      locker: lockerRoom,
+      admin: adminPanel
     });
 
     this.state = state;
@@ -323,6 +348,7 @@ export class SaveSystem {
     this.appliers.quality?.(state.settings.quality);
     this.appliers.records?.(state.records);
     this.appliers.lockerRoom?.(state.locker);
+    this.appliers.adminPanel?.(state.admin);
   }
 }
 

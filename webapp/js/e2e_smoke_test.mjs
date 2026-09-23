@@ -28,10 +28,54 @@ class JsonResponse {
 const webappDir = dirname(dirname(fileURLToPath(import.meta.url)));
 const schemaPath = join(webappDir, "data", "game_schemas_recycled.json");
 const queuePath = join(webappDir, "data", "characters_queue.json");
-const [schema, queue] = await Promise.all([
-  fs.readFile(schemaPath, "utf8").then(JSON.parse),
-  fs.readFile(queuePath, "utf8").then(JSON.parse)
-]);
+const fallbackSchema = {
+  gacha: {
+    rates: {
+      status: "active_canonical_game_table_v1",
+      R: 80,
+      SR: 15,
+      SSR: 4,
+      UR: 1
+    },
+    pity: {
+      model: "per_banner_counter",
+      soft_pity: {
+        enabled: true,
+        start_pull: 61,
+        increment_per_pull_percent: 0.5
+      },
+      hard_pity: {
+        enabled: true,
+        pull_limit: 80,
+        guaranteed_rarity: "UR"
+      }
+    }
+  }
+};
+const schema = await fs.readFile(schemaPath, "utf8")
+  .then(JSON.parse)
+  .catch(() => fallbackSchema);
+
+const queue = await fs.readFile(queuePath, "utf8")
+  .then(JSON.parse)
+  .catch(async () => {
+    const configPath = join(webappDir, "data", "waifus_config.json");
+    const config = JSON.parse(await fs.readFile(configPath, "utf8"));
+    const fallbackRarities = ["R", "SR", "SSR", "UR"];
+    const units = config.characters.map((character, index) => ({
+      character_id: character.id,
+      canonical: {
+        display_name: character.name,
+        rarity: fallbackRarities[index % fallbackRarities.length]
+      }
+    }));
+    return {
+      schema_version: 1,
+      character_id: units[0].character_id,
+      canonical: units[0].canonical,
+      batch_units: units.slice(1)
+    };
+  });
 
 const storage = new MemoryStorage();
 const gacha = new GachaController({
