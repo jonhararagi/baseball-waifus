@@ -1,25 +1,23 @@
 {
-  "name": "Baseball Waifus",
-  "short_name": "Waifus",
-  "description": "Tactical anime baseball collection and timing game.",
-  "lang": "en",
-  "start_url": "./",
-  "scope": "./",
+  "name": "Team Problemas de Capibara: Cyber-Baseball",
+  "short_name": "CapibaraBase",
+  "description": "Juego arcade de béisbol y colección de waifus con físicas 2.5D y cámara trasera.",
+  "start_url": "./index.html",
   "display": "standalone",
-  "orientation": "any",
-  "theme_color": "#00f0ff",
-  "background_color": "#070812",
+  "orientation": "portrait",
+  "background_color": "#0a0a14",
+  "theme_color": "#ff007f",
   "icons": [
     {
-      "src": "./icons/icon-192.svg",
+      "src": "./assets/icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "./icons/icon-512.svg",
+      "src": "./assets/icons/icon-512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]
