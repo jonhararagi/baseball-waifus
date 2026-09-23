@@ -132,7 +132,7 @@ assert.deepEqual(updatedStats.stats, {
   eye: 66
 });
 
-assert.equal(panel.grantScrap(10000), undefined);
+assert.equal(panel.grantScrap(10000), 1);
 assert.deepEqual(events.scrap, [10000]);
 assert.deepEqual(panel.unlockAllSkins(), { changed: true });
 panel.testSuperSwing("cari");
