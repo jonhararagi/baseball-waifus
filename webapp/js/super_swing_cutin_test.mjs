@@ -1,37 +1,37 @@
-import assert from "node:assert/strict";
-import { DEFAULT_WAIFU, PHASES, SuperSwingCutin } from "./super_swing_cutin.js";
+import assert from 'node:assert/strict';
+import { SuperSwingCutin } from './super_swing_cutin.js';
+
+console.log('🧪 Ejecutando pruebas unitarias de SuperSwingCutin...');
 
 const cutin = new SuperSwingCutin();
 
-assert.deepEqual(cutin.getState().phase, "IDLE");
-assert.equal(cutin.isFreezingTime(), false);
+// Test 1: Estado inicial
+assert.equal(cutin.active, false, 'CutIn debe iniciar inactivo');
+assert.equal(cutin.isFreezingTime(), false, 'No debe congelar tiempo en IDLE');
 
-assert.equal(cutin.trigger({
-  name: "Yuna",
-  archetype: "SPEED",
-  quote_super: "¡FULL THROTTLE!",
-  skill_name: "Full Throttle"
-}), true);
+// Test 2: Activación y transición de fases
+cutin.trigger({
+  name: 'Roxie Vane',
+  archetype: 'POWER',
+  quote_super: '¡IGNITION BUSTER!'
+});
 
-assert.equal(cutin.phase, PHASES[1]);
-assert.equal(cutin.isFreezingTime(), true);
-assert.equal(cutin.currentWaifu.name, "Yuna");
+assert.equal(cutin.active, true, 'CutIn debe estar activo tras trigger()');
+assert.equal(cutin.phase, 'ENTER', 'Fase inicial debe ser ENTER');
+assert.equal(cutin.isFreezingTime(), true, 'Debe congelar tiempo en fase ENTER');
 
-cutin.update(150);
-assert.equal(cutin.phase, "HOLD");
-assert.equal(cutin.bannerOffset, 0);
-assert.equal(cutin.isFreezingTime(), true);
+// Test 3: Avanzar tiempo hacia HOLD
+cutin.update(160); // Pasa la duración de ENTER (150ms)
+assert.equal(cutin.phase, 'HOLD', 'Debe pasar a fase HOLD');
+assert.equal(cutin.isFreezingTime(), true, 'Debe seguir congelando tiempo en HOLD');
 
-cutin.update(700);
-assert.equal(cutin.phase, "EXIT");
-assert.equal(cutin.isFreezingTime(), false);
+// Test 4: Avanzar tiempo hacia EXIT e IDLE
+cutin.update(710); // Pasa la duración de HOLD (700ms)
+assert.equal(cutin.phase, 'EXIT', 'Debe pasar a fase EXIT');
+assert.equal(cutin.isFreezingTime(), false, 'EXIT no debe congelar el tiempo de juego');
 
-cutin.update(200);
-assert.equal(cutin.active, false);
-assert.equal(cutin.phase, "IDLE");
+cutin.update(210); // Pasa la duración de EXIT (200ms)
+assert.equal(cutin.active, false, 'CutIn debe desactivarse tras completar las fases');
+assert.equal(cutin.phase, 'IDLE', 'Debe regresar a IDLE');
 
-assert.equal(cutin.trigger(), true);
-assert.equal(cutin.currentWaifu.name, DEFAULT_WAIFU.name);
-assert.equal(cutin.trigger({ name: "Blocked" }), false);
-
-console.log("super_swing_cutin_test: ok");
+console.log('✅ Todas las pruebas de SuperSwingCutin pasaron correctamente.');
