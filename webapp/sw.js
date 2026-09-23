@@ -1,4 +1,4 @@
-const CACHE_NAME = "v16_capibara_core";
+const CACHE_NAME = 'v16_capibara_core';
 
 const PRECACHE_ASSETS = [
   "./",
