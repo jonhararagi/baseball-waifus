@@ -348,7 +348,7 @@ export class AdminPanel {
     }
 
     const value = ensureString(url);
-    if (!/^https://.+/i.test(value)) {
+    if (!/^https:\/\/.+/i.test(value)) {
       throw new Error("Image URLs must use HTTPS");
     }
 
