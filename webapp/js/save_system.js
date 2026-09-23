@@ -78,6 +78,7 @@ export function migrateSaveState(input = {}) {
     : {
         pulls_since_UR: source.pulls_since_UR
       };
+
   const settings = isObject(source.settings) ? source.settings : {};
 
   const locker = isObject(source.locker) ? source.locker : {};
@@ -135,7 +136,14 @@ export function migrateSaveState(input = {}) {
     progression: clone(progression),
     gacha: {
       pity: {
-        pulls_since_UR: Math.min(79, nonNegative(gacha.pulls_since_UR))
+        pulls_since_UR: Math.min(
+        79,
+        nonNegative(
+          gacha.pity?.pulls_since_UR
+            ?? gacha.pulls_since_UR
+            ?? source.pulls_since_UR
+        )
+      )
       }
     },
     roster: {
