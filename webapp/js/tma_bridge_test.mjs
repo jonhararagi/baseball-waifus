@@ -33,7 +33,7 @@ const expectedShareMessage = "¡Acabo de reclutar a Nene Kagetsu (UR) en Basebal
 assert.equal(buildShareMessage(shareCharacter), expectedShareMessage);
 const sharePayload = buildSharePayload(shareCharacter, "UR", "https://baseball-waifus.example");
 assert.equal(sharePayload.message, expectedShareMessage);
-assert.match(sharePayload.telegram_url, /Nene%20Kagetsu/);
+assert.match(decodeURIComponent(sharePayload.telegram_url), /Nene Kagetsu/);
 
 const shareCalls = [];
 const telegramShare = {
