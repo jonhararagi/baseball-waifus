@@ -19,7 +19,7 @@ const pool = {
   UR: [{ character_id: "ur001", canonical: { display_name: "UR Test", rarity: "UR" } }]
 };
 
-const boundaryRolls = [0, 0.50, 0.85, 0.95, 0.99];
+const boundaryRolls = [0, 0, 0.50, 0, 0.85, 0, 0.95, 0, 0.99, 0];
 const engine = new GachaEngine({ rng: () => boundaryRolls.shift() ?? 0 });
 assert.equal(engine.rollSingle({ pool }).rarity, "N");
 assert.equal(engine.rollSingle({ pool }).rarity, "R");
