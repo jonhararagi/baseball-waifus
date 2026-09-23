@@ -106,6 +106,7 @@ assert.deepEqual(controller.getStatus(), {
   inventory_size: 0,
   active_batter: null,
   scavenger_scrap: 0,
+  fragments: 0,
   recruit_cost: 1000,
   can_afford_recruit: false,
   ready: true
