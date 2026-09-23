@@ -974,14 +974,13 @@ audioMuteButton?.addEventListener("click", () => {
 });
 syncAudioControls();
 
-async function registerOfflineShell() {
-  if (!("serviceWorker" in navigator)) return false;
-  try {
-    const registration = await navigator.serviceWorker.register("./sw.js", { scope: "./" });
-    registration.update?.();
-    return true;
-  } catch {
-    return false;
+export function registerServiceWorker() {
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./sw.js")
+        .then((reg) => console.log("[PWA] ServiceWorker registrado con éxito:", reg.scope))
+        .catch((err) => console.warn("[PWA] Fallo en registro de ServiceWorker:", err));
+    }, { once: true });
   }
 }
 
@@ -1093,6 +1092,6 @@ async function bootstrap() {
 renderer.initialize();
 mainMenu.mount();
 installMobileGestures();
-void registerOfflineShell();
+registerServiceWorker();
 startGameMode("PRACTICE", "cyberpunk");
 bootstrap();
