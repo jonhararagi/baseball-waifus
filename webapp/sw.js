@@ -4,7 +4,7 @@ const PRECACHE_ASSETS = [
   "./",
   "./index.html",
   "./manifest.json",
-  "./css/style.css",
+  "./css/styles.css",
   "./data/waifus_config.json",
   "./data/game_schemas_recycled.json",
   "./data/characters_queue.json",
