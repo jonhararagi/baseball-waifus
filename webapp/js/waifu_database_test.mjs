@@ -33,9 +33,12 @@ await initializeWaifuDatabase({
 });
 
 assert.equal(getWaifuConfigSource(), "json");
-assert.equal(Object.keys(WAIFU_DATABASE).length, 7);
+assert.equal(Object.keys(WAIFU_DATABASE).length, 8);
 assert.equal(WAIFU_DATABASE.cari.name, "Cari");
 assert.equal(WAIFU_DATABASE.fenrir.name, "Fenrir");
+assert.equal(WAIFU_DATABASE.roxie_vane.team, "Legends");
+assert.equal(typeof WAIFU_DATABASE.roxie_vane.jiggle_intensity, "number");
+assert.equal(typeof WAIFU_DATABASE.cari.quote_super, "string");
 
 resetWaifuDatabaseToMemory();
 

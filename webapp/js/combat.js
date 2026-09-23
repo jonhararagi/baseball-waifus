@@ -5,7 +5,7 @@ import { CombatEffects } from "./combat_effects.js";
 import { CombatHUD } from "./combat_hud.js";
 import { PerformanceAdapter } from "./performance_adapter.js";
 import { AssetLoader, isHttpsUrl } from "./asset_loader.js";
-import { getWaifuAssets } from "./waifu_database.js";
+import { getWaifuAssets, getWaifu } from "./waifu_database.js";
 
 const RESULT_COLORS = {
   STRIKE: "#8ca8ff",
@@ -295,6 +295,7 @@ export class CombatRenderer {
     if (!id || !this.state) return false;
 
     const assets = getWaifuAssets(id);
+    const configured = getWaifu(id);
     const currentBatterId = String(
       this.state.batter?.id
       || this.state.batter?.character_id
@@ -308,7 +309,13 @@ export class CombatRenderer {
         batter: {
           ...(this.state.batter || {}),
           sprite_url: assets.spriteSheetUrl,
-          card_hd_url: assets.cardArtUrl
+          card_hd_url: assets.cardArtUrl,
+          stats: configured?.stats ? { ...configured.stats } : this.state.batter?.stats,
+          archetype: configured?.archetype || this.state.batter?.archetype,
+          quote_super: configured?.quote_super || this.state.batter?.quote_super,
+          quote_idle: configured?.quote_idle || this.state.batter?.quote_idle,
+          quote_victory: configured?.quote_victory || this.state.batter?.quote_victory,
+          jiggle_intensity: configured?.jiggle_intensity ?? this.state.batter?.jiggle_intensity
         }
       };
       this.batterRenderer.setBatter(this.state.batter);
@@ -357,15 +364,21 @@ export class CombatRenderer {
     const source = character || {};
     const id = String(source.id || source.character_id || "");
     const name = String(source.name || source.canonical?.display_name || id || "WAIFU");
-    const archetype = String(source.archetype || source.canonical?.archetype || "POWER").toUpperCase();
+    const configured = getWaifu(id);
+    const archetype = String(
+      source.archetype
+      || source.canonical?.archetype
+      || configured?.archetype
+      || "POWER"
+    ).toUpperCase();
     const assets = getWaifuAssets(id || source);
     const loaded = await this.assetBank.load(assets.cutinArtUrl);
 
     const activated = this.combatHud.triggerSuperSwing({
-      name,
+      name: configured?.name || name,
       archetype,
-      quote_super: "¡SUPER SWING TEST!",
-      skill_name: "ADMIN TEST"
+      quote_super: configured?.quote_super || source.quote_super || "¡SUPER SWING TEST!",
+      skill_name: source.skill_name || "ADMIN TEST"
     }, loaded);
 
     if (activated) {

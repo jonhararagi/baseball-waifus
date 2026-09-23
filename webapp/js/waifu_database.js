@@ -1,6 +1,6 @@
 const IMAGE_PROVIDER_BASE = "https://api.dicebear.com/9.x/lorelei/png";
 const CONFIG_URL = "./data/waifus_config.json";
-const CONFIG_STORAGE_KEY = "baseball_waifus_waifu_config_v1";
+const CONFIG_STORAGE_KEY = "baseball_waifus_waifu_config_v2";
 
 export const ARCHETYPE_COLORS = Object.freeze({
   POWER: "#ff3b30",
@@ -10,37 +10,203 @@ export const ARCHETYPE_COLORS = Object.freeze({
   DEFAULT: "#00f0ff"
 });
 
-const MEMORY_FALLBACK_CONFIG = Object.freeze({
-  schema_version: 1,
-  team: "Team Problemas de Capibara",
-  characters: [
-    ["cari", "Cari", "capybara", "POWER", "Slugger", [82, 74, 78, 62], "Cari-Capybara"],
-    ["cami", "Cami", "capybara", "EYE", "Strategist", [62, 76, 61, 91], "Cami-Capybara"],
-    ["sunna", "Sunna", "serpent", "POWER", "Vanguard", [79, 66, 69, 72], "Sunna-Serpent"],
-    ["chie", "Chie", "mouse", "CONTACT", "Contact", [58, 89, 84, 76], "Chie-Mouse"],
-    ["scarlet", "Scarlet", "fruit_bat", "POWER", "Slugger", [86, 71, 67, 73], "Scarlet-Bat"],
-    ["chloe", "Chloe", "fruit_bat", "SPEED", "Support", [59, 72, 93, 79], "Chloe-Bat"],
-    ["fenrir", "Fenrir", "wolf", "SPEED", "Runner", [72, 68, 96, 70], "Fenrir-Wolf"]
-  ].map(([id, name, species, archetype, role, stats, seed]) => ({
-    id,
-    name,
-    species,
-    archetype,
-    role,
-    stats: {
-      power: stats[0],
-      contact: stats[1],
-      speed: stats[2],
-      eye: stats[3]
+const MEMORY_FALLBACK_CONFIG = {
+  "schema_version": 2,
+  "characters": [
+    {
+      "id": "cari",
+      "name": "Cari",
+      "team": "Team Problemas de Capibara",
+      "species": "capybara",
+      "role": "Slugger",
+      "archetype": "POWER",
+      "avatar_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Cari-Capybara&size=512&backgroundColor=0b0b14",
+      "card_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Cari-Capybara-Card&size=1024&backgroundColor=0b0b14",
+      "cutin_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Cari-Capybara-Cutin&size=1024&backgroundColor=0b0b14",
+      "power": 82,
+      "contact": 74,
+      "speed": 78,
+      "eye": 62,
+      "quote_super": "¡YO LE PEGARÉ!",
+      "quote_idle": "¡Vamos, vamos!",
+      "quote_victory": "¡Ganamos! ¡Eso estuvo genial!",
+      "jiggle_intensity": 0.18,
+      "assets": {
+        "avatar": "https://api.dicebear.com/9.x/lorelei/png?seed=Cari-Capybara&size=512&backgroundColor=0b0b14",
+        "card_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Cari-Capybara-Card&size=1024&backgroundColor=0b0b14",
+        "cutin_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Cari-Capybara-Cutin&size=1024&backgroundColor=0b0b14"
+      }
     },
-    assets: {
-      avatar: IMAGE_PROVIDER_BASE + "?seed=" + seed + "&size=512&backgroundColor=0b0b14",
-      card_art: IMAGE_PROVIDER_BASE + "?seed=" + seed + "-Card&size=1024&backgroundColor=0b0b14",
-      cutin_art: IMAGE_PROVIDER_BASE + "?seed=" + seed + "-Cutin&size=1024&backgroundColor=0b0b14",
-      sprite: IMAGE_PROVIDER_BASE + "?seed=" + seed + "-Sprite&size=256&backgroundColor=0b0b14"
+    {
+      "id": "cami",
+      "name": "Cami",
+      "team": "Team Problemas de Capibara",
+      "species": "capybara",
+      "role": "Strategist",
+      "archetype": "EYE",
+      "avatar_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Cami-Capybara&size=512&backgroundColor=0b0b14",
+      "card_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Cami-Capybara-Card&size=1024&backgroundColor=0b0b14",
+      "cutin_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Cami-Capybara-Cutin&size=1024&backgroundColor=0b0b14",
+      "power": 62,
+      "contact": 76,
+      "speed": 61,
+      "eye": 91,
+      "quote_super": "Calculado. Ahora batea.",
+      "quote_idle": "La estrategia primero.",
+      "quote_victory": "Funcionó exactamente como esperaba.",
+      "jiggle_intensity": 0.08,
+      "assets": {
+        "avatar": "https://api.dicebear.com/9.x/lorelei/png?seed=Cami-Capybara&size=512&backgroundColor=0b0b14",
+        "card_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Cami-Capybara-Card&size=1024&backgroundColor=0b0b14",
+        "cutin_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Cami-Capybara-Cutin&size=1024&backgroundColor=0b0b14"
+      }
+    },
+    {
+      "id": "sunna",
+      "name": "Sunna",
+      "team": "Team Problemas de Capibara",
+      "species": "serpent",
+      "role": "Vanguard",
+      "archetype": "POWER",
+      "avatar_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Sunna-Serpent&size=512&backgroundColor=0b0b14",
+      "card_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Sunna-Serpent-Card&size=1024&backgroundColor=0b0b14",
+      "cutin_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Sunna-Serpent-Cutin&size=1024&backgroundColor=0b0b14",
+      "power": 79,
+      "contact": 66,
+      "speed": 69,
+      "eye": 72,
+      "quote_super": "¡No apartaré la mirada!",
+      "quote_idle": "El sol está ahí...",
+      "quote_victory": "¡Lo logramos!",
+      "jiggle_intensity": 0.12,
+      "assets": {
+        "avatar": "https://api.dicebear.com/9.x/lorelei/png?seed=Sunna-Serpent&size=512&backgroundColor=0b0b14",
+        "card_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Sunna-Serpent-Card&size=1024&backgroundColor=0b0b14",
+        "cutin_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Sunna-Serpent-Cutin&size=1024&backgroundColor=0b0b14"
+      }
+    },
+    {
+      "id": "chie",
+      "name": "Chie",
+      "team": "Team Problemas de Capibara",
+      "species": "mouse",
+      "role": "Contact",
+      "archetype": "CONTACT",
+      "avatar_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Chie-Mouse&size=512&backgroundColor=0b0b14",
+      "card_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Chie-Mouse-Card&size=1024&backgroundColor=0b0b14",
+      "cutin_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Chie-Mouse-Cutin&size=1024&backgroundColor=0b0b14",
+      "power": 58,
+      "contact": 89,
+      "speed": 84,
+      "eye": 76,
+      "quote_super": "¡Golpe limpio!",
+      "quote_idle": "Tranquila... apunta.",
+      "quote_victory": "¡Kachi desu!",
+      "jiggle_intensity": 0.1,
+      "assets": {
+        "avatar": "https://api.dicebear.com/9.x/lorelei/png?seed=Chie-Mouse&size=512&backgroundColor=0b0b14",
+        "card_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Chie-Mouse-Card&size=1024&backgroundColor=0b0b14",
+        "cutin_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Chie-Mouse-Cutin&size=1024&backgroundColor=0b0b14"
+      }
+    },
+    {
+      "id": "scarlet",
+      "name": "Scarlet",
+      "team": "Team Problemas de Capibara",
+      "species": "fruit_bat",
+      "role": "Slugger",
+      "archetype": "POWER",
+      "avatar_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Scarlet-Bat&size=512&backgroundColor=0b0b14",
+      "card_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Scarlet-Bat-Card&size=1024&backgroundColor=0b0b14",
+      "cutin_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Scarlet-Bat-Cutin&size=1024&backgroundColor=0b0b14",
+      "power": 86,
+      "contact": 71,
+      "speed": 67,
+      "eye": 73,
+      "quote_super": "¡Muerde la pelota!",
+      "quote_idle": "La noche también juega.",
+      "quote_victory": "¡Victoria dulce!",
+      "jiggle_intensity": 0.22,
+      "assets": {
+        "avatar": "https://api.dicebear.com/9.x/lorelei/png?seed=Scarlet-Bat&size=512&backgroundColor=0b0b14",
+        "card_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Scarlet-Bat-Card&size=1024&backgroundColor=0b0b14",
+        "cutin_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Scarlet-Bat-Cutin&size=1024&backgroundColor=0b0b14"
+      }
+    },
+    {
+      "id": "chloe",
+      "name": "Chloe",
+      "team": "Team Problemas de Capibara",
+      "species": "fruit_bat",
+      "role": "Support",
+      "archetype": "SPEED",
+      "avatar_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Chloe-Bat&size=512&backgroundColor=0b0b14",
+      "card_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Chloe-Bat-Card&size=1024&backgroundColor=0b0b14",
+      "cutin_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Chloe-Bat-Cutin&size=1024&backgroundColor=0b0b14",
+      "power": 59,
+      "contact": 72,
+      "speed": 93,
+      "eye": 79,
+      "quote_super": "¡Más rápido!",
+      "quote_idle": "¿Necesitas algo?",
+      "quote_victory": "Buen trabajo.",
+      "jiggle_intensity": 0.14,
+      "assets": {
+        "avatar": "https://api.dicebear.com/9.x/lorelei/png?seed=Chloe-Bat&size=512&backgroundColor=0b0b14",
+        "card_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Chloe-Bat-Card&size=1024&backgroundColor=0b0b14",
+        "cutin_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Chloe-Bat-Cutin&size=1024&backgroundColor=0b0b14"
+      }
+    },
+    {
+      "id": "fenrir",
+      "name": "Fenrir",
+      "team": "Team Problemas de Capibara",
+      "species": "wolf",
+      "role": "Runner",
+      "archetype": "SPEED",
+      "avatar_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Fenrir-Wolf&size=512&backgroundColor=0b0b14",
+      "card_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Fenrir-Wolf-Card&size=1024&backgroundColor=0b0b14",
+      "cutin_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Fenrir-Wolf-Cutin&size=1024&backgroundColor=0b0b14",
+      "power": 72,
+      "contact": 68,
+      "speed": 96,
+      "eye": 70,
+      "quote_super": "¡Que empiece la cacería!",
+      "quote_idle": "La luna me guía.",
+      "quote_victory": "¡Esta carrera es mía!",
+      "jiggle_intensity": 0.1,
+      "assets": {
+        "avatar": "https://api.dicebear.com/9.x/lorelei/png?seed=Fenrir-Wolf&size=512&backgroundColor=0b0b14",
+        "card_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Fenrir-Wolf-Card&size=1024&backgroundColor=0b0b14",
+        "cutin_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Fenrir-Wolf-Cutin&size=1024&backgroundColor=0b0b14"
+      }
+    },
+    {
+      "id": "roxie_vane",
+      "name": "Roxie Vane",
+      "team": "Legends",
+      "species": "human",
+      "role": "Legend",
+      "archetype": "POWER",
+      "avatar_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Roxie-Vane&size=512&backgroundColor=0b0b14",
+      "card_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Roxie-Vane-Card&size=1024&backgroundColor=0b0b14",
+      "cutin_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Roxie-Vane-Cutin&size=1024&backgroundColor=0b0b14",
+      "power": 90,
+      "contact": 74,
+      "speed": 70,
+      "eye": 78,
+      "quote_super": "¡IGNITION BUSTER!",
+      "quote_idle": "Power check. Ready.",
+      "quote_victory": "¡That's a home run!",
+      "jiggle_intensity": 0.2,
+      "assets": {
+        "avatar": "https://api.dicebear.com/9.x/lorelei/png?seed=Roxie-Vane&size=512&backgroundColor=0b0b14",
+        "card_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Roxie-Vane-Card&size=1024&backgroundColor=0b0b14",
+        "cutin_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Roxie-Vane-Cutin&size=1024&backgroundColor=0b0b14"
+      }
     }
-  }))
-});
+  ]
+};
 
 let activeConfig = cloneConfig(MEMORY_FALLBACK_CONFIG);
 let configSource = "memory";
@@ -65,8 +231,15 @@ function clampStat(value, fallback = 50) {
     : fallback;
 }
 
+function clampJiggle(value, fallback = 0.12) {
+  const number = Number(value);
+  return Number.isFinite(number)
+    ? Math.min(1, Math.max(0, number))
+    : fallback;
+}
+
 function safeUrl(value, fallback) {
-  const text = String(value || "");
+  const text = String(value || "").trim();
   try {
     return new URL(text).protocol === "https:" ? text : fallback;
   } catch {
@@ -89,25 +262,35 @@ function normalizeCharacter(input = {}) {
   const id = normalizeId(input.id || input.character_id || input.card_id || input.name || "waifu");
   const generated = createGeneratedAssets({ ...input, id });
   const stats = input.stats || {};
-  const assets = input.assets || {};
+  const legacyAssets = input.assets || {};
+
+  const avatar = legacyAssets.avatar || input.avatar_url || input.avatarUrl;
+  const cardArt = legacyAssets.card_art || input.card_art_url || input.cardArtUrl;
+  const cutinArt = legacyAssets.cutin_art || input.cutin_art_url || input.cutinArtUrl;
+
   return {
     id,
     name: String(input.name || input.display_name || id),
+    team: String(input.team || "Team Problemas de Capibara"),
     species: String(input.species || "unknown"),
     archetype: String(input.archetype || "POWER").toUpperCase(),
     role: String(input.role || "Support"),
     stats: {
-      power: clampStat(stats.power),
-      contact: clampStat(stats.contact),
-      speed: clampStat(stats.speed),
-      eye: clampStat(stats.eye)
+      power: clampStat(stats.power ?? input.power),
+      contact: clampStat(stats.contact ?? input.contact),
+      speed: clampStat(stats.speed ?? input.speed),
+      eye: clampStat(stats.eye ?? input.eye)
     },
     assets: {
-      avatar: safeUrl(assets.avatar || input.avatarUrl, generated.avatar),
-      card_art: safeUrl(assets.card_art || input.cardArtUrl, generated.card_art),
-      cutin_art: safeUrl(assets.cutin_art || input.cutinArtUrl, generated.cutin_art),
-      sprite: safeUrl(assets.sprite || input.spriteSheetUrl, generated.sprite)
-    }
+      avatar: safeUrl(avatar, generated.avatar),
+      card_art: safeUrl(cardArt, generated.card_art),
+      cutin_art: safeUrl(cutinArt, generated.cutin_art),
+      sprite: safeUrl(legacyAssets.sprite || input.sprite_url || input.spriteUrl, generated.sprite)
+    },
+    quote_super: String(input.quote_super || "¡SUPER SWING!"),
+    quote_idle: String(input.quote_idle || ""),
+    quote_victory: String(input.quote_victory || ""),
+    jiggle_intensity: clampJiggle(input.jiggle_intensity)
   };
 }
 
@@ -125,17 +308,14 @@ function normalizeConfig(input = {}) {
   }
 
   return {
-    schema_version: 1,
-    team: String(input.team || "Team Problemas de Capibara"),
+    schema_version: 2,
     characters: deduped
   };
 }
 
 function mergeConfig(base, overrides) {
   const source = normalizeConfig(base);
-  const patch = overrides && typeof overrides === "object"
-    ? overrides
-    : {};
+  const patch = overrides && typeof overrides === "object" ? overrides : {};
   const patchCharacters = Array.isArray(patch.characters) ? patch.characters : [];
   const byId = new Map(source.characters.map((character) => [character.id, character]));
 
@@ -157,8 +337,7 @@ function mergeConfig(base, overrides) {
   }
 
   return {
-    schema_version: 1,
-    team: String(patch.team || source.team),
+    schema_version: 2,
     characters: [...byId.values()]
   };
 }
@@ -167,7 +346,7 @@ function persistLocalConfig(storage) {
   try {
     storage?.setItem?.(CONFIG_STORAGE_KEY, JSON.stringify(activeConfig));
   } catch {
-    // Local config is an optional cache. Memory state remains authoritative for this tab.
+    // Local config is optional. Memory state remains authoritative for this tab.
   }
 }
 
@@ -188,6 +367,7 @@ function rebuildDatabase(config = activeConfig) {
     next[character.id] = {
       id: character.id,
       name: character.name,
+      team: character.team,
       species: character.species,
       archetype: character.archetype,
       role: character.role,
@@ -195,7 +375,11 @@ function rebuildDatabase(config = activeConfig) {
       avatarUrl: character.assets.avatar,
       cardArtUrl: character.assets.card_art,
       cutinArtUrl: character.assets.cutin_art,
-      spriteSheetUrl: character.assets.sprite
+      spriteSheetUrl: character.assets.sprite,
+      quote_super: character.quote_super,
+      quote_idle: character.quote_idle,
+      quote_victory: character.quote_victory,
+      jiggle_intensity: character.jiggle_intensity
     };
   }
   WAIFU_DATABASE = Object.freeze(next);
@@ -209,10 +393,11 @@ export async function initializeWaifuDatabase({
   storage = typeof globalThis !== "undefined" ? globalThis.localStorage : null
 } = {}) {
   let remote = null;
+
   if (typeof fetchImpl === "function") {
     try {
       const response = await fetchImpl(url, { cache: "no-cache" });
-      if (!response.ok) throw new Error("WAIFU_CONFIG_HTTP_" + response.status);
+      if (!response?.ok) throw new Error("WAIFU_CONFIG_HTTP_" + (response?.status || "ERROR"));
       remote = normalizeConfig(await response.json());
     } catch {
       remote = null;
@@ -220,10 +405,7 @@ export async function initializeWaifuDatabase({
   }
 
   const local = readLocalConfig(storage);
-  activeConfig = mergeConfig(
-    remote || MEMORY_FALLBACK_CONFIG,
-    local || {}
-  );
+  activeConfig = mergeConfig(remote || MEMORY_FALLBACK_CONFIG, local || {});
   configSource = remote ? "json" : "memory";
   initialized = true;
   rebuildDatabase();
@@ -267,10 +449,9 @@ export function getWaifuAssets(characterOrId) {
   }
 
   const fallback = normalizeCharacter(
-    typeof characterOrId === "string"
-      ? { id: characterOrId }
-      : characterOrId
+    typeof characterOrId === "string" ? { id: characterOrId } : characterOrId
   );
+
   return {
     avatarUrl: fallback.assets.avatar,
     cardArtUrl: fallback.assets.card_art,
@@ -315,14 +496,13 @@ export function updateWaifuConfig(characterId, patch = {}, {
 
   activeConfig = {
     ...activeConfig,
-    characters: activeConfig.characters.map((character) =>
+    characters: activeConfig.characters.map((character) => (
       character.id === id ? merged : character
-    )
+    ))
   };
 
   configSource = "runtime";
   rebuildDatabase();
-
   if (persist) persistLocalConfig(storage);
   return cloneConfig(merged);
 }
@@ -349,8 +529,33 @@ export function resetWaifuDatabaseToMemory({
   return getConfigSnapshot();
 }
 
+export function exportWaifuConfigObject() {
+  return {
+    schema_version: 2,
+    characters: activeConfig.characters.map((character) => ({
+      id: character.id,
+      name: character.name,
+      team: character.team,
+      species: character.species,
+      role: character.role,
+      archetype: character.archetype,
+      avatar_url: character.assets.avatar,
+      card_art_url: character.assets.card_art,
+      cutin_art_url: character.assets.cutin_art,
+      power: character.stats.power,
+      contact: character.stats.contact,
+      speed: character.stats.speed,
+      eye: character.stats.eye,
+      quote_super: character.quote_super,
+      quote_idle: character.quote_idle,
+      quote_victory: character.quote_victory,
+      jiggle_intensity: character.jiggle_intensity
+    }))
+  };
+}
+
 export function exportWaifuConfigJson() {
-  return JSON.stringify(activeConfig, null, 2);
+  return JSON.stringify(exportWaifuConfigObject(), null, 2);
 }
 
 export function createRemoteWaifuAssets(character = {}) {
@@ -359,4 +564,3 @@ export function createRemoteWaifuAssets(character = {}) {
 
 export const WAIFU_CONFIG_URL = CONFIG_URL;
 export const WAIFU_CONFIG_STORAGE_KEY = CONFIG_STORAGE_KEY;
-

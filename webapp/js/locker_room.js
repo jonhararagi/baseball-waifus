@@ -292,6 +292,30 @@ export class LockerRoom {
     return clone(this.lastInteraction);
   }
 
+  unlockAllSkins(ids = []) {
+    const candidates = Array.isArray(ids) && ids.length
+      ? ids.map((id) => String(id || "")).filter(Boolean)
+      : [this.state.activeWaifuId].filter(Boolean);
+
+    for (const id of candidates) {
+      const entry = this._ensureWaifu(id);
+      for (const skinId of Object.keys(SKINS)) {
+        if (!entry.unlockedSkins.includes(skinId)) {
+          entry.unlockedSkins.push(skinId);
+        }
+      }
+    }
+
+    this.message = "ALL SKINS UNLOCKED";
+    this._persist();
+    this._render();
+    return {
+      changed: candidates.length > 0,
+      ids: candidates,
+      skins: Object.keys(SKINS)
+    };
+  }
+
   equipSkin(skinId, id = this.state.activeWaifuId) {
     const key = String(id || "");
     if (!key || !SKINS[String(skinId)]) {

@@ -25,6 +25,7 @@ import { PerformanceAdapter } from "./performance_adapter.js";
 import {
   getWaifuAssets,
   getWaifu,
+  listWaifus,
   initializeWaifuDatabase
 } from "./waifu_database.js";
 import { LockerRoom } from "./locker_room.js";
@@ -311,6 +312,23 @@ adminPanel = new AdminPanel({
   getCharacter: getAdminCharacter,
   onCharacterUpdated: handleAdminCharacterUpdated,
   onInfiniteScrapChange: applyAdminInfiniteScrap,
+  onScrapGrant: (amount) => {
+    const total = gachaController.addScrap(amount);
+    updateGachaHud(gachaController.getStatus());
+    return total;
+  },
+  onUnlockAllSkins: () => {
+    const ids = [
+      ...new Set([
+        ...gachaController.getCharacters().map((unit) => unit.character_id),
+        ...listWaifus().map((waifu) => waifu.id)
+      ])
+    ];
+    const result = lockerRoom.unlockAllSkins(ids);
+    refreshLockerRoom();
+    saveSystem.save();
+    return result;
+  },
   onSuperSwingTest: (character) => renderer.triggerSuperSwingDemo(character),
   onVoiceTest: (character) => voiceSystem.emit("ON_TAP", character)
 });
