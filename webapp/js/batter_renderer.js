@@ -29,7 +29,7 @@ function safeNumber(value, fallback = 0) {
 function normalizeState(value) {
   const state = String(value || "").toUpperCase();
   if (!BATTER_STATES[state]) {
-    throw new Error("Invalid BatterRenderer state: " + state);
+    throw new Error("Invalid BatterRenderer transition: invalid state " + state);
   }
   return state;
 }

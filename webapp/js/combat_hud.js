@@ -30,7 +30,7 @@ export class CombatHUD {
   }
 
   update(delta = 0) {
-    const dt = clamp(Number(delta) || 0, 0, 0.08);
+    const dt = clamp(Number(delta) || 0, 0, 1);
     this.time += dt;
     this.cutin.update(dt * 1000);
     this.bannerTimer = Math.max(0, this.bannerTimer - dt);

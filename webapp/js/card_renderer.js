@@ -1,3 +1,6 @@
+import { AssetLoader } from "./asset_loader.js";
+import { getWaifuAssets, getArchetypeColor } from "./waifu_database.js";
+
 const RARITY_PARTICLES = Object.freeze({
   N: "#aeb7c4",
   R: "#65d8ff",
@@ -38,6 +41,7 @@ export class CardRenderer {
     this.canvas = null;
     this.particleCanvas = null;
     this.particleContext = null;
+    this.assetLoader = new AssetLoader();
 
     if (this.autoDeviceOrientation) this._bindOrientation();
   }
@@ -75,9 +79,25 @@ export class CardRenderer {
     art.className = "card-layer card-layer-art";
     art.alt = String(character?.canonical?.display_name || character?.character_id || "Waifu");
     art.draggable = false;
-    art.src = assets.card_hd_url
-      || character?.canonical?.visual?.card_hd_url
-      || "./assets/production/cards/" + String(character?.character_id || "") + "--normal.jpg";
+    art.crossOrigin = "anonymous";
+    const remoteAssets = getWaifuAssets(character);
+    const remoteCardUrl = remoteAssets.cardArtUrl;
+    const fallbackColor = getArchetypeColor(character?.canonical?.archetype || character?.archetype || "DEFAULT");
+
+    this.assetLoader.attach(
+      art,
+      remoteCardUrl,
+      {
+        label: character?.canonical?.display_name || character?.character_id || "WAIFU",
+        archetype: character?.canonical?.archetype || character?.archetype || "DEFAULT",
+        color: accent || fallbackColor,
+        fallbackColor: "#0b0b14"
+      }
+    ).catch(() => {
+      art.src = assets.card_hd_url
+        || character?.canonical?.visual?.card_hd_url
+        || "./assets/production/cards/" + String(character?.character_id || "") + "--normal.jpg";
+    });
 
     const frame = document.createElement("div");
     frame.className = "card-layer card-layer-frame";

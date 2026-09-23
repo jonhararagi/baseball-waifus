@@ -4,6 +4,8 @@ import { BatterRenderer } from "./batter_renderer.js";
 import { CombatEffects } from "./combat_effects.js";
 import { CombatHUD } from "./combat_hud.js";
 import { PerformanceAdapter } from "./performance_adapter.js";
+import { AssetLoader, isHttpsUrl } from "./asset_loader.js";
+import { getWaifuAssets } from "./waifu_database.js";
 
 const RESULT_COLORS = {
   STRIKE: "#8ca8ff",
@@ -94,6 +96,7 @@ class AssetBank {
   constructor() {
     this.images = new Map();
     this.failed = new Set();
+    this.assetLoader = new AssetLoader();
   }
 
   async preload(descriptors = []) {
@@ -120,6 +123,15 @@ class AssetBank {
     }
 
     try {
+      if (isHttpsUrl(path)) {
+        const remote = await this.assetLoader.load(path, {
+          label: "WAIFU",
+          archetype: "DEFAULT"
+        });
+        this.images.set(path, remote.image);
+        return remote.image;
+      }
+
       const image = new Image();
       image.decoding = "async";
       image.src = assetUrl(path);
@@ -281,8 +293,10 @@ export class CombatRenderer {
   async showGachaCutIn({ rarity, character } = {}) {
     const id = String(character?.character_id || "");
     const name = String(character?.canonical?.display_name || id || "UNKNOWN");
+    const remoteAssets = getWaifuAssets(character);
     const cardPath = String(
-      character?.canonical?.visual?.card_hd_url
+      remoteAssets.cardArtUrl
+      || character?.canonical?.visual?.card_hd_url
       || `./assets/production/cards/${id}--normal.jpg`
     );
 

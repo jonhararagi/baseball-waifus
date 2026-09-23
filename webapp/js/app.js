@@ -22,6 +22,7 @@ import { GameModeManager } from "./game_modes.js";
 import { MainMenu, VIEWS } from "./main_menu.js";
 import { MobileHaptics } from "./mobile_haptics.js";
 import { PerformanceAdapter } from "./performance_adapter.js";
+import { getWaifuAssets } from "./waifu_database.js";
 import { LockerRoom } from "./locker_room.js";
 import { VoiceSystem } from "./voice_system.js";
 
@@ -385,9 +386,19 @@ function setLoading(visible, detail = "") {
 
 function activeAssetDescriptors(characterId) {
   const id = String(characterId || "");
+  const character = gachaController.getCharacter(id) || { character_id: id, canonical: { display_name: id } };
+  const remote = getWaifuAssets(character);
   return {
-    card: { id, card_hd_url: "./assets/production/cards/" + id + "--normal.jpg", path: "./assets/production/cards/" + id + "--normal.jpg" },
-    sprite: { id, sprite_url: "./assets/production/sprites/" + id + "_idle.png", path: "./assets/production/sprites/" + id + "_idle.png" }
+    card: {
+      id,
+      card_hd_url: remote.cardArtUrl,
+      path: remote.cardArtUrl
+    },
+    sprite: {
+      id,
+      sprite_url: remote.spriteSheetUrl,
+      path: remote.spriteSheetUrl
+    }
   };
 }
 

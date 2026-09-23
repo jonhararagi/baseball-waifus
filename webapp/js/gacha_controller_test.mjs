@@ -106,6 +106,7 @@ assert.deepEqual(controller.getStatus(), {
   inventory_size: 0,
   active_batter: null,
   scavenger_scrap: 0,
+  fragments: 0,
   recruit_cost: 1000,
   can_afford_recruit: false,
   ready: true
@@ -119,7 +120,7 @@ assert.equal(controller.getStatus().pulls_since_UR, 1);
 assert.equal(controller.getStatus().inventory_size, 1);
 assert.equal(controller.getStatus().scavenger_scrap, 2000);
 assert.equal(controller.getActiveBatter(), "bw017");
-assert.deepEqual(audioCalls, ["ui.confirm"]);
+assert.deepEqual(audioCalls, ["ui.confirm", "gacha.reveal_r"]);
 assert.equal(rendererCalls.length, 0);
 
 const soft = calculateGachaProbabilities(schema, 61);
@@ -136,7 +137,7 @@ assert.equal(softPull.rarity, "UR");
 assert.equal(softPull.soft_pity_active, true);
 assert.equal(controller.getStatus().pulls_since_UR, 0);
 assert.equal(rendererCalls.at(-1).rarity, "UR");
-assert.deepEqual(audioCalls.slice(-2), ["ui.confirm", "gacha.reveal_ssr"]);
+assert.deepEqual(audioCalls.slice(-2), ["ui.confirm", "gacha.reveal_ur"]);
 
 controller.state.pulls_since_UR = 79;
 rngValues.push(0);
@@ -147,8 +148,8 @@ assert.equal(hard.rarity, "UR");
 assert.equal(hard.hard_pity_triggered, true);
 assert.deepEqual(audioCalls.slice(-3), [
   "ui.confirm",
-  "gacha.pity_trigger",
-  "gacha.reveal_ssr"
+  "gacha.reveal_ur",
+  "gacha.pity_trigger"
 ]);
 
 const persisted = controller.storage.value;
