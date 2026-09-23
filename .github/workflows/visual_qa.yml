@@ -550,11 +550,12 @@ jobs:
           find webapp/js -maxdepth 1 -name "*.js" -print0 | while IFS= read -r -d "" file; do
             node --experimental-default-type=module --check "$file"
           done
-      - name: Run accumulated frontend unit tests P1-P10
+      - name: Run accumulated frontend unit tests P1-P15
         shell: bash
         run: |
           set -euo pipefail
           tests=(
+            webapp/js/admin_panel_test.mjs
             webapp/js/area_theme_test.mjs
             webapp/js/audio_bridge_test.mjs
             webapp/js/audio_engine_test.mjs
