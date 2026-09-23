@@ -417,12 +417,17 @@ export class AdminPanel {
   }
 
   updateStats(characterId, stats = {}) {
+    const current = listWaifus().find((waifu) => waifu.id === String(characterId || "").toLowerCase());
+    const mergedStats = {
+      ...(current?.stats || {}),
+      ...(stats || {})
+    };
     const updated = updateWaifuConfig(characterId, {
       stats: {
-        power: clampStat(stats.power),
-        contact: clampStat(stats.contact),
-        speed: clampStat(stats.speed),
-        eye: clampStat(stats.eye)
+        power: clampStat(mergedStats.power),
+        contact: clampStat(mergedStats.contact),
+        speed: clampStat(mergedStats.speed),
+        eye: clampStat(mergedStats.eye)
       }
     });
     this._afterCharacterUpdate(updated);
