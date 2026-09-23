@@ -101,8 +101,9 @@ function normalizeRapportEntry(value = {}) {
     }
   }
 
-  const activeSkin = unlocked.includes(normalizeSkinId(value.activeSkin))
-    ? normalizeSkinId(value.activeSkin)
+  const persistedActiveSkin = value.activeSkin || value.active_skin;
+  const activeSkin = unlocked.includes(normalizeSkinId(persistedActiveSkin))
+    ? normalizeSkinId(persistedActiveSkin)
     : unlocked[0];
 
   return {
