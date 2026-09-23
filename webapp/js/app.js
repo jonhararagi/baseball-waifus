@@ -111,10 +111,20 @@ const galleryView = document.querySelector("#gallery-view");
 const dexInspector = document.querySelector("#dex-card-inspector");
 const dexInspectorName = document.querySelector("#dex-inspector-name");
 const dexInspectorClose = document.querySelector("#dex-inspector-close");
+const superSwingButton = document.querySelector("#btn-superswing");
+const navRosterButton = document.querySelector("#btn-nav-roster");
+const navGachaButton = document.querySelector("#btn-nav-gacha");
+const navShopButton = document.querySelector("#btn-nav-shop");
+const adminTriggerButton = document.querySelector("#btn-admin-trigger");
+const waifuActiveName = document.querySelector("#waifu-active-name");
+const waifuActiveRole = document.querySelector("#waifu-active-role");
+const waifuAvatarImg = document.querySelector("#waifu-avatar-img");
+const waifuPowerBar = document.querySelector("#waifu-pwr-bar");
+const waifuSpeedBar = document.querySelector("#waifu-spd-bar");
 const cardRenderer = new CardRenderer({
   root: document.querySelector("#dex-card-stage")
 });
-const combatShell = document.querySelector(".combat-shell");
+const combatShell = document.querySelector(".combat-shell, .game-viewport");
 const combatViewPieces = [...document.querySelectorAll(".combat-view-piece")];
 
 let matchId = "";
@@ -246,7 +256,7 @@ const mainMenu = new MainMenu({
   onBiomeChange: (biome) => startGameMode(playModeSelect?.value || "PRACTICE", biome)
 });
 
-const renderer = new CombatRenderer(document.querySelector("#combat-canvas"), {
+const renderer = new CombatRenderer(document.querySelector("#combat-canvas, #gameCanvas"), {
   audioBridge,
   hapticsBridge,
   onScrapEarned: handleScrapEarned,
@@ -339,7 +349,25 @@ function getActiveLockerWaifu() {
     || null;
 }
 
+function refreshActiveWaifuCard() {
+  const active = getActiveLockerWaifu();
+  if (!active) return;
+  const canonical = active.canonical || {};
+  const stats = canonical.stats || {};
+  const displayName = canonical.display_name || active.character_id || "WAIFU";
+  const role = String(canonical.specialization || canonical.position || canonical.archetype || "WAIFU").toUpperCase();
+  if (waifuActiveName) waifuActiveName.textContent = displayName;
+  if (waifuActiveRole) waifuActiveRole.textContent = role + " • TYPE-" + String(canonical.rarity || "R");
+  if (waifuAvatarImg) {
+    const assets = getWaifuAssets(active);
+    if (assets.avatarUrl) waifuAvatarImg.src = assets.avatarUrl;
+  }
+  if (waifuPowerBar) waifuPowerBar.style.width = Math.max(0, Math.min(100, Number(stats.power ?? stats.contact ?? 0))) + "%";
+  if (waifuSpeedBar) waifuSpeedBar.style.width = Math.max(0, Math.min(100, Number(stats.speed ?? stats.eye ?? 0))) + "%";
+}
+
 function refreshLockerRoom() {
+  refreshActiveWaifuCard();
   const active = getActiveLockerWaifu();
   if (active) lockerRoom.setActiveWaifu(active);
 
@@ -666,6 +694,22 @@ function updateHud(state) {
   awayValue.textContent = awayTeam;
   homeValue.textContent = homeTeam;
   scoreValue.textContent = awayScore + " - " + homeScore;
+  const topHomeScore = document.querySelector("#score-home");
+  const topAwayScore = document.querySelector("#score-away");
+  const topInning = document.querySelector("#hud-inning");
+  const topBalls = document.querySelector("#cnt-balls");
+  const topStrikes = document.querySelector("#cnt-strikes");
+  const topOuts = document.querySelector("#cnt-outs");
+  const topHomeLabel = document.querySelector("#score-home-label");
+  const topAwayLabel = document.querySelector("#score-away-label");
+  if (topHomeScore) topHomeScore.textContent = String(homeScore);
+  if (topAwayScore) topAwayScore.textContent = String(awayScore);
+  if (topInning) topInning.textContent = "INNING " + String(inning) + " • " + String(half || "TOP").toUpperCase();
+  if (topBalls) topBalls.textContent = String(balls);
+  if (topStrikes) topStrikes.textContent = String(strikes);
+  if (topOuts) topOuts.textContent = String(outs);
+  if (topHomeLabel) topHomeLabel.textContent = homeTeam;
+  if (topAwayLabel) topAwayLabel.textContent = awayTeam;
 }
 
 function setActionPending(pending) {
@@ -741,6 +785,37 @@ batButton.addEventListener("click", () => {
 });
 stealButton.addEventListener("click", () => sendAction("STEAL"));
 syncButton.addEventListener("click", syncCombat);
+
+superSwingButton?.addEventListener("click", async () => {
+  if (actionPending) return;
+  superSwingButton.disabled = true;
+  try {
+    await renderer.triggerSuperSwingDemo(getActiveLockerWaifu());
+  } finally {
+    window.setTimeout(() => {
+      superSwingButton.disabled = false;
+    }, 1100);
+  }
+});
+
+adminTriggerButton?.addEventListener("click", () => {
+  adminPanel?.toggle();
+});
+
+navRosterButton?.addEventListener("click", () => {
+  mainMenu.navigate("roster");
+});
+
+navGachaButton?.addEventListener("click", () => {
+  mainMenu.navigate("gacha");
+});
+
+navShopButton?.addEventListener("click", () => {
+  mainMenu.navigate("gacha");
+  window.setTimeout(() => {
+    document.querySelector("#action-gacha")?.scrollIntoView?.({ behavior: "smooth", block: "center" });
+  }, 0);
+});
 
 gachaTenButton?.addEventListener("click", async () => {
   if (!gachaController.ready || gachaRolling) return;
