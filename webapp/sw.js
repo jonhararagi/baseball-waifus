@@ -26,6 +26,7 @@ const CORE_ASSETS = [
   "./js/save_system.js",
   "./js/share_bridge.js",
   "./js/team_manager.js",
+  "./js/super_swing_cutin.js",
   "./js/tma_bridge.js",
   "./js/upgrade_system.js",
   "./js/waifu_dex.js",
