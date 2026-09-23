@@ -148,8 +148,8 @@ assert.equal(hard.rarity, "UR");
 assert.equal(hard.hard_pity_triggered, true);
 assert.deepEqual(audioCalls.slice(-3), [
   "ui.confirm",
-  "gacha.pity_trigger",
-  "gacha.reveal_ur"
+  "gacha.reveal_ur",
+  "gacha.pity_trigger"
 ]);
 
 const persisted = controller.storage.value;
