@@ -199,4 +199,17 @@ assert.throws(
 
 resetWaifuDatabaseToMemory();
 
+await initializeWaifuDatabase({
+  storage: new MemoryStorage(),
+  fetchImpl: async () => {
+    throw new Error("CONFIG_LOAD_FAILED");
+  }
+});
+assert.equal(getWaifuConfigSource(), "memory");
+assert.ok(getWaifu("cari"));
+assert.equal(getConfigSnapshot().schema_version, 2);
+assert.equal(getConfigSnapshot().characters.length, 8);
+
+resetWaifuDatabaseToMemory();
+
 console.log("admin_panel_test: ok");
