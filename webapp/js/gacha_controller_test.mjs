@@ -120,7 +120,7 @@ assert.equal(controller.getStatus().pulls_since_UR, 1);
 assert.equal(controller.getStatus().inventory_size, 1);
 assert.equal(controller.getStatus().scavenger_scrap, 2000);
 assert.equal(controller.getActiveBatter(), "bw017");
-assert.deepEqual(audioCalls, ["ui.confirm"]);
+assert.deepEqual(audioCalls, ["ui.confirm", "gacha.reveal_r"]);
 assert.equal(rendererCalls.length, 0);
 
 const soft = calculateGachaProbabilities(schema, 61);
