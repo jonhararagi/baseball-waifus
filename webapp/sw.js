@@ -1,9 +1,13 @@
-const CACHE_NAME = "baseball-waifus-rc1-v1";
-const CORE_ASSETS = [
+const CACHE_NAME = "v16_capibara_core";
+
+const PRECACHE_ASSETS = [
   "./",
   "./index.html",
   "./manifest.json",
   "./css/style.css",
+  "./data/waifus_config.json",
+  "./data/game_schemas_recycled.json",
+  "./data/characters_queue.json",
   "./js/app.js",
   "./js/admin_panel.js",
   "./js/api.js",
@@ -22,37 +26,39 @@ const CORE_ASSETS = [
   "./js/gallery.js",
   "./js/game_modes.js",
   "./js/haptics_bridge.js",
-  "./js/main_menu.js",
   "./js/locker_room.js",
+  "./js/main_menu.js",
   "./js/mobile_haptics.js",
   "./js/performance_adapter.js",
   "./js/save_system.js",
   "./js/share_bridge.js",
-  "./js/team_manager.js",
   "./js/super_swing_cutin.js",
-  "./js/voice_system.js",
+  "./js/team_manager.js",
   "./js/tma_bridge.js",
   "./js/upgrade_system.js",
-  "./js/waifu_dex.js",
+  "./js/voice_system.js",
   "./js/waifu_database.js",
-  "./data/waifus_config.json",
-  "./data/game_schemas_recycled.json",
-  "./data/characters_queue.json",
+  "./js/waifu_dex.js",
+  "./assets/icons/icon-192.png",
+  "./assets/icons/icon-512.png",
   "./icons/icon-192.svg",
   "./icons/icon-512.svg"
 ];
 
-const isLocalGet = (request) => {
+function isLocalGet(request) {
   if (request.method !== "GET") return false;
   try {
     return new URL(request.url).origin === self.location.origin;
   } catch {
     return false;
   }
-};
+}
 
 async function cacheResponse(request, response) {
-  if (!response || (!response.ok && response.type !== "opaque")) return response;
+  if (!response || (!response.ok && response.type !== "opaque")) {
+    return response;
+  }
+
   const cache = await caches.open(CACHE_NAME);
   await cache.put(request, response.clone());
   return response;
@@ -72,35 +78,7 @@ async function cacheFirst(request) {
 self.addEventListener("install", (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
-    await cache.addAll(CORE_ASSETS);
-
-    try {
-      const manifestResponse = await fetch("./assets/production/manifest.json", { cache: "no-cache" });
-      if (manifestResponse.ok) {
-        const manifest = await manifestResponse.json();
-        const paths = [
-          ...(Array.isArray(manifest.sprites) ? manifest.sprites : []),
-          ...(Array.isArray(manifest.cards) ? manifest.cards : [])
-        ]
-          .map((asset) => asset?.path || asset?.sprite_url || asset?.card_hd_url)
-          .filter(Boolean)
-          .map((path) => new URL(String(path), self.location.href).toString());
-
-        await Promise.all(paths.map(async (url) => {
-          try {
-            const response = await fetch(url, { cache: "no-cache" });
-            if (response.ok) {
-              await cache.put(url, response);
-            }
-          } catch {
-            // Procedural fallbacks keep presentation functional when an optional asset is absent.
-          }
-        }));
-      }
-    } catch {
-      // The production asset manifest is optional in local/dev builds.
-    }
-
+    await cache.addAll(PRECACHE_ASSETS);
     await self.skipWaiting();
   })());
 });
