@@ -1,7 +1,3 @@
-function clamp(value, min, max) {
-  return Math.min(max, Math.max(min, value));
-}
-
 import { SuperSwingCutin } from "./super_swing_cutin.js";
 
 function clamp(value, min, max) {
