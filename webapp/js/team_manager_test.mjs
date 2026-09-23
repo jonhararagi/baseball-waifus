@@ -26,7 +26,7 @@ assert.equal(manager.getTimingWindowMultiplier("cyberpunk"), BIOME_SYNERGY_MULTI
 assert.equal(manager.getTimingWindowMultiplier("forest"), 1);
 assert.equal(hasBiomeSynergy(units.a, "cyberpunk"), true);
 assert.equal(hasBiomeSynergy(units.c, "cyberpunk"), false);
-assert.throws(() => manager.setSupport(0, "a"), /active batter/);
+assert.throws(() => manager.setSupport(0, "a"), /Active batter/);
 assert.throws(() => manager.setSupport(1, "b"), /one support slot/);
 const modified = manager.applyCombatModifiers({ area_id: "cyberpunk", state: {} });
 assert.equal(modified.team_modifiers.timing_window_multiplier, 1.15);
