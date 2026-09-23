@@ -290,6 +290,92 @@ export class CombatRenderer {
     this.audioBridge = audioBridge || null;
   }
 
+  async refreshWaifuAssets(characterId) {
+    const id = String(characterId || "");
+    if (!id || !this.state) return false;
+
+    const assets = getWaifuAssets(id);
+    const currentBatterId = String(
+      this.state.batter?.id
+      || this.state.batter?.character_id
+      || this.state.batter?.card_id
+      || ""
+    );
+
+    if (currentBatterId === id) {
+      this.state = {
+        ...this.state,
+        batter: {
+          ...(this.state.batter || {}),
+          sprite_url: assets.spriteSheetUrl,
+          card_hd_url: assets.cardArtUrl
+        }
+      };
+      this.batterRenderer.setBatter(this.state.batter);
+    }
+
+    const cardAsset = {
+      id,
+      card_hd_url: assets.cardArtUrl,
+      path: assets.cardArtUrl
+    };
+    const spriteAsset = {
+      id,
+      sprite_url: assets.spriteSheetUrl,
+      path: assets.spriteSheetUrl
+    };
+
+    this.state = {
+      ...this.state,
+      assets: {
+        ...(this.state.assets || {}),
+        cards: [
+          ...((this.state.assets?.cards || []).filter((asset) => asset?.id !== id)),
+          cardAsset
+        ],
+        sprites: [
+          ...((this.state.assets?.sprites || []).filter((asset) => asset?.id !== id)),
+          spriteAsset
+        ]
+      }
+    };
+
+    await this.assetBank.preload([{
+      ...cardAsset,
+      kind: "card"
+    }, {
+      ...spriteAsset,
+      kind: "sprite"
+    }]);
+
+    this._renderStaticLayer();
+    this.onState?.(this.state);
+    return true;
+  }
+
+  async triggerSuperSwingDemo(character = null) {
+    const source = character || {};
+    const id = String(source.id || source.character_id || "");
+    const name = String(source.name || source.canonical?.display_name || id || "WAIFU");
+    const archetype = String(source.archetype || source.canonical?.archetype || "POWER").toUpperCase();
+    const assets = getWaifuAssets(id || source);
+    const loaded = await this.assetBank.load(assets.cutinArtUrl);
+
+    const activated = this.combatHud.triggerSuperSwing({
+      name,
+      archetype,
+      quote_super: "¡SUPER SWING TEST!",
+      skill_name: "ADMIN TEST"
+    }, loaded);
+
+    if (activated) {
+      this._playAudio("result.perfect");
+      this._playHaptics("perfect_timing");
+    }
+
+    return activated;
+  }
+
   async showGachaCutIn({ rarity, character } = {}) {
     const id = String(character?.character_id || "");
     const name = String(character?.canonical?.display_name || id || "UNKNOWN");
