@@ -253,7 +253,8 @@ function createGeneratedAssets(character = {}) {
   return {
     avatar: IMAGE_PROVIDER_BASE + "?seed=" + seed + "-avatar&size=512&backgroundColor=0b0b14",
     card_art: IMAGE_PROVIDER_BASE + "?seed=" + seed + "-card&size=1024&backgroundColor=0b0b14",
-    cutin_art: IMAGE_PROVIDER_BASE + "?seed=" + seed + "-cutin&size=1024&backgroundColor=0b0b14"
+    cutin_art: IMAGE_PROVIDER_BASE + "?seed=" + seed + "-cutin&size=1024&backgroundColor=0b0b14",
+    sprite: IMAGE_PROVIDER_BASE + "?seed=" + seed + "-sprite&size=256&backgroundColor=0b0b14"
   };
 }
 
@@ -284,7 +285,7 @@ function normalizeCharacter(input = {}) {
       avatar: safeUrl(avatar, generated.avatar),
       card_art: safeUrl(cardArt, generated.card_art),
       cutin_art: safeUrl(cutinArt, generated.cutin_art),
-      sprite: safeUrl(legacyAssets.sprite || input.sprite_url || input.spriteUrl, generated.card_art)
+      sprite: safeUrl(legacyAssets.sprite || input.sprite_url || input.spriteUrl, generated.sprite)
     },
     quote_super: String(input.quote_super || "¡SUPER SWING!"),
     quote_idle: String(input.quote_idle || ""),
