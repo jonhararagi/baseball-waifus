@@ -568,6 +568,7 @@ jobs:
             webapp/js/mobile_haptics_test.mjs
             webapp/js/performance_adapter_test.mjs
             webapp/js/save_system_test.mjs
+            webapp/js/super_swing_cutin_test.mjs
             webapp/js/team_manager_test.mjs
             webapp/js/tma_bridge_test.mjs
             webapp/js/upgrade_system_test.mjs
