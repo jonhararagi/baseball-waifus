@@ -62,13 +62,19 @@ const queue = await fs.readFile(queuePath, "utf8")
     const configPath = join(webappDir, "data", "waifus_config.json");
     const config = JSON.parse(await fs.readFile(configPath, "utf8"));
     const fallbackRarities = ["R", "SR", "SSR", "UR"];
-    return config.characters.map((character, index) => ({
+    const units = config.characters.map((character, index) => ({
       character_id: character.id,
       canonical: {
         display_name: character.name,
         rarity: fallbackRarities[index % fallbackRarities.length]
       }
     }));
+    return {
+      schema_version: 1,
+      character_id: units[0].character_id,
+      canonical: units[0].canonical,
+      batch_units: units.slice(1)
+    };
   });
 
 const storage = new MemoryStorage();
