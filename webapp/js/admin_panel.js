@@ -54,6 +54,8 @@ export class AdminPanel {
     getCharacter = null,
     onCharacterUpdated = null,
     onInfiniteScrapChange = null,
+    onScrapGrant = null,
+    onUnlockAllSkins = null,
     onSuperSwingTest = null,
     onVoiceTest = null
   } = {}) {
@@ -64,6 +66,8 @@ export class AdminPanel {
     this.onInfiniteScrapChange = typeof onInfiniteScrapChange === "function"
       ? onInfiniteScrapChange
       : null;
+    this.onScrapGrant = typeof onScrapGrant === "function" ? onScrapGrant : null;
+    this.onUnlockAllSkins = typeof onUnlockAllSkins === "function" ? onUnlockAllSkins : null;
     this.onSuperSwingTest = typeof onSuperSwingTest === "function"
       ? onSuperSwingTest
       : null;
@@ -169,7 +173,22 @@ export class AdminPanel {
         spellcheck: false,
         placeholder: "https://..."
       });
-      field.appendChild(input);
+      const preview = makeElement("img", {
+        className: "admin-image-preview",
+        alt: label + " preview",
+        loading: "lazy"
+      });
+      field.append(input, preview);
+      input.addEventListener("input", () => {
+        preview.src = input.value;
+      });
+      input.addEventListener("change", () => {
+        try {
+          this.updateImage(this.selectedId, key, input.value);
+        } catch (error) {
+          this._setStatus("IMAGE ERROR // " + String(error.message || error));
+        }
+      });
       imageGrid.appendChild(field);
       imageInputs[key] = input;
     }
@@ -189,6 +208,15 @@ export class AdminPanel {
       field.appendChild(input);
       statGrid.appendChild(field);
       statInputs[key] = input;
+      input.addEventListener("change", () => {
+        try {
+          this.updateStats(this.selectedId, {
+            [key]: input.value
+          });
+        } catch (error) {
+          this._setStatus("STAT ERROR // " + String(error.message || error));
+        }
+      });
     }
 
     const testRow = makeElement("div", { className: "admin-test-row" });
@@ -199,6 +227,20 @@ export class AdminPanel {
     });
     infinite.addEventListener("change", () => this.setInfiniteScrap(infinite.checked));
     infiniteLabel.append(infinite, makeElement("span", { textContent: "INFINITE SCRAP // TEST BALANCE" }));
+
+    const scrapButton = makeElement("button", {
+      className: "admin-button admin-button-accent",
+      type: "button",
+      textContent: "+10,000 SCRAP"
+    });
+    scrapButton.addEventListener("click", () => this.grantScrap(10000));
+
+    const skinsButton = makeElement("button", {
+      className: "admin-button",
+      type: "button",
+      textContent: "UNLOCK ALL SKINS"
+    });
+    skinsButton.addEventListener("click", () => this.unlockAllSkins());
 
     const superButton = makeElement("button", {
       className: "admin-button admin-button-accent",
@@ -214,7 +256,7 @@ export class AdminPanel {
     });
     voiceButton.addEventListener("click", () => this.testVoice());
 
-    testRow.append(infiniteLabel, superButton, voiceButton);
+    testRow.append(infiniteLabel, scrapButton, skinsButton, superButton, voiceButton);
 
     const actionRow = makeElement("div", { className: "admin-action-row" });
     const applyButton = makeElement("button", {
@@ -227,14 +269,28 @@ export class AdminPanel {
     const exportButton = makeElement("button", {
       className: "admin-button",
       type: "button",
-      textContent: "EXPORT JSON.GZ"
+      textContent: "EXPORT JSON"
     });
     exportButton.addEventListener("click", async () => {
       try {
-        await this.exportCompressedFile();
+        await this.exportJsonFile();
         this._setStatus("CONFIG // EXPORTED");
       } catch (error) {
         this._setStatus("EXPORT ERROR // " + String(error.message || error));
+      }
+    });
+
+    const copyButton = makeElement("button", {
+      className: "admin-button",
+      type: "button",
+      textContent: "COPY JSON"
+    });
+    copyButton.addEventListener("click", async () => {
+      try {
+        await this.copyJson();
+        this._setStatus("CONFIG // COPIED");
+      } catch (error) {
+        this._setStatus("COPY ERROR // " + String(error.message || error));
       }
     });
 
@@ -252,7 +308,7 @@ export class AdminPanel {
       this._setStatus("CONFIG // MEMORY FALLBACK");
     });
 
-    actionRow.append(applyButton, exportButton, resetButton);
+    actionRow.append(applyButton, exportButton, copyButton, resetButton);
 
     this.statusNode = makeElement("div", {
       className: "admin-status",
@@ -378,6 +434,21 @@ export class AdminPanel {
     return this._applyForm();
   }
 
+  grantScrap(amount = 10000) {
+    const delta = Math.max(0, Math.floor(Number(amount) || 0));
+    const result = this.onScrapGrant?.(delta);
+    this._persist();
+    this._setStatus("SCRAP // +" + delta);
+    return result;
+  }
+
+  unlockAllSkins() {
+    const result = this.onUnlockAllSkins?.();
+    this._persist();
+    this._setStatus("SKINS // ALL UNLOCKED");
+    return result;
+  }
+
   setInfiniteScrap(enabled) {
     this.state.infinite_scrap = Boolean(enabled);
     if (this.onInfiniteScrapChange) {
@@ -434,6 +505,30 @@ export class AdminPanel {
   exportJson() {
     const json = exportWaifuConfigJson();
     JSON.parse(json);
+    return json;
+  }
+
+  async exportJsonFile(filename = "waifus_config.json") {
+    const json = this.exportJson();
+    if (typeof document === "undefined" || typeof Blob === "undefined" || typeof URL === "undefined") {
+      return json;
+    }
+
+    const blob = new Blob([json], { type: "application/json" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(link.href), 0);
+    return json;
+  }
+
+  async copyJson() {
+    const json = this.exportJson();
+    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(json);
+      return json;
+    }
     return json;
   }
 
