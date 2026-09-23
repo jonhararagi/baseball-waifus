@@ -4,6 +4,7 @@ import { BatterRenderer } from "./batter_renderer.js";
 import { CombatEffects } from "./combat_effects.js";
 import { CombatHUD } from "./combat_hud.js";
 import { PerformanceAdapter } from "./performance_adapter.js";
+import { SuperSwingCutin } from "./super_swing_cutin.js";
 
 const RESULT_COLORS = {
   STRIKE: "#8ca8ff",
@@ -185,6 +186,7 @@ export class CombatRenderer {
     this.onScrapEarned = onScrapEarned;
     this.hapticsBridge = hapticsBridge || null;
     this.performanceAdapter = performanceAdapter || new PerformanceAdapter();
+    this.superSwingCutin = new SuperSwingCutin();
     this.themeManager = new AreaThemeManager("cyberpunk");
     this.batterRenderer = new BatterRenderer({
       imageResolver: (path) => this.assetBank.get(path),
@@ -215,6 +217,7 @@ export class CombatRenderer {
     this.frameCanvas = document.createElement("canvas");
     this.frameCtx = this.frameCanvas.getContext("2d", { alpha: false });
     this.lastFrame = performance.now();
+    this.superSwingFrozen = false;
 
     this.handleViewportResize = () => this.resize();
 
@@ -423,6 +426,7 @@ export class CombatRenderer {
     ]);
 
     this.batterRenderer.setBatter(this.state.batter);
+    this._triggerSuperSwingCutIn(dto);
     const turnEvent = String(
       dto?.event
       || dto?.animation?.event
@@ -505,6 +509,13 @@ export class CombatRenderer {
   }
 
   _update(delta) {
+    this.superSwingCutin.update(delta * 1000);
+    this.superSwingFrozen = this.superSwingCutin.isFreezingTime();
+
+    if (this.superSwingFrozen) {
+      return;
+    }
+
     this.batterRenderer.update(delta);
     this.combatEffects.update(
       delta,
@@ -616,6 +627,11 @@ export class CombatRenderer {
     }
 
     this.combatHud.render(target, w, h, this.state, this.lastTurn);
+
+    if (this.superSwingCutin.active) {
+      const portrait = this._getSuperSwingPortrait();
+      this.superSwingCutin.render(target, w, h, { portrait });
+    }
 
     target.restore();
 
@@ -1091,6 +1107,60 @@ export class CombatRenderer {
     ctx.font = "900 46px system-ui, sans-serif";
     ctx.fillText("ZAN!", 0, -20);
     ctx.restore();
+  }
+
+
+  _isSuperSwingEvent(dto) {
+    const event = String(
+      dto?.animation?.event
+      || dto?.event
+      || dto?.action
+      || ""
+    ).toUpperCase();
+
+    return Boolean(
+      dto?.super_swing === true
+      || dto?.animation?.super_swing === true
+      || event === "SUPER_SWING"
+    );
+  }
+
+  _triggerSuperSwingCutIn(dto) {
+    if (!this._isSuperSwingEvent(dto)) return false;
+
+    const batter = dto?.animation?.super_swing_waifu
+      || dto?.super_swing_waifu
+      || dto?.batter
+      || this.state?.batter
+      || {};
+
+    const triggered = this.superSwingCutin.trigger({
+      id: batter.id || batter.card_id || batter.character_id || "",
+      name: batter.name || batter.display_name || "Unknown Waifu",
+      archetype: batter.archetype || batter.super_archetype || "POWER",
+      quote_super: batter.quote_super || batter.super_quote || "¡Siente todo mi poder!",
+      skill_name: batter.skill_name || batter.super_skill_name || "SUPER SWING!"
+    });
+
+    if (triggered) {
+      this._playAudio("result.perfect");
+      this._playHaptics("perfect");
+    }
+
+    return triggered;
+  }
+
+  _getSuperSwingPortrait() {
+    const waifu = this.superSwingCutin.currentWaifu;
+    const cardId = String(waifu?.id || "");
+    if (!cardId) return null;
+
+    const descriptor = [
+      ...(this.state?.assets?.cards || [])
+    ].find((asset) => String(asset?.id || "") === cardId);
+
+    const path = descriptorPath(descriptor, "card");
+    return path ? this.assetBank.get(path) : null;
   }
 
   _triggerAudioForTurn(dto) {
