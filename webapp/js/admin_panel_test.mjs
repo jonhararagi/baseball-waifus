@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import fs from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { SaveSystem } from "./save_system.js";
 import {
   AdminPanel,
@@ -7,6 +10,8 @@ import {
 import {
   getConfigSnapshot,
   getWaifu,
+  getWaifuConfigSource,
+  initializeWaifuDatabase,
   resetWaifuDatabaseToMemory
 } from "./waifu_database.js";
 
@@ -28,12 +33,49 @@ class MemoryStorage {
   }
 }
 
-resetWaifuDatabaseToMemory();
+const here = path.dirname(fileURLToPath(import.meta.url));
+const configPath = path.resolve(here, "../data/waifus_config.json");
+const config = JSON.parse(await fs.readFile(configPath, "utf8"));
+
+const storage = new MemoryStorage();
+await initializeWaifuDatabase({
+  storage,
+  fetchImpl: async () => ({
+    ok: true,
+    status: 200,
+    json: async () => config
+  })
+});
+
+assert.equal(getWaifuConfigSource(), "json");
+const snapshot = getConfigSnapshot();
+assert.equal(snapshot.schema_version, 2);
+assert.equal(snapshot.characters.length, 8);
+
+for (const character of snapshot.characters) {
+  assert.equal(typeof character.id, "string");
+  assert.ok(["POWER", "CONTACT", "SPEED", "EYE"].includes(character.archetype));
+  assert.equal(typeof character.team, "string");
+  assert.equal(typeof character.stats.power, "number");
+  assert.equal(typeof character.stats.contact, "number");
+  assert.equal(typeof character.stats.speed, "number");
+  assert.equal(typeof character.stats.eye, "number");
+  assert.equal(typeof character.quote_super, "string");
+  assert.equal(typeof character.quote_idle, "string");
+  assert.equal(typeof character.quote_victory, "string");
+  assert.equal(typeof character.jiggle_intensity, "number");
+  assert.match(character.assets.avatar, /^https:\/\//);
+}
 
 const imageUpdates = [];
-const storage = new MemoryStorage();
-
+const events = {
+  scrap: [],
+  skins: 0,
+  super: [],
+  voice: []
+};
 let panel = null;
+
 const saveSystem = new SaveSystem({
   storage,
   providers: {
@@ -47,13 +89,24 @@ const saveSystem = new SaveSystem({
 panel = new AdminPanel({
   root: null,
   saveSystem,
-  onCharacterUpdated: (character) => imageUpdates.push(character)
+  onCharacterUpdated: (character) => imageUpdates.push(character),
+  onScrapGrant: (amount) => events.scrap.push(amount),
+  onUnlockAllSkins: () => {
+    events.skins += 1;
+    return { changed: true };
+  },
+  onSuperSwingTest: (character) => {
+    events.super.push(character.id);
+    return true;
+  },
+  onVoiceTest: (character) => {
+    events.voice.push(character.id);
+    return true;
+  }
 });
 
 const originalCari = getWaifu("cari");
 assert.ok(originalCari);
-assert.ok(Array.isArray(getConfigSnapshot().characters));
-assert.equal(getConfigSnapshot().characters.length, 7);
 
 const updatedImage = panel.updateImage(
   "cari",
@@ -79,6 +132,14 @@ assert.deepEqual(updatedStats.stats, {
   eye: 66
 });
 
+assert.equal(panel.grantScrap(10000), undefined);
+assert.deepEqual(events.scrap, [10000]);
+assert.deepEqual(panel.unlockAllSkins(), { changed: true });
+panel.testSuperSwing("cari");
+panel.testVoice("cari");
+assert.deepEqual(events.super, ["cari"]);
+assert.deepEqual(events.voice, ["cari"]);
+
 panel.setInfiniteScrap(true);
 assert.equal(panel.getPersistence().infinite_scrap, true);
 assert.equal(INFINITE_SCRAP_VALUE, 999999999);
@@ -96,10 +157,7 @@ assert.equal(
   99
 );
 
-let restoredPanel = new AdminPanel({
-  root: null
-});
-
+const restoredPanel = new AdminPanel({ root: null });
 const restoredSave = new SaveSystem({
   storage,
   providers: {
@@ -123,13 +181,16 @@ assert.equal(
 
 const exported = restoredPanel.exportJson();
 const exportedObject = JSON.parse(exported);
-assert.equal(exportedObject.schema_version, 1);
-assert.equal(exportedObject.team, "Team Problemas de Capibara");
-assert.equal(exportedObject.characters.length, 7);
-assert.equal(
-  exportedObject.characters.find((item) => item.id === "cari").assets.card_art,
-  "https://cdn.example.test/cari-card-v2.png"
-);
+assert.equal(exportedObject.schema_version, 2);
+assert.equal(exportedObject.characters.length, 8);
+
+const exportedCari = exportedObject.characters.find((item) => item.id === "cari");
+assert.equal(exportedCari.card_art_url, "https://cdn.example.test/cari-card-v2.png");
+assert.equal(exportedCari.power, 99);
+assert.equal(typeof exportedCari.quote_super, "string");
+assert.equal(typeof exportedCari.jiggle_intensity, "number");
+assert.equal(Object.hasOwn(exportedCari, "avatar_url"), true);
+assert.equal(Object.hasOwn(exportedCari, "cutin_art_url"), true);
 
 assert.throws(
   () => restoredPanel.updateImage("cari", "card_art", "http://insecure.example.test/image.png"),
