@@ -2,6 +2,12 @@ function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
+import { SuperSwingCutin } from "./super_swing_cutin.js";
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
 function textValue(value, fallback = "-") {
   return value === undefined || value === null ? fallback : String(value);
 }
@@ -14,11 +20,23 @@ export class CombatHUD {
     this.bannerDuration = 1.45;
     this.time = 0;
     this.lastBannerTurnId = "";
+    this.cutin = new SuperSwingCutin();
+    this.superSwingPortrait = null;
+  }
+
+  triggerSuperSwing(waifuData, portrait = null) {
+    this.superSwingPortrait = portrait || null;
+    return this.cutin.trigger(waifuData);
+  }
+
+  isTimeFrozen() {
+    return this.cutin.isFreezingTime();
   }
 
   update(delta = 0) {
     const dt = clamp(Number(delta) || 0, 0, 0.08);
     this.time += dt;
+    this.cutin.update(dt * 1000);
     this.bannerTimer = Math.max(0, this.bannerTimer - dt);
     if (this.bannerTimer === 0) this.banner = null;
   }
@@ -56,6 +74,12 @@ export class CombatHUD {
     }
 
     if (this.banner && this.bannerTimer > 0) this.renderBanner(ctx, width, height);
+
+    if (this.cutin.active) {
+      this.cutin.render(ctx, width, height, {
+        portrait: this.superSwingPortrait
+      });
+    }
   }
 
   renderTopBar(ctx, width, height, matchState, energy, scrap) {
