@@ -1,104 +1,157 @@
 {
-  "schema_version": 1,
-  "team": "Team Problemas de Capibara",
+  "schema_version": 2,
   "characters": [
     {
       "id": "cari",
       "name": "Cari",
+      "team": "Team Problemas de Capibara",
       "species": "capybara",
-      "archetype": "POWER",
       "role": "Slugger",
-      "stats": { "power": 82, "contact": 74, "speed": 78, "eye": 62 },
-      "assets": {
-        "avatar": "https://api.dicebear.com/9.x/lorelei/png?seed=Cari-Capybara&size=512&backgroundColor=0b0b14",
-        "card_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Cari-Capybara-Card&size=1024&backgroundColor=0b0b14",
-        "cutin_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Cari-Capybara-Cutin&size=1024&backgroundColor=0b0b14",
-        "sprite": "https://api.dicebear.com/9.x/lorelei/png?seed=Cari-Capybara-Sprite&size=256&backgroundColor=0b0b14"
-      }
+      "archetype": "POWER",
+      "avatar_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Cari-Capybara&size=512&backgroundColor=0b0b14",
+      "card_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Cari-Capybara-Card&size=1024&backgroundColor=0b0b14",
+      "cutin_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Cari-Capybara-Cutin&size=1024&backgroundColor=0b0b14",
+      "power": 82,
+      "contact": 74,
+      "speed": 78,
+      "eye": 62,
+      "quote_super": "¡YO LE PEGARÉ!",
+      "quote_idle": "¡Vamos, vamos!",
+      "quote_victory": "¡Ganamos! ¡Eso estuvo genial!",
+      "jiggle_intensity": 0.18
     },
     {
       "id": "cami",
       "name": "Cami",
+      "team": "Team Problemas de Capibara",
       "species": "capybara",
-      "archetype": "EYE",
       "role": "Strategist",
-      "stats": { "power": 62, "contact": 76, "speed": 61, "eye": 91 },
-      "assets": {
-        "avatar": "https://api.dicebear.com/9.x/lorelei/png?seed=Cami-Capybara&size=512&backgroundColor=0b0b14",
-        "card_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Cami-Capybara-Card&size=1024&backgroundColor=0b0b14",
-        "cutin_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Cami-Capybara-Cutin&size=1024&backgroundColor=0b0b14",
-        "sprite": "https://api.dicebear.com/9.x/lorelei/png?seed=Cami-Capybara-Sprite&size=256&backgroundColor=0b0b14"
-      }
+      "archetype": "EYE",
+      "avatar_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Cami-Capybara&size=512&backgroundColor=0b0b14",
+      "card_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Cami-Capybara-Card&size=1024&backgroundColor=0b0b14",
+      "cutin_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Cami-Capybara-Cutin&size=1024&backgroundColor=0b0b14",
+      "power": 62,
+      "contact": 76,
+      "speed": 61,
+      "eye": 91,
+      "quote_super": "Calculado. Ahora batea.",
+      "quote_idle": "La estrategia primero.",
+      "quote_victory": "Funcionó exactamente como esperaba.",
+      "jiggle_intensity": 0.08
     },
     {
       "id": "sunna",
       "name": "Sunna",
+      "team": "Team Problemas de Capibara",
       "species": "serpent",
-      "archetype": "POWER",
       "role": "Vanguard",
-      "stats": { "power": 79, "contact": 66, "speed": 69, "eye": 72 },
-      "assets": {
-        "avatar": "https://api.dicebear.com/9.x/lorelei/png?seed=Sunna-Serpent&size=512&backgroundColor=0b0b14",
-        "card_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Sunna-Serpent-Card&size=1024&backgroundColor=0b0b14",
-        "cutin_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Sunna-Serpent-Cutin&size=1024&backgroundColor=0b0b14",
-        "sprite": "https://api.dicebear.com/9.x/lorelei/png?seed=Sunna-Serpent-Sprite&size=256&backgroundColor=0b0b14"
-      }
+      "archetype": "POWER",
+      "avatar_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Sunna-Serpent&size=512&backgroundColor=0b0b14",
+      "card_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Sunna-Serpent-Card&size=1024&backgroundColor=0b0b14",
+      "cutin_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Sunna-Serpent-Cutin&size=1024&backgroundColor=0b0b14",
+      "power": 79,
+      "contact": 66,
+      "speed": 69,
+      "eye": 72,
+      "quote_super": "¡No apartaré la mirada!",
+      "quote_idle": "El sol está ahí...",
+      "quote_victory": "¡Lo logramos!",
+      "jiggle_intensity": 0.12
     },
     {
       "id": "chie",
       "name": "Chie",
+      "team": "Team Problemas de Capibara",
       "species": "mouse",
-      "archetype": "CONTACT",
       "role": "Contact",
-      "stats": { "power": 58, "contact": 89, "speed": 84, "eye": 76 },
-      "assets": {
-        "avatar": "https://api.dicebear.com/9.x/lorelei/png?seed=Chie-Mouse&size=512&backgroundColor=0b0b14",
-        "card_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Chie-Mouse-Card&size=1024&backgroundColor=0b0b14",
-        "cutin_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Chie-Mouse-Cutin&size=1024&backgroundColor=0b0b14",
-        "sprite": "https://api.dicebear.com/9.x/lorelei/png?seed=Chie-Mouse-Sprite&size=256&backgroundColor=0b0b14"
-      }
+      "archetype": "CONTACT",
+      "avatar_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Chie-Mouse&size=512&backgroundColor=0b0b14",
+      "card_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Chie-Mouse-Card&size=1024&backgroundColor=0b0b14",
+      "cutin_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Chie-Mouse-Cutin&size=1024&backgroundColor=0b0b14",
+      "power": 58,
+      "contact": 89,
+      "speed": 84,
+      "eye": 76,
+      "quote_super": "¡Golpe limpio!",
+      "quote_idle": "Tranquila... apunta.",
+      "quote_victory": "¡Kachi desu!",
+      "jiggle_intensity": 0.1
     },
     {
       "id": "scarlet",
       "name": "Scarlet",
+      "team": "Team Problemas de Capibara",
       "species": "fruit_bat",
-      "archetype": "POWER",
       "role": "Slugger",
-      "stats": { "power": 86, "contact": 71, "speed": 67, "eye": 73 },
-      "assets": {
-        "avatar": "https://api.dicebear.com/9.x/lorelei/png?seed=Scarlet-Bat&size=512&backgroundColor=0b0b14",
-        "card_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Scarlet-Bat-Card&size=1024&backgroundColor=0b0b14",
-        "cutin_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Scarlet-Bat-Cutin&size=1024&backgroundColor=0b0b14",
-        "sprite": "https://api.dicebear.com/9.x/lorelei/png?seed=Scarlet-Bat-Sprite&size=256&backgroundColor=0b0b14"
-      }
+      "archetype": "POWER",
+      "avatar_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Scarlet-Bat&size=512&backgroundColor=0b0b14",
+      "card_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Scarlet-Bat-Card&size=1024&backgroundColor=0b0b14",
+      "cutin_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Scarlet-Bat-Cutin&size=1024&backgroundColor=0b0b14",
+      "power": 86,
+      "contact": 71,
+      "speed": 67,
+      "eye": 73,
+      "quote_super": "¡Muerde la pelota!",
+      "quote_idle": "La noche también juega.",
+      "quote_victory": "¡Victoria dulce!",
+      "jiggle_intensity": 0.22
     },
     {
       "id": "chloe",
       "name": "Chloe",
+      "team": "Team Problemas de Capibara",
       "species": "fruit_bat",
-      "archetype": "SPEED",
       "role": "Support",
-      "stats": { "power": 59, "contact": 72, "speed": 93, "eye": 79 },
-      "assets": {
-        "avatar": "https://api.dicebear.com/9.x/lorelei/png?seed=Chloe-Bat&size=512&backgroundColor=0b0b14",
-        "card_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Chloe-Bat-Card&size=1024&backgroundColor=0b0b14",
-        "cutin_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Chloe-Bat-Cutin&size=1024&backgroundColor=0b0b14",
-        "sprite": "https://api.dicebear.com/9.x/lorelei/png?seed=Chloe-Bat-Sprite&size=256&backgroundColor=0b0b14"
-      }
+      "archetype": "SPEED",
+      "avatar_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Chloe-Bat&size=512&backgroundColor=0b0b14",
+      "card_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Chloe-Bat-Card&size=1024&backgroundColor=0b0b14",
+      "cutin_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Chloe-Bat-Cutin&size=1024&backgroundColor=0b0b14",
+      "power": 59,
+      "contact": 72,
+      "speed": 93,
+      "eye": 79,
+      "quote_super": "¡Más rápido!",
+      "quote_idle": "¿Necesitas algo?",
+      "quote_victory": "Buen trabajo.",
+      "jiggle_intensity": 0.14
     },
     {
       "id": "fenrir",
       "name": "Fenrir",
+      "team": "Team Problemas de Capibara",
       "species": "wolf",
-      "archetype": "SPEED",
       "role": "Runner",
-      "stats": { "power": 72, "contact": 68, "speed": 96, "eye": 70 },
-      "assets": {
-        "avatar": "https://api.dicebear.com/9.x/lorelei/png?seed=Fenrir-Wolf&size=512&backgroundColor=0b0b14",
-        "card_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Fenrir-Wolf-Card&size=1024&backgroundColor=0b0b14",
-        "cutin_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Fenrir-Wolf-Cutin&size=1024&backgroundColor=0b0b14",
-        "sprite": "https://api.dicebear.com/9.x/lorelei/png?seed=Fenrir-Wolf-Sprite&size=256&backgroundColor=0b0b14"
-      }
+      "archetype": "SPEED",
+      "avatar_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Fenrir-Wolf&size=512&backgroundColor=0b0b14",
+      "card_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Fenrir-Wolf-Card&size=1024&backgroundColor=0b0b14",
+      "cutin_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Fenrir-Wolf-Cutin&size=1024&backgroundColor=0b0b14",
+      "power": 72,
+      "contact": 68,
+      "speed": 96,
+      "eye": 70,
+      "quote_super": "¡Que empiece la cacería!",
+      "quote_idle": "La luna me guía.",
+      "quote_victory": "¡Esta carrera es mía!",
+      "jiggle_intensity": 0.1
+    },
+    {
+      "id": "roxie_vane",
+      "name": "Roxie Vane",
+      "team": "Legends",
+      "species": "human",
+      "role": "Legend",
+      "archetype": "POWER",
+      "avatar_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Roxie-Vane&size=512&backgroundColor=0b0b14",
+      "card_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Roxie-Vane-Card&size=1024&backgroundColor=0b0b14",
+      "cutin_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Roxie-Vane-Cutin&size=1024&backgroundColor=0b0b14",
+      "power": 90,
+      "contact": 74,
+      "speed": 70,
+      "eye": 78,
+      "quote_super": "¡IGNITION BUSTER!",
+      "quote_idle": "Power check. Ready.",
+      "quote_victory": "¡That's a home run!",
+      "jiggle_intensity": 0.2
     }
   ]
 }
