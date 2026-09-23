@@ -14,7 +14,7 @@ const haptics = createHapticsBridge({
 assert.equal(haptics.handleGameEvent("ui_confirm"), true);
 assert.equal(haptics.handleGameEvent("single_hit"), true);
 assert.equal(haptics.handleGameEvent("home_run"), true);
-assert.equal(haptics.handleGameEvent("gacha_ssr"), true);
+assert.equal(haptics.handleGameEvent("perfect"), true);
 assert.equal(haptics.handleGameEvent("timing_bad"), true);
 assert.deepEqual(calls, [
   ["selection"],
