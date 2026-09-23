@@ -575,6 +575,7 @@ jobs:
             webapp/js/tma_bridge_test.mjs
             webapp/js/upgrade_system_test.mjs
             webapp/js/voice_system_test.mjs
+            webapp/js/waifu_database_test.mjs
             webapp/js/waifu_dex_test.mjs
             webapp/js/e2e_smoke_test.mjs
           )
