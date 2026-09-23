@@ -1,69 +1,67 @@
 <!doctype html>
-<html lang="en" data-ui-skin="scavenger">
+<html lang="es" data-ui-skin="capibara-cyber">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#00f0ff">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="manifest" href="./manifest.json">
-  <link rel="icon" href="./icons/icon-192.svg" type="image/svg+xml">
-  <meta name="color-scheme" content="dark">
-  <meta name="description" content="Baseball Waifus Telegram Mini App">
-  <title>Baseball Waifus</title>
-  <link rel="apple-touch-icon" href="./icons/icon-192.svg">
-  <link rel="stylesheet" href="./css/style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0c16" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="description" content="Team Problemas de Capibara: juego arcade de béisbol 2.5D y colección de waifus con estética cyberpunk." />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" href="./assets/icons/icon-192.png" type="image/png" />
+  <link rel="apple-touch-icon" href="./assets/icons/icon-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./css/style.css" />
+  <title>Team Problemas de Capibara ⚾ Cyberpunk Baseball</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
-  <main class="app-shell scavenger-shell">
-    <header class="topbar" aria-label="Baseball Waifus status" data-panel="scavenger">
-      <div class="brand-lockup">
-        <div class="brand-mark" aria-hidden="true">
-          <svg viewBox="0 0 64 64" role="presentation">
-            <circle cx="32" cy="32" r="26" fill="none" stroke="currentColor" stroke-width="4"/>
-            <path d="M20 17c7 9 12 15 25 18M17 44c11-1 17 3 26 10" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
-          </svg>
-        </div>
-        <div>
-          <div class="brand-name">BASEBALL WAIFUS</div>
-          <div class="brand-subtitle">TACTICAL BASEBALL COLLECTION</div>
-        </div>
-      </div>
-      <div class="topbar-actions">
-        <button id="audio-mute" class="topbar-nav" type="button" aria-pressed="false">AUDIO // ON</button>
-        <label class="audio-volume-control">VOL
-          <input id="audio-volume" type="range" min="0" max="1" step="0.05" value="0.8" aria-label="Master audio volume">
-        </label>
-        <button id="nav-dex" class="topbar-nav" type="button" aria-controls="gallery-view">DEX / EQUIPO</button>
-        <div id="connection-state" class="connection-state" role="status" aria-live="polite">Preparing match</div>
+  <div id="app-container" class="cyber-container">
+
+    <header class="cyber-header">
+      <button class="brand-badge brand-mark" type="button" aria-label="Abrir tablero de mando">
+        <span class="icon" aria-hidden="true">⚾</span>
+        <span class="title">CAPIBARA <span class="highlight">BASEBALL</span></span>
+      </button>
+      <div class="header-status">
+        <span class="badge-online"><span aria-hidden="true">●</span> ONLINE</span>
+        <button id="btn-admin-trigger" class="icon-btn" type="button" title="Tablero de Mando" aria-label="Tablero de Mando">⚙️</button>
       </div>
     </header>
 
     <nav id="main-menu" class="main-menu-nav" aria-label="Main navigation"></nav>
 
-    <section class="play-controls" aria-label="Play mode">
-      <label>MODE
-        <select id="play-mode">
-          <option value="PRACTICE">PRACTICE / ARCADE</option>
-          <option value="ENDLESS">ENDLESS / DESAFÍO</option>
-        </select>
-      </label>
-      <label>BIOME
-        <select id="play-biome">
-          <option value="cyberpunk">CYBERPUNK</option>
-          <option value="beach">BEACH</option>
-          <option value="volcano">VOLCANO</option>
-          <option value="forest">FOREST</option>
-        </select>
-      </label>
-      <span id="play-score">SCORE // 0</span>
-      <span id="play-speed">PITCH ×1.00</span>
-    </section>
+    <section class="game-viewport combat-view-piece" aria-label="Área de juego">
+      <div class="scoreboard-overlay">
+        <div class="score-team team-home">
+          <span class="team-name" id="score-home-label">CAPIBARAS</span>
+          <span class="team-score" id="score-home">0</span>
+        </div>
+        <div class="match-info">
+          <div class="inning-badge" id="hud-inning">INNING 1 • TOP</div>
+          <div class="count-balls-strikes">
+            <span class="count-item">B: <strong id="cnt-balls">0</strong></span>
+            <span class="count-item">S: <strong id="cnt-strikes">0</strong></span>
+            <span class="count-item">O: <strong id="cnt-outs">0</strong></span>
+          </div>
+        </div>
+        <div class="score-team team-away">
+          <span class="team-score" id="score-away">0</span>
+          <span class="team-name" id="score-away-label">RIVALES</span>
+        </div>
+      </div>
 
-    <section class="combat-shell" aria-label="Baseball combat presentation" data-render-layer="combat">
-      <canvas id="combat-canvas" class="combat-canvas" aria-label="Baseball Waifus match canvas"></canvas>
+      <div class="canvas-wrapper">
+        <canvas id="gameCanvas" class="combat-canvas" width="720" height="1280" aria-label="Campo de béisbol 2.5D"></canvas>
+        <div id="loading-state" class="loading-state" aria-live="polite">
+          <div class="loading-title">CAPIBARA BASEBALL</div>
+          <div class="loading-detail">Inicializando el diamante cyberpunk...</div>
+        </div>
+      </div>
 
       <div id="cutin" class="cutin" aria-hidden="true">
         <div class="cutin-backdrop"></div>
@@ -74,202 +72,109 @@
             <div id="cutin-detail" class="cutin-detail"></div>
           </div>
           <div class="cutin-portrait-wrap">
-            <img id="cutin-portrait" class="cutin-portrait" alt="" decoding="async">
+            <img id="cutin-portrait" class="cutin-portrait" alt="" decoding="async" />
           </div>
         </div>
       </div>
 
-      <div id="loading-state" class="loading-state" aria-live="polite">
-        <div class="loading-title">BASEBALL WAIFUS</div>
-        <div class="loading-detail">Waiting for an authoritative combat initialization payload.</div>
-      </div>
-    </section>
-
-    <section class="match-strip combat-view-piece" aria-label="Match information" data-hud="arcade">
-      <div class="match-block">
-        <span class="match-label">INNING</span>
-        <span id="match-inning" class="match-value">-</span>
-      </div>
-      <div class="match-block">
-        <span class="match-label">COUNT</span>
-        <span id="match-count" class="match-value">-</span>
-      </div>
-      <div class="match-block">
-        <span class="match-label">OUTS</span>
-        <span id="match-outs" class="match-value">-</span>
-      </div>
-      <div class="match-block score-block">
-        <span id="match-away" class="score-team">AWAY</span>
-        <span id="match-score" class="score-value">0 - 0</span>
-        <span id="match-home" class="score-team">HOME</span>
-      </div>
-    </section>
-
-    <section class="action-panel combat-view-piece" aria-label="Match actions" data-hud="controls">
-      <button id="action-bat" class="action-button action-primary" type="button">BATEAR</button>
-      <button id="action-steal" class="action-button action-secondary" type="button">ROBAR</button>
-      <button id="action-gacha" class="action-button action-secondary" type="button">RECLUTAR x1 • 1000 SCRAP</button>
-      <button id="action-gacha-ten" class="action-button action-secondary" type="button">RECLUTAR x10 • 10000 SCRAP</button>
-      <button id="action-share" class="action-button action-secondary" type="button" hidden>COMPARTIR / PRESUMIR</button>
-      <button id="action-sync" class="action-button action-quiet" type="button">ACTUALIZAR</button>
-    </section>
-
-    <section class="match-strip combat-view-piece" aria-label="Gacha status" data-hud="gacha">
-      <div class="match-block">
-        <span class="match-label">GACHA</span>
-        <span id="gacha-pull" class="match-value">0/80</span>
-      </div>
-      <div class="match-block">
-        <span class="match-label">SCRAP</span>
-        <span id="gacha-scrap" class="match-value">0</span>
-      </div>
-      <div class="match-block">
-        <span class="match-label">DEX</span>
-        <span id="gacha-dex" class="match-value">0</span>
-      </div>
-      <div class="match-block">
-        <span class="match-label">FRAG</span>
-        <span id="gacha-fragments" class="match-value">0</span>
-      </div>
-      <div class="match-block">
-        <span class="match-label">STATE</span>
-        <span id="gacha-status" class="match-value">LOADING</span>
-      </div>
-    </section>
-
-    <section id="gallery-view" class="gallery-view" aria-label="Waifu Dex and active roster" hidden>
-      <div class="gallery-headline">
-        <div>
-          <span class="gallery-kicker">SCAVENGER DATABASE</span>
-          <h2>WAIFU DEX</h2>
+      <div id="active-waifu-card" class="waifu-card-overlay">
+        <div class="waifu-avatar-frame">
+          <img id="waifu-avatar-img" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><rect width='100%' height='100%' fill='%23121226'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' fill='%2300f3ff' font-size='30'>⚾</text></svg>" alt="Avatar de la waifu activa" />
         </div>
-        <div class="gallery-active-stack">
-          <span id="gallery-active-batter">ACTIVE BATTER // NONE SELECTED</span>
-          <span id="gallery-scrap-readout">SCRAP // 0</span>
+        <div class="waifu-stats-info">
+          <div class="waifu-name-tag" id="waifu-active-name">CAMI</div>
+          <div class="waifu-role-tag" id="waifu-active-role">CONTACT • TYPE-B</div>
+          <div class="stat-bars">
+            <div class="stat-row"><span>PWR</span><div class="bar-bg"><div class="bar-fill pwr-fill" id="waifu-pwr-bar" style="width:85%"></div></div></div>
+            <div class="stat-row"><span>SPD</span><div class="bar-bg"><div class="bar-fill spd-fill" id="waifu-spd-bar" style="width:78%"></div></div></div>
+          </div>
         </div>
       </div>
-      <div class="dex-filters" aria-label="Waifu Dex filters">
-        <label>RARITY
-          <select id="dex-filter-rarity">
-            <option value="ALL">TODAS</option>
-            <option value="N">N</option>
-            <option value="R">R</option>
-            <option value="SR">SR</option>
-            <option value="SSR">SSR</option>
-            <option value="UR">UR</option>
-          </select>
-        </label>
-        <label>ROLE
-          <select id="dex-filter-role">
-            <option value="ALL">TODAS</option>
-            <option value="Slugger">SLUGGER</option>
-            <option value="Pitcher">PITCHER</option>
-            <option value="Outfielder">OUTFIELDER</option>
-          </select>
-        </label>
-        <label>AREA
-          <select id="dex-filter-area">
-            <option value="ALL">TODAS</option>
-          </select>
-        </label>
+
+      <div class="combat-data-compat">
+        <span id="connection-state" role="status" aria-live="polite">WEB CLIENT READY</span>
+        <span id="play-score">SCORE // 0</span>
+        <span id="play-speed">PITCH ×1.00</span>
+        <label>MODE <select id="play-mode"><option value="PRACTICE">PRACTICE / ARCADE</option><option value="ENDLESS">ENDLESS / DESAFÍO</option></select></label>
+        <label>BIOME <select id="play-biome"><option value="cyberpunk">CYBERPUNK</option><option value="beach">BEACH</option><option value="volcano">VOLCANO</option><option value="forest">FOREST</option></select></label>
+      </div>
+    </section>
+
+    <section class="match-strip combat-view-piece" aria-label="Información de partido">
+      <div class="match-block"><span class="match-label">INNING</span><span id="match-inning" class="match-value">1 • TOP</span></div>
+      <div class="match-block"><span class="match-label">COUNT</span><span id="match-count" class="match-value">0-0</span></div>
+      <div class="match-block"><span class="match-label">OUTS</span><span id="match-outs" class="match-value">0</span></div>
+      <div class="match-block score-block"><span id="match-away" class="score-team">RIVALES</span><span id="match-score" class="score-value">0 - 0</span><span id="match-home" class="score-team">CAPIBARAS</span></div>
+    </section>
+
+    <footer class="cyber-footer combat-view-piece">
+      <div class="primary-actions">
+        <button id="action-bat" class="cyber-btn btn-primary-swing" type="button">
+          <span class="btn-text">BATEAR</span>
+          <span class="btn-sub">SWING</span>
+        </button>
+        <button id="btn-superswing" class="cyber-btn btn-super-swing" type="button">
+          <span class="btn-text">SUPER SWING</span>
+          <span class="btn-sub">🔥 MAX ENERGY</span>
+        </button>
+      </div>
+      <div class="secondary-nav">
+        <button id="btn-nav-roster" class="nav-item" type="button"><span class="nav-icon">👥</span><span class="nav-label">EQUIPO</span></button>
+        <button id="btn-nav-gacha" class="nav-item highlight-nav" type="button"><span class="nav-icon">🎁</span><span class="nav-label">RECLUTAR</span></button>
+        <button id="btn-nav-shop" class="nav-item" type="button"><span class="nav-icon">💎</span><span class="nav-label">TIENDA</span></button>
+      </div>
+    </footer>
+
+    <section class="system-panel compat-panel" aria-label="Acciones secundarias del juego">
+      <div class="action-panel">
+        <button id="action-steal" class="action-button action-quiet" type="button">ROBAR</button>
+        <button id="action-gacha" class="action-button action-secondary" type="button">RECLUTAR x1 • 1000 SCRAP</button>
+        <button id="action-gacha-ten" class="action-button action-secondary" type="button">RECLUTAR x10 • 10000 SCRAP</button>
+        <button id="action-share" class="action-button action-secondary" type="button" hidden>COMPARTIR</button>
+        <button id="action-sync" class="action-button action-quiet" type="button">ACTUALIZAR</button>
+      </div>
+      <div class="match-strip gacha-strip">
+        <div class="match-block"><span class="match-label">GACHA</span><span id="gacha-pull" class="match-value">0/80</span></div>
+        <div class="match-block"><span class="match-label">SCRAP</span><span id="gacha-scrap" class="match-value">0</span></div>
+        <div class="match-block"><span class="match-label">DEX</span><span id="gacha-dex" class="match-value">0</span></div>
+        <div class="match-block"><span class="match-label">FRAG</span><span id="gacha-fragments" class="match-value">0</span></div>
+        <div class="match-block"><span class="match-label">STATE</span><span id="gacha-status" class="match-value">LOADING</span></div>
+      </div>
+    </section>
+
+    <section id="gallery-view" class="menu-view" aria-label="Waifu Dex y colección" hidden>
+      <div class="gallery-headline"><div><span class="gallery-kicker">SCAVENGER DATABASE</span><h2>WAIFU DEX</h2></div><div class="gallery-active-stack"><span id="gallery-active-batter">ACTIVE BATTER // NONE SELECTED</span><span id="gallery-scrap-readout">SCRAP // 0</span></div></div>
+      <div class="dex-filters">
+        <label>RARITY<select id="dex-filter-rarity"><option value="ALL">TODAS</option><option value="N">N</option><option value="R">R</option><option value="SR">SR</option><option value="SSR">SSR</option><option value="UR">UR</option></select></label>
+        <label>ROLE<select id="dex-filter-role"><option value="ALL">TODAS</option><option value="Slugger">SLUGGER</option><option value="Pitcher">PITCHER</option><option value="Outfielder">OUTFIELDER</option></select></label>
+        <label>AREA<select id="dex-filter-area"><option value="ALL">TODAS</option></select></label>
       </div>
       <div id="gallery-grid" class="gallery-grid" aria-live="polite"></div>
-      <section id="dex-card-inspector" class="dex-card-inspector" hidden aria-label="Waifu card inspector">
-        <div class="dex-inspector-header">
-          <div>
-            <span class="gallery-kicker">CARD INSPECTOR</span>
-            <div id="dex-inspector-name">UNKNOWN WAIFU</div>
-          </div>
-          <button id="dex-inspector-close" class="dex-inspector-close" type="button">CLOSE</button>
-        </div>
-        <div id="dex-card-stage" class="dex-card-stage"></div>
-      </section>
+      <section id="dex-card-inspector" class="dex-card-inspector" hidden aria-label="Inspector de carta"><div class="dex-inspector-header"><div><span class="gallery-kicker">CARD INSPECTOR</span><div id="dex-inspector-name">UNKNOWN WAIFU</div></div><button id="dex-inspector-close" class="dex-inspector-close" type="button">CERRAR</button></div><div id="dex-card-stage" class="dex-card-stage"></div></section>
     </section>
 
-    <section id="roster-view" class="menu-view" hidden aria-label="Active roster">
-      <div class="gallery-headline">
-        <div>
-          <span class="gallery-kicker">ACTIVE LINEUP</span>
-          <h2>ROSTER</h2>
-        </div>
-        <div class="gallery-active-stack">
-          <span id="roster-summary">BATTER // NONE</span>
-        </div>
-      </div>
+    <section id="roster-view" class="menu-view" aria-label="Equipo activo" hidden>
+      <div class="gallery-headline"><div><span class="gallery-kicker">ACTIVE LINEUP</span><h2>EQUIPO</h2></div><div class="gallery-active-stack"><span id="roster-summary">BATTER // NONE</span></div></div>
       <div class="roster-controls">
-        <label>BATTER
-          <select id="roster-active-select"></select>
-        </label>
-        <label>SUPPORT 01
-          <select id="roster-support-0"></select>
-        </label>
-        <label>SUPPORT 02
-          <select id="roster-support-1"></select>
-        </label>
-        <button id="roster-apply" class="action-button action-primary" type="button">EQUIP ROSTER</button>
+        <label>BATTER<select id="roster-active-select"></select></label>
+        <label>SUPPORT 01<select id="roster-support-0"></select></label>
+        <label>SUPPORT 02<select id="roster-support-1"></select></label>
+        <button id="roster-apply" class="action-button action-primary" type="button">EQUIPAR EQUIPO</button>
       </div>
     </section>
 
-    <section id="locker-view" class="menu-view" hidden aria-label="Locker Room">
-      <div class="gallery-headline">
-        <div>
-          <span class="gallery-kicker">LOCKER ROOM</span>
-          <h2>WAIFU INTERACTION</h2>
-        </div>
-        <div class="gallery-active-stack">
-          <span id="locker-waifu-name">WAIFU // NONE</span>
-          <span id="locker-rapport">RAPPORT // 1/10</span>
-        </div>
-      </div>
-      <div class="locker-layout">
-        <div class="locker-canvas-stage">
-          <canvas id="locker-canvas" class="locker-canvas" width="720" height="480" aria-label="Locker Room Waifu interaction"></canvas>
-          <div id="locker-message" class="locker-message" role="status" aria-live="polite">TAP THE WAIFU</div>
-        </div>
-        <div class="locker-controls">
-          <label>SKIN SELECTOR
-            <select id="locker-skin-select" aria-label="Active skin"></select>
-          </label>
-          <div id="locker-skin-label" class="locker-stat">SKIN // UNIFORM_DEFAULT</div>
-          <div id="locker-passives" class="locker-stat">PASSIVE // CONTACT +0% • POWER +0%</div>
-          <div id="locker-daily" class="locker-stat">DAILY TAPS // 0/50</div>
-          <div class="locker-skin-catalog" id="locker-skin-catalog" aria-label="Unlocked skin catalog"></div>
-        </div>
-      </div>
+    <section id="locker-view" class="menu-view" aria-label="Locker Room" hidden>
+      <div class="gallery-headline"><div><span class="gallery-kicker">LOCKER ROOM</span><h2>INTERACCIÓN</h2></div><div class="gallery-active-stack"><span id="locker-waifu-name">WAIFU // NONE</span><span id="locker-rapport">RAPPORT // 1/10</span></div></div>
+      <div class="locker-layout"><div class="locker-canvas-stage"><canvas id="locker-canvas" width="720" height="480" aria-label="Interacción Locker Room"></canvas><div id="locker-message" class="locker-message">TAP THE WAIFU</div></div><div class="locker-controls"><label>SKIN<select id="locker-skin-select"></select></label><div id="locker-skin-label" class="locker-stat">SKIN // UNIFORM_DEFAULT</div><div id="locker-passives" class="locker-stat">PASSIVE // CONTACT +0% • POWER +0%</div><div id="locker-daily" class="locker-stat">DAILY TAPS // 0/50</div><div id="locker-skin-catalog" class="locker-skin-catalog"></div></div></div>
     </section>
 
-    <section id="settings-view" class="menu-view" hidden aria-label="Game settings">
-      <div class="gallery-headline">
-        <div>
-          <span class="gallery-kicker">SYSTEM CONTROL</span>
-          <h2>SETTINGS</h2>
-        </div>
-        <div class="gallery-active-stack">
-          <span id="settings-save-status">SAVE // READY</span>
-        </div>
-      </div>
-      <div class="settings-controls">
-        <label>QUALITY
-          <select id="settings-quality">
-            <option value="auto">AUTO</option>
-            <option value="low">LOW</option>
-            <option value="medium">MEDIUM</option>
-            <option value="high">HIGH</option>
-          </select>
-        </label>
-        <button id="save-export" class="action-button action-secondary" type="button">EXPORT SAVE</button>
-        <label class="file-button">IMPORT SAVE
-          <input id="save-import" type="file" accept="application/json">
-        </label>
-        <button id="save-reset" class="action-button action-secondary" type="button">RESET DATA</button>
-      </div>
+    <section id="settings-view" class="menu-view" aria-label="Configuración" hidden>
+      <div class="gallery-headline"><div><span class="gallery-kicker">SYSTEM CONTROL</span><h2>SETTINGS</h2></div><div class="gallery-active-stack"><span id="settings-save-status">SAVE // READY</span></div></div>
+      <div class="settings-controls"><label>QUALITY<select id="settings-quality"><option value="auto">AUTO</option><option value="low">LOW</option><option value="medium">MEDIUM</option><option value="high">HIGH</option></select></label><button id="save-export" class="action-button action-secondary" type="button">EXPORT SAVE</button><label class="file-button">IMPORT SAVE<input id="save-import" type="file" accept="application/json" /></label><button id="save-reset" class="action-button action-secondary" type="button">RESET DATA</button></div>
     </section>
 
-    <footer class="footer combat-view-piece">
-      <span>Presentation client only. Combat result authority remains server-side or inside the Godot gameplay core.</span>
-    </footer>
-  </main>
-
+    <section id="admin-panel-modal" hidden aria-hidden="true"></section>
+  </div>
   <script type="module" src="./js/app.js"></script>
 </body>
 </html>
