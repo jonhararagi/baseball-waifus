@@ -3,6 +3,7 @@ import {
   exportWaifuConfigJson,
   getConfigSnapshot,
   listWaifus,
+  resetWaifuDatabaseToMemory,
   updateWaifuConfig
 } from "./waifu_database.js";
 
@@ -463,21 +464,7 @@ export class AdminPanel {
   }
 
   resetToMemoryFallback() {
-    const current = getConfigSnapshot();
-    const characters = current.characters.map((character) => ({
-      ...character,
-      assets: {
-        ...character.assets
-      },
-      stats: {
-        ...character.stats
-      }
-    }));
-    return applyWaifuConfig({
-      schema_version: 1,
-      team: current.team,
-      characters
-    });
+    return resetWaifuDatabaseToMemory();
   }
 
   _applyForm() {
