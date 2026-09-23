@@ -338,6 +338,17 @@ export function applyWaifuConfig(config, {
   return getConfigSnapshot();
 }
 
+export function resetWaifuDatabaseToMemory({
+  persist = false,
+  storage = typeof globalThis !== "undefined" ? globalThis.localStorage : null
+} = {}) {
+  activeConfig = cloneConfig(MEMORY_FALLBACK_CONFIG);
+  configSource = "memory";
+  rebuildDatabase();
+  if (persist) persistLocalConfig(storage);
+  return getConfigSnapshot();
+}
+
 export function exportWaifuConfigJson() {
   return JSON.stringify(activeConfig, null, 2);
 }
