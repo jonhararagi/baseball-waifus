@@ -356,6 +356,7 @@ export class AdminPanel {
       assets: { [key]: value }
     });
     this._afterCharacterUpdate(updated);
+    this._persist();
     return updated;
   }
 
@@ -369,6 +370,7 @@ export class AdminPanel {
       }
     });
     this._afterCharacterUpdate(updated);
+    this._persist();
     return updated;
   }
 
