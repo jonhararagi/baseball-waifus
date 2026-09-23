@@ -137,7 +137,7 @@ assert.equal(softPull.rarity, "UR");
 assert.equal(softPull.soft_pity_active, true);
 assert.equal(controller.getStatus().pulls_since_UR, 0);
 assert.equal(rendererCalls.at(-1).rarity, "UR");
-assert.deepEqual(audioCalls.slice(-2), ["ui.confirm", "gacha.reveal_ssr"]);
+assert.deepEqual(audioCalls.slice(-2), ["ui.confirm", "gacha.reveal_ur"]);
 
 controller.state.pulls_since_UR = 79;
 rngValues.push(0);
@@ -149,7 +149,7 @@ assert.equal(hard.hard_pity_triggered, true);
 assert.deepEqual(audioCalls.slice(-3), [
   "ui.confirm",
   "gacha.pity_trigger",
-  "gacha.reveal_ssr"
+  "gacha.reveal_ur"
 ]);
 
 const persisted = controller.storage.value;
