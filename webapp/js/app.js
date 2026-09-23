@@ -22,6 +22,8 @@ import { GameModeManager } from "./game_modes.js";
 import { MainMenu, VIEWS } from "./main_menu.js";
 import { MobileHaptics } from "./mobile_haptics.js";
 import { PerformanceAdapter } from "./performance_adapter.js";
+import { LockerRoom } from "./locker_room.js";
+import { VoiceSystem } from "./voice_system.js";
 
 function initializeTelegramNativeShell() {
   const webApp = window.Telegram?.WebApp || null;
@@ -71,6 +73,16 @@ const gachaTenButton = document.querySelector("#action-gacha-ten");
 const mainMenuRoot = document.querySelector("#main-menu");
 const rosterView = document.querySelector("#roster-view");
 const settingsView = document.querySelector("#settings-view");
+const lockerView = document.querySelector("#locker-view");
+const lockerCanvas = document.querySelector("#locker-canvas");
+const lockerSkinSelect = document.querySelector("#locker-skin-select");
+const lockerWaifuName = document.querySelector("#locker-waifu-name");
+const lockerRapport = document.querySelector("#locker-rapport");
+const lockerSkinLabel = document.querySelector("#locker-skin-label");
+const lockerPassives = document.querySelector("#locker-passives");
+const lockerDaily = document.querySelector("#locker-daily");
+const lockerMessage = document.querySelector("#locker-message");
+const lockerSkinCatalog = document.querySelector("#locker-skin-catalog");
 const rosterActiveSelect = document.querySelector("#roster-active-select");
 const rosterSupport0 = document.querySelector("#roster-support-0");
 const rosterSupport1 = document.querySelector("#roster-support-1");
@@ -117,6 +129,8 @@ const teamManager = new TeamManager({
   persistActiveBatter: (id) => gachaController.setActiveBatter(id)
 });
 
+const voiceSystem = new VoiceSystem();
+
 const upgradeSystem = new UpgradeSystem({
   storage: gachaController.storage,
   getWaifu: (id) => gachaController.getCharacter(id),
@@ -126,6 +140,16 @@ const upgradeSystem = new UpgradeSystem({
     fragments: gachaController.getFragments()
   }),
   consumeCurrencies: (cost) => gachaController.spendScrapAndFragments(cost)
+});
+
+const lockerRoom = new LockerRoom({
+  voiceSystem,
+  getWaifu: (id = null) => {
+    if (id) return gachaController.getCharacter(id);
+    return teamManager.getActiveWaifu()
+      || gachaController.getCharacters().find((unit) => gachaController.getState().inventory?.[unit.character_id])
+      || null;
+  }
 });
 
 function handleScrapEarned({ amount, result }) {
@@ -146,7 +170,8 @@ const saveSystem = new SaveSystem({
     progression: () => upgradeSystem.getAllProgression(),
     audioSettings: () => audioBridge.getSettings(),
     quality: () => qualitySetting,
-    records: () => savedRecords
+    records: () => savedRecords,
+    lockerRoom: () => lockerRoom.getPersistence()
   },
   appliers: {
     gacha: (state) => {
@@ -185,9 +210,14 @@ const saveSystem = new SaveSystem({
     },
     records: (records) => {
       savedRecords = records || {};
+    },
+    lockerRoom: (state) => {
+      lockerRoom.applyPersistence(state || {});
     }
   }
 });
+
+lockerRoom.setSaveSystem(saveSystem);
 
 const gameModes = new GameModeManager({
   recordSink: (biome, record) => {
@@ -216,6 +246,51 @@ const renderer = new CombatRenderer(document.querySelector("#combat-canvas"), {
   })
 });
 gachaController.setCutInRenderer(renderer);
+
+function getActiveLockerWaifu() {
+  return teamManager.getActiveWaifu()
+    || gachaController.getCharacters().find((unit) => gachaController.getState().inventory?.[unit.character_id])
+    || null;
+}
+
+function refreshLockerRoom() {
+  const active = getActiveLockerWaifu();
+  if (active) lockerRoom.setActiveWaifu(active);
+
+  const state = lockerRoom.getState();
+  if (lockerWaifuName) {
+    lockerWaifuName.textContent = "WAIFU // " + (
+      active?.canonical?.display_name
+      || active?.display_name
+      || active?.name
+      || active?.character_id
+      || "NONE"
+    );
+  }
+  if (lockerRapport) lockerRapport.textContent = "RAPPORT // " + (state.rapport?.level || 1) + "/10";
+  if (lockerSkinLabel) lockerSkinLabel.textContent = "SKIN // " + state.activeSkin.toUpperCase();
+  if (lockerPassives) {
+    lockerPassives.textContent =
+      "PASSIVE // CONTACT +" + Math.round((state.modifiers.contact - 1) * 100) + "% • POWER +" +
+      Math.round((state.modifiers.power - 1) * 100) + "%";
+  }
+  if (lockerDaily) lockerDaily.textContent = "DAILY TAPS // " + state.dailyTaps + "/" + state.dailyTapLimit;
+  if (lockerSkinCatalog) {
+    lockerSkinCatalog.replaceChildren();
+    for (const skinId of state.unlockedSkins) {
+      const card = document.createElement("div");
+      card.className = "locker-skin-card";
+      card.dataset.active = String(skinId === state.activeSkin);
+      const skin = lockerRoom.constructor === LockerRoom ? skinId : skinId;
+      card.style.setProperty("--locker-accent",
+        skinId === "volcano_bikini" ? "#ff4d2f" :
+        skinId === "damage_skin" ? "#a855f7" : "#00e5ff"
+      );
+      card.textContent = skin.replaceAll("_", " ").toUpperCase() + (skinId === state.activeSkin ? " // ACTIVE" : "");
+      lockerSkinCatalog.appendChild(card);
+    }
+  }
+}
 
 const gallery = new GalleryController({
   root: galleryView,
@@ -337,14 +412,14 @@ function applyActiveRoster(dto) {
       faction: canonical.faction,
       position: canonical.position,
       specialization: canonical.specialization,
-      stats: effectiveStats,
+      stats: modifiedStats,
       progression: progression || null,
       sprite_url: assets.sprite.sprite_url,
       card_hd_url: assets.card.card_hd_url
     },
     active_batter: {
       character_id: active.character_id,
-      stats: effectiveStats,
+      stats: modifiedStats,
       progression: progression || null,
       card_hd_url: assets.card.card_hd_url,
       sprite_url: assets.sprite.sprite_url
@@ -542,6 +617,12 @@ async function sendAction(actionType) {
     const payload = await api.submitTurnAction(matchId, { type: actionType, client_time_ms: Date.now() });
     if (!isTurnResultDTO(payload)) throw new Error("Server returned an invalid TurnResultDTO");
     await renderer.applyTurnResult(payload);
+    if (payload.super_swing === true || payload.animation?.super_swing === true || payload.animation?.event === "SUPER_SWING") {
+      lockerRoom.handleEvent("ON_SUPER_SWING", getActiveLockerWaifu());
+    }
+    if (payload.result === "VICTORY" || payload.match_end === true || payload.state?.match_complete === true) {
+      lockerRoom.handleEvent("ON_VICTORY", getActiveLockerWaifu());
+    }
     gameModes.registerResult(payload.result);
     updatePlayHud();
     saveSystem.save();
@@ -643,18 +724,24 @@ function setMainMenuView(view) {
   const showGallery = active === "dex";
   const showRoster = active === "roster";
   const showSettings = active === "settings";
-  if (combatShell) combatShell.hidden = !(!showGallery && !showRoster && !showSettings);
+  const showLocker = active === "locker";
+  const showCombat = !showGallery && !showRoster && !showSettings && !showLocker;
+  if (combatShell) combatShell.hidden = !showCombat;
   if (galleryView) galleryView.hidden = !showGallery;
   if (rosterView) rosterView.hidden = !showRoster;
   if (settingsView) settingsView.hidden = !showSettings;
-  for (const element of combatViewPieces) element.hidden = showGallery || showRoster || showSettings;
+  if (lockerView) lockerView.hidden = !showLocker;
+  for (const element of combatViewPieces) {
+    element.hidden = !showCombat;
+  }
   if (active === "gacha") {
     const target = document.querySelector("#action-gacha");
     target?.scrollIntoView?.({ behavior: "smooth", block: "center" });
   }
   if (active === "roster") syncRosterControls();
   if (active === "dex") gallery.refresh();
-  setTelegramBackButton(showGallery || showRoster || showSettings);
+  if (active === "locker") refreshLockerRoom();
+  setTelegramBackButton(showGallery || showRoster || showSettings || showLocker);
 }
 
 function setView(view) {
@@ -692,9 +779,11 @@ rosterApplyButton?.addEventListener("click", () => {
     const support0 = rosterSupport0?.value || null;
     const support1 = rosterSupport1?.value || null;
     teamManager.setActiveBatter(active);
+    lockerRoom.setActiveWaifu(active);
     teamManager.setSupport(0, support0);
     teamManager.setSupport(1, support1);
     syncRosterControls();
+    lockerRoom.setActiveWaifu(active);
     if (renderer.state) void renderer.setCombatInit(applyActiveRoster(renderer.state));
     saveSystem.save();
     if (settingsSaveStatus) settingsSaveStatus.textContent = "ROSTER // SAVED";
@@ -732,6 +821,32 @@ saveImportInput?.addEventListener("change", async () => {
     saveImportInput.value = "";
   }
 });
+
+lockerSkinSelect?.addEventListener("change", () => {
+  const result = lockerRoom.equipSkin(lockerSkinSelect.value);
+  if (result.changed) refreshLockerRoom();
+});
+
+if (lockerCanvas) {
+  lockerRoom.mount(lockerView, {
+    canvas: lockerCanvas,
+    select: lockerSkinSelect,
+    rapportLabel: lockerRapport,
+    skinLabel: lockerSkinLabel,
+    messageLabel: lockerMessage
+  });
+}
+
+let lockerFrameHandle = 0;
+let lockerLastFrame = performance.now();
+function lockerFrame(time) {
+  const delta = Math.min(0.08, Math.max(0, (time - lockerLastFrame) / 1000));
+  lockerLastFrame = time;
+  lockerRoom.update(delta);
+  refreshLockerRoom();
+  lockerFrameHandle = requestAnimationFrame(lockerFrame);
+}
+lockerFrameHandle = requestAnimationFrame(lockerFrame);
 
 saveResetButton?.addEventListener("click", () => {
   saveSystem.reset();
@@ -822,6 +937,12 @@ window.addEventListener("message", async (event) => {
   }
   if (isTurnResultDTO(payload)) {
     await renderer.applyTurnResult(payload);
+    if (payload.super_swing === true || payload.animation?.super_swing === true || payload.animation?.event === "SUPER_SWING") {
+      lockerRoom.handleEvent("ON_SUPER_SWING", getActiveLockerWaifu());
+    }
+    if (payload.result === "VICTORY" || payload.match_end === true || payload.state?.match_complete === true) {
+      lockerRoom.handleEvent("ON_VICTORY", getActiveLockerWaifu());
+    }
     gameModes.registerResult(payload.result);
     updatePlayHud();
     saveSystem.save();
@@ -850,6 +971,7 @@ async function bootstrap() {
     } else {
       saveSystem.save();
     }
+    refreshLockerRoom();
     syncAudioControls();
     updateGachaHud(gachaController.getStatus());
     syncRosterControls();

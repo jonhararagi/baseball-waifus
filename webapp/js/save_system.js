@@ -11,6 +11,11 @@ export const SAVE_DEFAULTS = Object.freeze({
     beach: { high_score: 0, best_hits: 0, best_home_runs: 0 },
     volcano: { high_score: 0, best_hits: 0, best_home_runs: 0 },
     forest: { high_score: 0, best_hits: 0, best_home_runs: 0 }
+  }),
+  locker: Object.freeze({
+    active_waifu_id: null,
+    rapport: {},
+    daily: { date: "", taps: 0 }
   })
 });
 
@@ -70,6 +75,33 @@ export function migrateSaveState(input = {}) {
       };
   const settings = isObject(source.settings) ? source.settings : {};
 
+  const locker = isObject(source.locker) ? source.locker : {};
+  const lockerRapport = isObject(locker.rapport)
+    ? locker.rapport
+    : {};
+  const normalizedLockerRapport = {};
+  for (const [id, entry] of Object.entries(lockerRapport)) {
+    const safe = isObject(entry) ? entry : {};
+    const level = Math.min(10, Math.max(1, nonNegative(safe.level, 1) || 1));
+    const unlocked = Array.isArray(safe.unlocked_skins)
+      ? safe.unlocked_skins
+      : Array.isArray(safe.unlockedSkins)
+        ? safe.unlockedSkins
+        : [];
+    const uniqueSkins = [...new Set(["uniform_default", ...unlocked].filter((skin) => typeof skin === "string"))];
+    const activeSkin = uniqueSkins.includes(String(safe.active_skin || safe.activeSkin || "uniform_default"))
+      ? String(safe.active_skin || safe.activeSkin || "uniform_default")
+      : "uniform_default";
+    normalizedLockerRapport[id] = {
+      level,
+      unlocked_skins: uniqueSkins,
+      active_skin: activeSkin
+    };
+  }
+
+  const lockerDate = String(locker.daily?.date || "");
+  const todayTaps = Math.min(50, nonNegative(locker.daily?.taps));
+
   const migratedInventory = {};
   for (const [id, entry] of Object.entries(inventory)) {
     const safe = isObject(entry) ? entry : {};
@@ -109,7 +141,15 @@ export function migrateSaveState(input = {}) {
         ? settings.quality
         : SAVE_DEFAULTS.settings.quality
     },
-    records: normalizeRecords(source.records)
+    records: normalizeRecords(source.records),
+    locker: {
+      active_waifu_id: locker.active_waifu_id || locker.activeWaifuId || null,
+      rapport: normalizedLockerRapport,
+      daily: {
+        date: lockerDate,
+        taps: todayTaps
+      }
+    }
   };
 }
 
@@ -143,6 +183,7 @@ export class SaveSystem {
     const audioSettings = this.providers.audioSettings?.() || {};
     const progression = this.providers.progression?.() || {};
     const records = this.providers.records?.() || this.state.records;
+    const lockerRoom = this.providers.lockerRoom?.() || this.state.locker;
 
     const inventory = {};
     for (const [id, entry] of Object.entries(gachaState.inventory || {})) {
@@ -179,7 +220,8 @@ export class SaveSystem {
         muted: audioSettings.muted,
         quality: this.providers.quality?.() || "auto"
       },
-      records
+      records,
+      locker: lockerRoom
     });
 
     this.state = state;
@@ -280,6 +322,7 @@ export class SaveSystem {
     this.appliers.audio?.(state.settings);
     this.appliers.quality?.(state.settings.quality);
     this.appliers.records?.(state.records);
+    this.appliers.lockerRoom?.(state.locker);
   }
 }
 

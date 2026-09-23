@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   test-and-validate:
-    name: Run P1-P10 CI Release Gate
+    name: Run P1-P12 CI Release Gate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -41,7 +41,7 @@ jobs:
             node --experimental-default-type=module --check "$file"
           done
 
-      - name: Run P1-P10 frontend test suite
+      - name: Run P1-P12 frontend test suite
         shell: bash
         run: |
           set -euo pipefail
@@ -57,6 +57,7 @@ jobs:
             webapp/js/gacha_controller_test.mjs
             webapp/js/gacha_engine_test.mjs
             webapp/js/game_modes_test.mjs
+            webapp/js/locker_room_test.mjs
             webapp/js/mobile_haptics_test.mjs
             webapp/js/performance_adapter_test.mjs
             webapp/js/save_system_test.mjs
@@ -64,6 +65,7 @@ jobs:
             webapp/js/team_manager_test.mjs
             webapp/js/tma_bridge_test.mjs
             webapp/js/upgrade_system_test.mjs
+            webapp/js/voice_system_test.mjs
             webapp/js/waifu_dex_test.mjs
             webapp/js/e2e_smoke_test.mjs
           )

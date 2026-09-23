@@ -1,4 +1,4 @@
-const VIEWS = Object.freeze(["combat", "roster", "gacha", "dex", "settings"]);
+const VIEWS = Object.freeze(["combat", "roster", "gacha", "dex", "locker", "settings"]);
 
 export class MainMenu {
   constructor({
