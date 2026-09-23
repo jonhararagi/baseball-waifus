@@ -87,7 +87,9 @@ function normalizeRapportEntry(value = {}) {
   const level = clampInt(value.level, RAPPORT_MIN, RAPPORT_MAX);
   const unlocked = Array.isArray(value.unlockedSkins)
     ? value.unlockedSkins.filter((id) => Boolean(SKINS[id]))
-    : [];
+    : Array.isArray(value.unlocked_skins)
+      ? value.unlocked_skins.filter((id) => Boolean(SKINS[id]))
+      : [];
 
   if (!unlocked.includes(DEFAULT_ACTIVE_SKIN)) {
     unlocked.unshift(DEFAULT_ACTIVE_SKIN);
@@ -121,8 +123,8 @@ function normalizePersistence(input = {}) {
     ? clampInt(input.daily?.taps, 0, DAILY_TAP_LIMIT)
     : 0;
 
-  const activeWaifuId = input.activeWaifuId
-    ? String(input.activeWaifuId)
+  const activeWaifuId = input.activeWaifuId || input.active_waifu_id
+    ? String(input.activeWaifuId || input.active_waifu_id)
     : null;
 
   return {
@@ -364,7 +366,6 @@ export class LockerRoom {
         && y <= point.y + point.height
       ) {
         event.preventDefault?.();
-        this.handleEvent("ON_TOUCH_LOCKER");
         this.tapActiveWaifu();
       }
     };
