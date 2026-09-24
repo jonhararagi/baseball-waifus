@@ -141,6 +141,8 @@ const navShopButton = document.querySelector("#btn-nav-shop");
 const gachaRecruitmentRoot = document.querySelector("#gacha-recruitment-modal");
 const rosterPanelRoot = document.querySelector("#roster-panel");
 const leaderboardRoot = document.querySelector("#leaderboard-panel");
+const leaderboardClose = document.querySelector("#leaderboard-close");
+leaderboardClose?.addEventListener("click", () => { leaderboardRoot?.classList.remove("is-open"); window.setTimeout(() => leaderboardRoot?.setAttribute("hidden", ""), 180); setView("combat"); });
 const shopRoot = document.querySelector("#shop-panel");
 const adminTriggerButton = document.querySelector("#btn-admin-trigger");
 const waifuActiveName = document.querySelector("#waifu-active-name");
