@@ -200,7 +200,7 @@ export class CombatRenderer {
     this.eyeFocusImage = document.querySelector("#eye-focus-image");
     this.activeWaifuCard = document.querySelector("#active-waifu-card");
     this.timingFeedback = document.querySelector("#timing-feedback");
-    this.combatShell = canvas.closest(".combat-shell");
+    this.combatShell = canvas.closest(".combat-shell, .game-viewport");
 
     this.assetBank = new AssetBank();
     this.manifestUrl = manifestUrl;
@@ -367,10 +367,10 @@ export class CombatRenderer {
   _triggerTimingPreview(timing) {
     const grade = String(timing?.grade || "MISS").toUpperCase();
     const feedback = grade === "GREAT"
-      ? { label: "GREAT", className: "feedback-home-run", haptic: "home_run" }
+      ? { label: "GREAT • HOME RUN", className: "feedback-home-run", haptic: "home_run" }
       : grade === "HIT"
         ? { label: "HIT", className: "feedback-hit", haptic: "good" }
-        : { label: "MISS", className: "feedback-miss", haptic: "miss" };
+        : { label: "MISS • STRIKE", className: "feedback-miss", haptic: "miss" };
 
     this._applyWaifuFeedback(feedback.className, feedback.label);
     this._playHaptics(feedback.haptic);
