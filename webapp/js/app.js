@@ -23,7 +23,8 @@ ort {
   isTurnResultDTO
 } from "./api.js";
 import { CombatRenderer } from "./combat.js";
-import { AudioEngine } from "./audio_engine.js";
+import { AudioManager } from "./audioManager.js";
+import { Leaderboard } from "./leaderboard.js";
 import {
   GachaController,
   exposeGachaToWindow
@@ -73,7 +74,7 @@ telegram.init();
 const api = new BaseballWaifusApi({ telegramBridge: telegram });
 const hapticsBridge = createHapticsBridge(telegramWebApp);
 const cloudStorage = telegramWebApp?.CloudStorage || null;
-const audioBridge = new AudioEngine();
+const audioBridge = new AudioManager();
 const mobileHaptics = new MobileHaptics();
 const performanceAdapter = new PerformanceAdapter();
 
@@ -139,6 +140,7 @@ const navGachaButton = document.querySelector("#btn-nav-gacha");
 const navShopButton = document.querySelector("#btn-nav-shop");
 const gachaRecruitmentRoot = document.querySelector("#gacha-recruitment-modal");
 const rosterPanelRoot = document.querySelector("#roster-panel");
+const leaderboardRoot = document.querySelector("#leaderboard-panel");
 const shopRoot = document.querySelector("#shop-panel");
 const adminTriggerButton = document.querySelector("#btn-admin-trigger");
 const waifuActiveName = document.querySelector("#waifu-active-name");
@@ -160,6 +162,13 @@ let sharePayload = null;
 let adminPanel = null;
 let finiteScrapBeforeInfinite = null;
 
+const leaderboard = new Leaderboard({
+  storage: window.localStorage,
+  cloudStorage,
+  playerId: telegramWebApp?.initDataUnsafe?.user?.id || "local-player",
+  playerName: telegramWebApp?.initDataUnsafe?.user?.first_name || "PLAYER"
+});
+
 const gachaController = new GachaController({
   audioBridge,
   hapticsBridge,
@@ -169,6 +178,7 @@ const gachaController = new GachaController({
 const gachaRecruitment = new GachaRecruitmentUI({
   root: gachaRecruitmentRoot,
   controller: gachaController,
+  audio: audioBridge,
   onResult: (payload) => {
     gallery.refresh();
     updateGachaHud(gachaController.getStatus(), payload?.results?.[0] || null);
@@ -217,6 +227,7 @@ const lockerRoom = new LockerRoom({
 
 function handleScrapEarned({ amount, result }) {
   if (amount <= 0) return;
+  leaderboard.record({ homeRuns: String(result).toUpperCase() === "HOME_RUN" ? 1 : 0, scrapEarned: amount });
   gachaController.addScrap(amount);
   if (gachaStatusValue) {
     gachaStatusValue.textContent = "+" + amount + " SCRAP // " + String(result).toUpperCase();
@@ -982,10 +993,11 @@ function setMainMenuView(view) {
     const target = document.querySelector("#action-gacha");
     target?.scrollIntoView?.({ behavior: "smooth", block: "center" });
   }
+  if (active === "leaderboard") { leaderboard.render(leaderboardRoot?.querySelector("#leaderboard-list")); leaderboardRoot?.removeAttribute("hidden"); requestAnimationFrame(() => leaderboardRoot?.classList.add("is-open")); }
   if (active === "roster") syncRosterControls();
   if (active === "dex") gallery.refresh();
   if (active === "locker") refreshLockerRoom();
-  setTelegramBackButton(showGallery || showRoster || showSettings || showLocker);
+  setTelegramBackButton(showGallery || showRoster || showSettings || showLocker || active === "leaderboard");
 }
 
 function setView(view) {
