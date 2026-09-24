@@ -15,7 +15,7 @@ export function classifyTimingDelta(deltaMs) {
 
 export function timingRingProgress(elapsedMs) {
   const elapsed = Math.max(0, Number(elapsedMs) || 0);
-  return Math.min(1, elapsed / TIMING_RING_DURATION_MS);
+  return Math.min(1, elapsed / TIMING_RING_TARGET_MS);
 }
 
 export function timingRingRadius(elapsedMs) {
