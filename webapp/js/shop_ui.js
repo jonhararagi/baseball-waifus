@@ -55,5 +55,7 @@ export class ShopUI {
   getScrapMultiplier() { return this.boosts.getScrapMultiplier(); }
   getTimingGraceMs() { return this.boosts.getTimingGraceMs(); }
   consumeTurn() { const state = this.boosts.consumeTurn(); this.render(); return state; }
+  consumeTimingTurn() { const state = this.boosts.consumeTimingTurn(); this.render(); return state; }
+  consumeRewardTurn() { const state = this.boosts.consumeRewardTurn(); this.render(); return state; }
   getBoostState() { return this.boosts.getState(); }
 }
