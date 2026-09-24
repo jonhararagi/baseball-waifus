@@ -76,6 +76,14 @@ jobs:
             node --experimental-default-type=module "${test_file}"
           done
 
+      - name: Run Final Module Tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --experimental-default-type=module tests/cmsProductionBundle.test.mjs
+          node --experimental-default-type=module tests/audioManager.test.mjs
+          node --experimental-default-type=module tests/leaderboard.test.mjs
+
       - name: Prepare Pages Artifact
         shell: bash
         run: |
