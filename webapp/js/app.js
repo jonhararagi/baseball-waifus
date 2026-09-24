@@ -31,6 +31,7 @@ import {
 import { LockerRoom } from "./locker_room.js";
 import { VoiceSystem } from "./voice_system.js";
 import { AdminPanel, INFINITE_SCRAP_VALUE } from "./admin_panel.js";
+import { localResultForTimingGrade } from "./timing_ring.js";
 
 function initializeTelegramNativeShell() {
   const webApp = window.Telegram?.WebApp || null;
@@ -121,6 +122,7 @@ const waifuActiveRole = document.querySelector("#waifu-active-role");
 const waifuAvatarImg = document.querySelector("#waifu-avatar-img");
 const waifuPowerBar = document.querySelector("#waifu-pwr-bar");
 const waifuSpeedBar = document.querySelector("#waifu-spd-bar");
+const timingFeedback = document.querySelector("#timing-feedback");
 const cardRenderer = new CardRenderer({
   root: document.querySelector("#dex-card-stage")
 });
@@ -261,6 +263,9 @@ const renderer = new CombatRenderer(document.querySelector("#combat-canvas, #gam
   hapticsBridge,
   onScrapEarned: handleScrapEarned,
   performanceAdapter,
+  onTimingResult: (timing) => {
+    void sendAction("BAT", timing);
+  },
   getHudResources: () => ({
     scrap: gachaController.getScavengerScrap(),
     energy: renderer?.state?.energy
@@ -649,34 +654,36 @@ function startGameMode(mode, biome) {
   return state;
 }
 
-function simulateLocalTurn() {
+function simulateLocalTurn(timing = {}) {
   const state = gameModes.getState();
-  const roll = Math.random();
-  const result = state.mode === "ENDLESS"
-    ? (roll < 0.08 ? "HOME_RUN" : roll < 0.45 ? "SINGLE" : roll < 0.68 ? "DOUBLE" : roll < 0.78 ? "TRIPLE" : "OUT")
-    : (roll < 0.06 ? "HOME_RUN" : roll < 0.48 ? "SINGLE" : roll < 0.7 ? "DOUBLE" : roll < 0.8 ? "TRIPLE" : "OUT");
-
+  const grade = String(timing.grade || "MISS").toUpperCase();
+  const result = localResultForTimingGrade(grade);
   const current = renderer.state?.state || {};
+  const isStrike = result === "STRIKE";
   const dto = {
     type: "TurnResultDTO",
     turn_id: "local-" + Date.now() + "-" + Math.random().toString(16).slice(2),
     result,
-    timing: result === "OUT" ? "BAD" : result === "HOME_RUN" ? "PERFECT" : "GOOD",
-    event: result === "OUT" ? "SWING" : "HIT",
+    timing: grade,
+    timing_delta_ms: Number(timing.delta_ms ?? 0),
+    event: isStrike ? "SWING" : "HIT",
     area_id: state.biome,
     state: {
       ...current,
-      balls: result === "OUT" ? Math.min(3, Number(current.balls || 0) + 1) : 0,
-      strikes: result === "OUT" ? Math.min(2, Number(current.strikes || 0) + 1) : 0
+      balls: isStrike ? Math.min(3, Number(current.balls || 0) + 1) : 0,
+      strikes: isStrike ? Math.min(2, Number(current.strikes || 0) + 1) : 0
     }
   };
   void renderer.applyTurnResult(dto).then(() => {
     gameModes.registerResult(result);
     updatePlayHud();
     saveSystem.save();
+    if (timingFeedback) timingFeedback.textContent = grade + " • " + result.replace("_", " ");
+    batButton.disabled = false;
+  }).catch(() => {
+    batButton.disabled = false;
   });
 }
-
 function updateHud(state) {
   const matchState = state?.state || {};
   const inning = matchState.inning ?? "-";
@@ -745,16 +752,29 @@ async function syncCombat() {
   }
 }
 
-async function sendAction(actionType) {
+async function sendAction(actionType, timing = {}) {
   if (!api.configured() || !matchId || actionPending) {
     if (!api.configured() && actionType === "BAT") {
-      simulateLocalTurn();
+      simulateLocalTurn(timing);
+    } else if (actionType === "BAT") {
+      batButton.disabled = false;
     }
     return;
   }
+
   setActionPending(true);
   try {
-    const payload = await api.submitTurnAction(matchId, { type: actionType, client_time_ms: Date.now() });
+    const payload = await api.submitTurnAction(matchId, {
+      type: actionType,
+      client_time_ms: Date.now(),
+      ...(actionType === "BAT"
+        ? {
+          timing_grade: String(timing.grade || "MISS").toUpperCase(),
+          timing_delta_ms: Number(timing.delta_ms ?? 0),
+          timing_target_ms: Number(timing.target_ms ?? 0)
+        }
+        : {})
+    });
     if (!isTurnResultDTO(payload)) throw new Error("Server returned an invalid TurnResultDTO");
     await renderer.applyTurnResult(payload);
     if (payload.super_swing === true || payload.animation?.super_swing === true || payload.animation?.event === "SUPER_SWING") {
@@ -772,17 +792,27 @@ async function sendAction(actionType) {
       home_team: payload.home_team || renderer.state.home_team,
       away_team: payload.away_team || renderer.state.away_team
     });
-  } catch {
+    if (timingFeedback) {
+      const grade = String(timing.grade || payload.timing || "").toUpperCase();
+      timingFeedback.textContent = grade ? grade + " • " + String(payload.result || "").replaceAll("_", " ") : String(payload.result || "");
+    }
+  } catch (error) {
     setConnection("Action rejected", "error");
+    batButton.disabled = false;
   } finally {
     setActionPending(false);
   }
 }
 
+
 batButton.addEventListener("click", () => {
-  renderer.beginBatterWindup();
-  sendAction("BAT");
+  if (actionPending || renderer.isTimingWindowActive?.()) return;
+  const started = renderer.beginTimingWindow?.();
+  if (started) {
+    batButton.disabled = true;
+  }
 });
+
 stealButton.addEventListener("click", () => sendAction("STEAL"));
 syncButton.addEventListener("click", syncCombat);
 

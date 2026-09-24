@@ -34,6 +34,7 @@ const PRECACHE_ASSETS = [
   "./js/share_bridge.js",
   "./js/super_swing_cutin.js",
   "./js/team_manager.js",
+  "./js/timing_ring.js",
   "./js/tma_bridge.js",
   "./js/upgrade_system.js",
   "./js/voice_system.js",

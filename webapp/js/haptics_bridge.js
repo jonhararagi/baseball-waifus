@@ -50,9 +50,17 @@ export class TelegramHapticsBridge {
       case "good":
         this.mobileHaptics?.handleGameEvent?.("good");
         return this.impactOccurred("light");
-      case "home_run":
+      case "home_run": {
         this.mobileHaptics?.handleGameEvent?.("home_run");
-        return this.impactOccurred("heavy");
+        this.notificationOccurred("success");
+        this.impactOccurred("heavy");
+        if (typeof window !== "undefined" && this.haptics) {
+          window.setTimeout(() => this.impactOccurred("light"), 180);
+          window.setTimeout(() => this.impactOccurred("heavy"), 360);
+          window.setTimeout(() => this.impactOccurred("light"), 540);
+        }
+        return Boolean(this.haptics || this.mobileHaptics?.isAvailable?.());
+      }
       case "swing":
         this.mobileHaptics?.handleGameEvent?.("swing");
         return this.impactOccurred("light");

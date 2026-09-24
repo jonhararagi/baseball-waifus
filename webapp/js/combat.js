@@ -6,6 +6,13 @@ import { CombatHUD } from "./combat_hud.js";
 import { PerformanceAdapter } from "./performance_adapter.js";
 import { AssetLoader, isHttpsUrl } from "./asset_loader.js";
 import { getWaifuAssets, getWaifu } from "./waifu_database.js";
+import {
+  classifyTimingDelta,
+  timingRingRadius,
+  TIMING_RING_DURATION_MS,
+  TIMING_RING_TARGET_MS,
+  TIMING_RING_TARGET_RADIUS
+} from "./timing_ring.js";
 
 const RESULT_COLORS = {
   STRIKE: "#8ca8ff",
@@ -167,7 +174,8 @@ export class CombatRenderer {
     onScrapEarned = null,
     hapticsBridge = null,
     getHudResources = null,
-    performanceAdapter = null
+    performanceAdapter = null,
+    onTimingResult = null
   } = {}) {
     if (!(canvas instanceof HTMLCanvasElement)) {
       throw new TypeError("CombatRenderer requires a canvas element");
@@ -188,6 +196,10 @@ export class CombatRenderer {
     this.cutinTitle = document.querySelector("#cutin-title");
     this.cutinDetail = document.querySelector("#cutin-detail");
     this.cutinPortrait = document.querySelector("#cutin-portrait");
+    this.eyeFocusOverlay = document.querySelector("#eye-focus-overlay");
+    this.eyeFocusImage = document.querySelector("#eye-focus-image");
+    this.activeWaifuCard = document.querySelector("#active-waifu-card");
+    this.timingFeedback = document.querySelector("#timing-feedback");
     this.combatShell = canvas.closest(".combat-shell");
 
     this.assetBank = new AssetBank();
@@ -197,6 +209,7 @@ export class CombatRenderer {
     this.onScrapEarned = onScrapEarned;
     this.hapticsBridge = hapticsBridge || null;
     this.performanceAdapter = performanceAdapter || new PerformanceAdapter();
+    this.onTimingResult = typeof onTimingResult === "function" ? onTimingResult : null;
     this.themeManager = new AreaThemeManager("cyberpunk");
     this.batterRenderer = new BatterRenderer({
       imageResolver: (path) => this.assetBank.get(path),
@@ -221,7 +234,11 @@ export class CombatRenderer {
     this.scrapTurnIds = new Set();
     this.zanTimer = 0;
     this.zanDuration = 0.34;
-    this.ballTrail = [];
+    this.timingState = null;
+    this.timingTimeout = 0;
+    this.lastTiming = null;
+    this.eyeFocusUntil = 0;
+    this.eyeFocusToken = 0;
     this.staticCanvas = document.createElement("canvas");
     this.staticCtx = this.staticCanvas.getContext("2d", { alpha: false });
     this.frameCanvas = document.createElement("canvas");
@@ -229,6 +246,11 @@ export class CombatRenderer {
     this.lastFrame = performance.now();
 
     this.handleViewportResize = () => this.resize();
+    this.handleTimingPointer = (event) => {
+      if (!this.timingState?.active) return;
+      event.preventDefault();
+      this.resolveTimingInput("pointer");
+    };
 
     this.resizeObserver = typeof ResizeObserver === "function"
       ? new ResizeObserver(this.handleViewportResize)
@@ -239,6 +261,7 @@ export class CombatRenderer {
     }
 
     window.addEventListener("resize", this.handleViewportResize, { passive: true });
+    this.canvas.addEventListener("pointerdown", this.handleTimingPointer, { passive: false });
     window.visualViewport?.addEventListener("resize", this.handleViewportResize, { passive: true });
     window.visualViewport?.addEventListener("scroll", this.handleViewportResize, { passive: true });
 
@@ -270,6 +293,105 @@ export class CombatRenderer {
 
   beginBatterWindup() {
     return this.batterRenderer.beginWindup();
+  }
+
+  isTimingWindowActive() {
+    return Boolean(this.timingState?.active);
+  }
+
+  beginTimingWindow() {
+    if (!this.matchReady || this.timingState?.active) return false;
+    const startedAt = performance.now();
+    this.batterRenderer.beginWindup();
+    this.timingState = {
+      active: true,
+      startedAt,
+      targetMs: TIMING_RING_TARGET_MS,
+      durationMs: TIMING_RING_DURATION_MS
+    };
+    window.clearTimeout(this.timingTimeout);
+    this.timingTimeout = window.setTimeout(() => {
+      this.resolveTimingInput("timeout");
+    }, TIMING_RING_DURATION_MS);
+    return true;
+  }
+
+  resolveTimingInput(source = "pointer") {
+    if (!this.timingState?.active) return null;
+    const current = this.timingState;
+    const elapsedMs = performance.now() - current.startedAt;
+    const deltaMs = elapsedMs - current.targetMs;
+    const grade = classifyTimingDelta(deltaMs);
+    window.clearTimeout(this.timingTimeout);
+    this.timingTimeout = 0;
+    this.timingState = null;
+
+    const timing = {
+      grade,
+      delta_ms: Math.round(deltaMs),
+      elapsed_ms: Math.round(elapsedMs),
+      target_ms: current.targetMs,
+      source
+    };
+
+    this.lastTiming = timing;
+    this.batterRenderer.beginSwing();
+    this._activateEyeFocus(200);
+    this._triggerTimingPreview(timing);
+    this.onTimingResult?.(timing);
+    return timing;
+  }
+
+  _activateEyeFocus(durationMs = 200) {
+    this.eyeFocusUntil = performance.now() + durationMs;
+    this.eyeFocusToken += 1;
+    const token = this.eyeFocusToken;
+    const avatar = document.querySelector("#waifu-avatar-img");
+    if (avatar?.src && this.eyeFocusImage) this.eyeFocusImage.src = avatar.src;
+    this.eyeFocusOverlay?.classList.add("is-active");
+    window.setTimeout(() => {
+      if (token === this.eyeFocusToken) this.eyeFocusOverlay?.classList.remove("is-active");
+    }, durationMs);
+  }
+
+  async _awaitEyeFocus() {
+    const remaining = this.eyeFocusUntil - performance.now();
+    if (remaining <= 0) {
+      this.eyeFocusOverlay?.classList.remove("is-active");
+      return;
+    }
+    await new Promise((resolve) => window.setTimeout(resolve, remaining));
+    this.eyeFocusOverlay?.classList.remove("is-active");
+  }
+
+  _triggerTimingPreview(timing) {
+    const grade = String(timing?.grade || "MISS").toUpperCase();
+    const feedback = grade === "GREAT"
+      ? { label: "GREAT", className: "feedback-home-run", haptic: "home_run" }
+      : grade === "HIT"
+        ? { label: "HIT", className: "feedback-hit", haptic: "good" }
+        : { label: "MISS", className: "feedback-miss", haptic: "miss" };
+
+    this._applyWaifuFeedback(feedback.className, feedback.label);
+    this._playHaptics(feedback.haptic);
+  }
+
+  _applyWaifuFeedback(className, label = "") {
+    if (this.activeWaifuCard) {
+      this.activeWaifuCard.classList.remove("feedback-miss", "feedback-hit", "feedback-home-run");
+      if (className) {
+        void this.activeWaifuCard.offsetWidth;
+        this.activeWaifuCard.classList.add(className);
+        window.setTimeout(() => this.activeWaifuCard?.classList.remove(className), 900);
+      }
+    }
+    if (this.timingFeedback) {
+      this.timingFeedback.textContent = label;
+      this.timingFeedback.classList.remove("is-visible");
+      void this.timingFeedback.offsetWidth;
+      if (label) this.timingFeedback.classList.add("is-visible");
+      window.setTimeout(() => this.timingFeedback?.classList.remove("is-visible"), 900);
+    }
   }
 
   beginBatterSwing() {
@@ -495,7 +617,7 @@ export class CombatRenderer {
     this.lastTurn = null;
     this.matchReady = true;
     this.resultPulse = 0;
-    this.ballTrail = [];
+    this.timingState = null;
 
     await this.assetBank.preload([
       ...(dto.assets?.sprites || []).map((asset) => ({ ...asset, kind: "sprite" })),
@@ -515,6 +637,7 @@ export class CombatRenderer {
       throw new Error("Combat renderer is not initialized");
     }
 
+    await this._awaitEyeFocus();
     this.lastTurn = cloneDTO(dto);
     const areaId = dto.area_id || dto.area?.id || dto.theme_id || dto.theme?.id || dto.state?.area_id;
     if (areaId) {
@@ -553,7 +676,6 @@ export class CombatRenderer {
       this.batterRenderer.beginSwing();
     }
 
-    this._prepareBallTrail(dto);
     this._triggerCutIn(dto);
     this._triggerVisualImpact(dto);
     this.resultPulse = 1;
@@ -598,8 +720,10 @@ export class CombatRenderer {
     cancelAnimationFrame(this.frameHandle);
     this.resizeObserver?.disconnect();
     window.removeEventListener("resize", this.handleViewportResize);
+    this.canvas.removeEventListener("pointerdown", this.handleTimingPointer);
     window.visualViewport?.removeEventListener("resize", this.handleViewportResize);
     window.visualViewport?.removeEventListener("scroll", this.handleViewportResize);
+    window.clearTimeout(this.timingTimeout);
     this.staticCanvas.width = 1;
     this.staticCanvas.height = 1;
     this.frameCanvas.width = 1;
@@ -620,6 +744,10 @@ export class CombatRenderer {
 
   _update(delta) {
     this.combatHud.update(delta);
+
+    if (this.timingState?.active && performance.now() - this.timingState.startedAt >= this.timingState.durationMs) {
+      this.resolveTimingInput("timeout");
+    }
 
     if (this.combatHud.isTimeFrozen()) {
       this.impactTimer = Math.max(0, this.impactTimer - delta);
@@ -720,12 +848,9 @@ export class CombatRenderer {
       this._drawMatchState(target, w, h);
     }
 
+    this._drawTimingRing(target, w, h, time);
     this.combatEffects.renderBatTrail(target);
     this.combatEffects.renderFlash(target, w, h);
-
-    if (this.ballTrail.length > 0) {
-      this._drawBallTrail(target, time);
-    }
 
     if (this.resultPulse > 0 && this.lastTurn) {
       this._drawResultPulse(target, w, h);
@@ -1011,70 +1136,59 @@ export class CombatRenderer {
     return null;
   }
 
-  _prepareBallTrail(dto) {
-    const trajectory = dto.animation?.trajectory || {};
-    const from = normalizePoint(trajectory.from, {
-      x: this.pixelWidth * 0.2,
-      y: this.pixelHeight * 0.72
-    });
-    const to = normalizePoint(trajectory.to, {
-      x: this.pixelWidth * 0.8,
-      y: this.pixelHeight * 0.26
-    });
-    const arc = safeNumber(trajectory.arc, -0.12);
-    const segments = 14;
+  _drawTimingRing(ctx, w, h, time) {
+    const timing = this.timingState;
+    if (!timing?.active) return;
 
-    this.ballTrail = [];
+    const elapsedMs = performance.now() - timing.startedAt;
+    const radius = timingRingRadius(elapsedMs);
+    const cx = w * 0.5;
+    const cy = h * 0.52;
+    const targetRadius = TIMING_RING_TARGET_RADIUS;
+    const progress = clamp(elapsedMs / timing.durationMs, 0, 1);
+    const pulse = 0.72 + Math.sin(time * 0.012) * 0.12;
 
-    for (let i = 0; i <= segments; i += 1) {
-      const t = i / segments;
-      const x = from.x + (to.x - from.x) * t;
-      const y = from.y
-        + (to.y - from.y) * t
-        + Math.sin(t * Math.PI) * this.pixelHeight * arc;
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
 
-      this.ballTrail.push({
-        x,
-        y,
-        age: i * 0.028
-      });
-    }
-  }
+    ctx.globalAlpha = 0.22;
+    ctx.strokeStyle = "#00f3ff";
+    ctx.lineWidth = 10;
+    ctx.beginPath();
+    ctx.arc(cx, cy, targetRadius, 0, Math.PI * 2);
+    ctx.stroke();
 
-  _drawBallTrail(ctx, time) {
-    const visible = this.ballTrail.filter((point) => point.age < 0.62);
+    ctx.globalAlpha = pulse;
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 3;
+    ctx.shadowColor = "#00f3ff";
+    ctx.shadowBlur = 18;
+    ctx.beginPath();
+    ctx.arc(cx, cy, targetRadius, 0, Math.PI * 2);
+    ctx.stroke();
 
-    for (const point of visible) {
-      const alpha = clamp(1 - point.age / 0.72, 0, 1);
+    ctx.globalAlpha = 0.92;
+    ctx.strokeStyle = progress > 0.82 ? "#ffdf00" : "#ff007f";
+    ctx.lineWidth = 5;
+    ctx.shadowColor = progress > 0.82 ? "#ffdf00" : "#ff007f";
+    ctx.shadowBlur = 16;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.stroke();
 
-      ctx.save();
-      ctx.globalAlpha = alpha * 0.52;
-      ctx.fillStyle = "#ffffff";
-      ctx.beginPath();
-      ctx.arc(point.x, point.y, 3.2, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    }
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "900 13px Orbitron, system-ui, sans-serif";
+    ctx.fillText("TAP", cx, cy);
 
-    if (visible.length === 0) {
-      return;
-    }
+    ctx.globalAlpha = 0.68;
+    ctx.font = "800 9px Rajdhani, system-ui, sans-serif";
+    ctx.fillStyle = "#9cefff";
+    ctx.fillText("TIMING", cx, cy + targetRadius + 22);
 
-    const phase = (time / 1000) % 1;
-    const current = visible[
-      Math.min(visible.length - 1, Math.floor(phase * visible.length))
-    ];
-
-    if (current) {
-      ctx.save();
-      ctx.fillStyle = "#fff6d8";
-      ctx.shadowColor = "#fff6d8";
-      ctx.shadowBlur = 14;
-      ctx.beginPath();
-      ctx.arc(current.x, current.y, 5, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    }
+    ctx.restore();
   }
 
   _drawResultPulse(ctx, w, h) {
@@ -1122,7 +1236,9 @@ export class CombatRenderer {
       : Math.min(18, this.maxImpactParticles);
     const originX = this.pixelWidth * 0.5;
     const originY = this.pixelHeight * 0.48;
-    const colors = ["#00f0ff", "#ff2b1f", "#ff0055"];
+    const colors = normalizedResult === "HOME_RUN"
+      ? ["#ff007f", "#ffdf00", "#00f3ff", "#ffffff"]
+      : ["#00f0ff", "#ff2b1f", "#ff0055"];
 
     this.impactParticles = [];
     for (let index = 0; index < count; index += 1) {
@@ -1137,7 +1253,7 @@ export class CombatRenderer {
         age: 0,
         life: 0.24 + Math.random() * 0.22,
         size: 1.5 + Math.random() * 2.5,
-        color: this.themeManager.getParticleColor()
+        color: colors[index % colors.length]
       });
     }
   }
@@ -1385,6 +1501,7 @@ export class CombatRenderer {
       this._spawnImpactParticles(result || "HIT");
     }
 
+    this._applyServerWaifuFeedback(result, timing);
     this._triggerAudioForTurn(dto);
 
     if (
@@ -1407,6 +1524,21 @@ export class CombatRenderer {
     this.combatShell.classList.add("is-glitching", `impact-${kind}`);
     if (superResults.has(result)) {
       this.combatShell.classList.add("impact-super");
+    }
+  }
+
+  _applyServerWaifuFeedback(result, timing) {
+    const normalized = String(result || "").toUpperCase();
+    if (normalized === "HOME_RUN") {
+      this._applyWaifuFeedback("feedback-home-run", "HOME RUN!");
+      return;
+    }
+    if (["SINGLE", "DOUBLE", "TRIPLE", "HIT", "FIELDING_ERROR"].includes(normalized)) {
+      this._applyWaifuFeedback("feedback-hit", "HIT");
+      return;
+    }
+    if (["MISS", "STRIKE", "OUT", "FOUL"].includes(normalized) || String(timing || "").toUpperCase() === "BAD") {
+      this._applyWaifuFeedback("feedback-miss", "MISS");
     }
   }
 
