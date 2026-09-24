@@ -143,6 +143,21 @@
       </div>
     </section>
 
+    <section id="shop-panel" class="shop-panel" hidden aria-label="Tienda de recursos" aria-modal="true" role="dialog">
+      <div class="shop-panel-card">
+        <header class="shop-head"><div><span class="gallery-kicker">TEAM PROBLEMAS // SHOP</span><h2>TIENDA DE RECURSOS</h2></div><button id="shop-close" class="shop-close" type="button" aria-label="Cerrar tienda">×</button></header>
+        <div class="shop-balance"><span>SCRAP</span><strong id="shop-scrap">0</strong></div>
+        <section class="shop-section"><h3>⚡ SCRAP // TELEGRAM STARS</h3>
+          <div class="shop-grid"><button class="shop-item shop-stars" data-shop-pack="scrap_5000" type="button"><strong>5.000 SCRAP</strong><small>50 ⭐ Telegram Stars</small></button><button class="shop-item shop-stars" data-shop-pack="scrap_25000" type="button"><strong>25.000 SCRAP</strong><small>200 ⭐ Telegram Stars</small></button></div>
+        </section>
+        <section class="shop-section"><h3>🧪 POTENCIADORES</h3>
+          <div class="shop-grid"><button class="shop-item" data-shop-boost="scrap_multiplier" data-cost="1000" type="button"><strong>SCRAP RUSH ×2</strong><small>1.000 Scrap · 10 recompensas</small></button><button class="shop-item" data-shop-boost="focus" data-cost="1500" type="button"><strong>FOCUS +20ms</strong><small>1.500 Scrap · 10 bateos</small></button></div>
+        </section>
+        <div id="shop-boost-state" class="shop-boost-state">RUSH: 0 turnos • FOCUS: 0 turnos</div>
+        <div id="shop-status" class="shop-status">SELECCIONA UN RECURSO</div>
+      </div>
+    </section>
+
     <section id="gacha-recruitment-modal" class="gacha-modal" hidden aria-label="Reclutamiento de waifus" aria-modal="true" role="dialog">
       <div class="gacha-modal-card">
         <header class="gacha-modal-header"><div><span class="gacha-kicker">TEAM PROBLEMAS // RECRUITMENT</span><h2>RECLUTAR WAIFUS</h2></div><button id="gacha-recruit-close" class="gacha-close" type="button" aria-label="Cerrar reclutamiento">×</button></header>
