@@ -779,12 +779,6 @@ export class CombatRenderer {
       this.combatShell.classList.remove("is-glitching", "impact-hit", "impact-run", "impact-danger", "impact-super");
     }
 
-    for (const point of this.ballTrail) {
-      point.age += delta;
-    }
-
-    this.ballTrail = this.ballTrail.filter((point) => point.age < 0.72);
-
     if (this.cutinRoot?.classList.contains("visible")) {
       const age = performance.now() - this.cutInStartedAt;
       if (age >= this.cutInDurationMs) {
