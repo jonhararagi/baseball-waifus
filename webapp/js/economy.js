@@ -103,6 +103,8 @@ export class EconomyBoostManager {
   getState() { this.normalize(); return { ...this.boosts }; }
   getScrapMultiplier() { return this.boosts.scrap_multiplier_turns > 0 ? 2 : 1; }
   getTimingGraceMs() { return this.boosts.focus_turns > 0 ? 20 : 0; }
+  consumeTimingTurn() { if (this.boosts.focus_turns > 0) this.boosts.focus_turns--; this._save(); return this.getState(); }
+  consumeRewardTurn() { if (this.boosts.scrap_multiplier_turns > 0) this.boosts.scrap_multiplier_turns--; this._save(); return this.getState(); }
   consumeTurn() {
     if (this.boosts.scrap_multiplier_turns > 0) this.boosts.scrap_multiplier_turns--;
     if (this.boosts.focus_turns > 0) this.boosts.focus_turns--;
