@@ -1,0 +1,16 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+const root=path.resolve("webapp");
+const index=fs.readFileSync(path.join(root,"index.html"),"utf8");
+const css=fs.readFileSync(path.join(root,"css/styles.css"),"utf8");
+const moduleSource=fs.readFileSync(path.join(root,"js/gacha_recruitment.js"),"utf8");
+const appSource=fs.readFileSync(path.join(root,"js/app.js"),"utf8");
+const swSource=fs.readFileSync(path.join(root,"sw.js"),"utf8");
+assert.ok(index.includes('id="gacha-recruitment-modal"'));
+assert.ok(index.includes('id="gacha-recruit-1"')&&index.includes('id="gacha-recruit-10"'));
+assert.ok(css.includes(".gacha-modal")&&css.includes(".gacha-result-card"));
+assert.ok(moduleSource.includes("rollGacha()")&&moduleSource.includes("rollGachaTen()"));
+assert.ok(appSource.includes("gachaRecruitment.open()"));
+assert.ok(swSource.includes("./js/gacha_recruitment.js"));
+console.log("✅ P17 Gacha Recruitment validado.");
