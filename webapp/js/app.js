@@ -1,4 +1,22 @@
-import {
+imp
+const rosterPanel = new RosterPanel({
+  root: rosterPanelRoot,
+  getCharacters: () => gachaController.getCharacters(),
+  getInventory: () => gachaController.getState().inventory || {},
+  getActiveId: () => teamManager.getActiveBatterId(),
+  onSetActive: async (characterId) => {
+    teamManager.setActiveBatter(characterId);
+    gachaController.setActiveBatter(characterId);
+    const active = teamManager.getActiveWaifu();
+    refreshActiveWaifuCard();
+    if (renderer.state && active) {
+      await renderer.setCombatInit(applyActiveRoster(renderer.state));
+    }
+    syncRosterControls();
+    saveSystem.save();
+  }
+});
+ort {
   BaseballWaifusApi,
   TelegramBridge,
   isCombatInitDTO,
@@ -33,6 +51,7 @@ import { VoiceSystem } from "./voice_system.js";
 import { AdminPanel, INFINITE_SCRAP_VALUE } from "./admin_panel.js";
 import { localResultForTimingGrade } from "./timing_ring.js";
 import { GachaRecruitmentUI } from "./gacha_recruitment.js";
+import { RosterPanel } from "./roster_panel.js";
 
 function initializeTelegramNativeShell() {
   const webApp = window.Telegram?.WebApp || null;
@@ -118,6 +137,7 @@ const navRosterButton = document.querySelector("#btn-nav-roster");
 const navGachaButton = document.querySelector("#btn-nav-gacha");
 const navShopButton = document.querySelector("#btn-nav-shop");
 const gachaRecruitmentRoot = document.querySelector("#gacha-recruitment-modal");
+const rosterPanelRoot = document.querySelector("#roster-panel");
 const adminTriggerButton = document.querySelector("#btn-admin-trigger");
 const waifuActiveName = document.querySelector("#waifu-active-name");
 const waifuActiveRole = document.querySelector("#waifu-active-role");
@@ -846,7 +866,7 @@ adminTriggerButton?.addEventListener("click", () => {
 });
 
 navRosterButton?.addEventListener("click", () => {
-  mainMenu.navigate("roster");
+  rosterPanel.open();
 });
 
 navGachaButton?.addEventListener("click", () => {
@@ -1186,6 +1206,7 @@ async function bootstrap() {
     syncAudioControls();
     updateGachaHud(gachaController.getStatus());
     syncRosterControls();
+    rosterPanel.refresh();
     await initializeGallery();
   } catch {
     gachaButton.disabled = true;
