@@ -22,6 +22,7 @@ const PRECACHE_ASSETS = [
   "./js/combat_hud.js",
   "./js/economy.js",
   "./js/gacha_controller.js",
+  "./js/gacha_recruitment.js",
   "./js/gacha_engine.js",
   "./js/gallery.js",
   "./js/game_modes.js",
