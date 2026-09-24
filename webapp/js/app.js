@@ -95,6 +95,7 @@ const gachaScrapValue = document.querySelector("#gacha-scrap");
 const gachaDexValue = document.querySelector("#gacha-dex");
 const gachaStatusValue = document.querySelector("#gacha-status");
 const gachaFragmentsValue = document.querySelector("#gacha-fragments");
+const hudScrapValue = document.querySelector("#hud-scrap");
 const audioMuteButton = document.querySelector("#audio-mute");
 const audioVolumeSlider = document.querySelector("#audio-volume");
 const gachaTenButton = document.querySelector("#action-gacha-ten");
@@ -516,6 +517,7 @@ function updateGachaHud(status, result = null) {
   if (!status) return;
   if (gachaPullValue) gachaPullValue.textContent = status.pulls_since_UR + "/80";
   if (gachaScrapValue) gachaScrapValue.textContent = String(status.scavenger_scrap);
+  if (hudScrapValue) hudScrapValue.textContent = String(status.scavenger_scrap);
   if (gachaFragmentsValue) gachaFragmentsValue.textContent = String(status.fragments ?? gachaController.getFragments());
   if (galleryScrapReadout) galleryScrapReadout.textContent = "SCRAP // " + status.scavenger_scrap;
   if (gachaDexValue) gachaDexValue.textContent = String(status.inventory_size);
