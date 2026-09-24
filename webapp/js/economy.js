@@ -90,4 +90,33 @@ export async function requestScrapPurchase(amount, {
   return result;
 }
 
+export class EconomyBoostManager {
+  constructor({ storage = globalThis.localStorage } = {}) {
+    this.storage = storage;
+    try { this.boosts = JSON.parse(this.storage?.getItem?.("baseball_waifus_shop_boosts_v1") || "{}") || {}; } catch { this.boosts = {}; }
+    this.normalize();
+  }
+  normalize() {
+    this.boosts.scrap_multiplier_turns = Math.max(0, Math.floor(Number(this.boosts.scrap_multiplier_turns) || 0));
+    this.boosts.focus_turns = Math.max(0, Math.floor(Number(this.boosts.focus_turns) || 0));
+  }
+  getState() { this.normalize(); return { ...this.boosts }; }
+  getScrapMultiplier() { return this.boosts.scrap_multiplier_turns > 0 ? 2 : 1; }
+  getTimingGraceMs() { return this.boosts.focus_turns > 0 ? 20 : 0; }
+  consumeTurn() {
+    if (this.boosts.scrap_multiplier_turns > 0) this.boosts.scrap_multiplier_turns--;
+    if (this.boosts.focus_turns > 0) this.boosts.focus_turns--;
+    this._save();
+    return this.getState();
+  }
+  grant(type, turns) {
+    const n = Math.max(1, Math.floor(Number(turns) || 0));
+    if (type === "scrap_multiplier") this.boosts.scrap_multiplier_turns += n;
+    if (type === "focus") this.boosts.focus_turns += n;
+    this._save();
+    return this.getState();
+  }
+  clear() { this.boosts = { scrap_multiplier_turns: 0, focus_turns: 0 }; this._save(); }
+  _save() { try { this.storage?.setItem?.("baseball_waifus_shop_boosts_v1", JSON.stringify(this.boosts)); } catch {} }
+}
 export { DEFAULT_INVOICE_TABLE_KEY };
