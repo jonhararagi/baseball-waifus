@@ -32,6 +32,7 @@ import { LockerRoom } from "./locker_room.js";
 import { VoiceSystem } from "./voice_system.js";
 import { AdminPanel, INFINITE_SCRAP_VALUE } from "./admin_panel.js";
 import { localResultForTimingGrade } from "./timing_ring.js";
+import { GachaRecruitmentUI } from "./gacha_recruitment.js";
 
 function initializeTelegramNativeShell() {
   const webApp = window.Telegram?.WebApp || null;
@@ -116,6 +117,7 @@ const superSwingButton = document.querySelector("#btn-superswing");
 const navRosterButton = document.querySelector("#btn-nav-roster");
 const navGachaButton = document.querySelector("#btn-nav-gacha");
 const navShopButton = document.querySelector("#btn-nav-shop");
+const gachaRecruitmentRoot = document.querySelector("#gacha-recruitment-modal");
 const adminTriggerButton = document.querySelector("#btn-admin-trigger");
 const waifuActiveName = document.querySelector("#waifu-active-name");
 const waifuActiveRole = document.querySelector("#waifu-active-role");
@@ -140,6 +142,17 @@ const gachaController = new GachaController({
   audioBridge,
   hapticsBridge,
   cloudStorage
+});
+
+const gachaRecruitment = new GachaRecruitmentUI({
+  root: gachaRecruitmentRoot,
+  controller: gachaController,
+  onResult: (payload) => {
+    gallery.refresh();
+    updateGachaHud(gachaController.getStatus(), payload?.results?.[0] || null);
+    syncRosterControls();
+    saveSystem.save();
+  }
 });
 
 const teamManager = new TeamManager({
@@ -837,14 +850,11 @@ navRosterButton?.addEventListener("click", () => {
 });
 
 navGachaButton?.addEventListener("click", () => {
-  mainMenu.navigate("gacha");
+  gachaRecruitment.open();
 });
 
 navShopButton?.addEventListener("click", () => {
-  mainMenu.navigate("gacha");
-  window.setTimeout(() => {
-    document.querySelector("#action-gacha")?.scrollIntoView?.({ behavior: "smooth", block: "center" });
-  }, 0);
+  gachaRecruitment.open();
 });
 
 gachaTenButton?.addEventListener("click", async () => {
