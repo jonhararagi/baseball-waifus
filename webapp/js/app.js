@@ -138,6 +138,7 @@ const navGachaButton = document.querySelector("#btn-nav-gacha");
 const navShopButton = document.querySelector("#btn-nav-shop");
 const gachaRecruitmentRoot = document.querySelector("#gacha-recruitment-modal");
 const rosterPanelRoot = document.querySelector("#roster-panel");
+const shopRoot = document.querySelector("#shop-panel");
 const adminTriggerButton = document.querySelector("#btn-admin-trigger");
 const waifuActiveName = document.querySelector("#waifu-active-name");
 const waifuActiveRole = document.querySelector("#waifu-active-role");
@@ -173,6 +174,13 @@ const gachaRecruitment = new GachaRecruitmentUI({
     syncRosterControls();
     saveSystem.save();
   }
+});
+
+const shopUI = new ShopUI({
+  root: shopRoot,
+  controller: gachaController,
+  webApp: telegramWebApp,
+  onBalanceChange: () => updateGachaHud(gachaController.getStatus())
 });
 
 const teamManager = new TeamManager({
@@ -299,6 +307,7 @@ const renderer = new CombatRenderer(document.querySelector("#combat-canvas, #gam
   onTimingResult: (timing) => {
     void sendAction("BAT", timing);
   },
+  getEconomyBoosts: () => ({ scrapMultiplier: shopUI.getScrapMultiplier(), timingGraceMs: shopUI.getTimingGraceMs() })
   getHudResources: () => ({
     scrap: gachaController.getScavengerScrap(),
     energy: renderer?.state?.energy
@@ -307,6 +316,8 @@ const renderer = new CombatRenderer(document.querySelector("#combat-canvas, #gam
   })
 });
 gachaController.setCutInRenderer(renderer);
+renderer.onEconomyTimingConsumed = () => shopUI.consumeTimingTurn?.();
+renderer.onEconomyRewardConsumed = () => shopUI.consumeRewardTurn?.();
 
 function applyAdminInfiniteScrap(enabled, fromPersistence = false) {
   const current = gachaController.getScavengerScrap();
@@ -874,7 +885,7 @@ navGachaButton?.addEventListener("click", () => {
 });
 
 navShopButton?.addEventListener("click", () => {
-  gachaRecruitment.open();
+  shopUI.open();
 });
 
 gachaTenButton?.addEventListener("click", async () => {
