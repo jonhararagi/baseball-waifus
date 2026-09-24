@@ -4,8 +4,8 @@ const LABEL = { R: "COMÚN", SR: "RARA", SSR: "ÉPICA", UR: "LEGENDARIA" };
 const CLASS = { R: "gacha-r", SR: "gacha-sr", SSR: "gacha-ssr", UR: "gacha-ur" };
 
 export class GachaRecruitmentUI {
-  constructor({ root, controller, onResult = null } = {}) {
-    this.root = root; this.controller = controller; this.onResult = onResult; this.busy = false;
+  constructor({ root, controller, audio = null, onResult = null } = {}) {
+    this.root = root; this.controller = controller; this.audio = audio; this.onResult = onResult; this.busy = false;
     this.scrap = root?.querySelector("#gacha-recruit-scrap");
     this.status = root?.querySelector("#gacha-recruit-status");
     this.stage = root?.querySelector("#gacha-reveal-stage");
@@ -28,11 +28,11 @@ export class GachaRecruitmentUI {
   clear() { if (this.results) this.results.innerHTML = ""; if (this.stage) { this.stage.className = "gacha-reveal-stage"; this.stage.innerHTML = ""; } if (this.status) this.status.textContent = "SELECCIONA UNA RECLUTACIÓN"; }
   async pull(count) {
     if (this.busy || !this.controller?.ready) return;
-    this.busy = true; this.refresh(); this.stage?.classList.add("is-opening");
+    this.busy = true; this.audio?.playTap?.(); this.refresh(); this.stage?.classList.add("is-opening");
     if (this.status) this.status.textContent = count === 10 ? "ABRIENDO 10 CÁPSULAS..." : "ABRIENDO CÁPSULA...";
     try {
       const payload = count === 10 ? await this.controller.rollGachaTen() : { count: 1, results: [await this.controller.rollGacha()] };
-      this.render(payload.results || []); this.onResult?.(payload);
+      this.render(payload.results || []); const best = payload.results?.reduce((a,b) => ({R:0,SR:1,SSR:2,UR:3}[b.rarity]||0) > ({R:0,SR:1,SSR:2,UR:3}[a?.rarity]||0) ? b : a, payload.results?.[0]); this.audio?.playGachaReveal?.(best?.rarity); this.onResult?.(payload);
     } catch (error) {
       if (this.status) this.status.textContent = String(error?.message || error).toUpperCase();
     } finally { this.busy = false; this.stage?.classList.remove("is-opening"); this.refresh(); }
