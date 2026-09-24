@@ -175,7 +175,8 @@ export class CombatRenderer {
     hapticsBridge = null,
     getHudResources = null,
     performanceAdapter = null,
-    onTimingResult = null
+    onTimingResult = null,
+    getEconomyBoosts = null
   } = {}) {
     if (!(canvas instanceof HTMLCanvasElement)) {
       throw new TypeError("CombatRenderer requires a canvas element");
@@ -210,6 +211,9 @@ export class CombatRenderer {
     this.hapticsBridge = hapticsBridge || null;
     this.performanceAdapter = performanceAdapter || new PerformanceAdapter();
     this.onTimingResult = typeof onTimingResult === "function" ? onTimingResult : null;
+    this.getEconomyBoosts = typeof getEconomyBoosts === "function" ? getEconomyBoosts : () => ({ scrapMultiplier: 1, timingGraceMs: 0 });
+    this.onEconomyTimingConsumed = null;
+    this.onEconomyRewardConsumed = null;
     this.themeManager = new AreaThemeManager("cyberpunk");
     this.batterRenderer = new BatterRenderer({
       imageResolver: (path) => this.assetBank.get(path),
@@ -320,7 +324,9 @@ export class CombatRenderer {
     if (!this.timingState?.active) return null;
     const current = this.timingState;
     const elapsedMs = performance.now() - current.startedAt;
-    const deltaMs = elapsedMs - current.targetMs;
+    const rawDeltaMs = elapsedMs - current.targetMs;
+    const timingGraceMs = Math.max(0, Number(this.getEconomyBoosts()?.timingGraceMs) || 0);
+    const deltaMs = Math.sign(rawDeltaMs) * Math.max(0, Math.abs(rawDeltaMs) - timingGraceMs);
     const grade = classifyTimingDelta(deltaMs);
     window.clearTimeout(this.timingTimeout);
     this.timingTimeout = 0;
@@ -339,6 +345,7 @@ export class CombatRenderer {
     this._activateEyeFocus(200);
     this._triggerTimingPreview(timing);
     this.onTimingResult?.(timing);
+    this.onEconomyTimingConsumed?.();
     return timing;
   }
 
@@ -1548,7 +1555,9 @@ export class CombatRenderer {
         this.scrapTurnIds.delete(oldest);
       }
     }
-    this.onScrapEarned({ amount, result: String(dto.result || ""), turn_id: turnId || null });
+    const multiplier = Math.max(1, Number(this.getEconomyBoosts()?.scrapMultiplier) || 1);
+    this.onScrapEarned({ amount: amount * multiplier, base_amount: amount, multiplier, result: String(dto.result || ""), turn_id: turnId || null });
+    this.onEconomyRewardConsumed?.();
   }
 
   _triggerCutIn(dto) {
