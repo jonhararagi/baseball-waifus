@@ -1,0 +1,12 @@
+import assert from "node:assert/strict";
+import { CMSProductionBundle, inferAssetDescriptor, TYPES } from "../webapp/js/cmsProductionBundle.js";
+const storage={data:new Map(),getItem(k){return this.data.get(k)||null},setItem(k,v){this.data.set(k,v)},removeItem(k){this.data.delete(k)}};
+const cms=new CMSProductionBundle({storage});
+assert.deepEqual(TYPES,["AVATAR_ROSTRO","CARTA_GACHA_R","CARTA_GACHA_UR","BACKGROUND_HUD","CUT_IN_EYES"]);
+assert.equal(inferAssetDescriptor("Cari_CARTA_GACHA_UR.png").asset_type,"CARTA_GACHA_UR");
+assert.equal(inferAssetDescriptor("Sunna_cut_eyes.webp").asset_type,"CUT_IN_EYES");
+const manifest=cms.processDescriptors([{source_name:"Cami_BG_HUD.png",asset_type:"BACKGROUND_HUD",url:"blob:test"}]);
+assert.equal(manifest.assets.cami.BACKGROUND_HUD.url,"blob:test");
+assert.deepEqual(JSON.parse(cms.toJson()).assets.cami.BACKGROUND_HUD,manifest.assets.cami.BACKGROUND_HUD);
+assert.ok(storage.getItem("baseball_waifus_cms_manifest_v1"));
+console.log("✅ CMS production bundle tests passed.");
