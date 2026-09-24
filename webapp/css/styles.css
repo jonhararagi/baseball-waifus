@@ -1336,3 +1336,10 @@ button {
 .shop-boost-state{margin-top:10px;padding:7px;text-align:center;border:1px solid rgba(255,0,127,.25);border-radius:6px;color:var(--border-neon-pink);font:700 .58rem var(--font-header)}.shop-status{min-height:18px;margin-top:8px;text-align:center;color:var(--text-muted);font:700 .6rem var(--font-header)}
 @media(max-width:380px){.shop-grid{grid-template-columns:1fr}.shop-panel-card{padding:12px}}
 @media(prefers-reduced-motion:reduce){.shop-panel{transition:none}}
+
+/* Leaderboard */
+.leaderboard-panel{position:fixed;inset:0;z-index:190;display:flex;align-items:center;justify-content:center;padding:14px;background:rgba(2,3,10,.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);opacity:0;pointer-events:none;transition:opacity 180ms ease}
+.leaderboard-panel.is-open{opacity:1;pointer-events:auto}.leaderboard-panel[hidden]{display:none}
+.leaderboard-card{width:min(100%,460px);max-height:calc(100dvh - 28px);overflow:auto;padding:16px;border:1px solid rgba(255,0,127,.65);border-radius:16px;background:linear-gradient(145deg,rgba(18,20,38,.97),rgba(8,10,24,.95));box-shadow:0 0 28px rgba(255,0,127,.2),0 0 60px rgba(0,243,255,.1)}
+.leaderboard-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.leaderboard-head h2{margin-top:3px;font-family:var(--font-header);font-size:1.15rem}.leaderboard-close{border:0;background:transparent;color:#fff;font-size:1.8rem;cursor:pointer}.leaderboard-copy{margin:10px 0;color:var(--text-muted);font-size:.72rem;line-height:1.35}
+.leaderboard-list{display:grid;gap:6px}.leaderboard-row{display:grid;grid-template-columns:30px minmax(0,1fr) auto auto;align-items:center;gap:7px;padding:9px;border:1px solid rgba(0,243,255,.18);border-radius:8px;background:rgba(0,243,255,.035);font-size:.7rem}.leaderboard-row b{color:var(--accent-yellow);font-family:var(--font-header)}.leaderboard-row span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.leaderboard-row strong{color:#fff}.leaderboard-row em{color:var(--border-neon-cyan);font-style:normal}
