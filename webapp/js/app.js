@@ -574,14 +574,14 @@ function applyActiveRoster(dto) {
       faction: canonical.faction,
       position: canonical.position,
       specialization: canonical.specialization,
-      stats: modifiedStats,
+      stats: effectiveStats,
       progression: progression || null,
       sprite_url: assets.sprite.sprite_url,
       card_hd_url: assets.card.card_hd_url
     },
     active_batter: {
       character_id: active.character_id,
-      stats: modifiedStats,
+      stats: effectiveStats,
       progression: progression || null,
       card_hd_url: assets.card.card_hd_url,
       sprite_url: assets.sprite.sprite_url
