@@ -107,7 +107,7 @@ assert.equal(
 );
 console.log("[webapp-contract] faction DTO/catalog contract passed");
 
-const styleCss = await fs.readFile(new URL("../css/style.css", import.meta.url), "utf8");
+const styleCss = await fs.readFile(new URL("../css/styles.css", import.meta.url), "utf8");
 const combatJs = await fs.readFile(new URL("./combat.js", import.meta.url), "utf8");
 
 assert.match(indexHtml, /data-ui-skin="scavenger"/);
