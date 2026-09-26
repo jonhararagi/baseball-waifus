@@ -10,6 +10,8 @@ const PRECACHE_ASSETS = [
   "./data/game_schemas_recycled.json",
   "./data/characters_queue.json",
   "./js/app.js",
+  "./js/shopManager.js",
+  "./js/telegramBridge.js",
   "./js/admin_panel.js",
   "./js/api.js",
   "./js/audio_engine.js",
