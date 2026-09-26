@@ -44,6 +44,31 @@ export function getScrapRewardForResult(result) {
 }
 const DEFAULT_MANIFEST_URL = "./assets/production/manifest.json";
 
+export function calculateTacticalTurn({ turn = 1, power = 70, contact = 70, speed = 70, eye = 70 } = {}) {
+  const t = clamp(Number(turn) || 1, 1, 5);
+  const offense = clamp((Number(power) + Number(contact) + Number(speed) + Number(eye)) / 4, 1, 100);
+  const cardPower = clamp(offense * 0.55 + Number(power) * 0.45, 1, 100);
+  const mobCount = 2 + (t % 2) + (cardPower >= 82 ? 1 : 0);
+  const damage = Math.round(clamp(7 + cardPower * 0.12 + t * 1.5, 6, 24));
+  const charge = Math.round(clamp(10 + Number(contact) * 0.08 + Number(eye) * 0.04, 8, 22));
+  const effectiveness = Math.round(clamp(damage * 2.2 + charge * 1.4, 0, 100));
+  return { turn: t, mob_count: mobCount, damage, charge, effectiveness };
+}
+
+export function calculateClimaxDamage({ grade = "MISS", effectiveness = 0, internalEnergy = 0 } = {}) {
+  const g = String(grade).toUpperCase();
+  const eff = clamp(Number(effectiveness) || 0, 0, 100);
+  const energy = clamp(Number(internalEnergy) || 0, 0, 100);
+  if (g === "GREAT") {
+    return Math.round(clamp(42 + eff * 0.38 + energy * 0.28, 42, 95));
+  }
+  if (g === "HIT") {
+    return Math.round(clamp(18 + eff * 0.20 + energy * 0.12, 18, 50));
+  }
+  return 0;
+}
+
+
 function cloneDTO(value) {
   return JSON.parse(JSON.stringify(value));
 }
@@ -394,6 +419,114 @@ export class CombatRenderer {
     this.onTimingResult?.(timing);
     this.onEconomyTimingConsumed?.();
     return timing;
+  }
+
+  _playTacticalTurn() {
+    if (!this.matchReady || this.timingState?.active || this.battlePhase === "VICTORY") return null;
+    if (this.tacticalTurn >= this.tacticalMaxTurns) {
+      this.battlePhase = "CLIMAX";
+      return this.beginTimingWindow();
+    }
+
+    const batter = this.state?.batter || {};
+    const stats = batter.stats || batter.base_stats || {};
+    const result = calculateTacticalTurn({
+      turn: this.tacticalTurn + 1,
+      power: stats.power ?? batter.power ?? 70,
+      contact: stats.contact ?? batter.contact ?? 70,
+      speed: stats.speed ?? batter.speed ?? 70,
+      eye: stats.eye ?? batter.eye ?? 70
+    });
+
+    this.tacticalTurn = result.turn;
+    this.bossHp = clamp(this.bossHp - result.damage, 1, this.bossMaxHp);
+    this.bossConcentration = Math.round(clamp((this.bossHp / this.bossMaxHp) * 100, 0, 100));
+    this.internalEnergy = Math.round(clamp(this.internalEnergy + result.charge, 0, 100));
+    this.tacticalEffectiveness = Math.round(clamp(
+      this.tacticalEffectiveness * 0.55 + result.effectiveness * 0.45,
+      0,
+      100
+    ));
+    this.lastTacticalEvent = result;
+
+    this.audioBridge?.playTacticalCard?.();
+    this.audioBridge?.playTacticalCharge?.();
+    this.batterRenderer.beginSwing();
+    this._applyWaifuFeedback("feedback-hit", "TACTICAL HIT");
+    this.onTacticalTurn?.({
+      ...result,
+      boss_hp: this.bossHp,
+      boss_concentration: this.bossConcentration,
+      internal_energy: this.internalEnergy,
+      effectiveness: this.tacticalEffectiveness
+    });
+
+    if (this.tacticalTurn >= this.tacticalMaxTurns) {
+      this.battlePhase = "CLIMAX";
+      window.clearTimeout(this.phaseTransitionTimeout);
+      this.phaseTransitionTimeout = window.setTimeout(() => {
+        this.phaseTransitionTimeout = 0;
+        if (this.matchReady && this.battlePhase === "CLIMAX" && !this.timingState?.active) {
+          this.beginTimingWindow();
+        }
+      }, 260);
+    }
+    return result;
+  }
+
+  _resolveClimaxDamage(grade) {
+    const damage = calculateClimaxDamage({
+      grade,
+      effectiveness: this.tacticalEffectiveness,
+      internalEnergy: this.internalEnergy
+    });
+    if (damage > 0) {
+      this.bossHp = Math.max(0, this.bossHp - damage);
+      this.bossConcentration = Math.round(clamp((this.bossHp / this.bossMaxHp) * 100, 0, 100));
+      this.impactTimer = grade === "GREAT" ? 0.42 : 0.28;
+      this.cameraShakeTimer = grade === "GREAT" ? 0.32 : 0.18;
+      this.impactKind = grade === "GREAT" ? "HOME_RUN" : "HIT";
+      this._spawnImpactParticles(grade === "GREAT" ? 28 : 14);
+      this._playAudio(grade === "GREAT" ? "result.home_run" : "result.hit");
+    } else {
+      this.impactKind = "STRIKE";
+      this.impactTimer = 0.18;
+      this.cameraShakeTimer = 0.12;
+      this._playAudio("result.miss");
+    }
+
+    if (this.bossHp <= 0) {
+      this.battlePhase = "VICTORY";
+      this.internalEnergy = 100;
+      this.tacticalEffectiveness = 100;
+      this.onState?.(this.state);
+      return;
+    }
+
+    this.round += 1;
+    this.tacticalTurn = 0;
+    this.battlePhase = "TACTICAL";
+    this.internalEnergy = 0;
+    this.tacticalEffectiveness = 0;
+    this.bossConcentration = Math.round(clamp((this.bossHp / this.bossMaxHp) * 100, 0, 100));
+    this.lastTacticalEvent = null;
+    this.onState?.(this.state);
+  }
+
+  getBattleLoopState() {
+    return {
+      phase: this.battlePhase,
+      round: this.round,
+      tactical_turn: this.tacticalTurn,
+      tactical_max_turns: this.tacticalMaxTurns,
+      boss_hp: this.bossHp,
+      boss_max_hp: this.bossMaxHp,
+      boss_concentration: this.bossConcentration,
+      internal_energy: this.internalEnergy,
+      tactical_effectiveness: this.tacticalEffectiveness,
+      last_tactical_event: this.lastTacticalEvent,
+      last_timing: this.lastTiming
+    };
   }
 
   _activateEyeFocus(durationMs = 200) {
@@ -787,6 +920,7 @@ export class CombatRenderer {
     window.visualViewport?.removeEventListener("resize", this.handleViewportResize);
     window.visualViewport?.removeEventListener("scroll", this.handleViewportResize);
     window.clearTimeout(this.timingTimeout);
+    window.clearTimeout(this.phaseTransitionTimeout);
     this.staticCanvas.width = 1;
     this.staticCanvas.height = 1;
     this.frameCanvas.width = 1;
