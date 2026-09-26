@@ -903,6 +903,7 @@ export class CombatRenderer {
 
     if (this.matchReady && this.state) {
       this._drawMatchState(target, w, h);
+      this._drawBattleLoopHud(target, w, h);
     }
 
     this._drawTimingRing(target, w, h, time);
@@ -1193,12 +1194,62 @@ export class CombatRenderer {
     return null;
   }
 
+  _drawBattleLoopHud(ctx, w, h) {
+    const loop = this.getBattleLoopState();
+    if (!loop || !this.matchReady) return;
+
+    const phaseLabel = loop.phase === "TACTICAL"
+      ? `TACTICAL // CARTA ${loop.tactical_turn}/${loop.tactical_max_turns}`
+      : loop.phase === "CLIMAX"
+        ? "CLIMAX // META CELL RAY"
+        : "VICTORY // RAY REFLECTED";
+
+    const barX = w * 0.08;
+    const barW = w * 0.84;
+    const hpRatio = clamp(loop.boss_hp / loop.boss_max_hp, 0, 1);
+    const energyRatio = clamp(loop.internal_energy / 100, 0, 1);
+
+    ctx.save();
+    ctx.textAlign = "center";
+    ctx.font = "900 11px Orbitron, system-ui, sans-serif";
+    ctx.fillStyle = loop.phase === "CLIMAX" ? "#ffdf00" : "#00f3ff";
+    ctx.shadowColor = ctx.fillStyle;
+    ctx.shadowBlur = 10;
+    ctx.fillText(`ROUND ${loop.round} • ${phaseLabel}`, w / 2, h * 0.205);
+
+    ctx.shadowBlur = 0;
+    ctx.textAlign = "left";
+    ctx.font = "800 8px Rajdhani, system-ui, sans-serif";
+    ctx.fillStyle = "#b8bed0";
+    ctx.fillText("META CELL CORE", barX, h * 0.225);
+
+    ctx.fillStyle = "rgba(255,255,255,.10)";
+    ctx.fillRect(barX, h * 0.232, barW, 6);
+    ctx.fillStyle = "#ff007f";
+    ctx.fillRect(barX, h * 0.232, barW * hpRatio, 6);
+
+    ctx.fillStyle = "rgba(255,255,255,.10)";
+    ctx.fillRect(barX, h * 0.247, barW, 4);
+    ctx.fillStyle = "#00f3ff";
+    ctx.fillRect(barX, h * 0.247, barW * energyRatio, 4);
+
+    if (loop.last_tactical_event) {
+      ctx.textAlign = "right";
+      ctx.fillStyle = "#8ef0cc";
+      ctx.fillText(`MOBS ×${loop.last_tactical_event.mob_count} • ENERGY ${loop.internal_energy}%`, barX + barW, h * 0.225);
+    }
+    ctx.restore();
+  }
+
   _drawTimingRing(ctx, w, h, time) {
     const timing = this.timingState;
     if (!timing?.active) return;
 
     const elapsedMs = performance.now() - timing.startedAt;
-    const radius = timingRingRadius(elapsedMs);
+    const baseRadius = timingRingRadius(elapsedMs);
+    const radiusScale = Number(timing.radiusScale) || 1;
+    const radius = TIMING_RING_TARGET_RADIUS * radiusScale
+      + (baseRadius - TIMING_RING_TARGET_RADIUS) * radiusScale;
     const cx = w * 0.5;
     const cy = h * 0.52;
     const targetRadius = TIMING_RING_TARGET_RADIUS;
