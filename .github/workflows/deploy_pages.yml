@@ -51,6 +51,7 @@ jobs:
             webapp/js/batter_renderer_test.mjs
             webapp/js/combat_effects_test.mjs
             webapp/js/combat_hud_test.mjs
+            webapp/js/combat_tactical_test.mjs
             webapp/js/contract_test.mjs
             webapp/js/economy_test.mjs
             webapp/js/gacha_controller_test.mjs
