@@ -1,0 +1,2 @@
+/* Legacy compatibility entry point. Canonical Capibara UI lives in styles.css. */
+@import url("./styles.css");
