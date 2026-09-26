@@ -7,8 +7,6 @@ const PRECACHE_ASSETS = [
   "./manifest.json",
   "./css/styles.css",
   "./data/waifus_config.json",
-  "./data/game_schemas_recycled.json",
-  "./data/characters_queue.json",
   "./js/app.js",
   "./js/shopManager.js",
   "./js/telegramBridge.js",
@@ -44,13 +42,10 @@ const PRECACHE_ASSETS = [
   "./js/super_swing_cutin.js",
   "./js/team_manager.js",
   "./js/timing_ring.js",
-  "./js/tma_bridge.js",
   "./js/upgrade_system.js",
   "./js/voice_system.js",
   "./js/waifu_database.js",
   "./js/waifu_dex.js",
-  "./assets/icons/icon-192.png",
-  "./assets/icons/icon-512.png",
   "./icons/icon-192.svg",
   "./icons/icon-512.svg"
 ];

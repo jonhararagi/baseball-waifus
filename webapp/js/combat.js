@@ -42,8 +42,6 @@ const SCRAP_REWARDS = Object.freeze({
 export function getScrapRewardForResult(result) {
   return Number(SCRAP_REWARDS[String(result || "").toUpperCase()]) || 0;
 }
-const DEFAULT_MANIFEST_URL = "./assets/production/manifest.json";
-
 export function calculateTacticalTurn({ turn = 1, power = 70, contact = 70, speed = 70, eye = 70 } = {}) {
   const t = clamp(Number(turn) || 1, 1, 5);
   const offense = clamp((Number(power) + Number(contact) + Number(speed) + Number(eye)) / 4, 1, 100);
@@ -193,7 +191,7 @@ class AssetBank {
 export class CombatRenderer {
   constructor(canvas, {
     cutInRoot = document.querySelector("#cutin"),
-    manifestUrl = DEFAULT_MANIFEST_URL,
+    manifestUrl = null,
     onState = null,
     audioBridge = null,
     onScrapEarned = null,
@@ -755,6 +753,7 @@ export class CombatRenderer {
   }
 
   async initialize() {
+    if (!this.manifestUrl) return;
     try {
       const response = await fetch(this.manifestUrl, { cache: "no-cache" });
       if (!response.ok) {
