@@ -84,6 +84,7 @@ jobs:
           node --experimental-default-type=module tests/cmsProductionBundle.test.mjs
           node --experimental-default-type=module tests/audioManager.test.mjs
           node --experimental-default-type=module tests/leaderboard.test.mjs
+          node --experimental-default-type=module tests/telegram_shop_integration_test.mjs
 
       - name: Prepare Pages Artifact
         shell: bash
