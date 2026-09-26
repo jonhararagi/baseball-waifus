@@ -19,6 +19,7 @@ assert.equal(haptics.handleGameEvent("timing_bad"), true);
 assert.deepEqual(calls, [
   ["selection"],
   ["impact", "light"],
+  ["notification", "success"],
   ["impact", "heavy"],
   ["impact", "heavy"],
   ["notification", "error"]
