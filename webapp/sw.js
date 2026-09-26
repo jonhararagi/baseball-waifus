@@ -1,3 +1,4 @@
+// P17 combat loop: tactical card phase -> Meta Cell climax -> Timing Ring.
 const CACHE_NAME = 'v16_capibara_core';
 
 const PRECACHE_ASSETS = [
