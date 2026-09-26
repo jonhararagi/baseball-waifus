@@ -21,6 +21,18 @@ const SOUND_PROFILES = Object.freeze({
     { frequency: 1046.5, waveform: "sine", duration: 0.36, endFrequency: 1568, gain: 0.09, delay: 0.16 }
   ] },
   "result.miss": { noise: { duration: 0.16, gain: 0.13, highpass: 500 } },
+  "tactical.card": { notes: [
+    { frequency: 310, waveform: "square", duration: 0.07, endFrequency: 620, gain: 0.08 },
+    { frequency: 620, waveform: "triangle", duration: 0.09, endFrequency: 880, gain: 0.055, delay: 0.045 }
+  ] },
+  "tactical.charge": { notes: [
+    { frequency: 180, waveform: "sawtooth", duration: 0.18, endFrequency: 420, gain: 0.055 },
+    { frequency: 420, waveform: "sine", duration: 0.22, endFrequency: 760, gain: 0.045, delay: 0.12 }
+  ] },
+  "climax.warning": { notes: [
+    { frequency: 90, waveform: "sawtooth", duration: 0.12, endFrequency: 55, gain: 0.09 },
+    { frequency: 660, waveform: "triangle", duration: 0.16, endFrequency: 990, gain: 0.07, delay: 0.1 }
+  ] },
   "bat.foul": {
     notes: [{ frequency: 118, waveform: "square", duration: 0.08, endFrequency: 72, gain: 0.08 }],
     noise: { duration: 0.11, gain: 0.13, highpass: 700 }
