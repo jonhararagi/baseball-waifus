@@ -176,6 +176,8 @@ export class CombatRenderer {
     getHudResources = null,
     performanceAdapter = null,
     onTimingResult = null,
+    onTacticalTurn = null,
+    onClimaxStart = null,
     getEconomyBoosts = null
   } = {}) {
     if (!(canvas instanceof HTMLCanvasElement)) {
@@ -211,6 +213,8 @@ export class CombatRenderer {
     this.hapticsBridge = hapticsBridge || null;
     this.performanceAdapter = performanceAdapter || new PerformanceAdapter();
     this.onTimingResult = typeof onTimingResult === "function" ? onTimingResult : null;
+    this.onTacticalTurn = typeof onTacticalTurn === "function" ? onTacticalTurn : null;
+    this.onClimaxStart = typeof onClimaxStart === "function" ? onClimaxStart : null;
     this.getEconomyBoosts = typeof getEconomyBoosts === "function" ? getEconomyBoosts : () => ({ scrapMultiplier: 1, timingGraceMs: 0 });
     this.onEconomyTimingConsumed = null;
     this.onEconomyRewardConsumed = null;
@@ -240,6 +244,16 @@ export class CombatRenderer {
     this.zanDuration = 0.34;
     this.timingState = null;
     this.timingTimeout = 0;
+    this.battlePhase = "TACTICAL";
+    this.tacticalTurn = 0;
+    this.tacticalMaxTurns = 5;
+    this.bossMaxHp = 100;
+    this.bossHp = 100;
+    this.bossConcentration = 100;
+    this.internalEnergy = 0;
+    this.tacticalEffectiveness = 0;
+    this.round = 1;
+    this.lastTacticalEvent = null;
     this.lastTiming = null;
     this.eyeFocusUntil = 0;
     this.eyeFocusToken = 0;
@@ -304,15 +318,33 @@ export class CombatRenderer {
   }
 
   beginTimingWindow() {
-    if (!this.matchReady || this.timingState?.active) return false;
+    if (!this.matchReady || this.timingState?.active || this.battlePhase === "VICTORY") return false;
+
+    if (this.battlePhase === "TACTICAL") {
+      this._playTacticalTurn();
+      return true;
+    }
+
     const startedAt = performance.now();
+    const advantage = clamp(this.tacticalEffectiveness / 100, 0, 1);
     this.batterRenderer.beginWindup();
     this.timingState = {
       active: true,
       startedAt,
       targetMs: TIMING_RING_TARGET_MS,
-      durationMs: TIMING_RING_DURATION_MS
+      durationMs: TIMING_RING_DURATION_MS,
+      greatWindowMs: 55 + advantage * 35,
+      hitWindowMs: 135 + advantage * 55,
+      radiusScale: 1 + advantage * 0.42
     };
+    this.onClimaxStart?.({
+      round: this.round,
+      tactical_turns: this.tacticalTurn,
+      boss_hp: this.bossHp,
+      boss_concentration: this.bossConcentration,
+      effectiveness: this.tacticalEffectiveness
+    });
+    this.audioBridge?.playClimaxWarning?.();
     window.clearTimeout(this.timingTimeout);
     this.timingTimeout = window.setTimeout(() => {
       this.resolveTimingInput("timeout");
@@ -327,7 +359,14 @@ export class CombatRenderer {
     const rawDeltaMs = elapsedMs - current.targetMs;
     const timingGraceMs = Math.max(0, Number(this.getEconomyBoosts()?.timingGraceMs) || 0);
     const deltaMs = Math.sign(rawDeltaMs) * Math.max(0, Math.abs(rawDeltaMs) - timingGraceMs);
-    const grade = classifyTimingDelta(deltaMs);
+    const greatWindowMs = Number.isFinite(current.greatWindowMs) ? current.greatWindowMs : 55;
+    const hitWindowMs = Number.isFinite(current.hitWindowMs) ? current.hitWindowMs : 135;
+    const absoluteDelta = Math.abs(deltaMs);
+    const grade = absoluteDelta <= greatWindowMs
+      ? "GREAT"
+      : absoluteDelta <= hitWindowMs
+        ? "HIT"
+        : "MISS";
     window.clearTimeout(this.timingTimeout);
     this.timingTimeout = 0;
     this.timingState = null;
@@ -337,11 +376,19 @@ export class CombatRenderer {
       delta_ms: Math.round(deltaMs),
       elapsed_ms: Math.round(elapsedMs),
       target_ms: current.targetMs,
-      source
+      great_window_ms: Math.round(current.greatWindowMs),
+      hit_window_ms: Math.round(current.hitWindowMs),
+      source,
+      round: this.round,
+      tactical_effectiveness: Math.round(this.tacticalEffectiveness),
+      boss_hp_before: Math.round(this.bossHp)
     };
+
+    this._resolveClimaxDamage(grade);
 
     this.lastTiming = timing;
     this.batterRenderer.beginSwing();
+    this.audioBridge?.playTimingResult?.(grade);
     this._activateEyeFocus(200);
     this._triggerTimingPreview(timing);
     this.onTimingResult?.(timing);
@@ -625,6 +672,15 @@ export class CombatRenderer {
     this.matchReady = true;
     this.resultPulse = 0;
     this.timingState = null;
+    this.battlePhase = "TACTICAL";
+    this.tacticalTurn = 0;
+    this.bossMaxHp = 100;
+    this.bossHp = 100;
+    this.bossConcentration = 100;
+    this.internalEnergy = 0;
+    this.tacticalEffectiveness = 0;
+    this.round = 1;
+    this.lastTacticalEvent = null;
 
     await this.assetBank.preload([
       ...(dto.assets?.sprites || []).map((asset) => ({ ...asset, kind: "sprite" })),
