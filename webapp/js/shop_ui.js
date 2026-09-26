@@ -10,8 +10,8 @@ const BOOSTS = [
 ];
 
 export class ShopUI {
-  constructor({ root, controller, webApp = null, onBalanceChange = null } = {}) {
-    this.root = root; this.controller = controller; this.webApp = webApp; this.onBalanceChange = onBalanceChange;
+  constructor({ root, controller, webApp = null, shopManager = null, onBalanceChange = null } = {}) {
+    this.root = root; this.controller = controller; this.webApp = webApp; this.shopManager = shopManager; this.onBalanceChange = onBalanceChange;
     this.boosts = new EconomyBoostManager();
     this.status = root?.querySelector("#shop-status"); this.scrap = root?.querySelector("#shop-scrap"); this.boostState = root?.querySelector("#shop-boost-state");
     root?.querySelector("#shop-close")?.addEventListener("click", () => this.close());
@@ -34,23 +34,22 @@ export class ShopUI {
     const pack = PACKS.find((item) => item.id === id);
     if (!pack) return;
     this.setStatus("ABRIENDO INVOICE DE TELEGRAM STARS...");
-    const result = await requestScrapPurchase(pack.amount, { webApp: this.webApp });
+    const result = this.shopManager ? await this.shopManager.buyScrapPack(pack.id) : await requestScrapPurchase(pack.amount, { webApp: this.webApp });
     if (!result.ok) { this.setStatus("COMPRA NO COMPLETADA // " + result.status.toUpperCase()); return; }
     this.controller?.addScrap?.(pack.amount);
     this.setStatus("+" + pack.amount.toLocaleString("es-AR") + " SCRAP // COMPRA CONFIRMADA");
     this.render(); this.onBalanceChange?.();
   }
-  buyBoost(id) {
+  async buyBoost(id) {
     const boost = BOOSTS.find((item) => item.id === id);
-    const scrap = this.controller?.getScavengerScrap?.() || 0;
     if (!boost) return;
-    if (scrap < boost.cost) { this.setStatus("SCRAP INSUFICIENTE"); return; }
-    try {
-      this.controller.spendScrapAndFragments({ scrap: boost.cost });
-      this.boosts.grant(boost.id, boost.turns);
-      this.setStatus(boost.label + " ACTIVADO");
-      this.render(); this.onBalanceChange?.();
-    } catch (error) { this.setStatus(String(error.message || error).toUpperCase()); }
+    if (!this.shopManager) { this.setStatus("STARS SHOP UNAVAILABLE"); return; }
+    this.setStatus("ABRIENDO INVOICE DE TELEGRAM STARS...");
+    const result = await this.shopManager.buyBoost(boost.id);
+    if (!result.ok) { this.setStatus("COMPRA NO COMPLETADA // " + result.status.toUpperCase()); return; }
+    this.boosts.grant(boost.id, boost.turns);
+    this.setStatus(boost.label + " ACTIVADO // STARS");
+    this.render(); this.onBalanceChange?.();
   }
   getScrapMultiplier() { return this.boosts.getScrapMultiplier(); }
   getTimingGraceMs() { return this.boosts.getTimingGraceMs(); }
