@@ -321,7 +321,18 @@ const renderer = new CombatRenderer(document.querySelector("#combat-canvas, #gam
   onTimingResult: (timing) => {
     void sendAction("BAT", timing);
   },
-  getEconomyBoosts: () => ({ scrapMultiplier: shopUI.getScrapMultiplier(), timingGraceMs: shopUI.getTimingGraceMs() })
+  onTacticalTurn: (event) => {
+    if (timingFeedback) {
+      timingFeedback.textContent = `TACTICAL ${event.turn}/5 • MOBS ×${event.mob_count} • ENERGY ${event.energy}%`;
+    }
+    if (event.turn < 5) batButton.disabled = false;
+  },
+  onClimaxStart: (state) => {
+    if (timingFeedback) {
+      timingFeedback.textContent = `CLIMAX • META CELL RAY • CORE ${Math.round(state.boss_concentration)}%`;
+    }
+  },
+  getEconomyBoosts: () => ({ scrapMultiplier: shopUI.getScrapMultiplier(), timingGraceMs: shopUI.getTimingGraceMs() }),
   getHudResources: () => ({
     scrap: gachaController.getScavengerScrap(),
     energy: renderer?.state?.energy
