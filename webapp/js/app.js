@@ -1139,7 +1139,7 @@ function syncAudioControls() {
   const settings = audioBridge.getSettings();
   if (audioVolumeSlider) audioVolumeSlider.value = String(settings.volume);
   if (audioMuteButton) {
-    audioMuteButton.textContent = settings.muted ? "AUDIO // OFF" : "AUDIO // ON";
+    audioMuteButton.textContent = settings.muted ? "🔇" : "🔊";
     audioMuteButton.setAttribute("aria-pressed", settings.muted ? "true" : "false");
   }
 }
