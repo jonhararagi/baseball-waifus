@@ -2,6 +2,9 @@ import { AudioEngine } from "./audio_engine.js";
 export class AudioManager extends AudioEngine{
  playTap(){return this.play("ui.confirm");}
  playTimingResult(grade){const g=String(grade||"").toUpperCase();return this.play(g==="GREAT"?"result.perfect":g==="HIT"?"result.hit":"result.miss");}
+ playTacticalCard(){return this.play("tactical.card");}
+ playTacticalCharge(){return this.play("tactical.charge");}
+ playClimaxWarning(){return this.play("climax.warning");}
  playGachaReveal(rarity){const r=String(rarity||"R").toLowerCase();return this.play("gacha.reveal_"+(["r","sr","ssr","ur"].includes(r)?r:"r"));}
  startBGM(){return this.resume();}
  stopBGM(){return this.suspend();}
