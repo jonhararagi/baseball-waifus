@@ -35,6 +35,8 @@ import { AdminPanel, INFINITE_SCRAP_VALUE } from "./admin_panel.js";
 import { localResultForTimingGrade } from "./timing_ring.js";
 import { GachaRecruitmentUI } from "./gacha_recruitment.js";
 import { RosterPanel } from "./roster_panel.js";
+import { createTelegramNativeBridge } from "./telegramBridge.js";
+import { ShopManager } from "./shopManager.js";
 
 function initializeTelegramNativeShell() {
   const webApp = window.Telegram?.WebApp || null;
@@ -152,6 +154,7 @@ const leaderboard = new Leaderboard({
   playerId: telegramWebApp?.initDataUnsafe?.user?.id || "local-player",
   playerName: telegramWebApp?.initDataUnsafe?.user?.first_name || "PLAYER"
 });
+const telegramNativeBridge = createTelegramNativeBridge({ leaderboard });
 
 const gachaController = new GachaController({
   audioBridge,
@@ -171,10 +174,13 @@ const gachaRecruitment = new GachaRecruitmentUI({
   }
 });
 
+const shopManager = new ShopManager({ webApp: telegramNativeBridge.webApp });
+
 const shopUI = new ShopUI({
   root: shopRoot,
   controller: gachaController,
   webApp: telegramWebApp,
+  shopManager,
   onBalanceChange: () => updateGachaHud(gachaController.getStatus())
 });
 
