@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { classifyTimingDelta } from "./timing_ring.js";
+import { calculateTacticalTurn, calculateClimaxDamage } from "./combat.js";
 
 const root = path.resolve("webapp/js");
 const combat = fs.readFileSync(path.join(root, "combat.js"), "utf8");
@@ -29,5 +30,15 @@ assert.equal(classifyTimingDelta(0), "GREAT");
 assert.equal(classifyTimingDelta(55), "GREAT");
 assert.equal(classifyTimingDelta(135), "HIT");
 assert.equal(classifyTimingDelta(136), "MISS");
+
+const tactical = calculateTacticalTurn({ turn: 5, power: 90, contact: 85, speed: 80, eye: 88 });
+assert.equal(tactical.turn, 5);
+assert.ok(tactical.mob_count >= 2);
+assert.ok(tactical.damage > 0);
+assert.ok(tactical.charge > 0);
+assert.ok(tactical.effectiveness <= 100);
+assert.ok(calculateClimaxDamage({ grade: "GREAT", effectiveness: 100, internalEnergy: 100 }) > calculateClimaxDamage({ grade: "HIT", effectiveness: 50, internalEnergy: 50 }));
+assert.ok(calculateClimaxDamage({ grade: "HIT", effectiveness: 50, internalEnergy: 50 }) > 0);
+assert.equal(calculateClimaxDamage({ grade: "MISS", effectiveness: 100, internalEnergy: 100 }), 0);
 
 console.log("PASS: tactical 5-turn loop, dynamic climax timing, HUD and audio hooks validated.");
