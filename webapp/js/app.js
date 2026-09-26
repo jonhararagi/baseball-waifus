@@ -1150,7 +1150,7 @@ syncAudioControls();
 export function registerServiceWorker() {
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./sw.js")
+      navigator.serviceWorker.register('./sw.js')
         .then((reg) => console.log("[PWA] ServiceWorker registrado con éxito:", reg.scope))
         .catch((err) => console.warn("[PWA] Fallo en registro de ServiceWorker:", err));
     }, { once: true });
