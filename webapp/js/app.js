@@ -1,22 +1,4 @@
-imp
-const rosterPanel = new RosterPanel({
-  root: rosterPanelRoot,
-  getCharacters: () => gachaController.getCharacters(),
-  getInventory: () => gachaController.getState().inventory || {},
-  getActiveId: () => teamManager.getActiveBatterId(),
-  onSetActive: async (characterId) => {
-    teamManager.setActiveBatter(characterId);
-    gachaController.setActiveBatter(characterId);
-    const active = teamManager.getActiveWaifu();
-    refreshActiveWaifuCard();
-    if (renderer.state && active) {
-      await renderer.setCombatInit(applyActiveRoster(renderer.state));
-    }
-    syncRosterControls();
-    saveSystem.save();
-  }
-});
-ort {
+import {
   BaseballWaifusApi,
   TelegramBridge,
   isCombatInitDTO,
@@ -343,6 +325,24 @@ const renderer = new CombatRenderer(document.querySelector("#combat-canvas, #gam
 gachaController.setCutInRenderer(renderer);
 renderer.onEconomyTimingConsumed = () => shopUI.consumeTimingTurn?.();
 renderer.onEconomyRewardConsumed = () => shopUI.consumeRewardTurn?.();
+const rosterPanel = new RosterPanel({
+  root: rosterPanelRoot,
+  getCharacters: () => gachaController.getCharacters(),
+  getInventory: () => gachaController.getState().inventory || {},
+  getActiveId: () => teamManager.getActiveBatterId(),
+  onSetActive: async (characterId) => {
+    teamManager.setActiveBatter(characterId);
+    gachaController.setActiveBatter(characterId);
+    const active = teamManager.getActiveWaifu();
+    refreshActiveWaifuCard();
+    if (renderer.state && active) {
+      await renderer.setCombatInit(applyActiveRoster(renderer.state));
+    }
+    syncRosterControls();
+    saveSystem.save();
+  }
+});
+
 
 function applyAdminInfiniteScrap(enabled, fromPersistence = false) {
   const current = gachaController.getScavengerScrap();
