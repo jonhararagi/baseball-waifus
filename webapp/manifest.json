@@ -1,7 +1,7 @@
 {
-  "name": "Team Problemas de Capibara: Cyber-Baseball",
-  "short_name": "CapibaraBase",
-  "description": "Juego arcade de béisbol y colección de waifus con físicas 2.5D y cámara trasera.",
+  "name": "BaseWarriors: Meta-Strike",
+  "short_name": "BaseWarriors",
+  "description": "BaseWarriors: Meta-Strike, juego arcade de béisbol y colección de waifus con físicas 2.5D y cámara trasera.",
   "start_url": "./index.html",
   "display": "standalone",
   "orientation": "portrait",

@@ -1,4 +1,4 @@
-name: Deploy Team Problemas de Capibara to GitHub Pages
+name: Deploy BaseWarriors: Meta-Strike to GitHub Pages
 
 on:
   push:
