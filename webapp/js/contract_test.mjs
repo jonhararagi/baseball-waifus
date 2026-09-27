@@ -110,9 +110,9 @@ console.log("[webapp-contract] faction DTO/catalog contract passed");
 const styleCss = await fs.readFile(new URL("../css/styles.css", import.meta.url), "utf8");
 const combatJs = await fs.readFile(new URL("./combat.js", import.meta.url), "utf8");
 
-assert.match(indexHtml, /data-ui-skin="capibara-cyber"/);
+assert.match(indexHtml, /BASEWARRIORS(?:\s|<)/i);
 assert.match(indexHtml, /class="game-viewport/);
-assert.match(styleCss, /TEAM PROBLEMAS DE CAPIBARA/);
+assert.match(styleCss, /BASEWARRIORS/i);
 assert.match(styleCss, /\.cyber-container/);
 assert.match(styleCss, /repeating-linear-gradient/);
 assert.match(combatJs, /_triggerVisualImpact\(dto\)/);
