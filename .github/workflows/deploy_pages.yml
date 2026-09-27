@@ -91,6 +91,9 @@ jobs:
         run: |
           set -euo pipefail
           touch webapp/.nojekyll
+          mkdir -p webapp/data
+          cp data/characters_queue.json webapp/data/characters_queue.json
+          cp data/game_schemas_recycled.json webapp/data/game_schemas_recycled.json
           echo "build_timestamp=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" > webapp/build_info.txt
 
       - name: Setup Pages
