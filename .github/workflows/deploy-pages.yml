@@ -168,6 +168,7 @@ jobs:
           cp -R webapp/. site/
           mkdir -p site/data
           cp data/game_schemas_recycled.json site/data/game_schemas_recycled.json
+          cp data/characters_queue.json site/data/characters_queue.json
           mkdir -p site/assets/production/sprites site/assets/production/cards
           cp -R assets/production/sprites/. site/assets/production/sprites/ || true
           cp -R assets/production/cards/. site/assets/production/cards/ || true
