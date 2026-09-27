@@ -37,6 +37,7 @@ import { GachaRecruitmentUI } from "./gacha_recruitment.js";
 import { RosterPanel } from "./roster_panel.js";
 import { createTelegramNativeBridge } from "./telegramBridge.js";
 import { ShopManager } from "./shopManager.js";
+import { ShopUI } from "./shop_ui.js";
 
 function initializeTelegramNativeShell() {
   const webApp = window.Telegram?.WebApp || null;
