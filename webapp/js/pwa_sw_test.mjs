@@ -8,7 +8,7 @@ const manifestPath = path.resolve('webapp/manifest.json');
 assert.ok(fs.existsSync(manifestPath), 'El archivo webapp/manifest.json debe existir');
 
 const manifestContent = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-assert.equal(manifestContent.short_name, 'CapibaraBase', 'El short_name debe ser CapibaraBase');
+assert.equal(manifestContent.short_name, 'BaseWarriors', 'El short_name debe ser BaseWarriors');
 assert.equal(manifestContent.display, 'standalone', 'El modo display debe ser standalone');
 assert.equal(manifestContent.orientation, 'portrait', 'La orientación debe ser portrait');
 assert.ok(
