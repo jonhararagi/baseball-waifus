@@ -126,6 +126,21 @@ jobs:
           done
           ! grep -R --fixed-strings "./assets/demo-characters/" webapp/js/app.js webapp/js/combat.js
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Prepare runtime data for integration tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p webapp/data
+          cp data/characters_queue.json webapp/data/characters_queue.json
+          cp data/game_schemas_recycled.json webapp/data/game_schemas_recycled.json
+          test -s webapp/data/characters_queue.json
+          test -s webapp/data/game_schemas_recycled.json
+
       - name: Validate JavaScript syntax
         shell: bash
         run: |
@@ -159,6 +174,14 @@ jobs:
           node --experimental-default-type=module webapp/js/audio_bridge_test.mjs
           node --experimental-default-type=module webapp/js/contract_test.mjs
 
+      - name: Validate P0 runtime integration
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --experimental-default-type=module webapp/js/contract_test.mjs
+          node --experimental-default-type=module webapp/js/pwa_sw_test.mjs
+          node --experimental-default-type=module webapp/js/e2e_smoke_test.mjs
+
       - name: Prepare static site
         shell: bash
         run: |
@@ -169,6 +192,8 @@ jobs:
           mkdir -p site/data
           cp data/game_schemas_recycled.json site/data/game_schemas_recycled.json
           cp data/characters_queue.json site/data/characters_queue.json
+          test -s site/data/characters_queue.json
+          test -s site/data/game_schemas_recycled.json
           mkdir -p site/assets/production/sprites site/assets/production/cards
           cp -R assets/production/sprites/. site/assets/production/sprites/ || true
           cp -R assets/production/cards/. site/assets/production/cards/ || true
