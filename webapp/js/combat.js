@@ -587,6 +587,18 @@ export class CombatRenderer {
     return this.kytosPresentationState;
   }
 
+  beginBatterWindup() {
+    return this.batterRenderer.beginWindup();
+  }
+
+  beginBatterSwing() {
+    return this.batterRenderer.beginSwing();
+  }
+
+  triggerCombatEffect(quality, options = {}) {
+    this.combatEffects.trigger(quality, options);
+  }
+
   setAudioBridge(audioBridge) {
     this.audioBridge = audioBridge || null;
   }
@@ -1035,6 +1047,10 @@ export class CombatRenderer {
 
     if (this.kytosPresentationState) {
       this.kytosPresentation.render(target, w, h, this.kytosPresentationState, { time });
+      this.batterRenderer.draw(target, w, h, {
+        accentColor: this.themeManager.getStrikeZoneColor(),
+        scale: 0.86
+      });
     }
 
     this._drawTimingRing(target, w, h, time);
