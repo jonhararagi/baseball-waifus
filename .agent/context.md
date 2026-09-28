@@ -16,3 +16,7 @@
 
 ## Recovery
 Read task.json, state.json, discoveries.json, decisions.json, evidence.json, tests.json, and blockers.json before continuing a long task.
+
+## TAREA_008
+- Real validation initiated on main; CI Agent Guard workflow is the execution target.
+- Do not mark PASS_REAL, VERIFIED, or COMPLETE without an observed execution result.
