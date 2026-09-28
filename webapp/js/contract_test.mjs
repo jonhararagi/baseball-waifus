@@ -1,5 +1,11 @@
 import assert from "node:assert/strict";
 import { CHARACTER_FACTIONS, isCombatInitDTO, isTurnResultDTO } from "./api.js";
+import {
+  calculateClimaxDamage,
+  resolveClimaxTurn,
+  resolveTacticalTurn,
+  resolveTimingGrade
+} from "./combat_core.js";
 
 const combatInit = {
   type: "CombatInitDTO",
@@ -72,6 +78,42 @@ assert.equal(isTurnResultDTO({ ...turnResult, result: 42 }), false);
 assert.equal(isTurnResultDTO(null), false);
 
 console.log("[webapp-contract] DTO validation passed");
+
+const coreInput = {
+  turn: 1,
+  power: 70,
+  contact: 70,
+  speed: 70,
+  eye: 70,
+  bossHp: 100,
+  bossMaxHp: 100,
+  internalEnergy: 0,
+  tacticalEffectiveness: 0
+};
+assert.deepEqual(resolveTacticalTurn(coreInput), resolveTacticalTurn(coreInput));
+const climax = resolveClimaxTurn({
+  grade: "GREAT",
+  bossHp: 100,
+  bossMaxHp: 100,
+  internalEnergy: 50,
+  tacticalEffectiveness: 80,
+  round: 1
+});
+assert.equal(climax.damage, calculateClimaxDamage({
+  grade: "GREAT",
+  internalEnergy: 50,
+  effectiveness: 80
+}));
+assert.equal(resolveTimingGrade("GREAT"), "HOME_RUN");
+
+const combatCoreJs = await fs.readFile(new URL("./combat_core.js", import.meta.url), "utf8");
+const timingRingJs = await fs.readFile(new URL("./timing_ring.js", import.meta.url), "utf8");
+assert.doesNotMatch(combatCoreJs, /document\\.|window\\.|HTMLCanvasElement|CanvasRenderingContext2D/);
+assert.doesNotMatch(combatCoreJs, /CombatRenderer|AudioManager|CombatHUD|BatterRenderer|CombatEffects/);
+assert.doesNotMatch(timingRingJs, /damage|boss|victory|defeat|HOME_RUN|STRIKE/);
+
+console.log("[webapp-contract] combat core separation contract passed");
+
 
 const fs = await import("node:fs/promises");
 const indexHtml = await fs.readFile(new URL("../index.html", import.meta.url), "utf8");
