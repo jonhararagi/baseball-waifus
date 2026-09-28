@@ -153,6 +153,7 @@ jobs:
           node --experimental-default-type=module webapp/js/narrative_runtime_test.mjs
           node --experimental-default-type=module --check webapp/js/narrative_presentation.js
           node --experimental-default-type=module webapp/js/narrative_presentation_test.mjs
+          node --experimental-default-type=module webapp/js/narrative_team11_test.mjs
           node --experimental-default-type=module --check webapp/js/combat.js
           node --experimental-default-type=module --check webapp/js/app.js
           node --experimental-default-type=module --check webapp/js/audio_bridge.js
