@@ -42,7 +42,7 @@ jobs:
         run: |
           set -euo pipefail
           node --experimental-default-type=module -e '
-            const fs = require("node:fs");
+            const fs = await import("node:fs");
             for (const file of [
               ".agent/task.json",
               ".agent/state.json",
