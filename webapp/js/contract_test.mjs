@@ -107,6 +107,10 @@ assert.equal(climax.damage, calculateClimaxDamage({
 assert.equal(resolveTimingGrade("GREAT"), "HOME_RUN");
 
 const combatCoreJs = await fs.readFile(new URL("./combat_core.js", import.meta.url), "utf8");
+const combatJs = await fs.readFile(new URL("./combat.js", import.meta.url), "utf8");
+assert.match(combatJs, /resolveTacticalTurn/);
+assert.match(combatJs, /resolveClimaxTurn/);
+assert.match(combatJs, /async applyTurnResult\(dto\)/);
 const timingRingJs = await fs.readFile(new URL("./timing_ring.js", import.meta.url), "utf8");
 assert.doesNotMatch(combatCoreJs, /document\.|window\.|HTMLCanvasElement|CanvasRenderingContext2D/);
 assert.doesNotMatch(combatCoreJs, /CombatRenderer|AudioManager|CombatHUD|BatterRenderer|CombatEffects/);
