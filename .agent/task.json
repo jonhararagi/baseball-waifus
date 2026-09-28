@@ -1,0 +1,1 @@
+{"task":"TAREA_007","name":"Agent Guard / Verification Layer","version":1,"max_auto_repair_attempts":3,"claim_statuses":["VERIFIED","INSPECTED","INFERRED","UNKNOWN","BLOCKED","NOT_RUN"],"verification_statuses":["PASS_REAL","PASS_INSPECTION","NOT_RUN","NOT_OBSERVED","BLOCKED","FAILURE"],"metric_types":["REAL","ESTIMATED","UNKNOWN"]}
