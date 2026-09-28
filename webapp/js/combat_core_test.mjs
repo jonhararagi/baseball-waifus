@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import {
   COMBAT_RESULT_TYPE,
   calculateClimaxDamage,
@@ -34,11 +35,11 @@ assert.equal(climax.outcome, "HOME_RUN");
 assert.equal(climax.boss_hp_after, 100 - climax.damage);
 assert.equal(climax.victory, climax.boss_hp_after <= 0);
 
-const coreSource = await readFile("combat_core.js", "utf8");
+const coreSource = await readFile(fileURLToPath(new URL("./combat_core.js", import.meta.url)), "utf8");
 assert.doesNotMatch(coreSource, /document\.|window\.|HTMLCanvasElement|CanvasRenderingContext2D/);
 assert.doesNotMatch(coreSource, /(?:CombatRenderer|AudioManager|AudioBridge|CombatHUD|BatterRenderer|CombatEffects)/);
 
-const timingSource = await readFile("timing_ring.js", "utf8");
+const timingSource = await readFile(fileURLToPath(new URL("./timing_ring.js", import.meta.url)), "utf8");
 assert.doesNotMatch(timingSource, /damage|boss|victory|defeat|HOME_RUN|STRIKE/);
 
 console.log("[combat-core] separation contracts passed");
