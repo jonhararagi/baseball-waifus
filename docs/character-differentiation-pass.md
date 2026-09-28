@@ -79,7 +79,7 @@ Antes de cambiar cabello:
 
 ---
 
-# 4. Yuna vs Towa
+## 4. Yuna vs Towa
 
 ## 4.1 Current Identity
 
@@ -272,7 +272,7 @@ La propuesta trabaja presentación y performance, sin modificar datos canónicos
 
 ---
 
-# 5. Sora vs Kagari
+## 5. Sora vs Kagari
 
 ## 5.1 Current Identity
 
@@ -442,7 +442,7 @@ Las frases son fórmulas de diseño, no diálogo canónico.
 
 ---
 
-# 6. Kira vs Chika vs Aria
+## 6. Kira vs Chika vs Aria
 
 ## 6.1 Current Identity
 
@@ -569,7 +569,7 @@ pero estas son **OPTIONAL FANSERVICE** y nunca sustituyen el hook principal.
 
 ---
 
-# 7. Pitcher Differentiation
+## 7. Pitcher Differentiation
 
 ## 7.1 Current Group
 
@@ -700,7 +700,7 @@ No cambiar:
 
 ---
 
-# 8. Body Language System
+## 8. Body Language System
 
 Este sistema es documental y no define animaciones técnicas.
 
@@ -785,7 +785,7 @@ puede convertirse en una firma reconocible si ambos rasgos aparecen en idle, pre
 
 ---
 
-# 9. Expression System
+## 9. Expression System
 
 Las expresiones son una capa de identidad, no un catálogo genérico de caras.
 
@@ -822,7 +822,7 @@ No se asignan automáticamente estos estilos a personajes fuera de los casos ya 
 
 ---
 
-# 10. Silhouette System
+## 10. Silhouette System
 
 ## 10.1 Components
 
@@ -877,7 +877,7 @@ Si dos personajes siguen siendo indistinguibles, escalar al siguiente nivel de c
 
 ---
 
-# 11. Character Design Change Levels
+## 11. Character Design Change Levels
 
 ## LEVEL 0 - No change
 
@@ -941,7 +941,7 @@ Regla:
 
 ---
 
-# 12. Priority Matrix
+## 12. Priority Matrix
 
 | Character / Group | Problem | Priority | Recommended Level | Canon Impact | Implementation Risk |
 |---|---|---:|---|---|---|
@@ -957,7 +957,7 @@ Regla:
 
 ---
 
-# 13. Canon Safety
+## 13. Canon Safety
 
 ## Existing canon preserved
 
@@ -1029,7 +1029,7 @@ Fanservice remains **OPTIONAL FANSERVICE**, not the Primary Hook.
 
 ---
 
-# 14. Market Validation Pending
+## 14. Market Validation Pending
 
 **MARKET VALIDATION PENDING**
 
@@ -1048,7 +1048,7 @@ All recommendations are internal design proposals based on repository evidence a
 
 ---
 
-# 15. Recommended Next Implementation
+## 15. Recommended Next Implementation
 
 The next implementation task should be narrow and reversible.
 
@@ -1106,7 +1106,7 @@ The next task must record exactly which proposal was implemented and leave non-s
 
 ---
 
-# 16. Open Questions
+## 16. Open Questions
 
 1. Which existing presentation layer should own the future per-character body-language profile?
 2. Can the current animation controller express the proposed differences without adding new gameplay-facing state?
