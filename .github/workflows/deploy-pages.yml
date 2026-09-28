@@ -147,6 +147,8 @@ jobs:
           set -euo pipefail
           node --version
           node --experimental-default-type=module --check webapp/js/api.js
+          node --experimental-default-type=module --check webapp/js/reaction_rules.js
+          node --experimental-default-type=module webapp/js/reaction_rules_test.mjs
           node --experimental-default-type=module --check webapp/js/combat.js
           node --experimental-default-type=module --check webapp/js/app.js
           node --experimental-default-type=module --check webapp/js/audio_bridge.js
