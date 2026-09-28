@@ -1,3 +1,4 @@
+import { InactivitySignalDetector, REACTION_SIGNAL, ReactionRuleSystem } from "./reaction_rules.js";
 const RAPPORT_MIN = 1;
 const RAPPORT_MAX = 10;
 const DAILY_TAP_LIMIT = 50;
@@ -160,6 +161,8 @@ export class LockerRoom {
     this.message = "";
     this.messageTimer = 0;
     this.lastInteraction = null;
+    this.reactionRules = new ReactionRuleSystem();
+    this.inactivityDetector = new InactivitySignalDetector();
   }
 
   setSaveSystem(saveSystem = null) {
@@ -203,6 +206,8 @@ export class LockerRoom {
     };
 
     this.state.activeWaifuId = id;
+    this.inactivityDetector.reset();
+    this.reactionRules.reset({ characterId: id, context: "locker" });
     this._ensureWaifu(id);
     this._render();
     return this.getState();
@@ -269,6 +274,7 @@ export class LockerRoom {
     const waifu = this.currentWaifu || this.getWaifu?.(id) || null;
     const unlocked = [...entry.unlockedSkins];
 
+    this.inactivityDetector.reset();
     this.tapFlash = 1;
     this.tapPulse = 1;
     this.message = levelUp
@@ -355,8 +361,20 @@ export class LockerRoom {
     const normalizedEvent = String(event || "").toUpperCase();
     switch (normalizedEvent) {
       case "ON_TOUCH_LOCKER":
+        this.inactivityDetector.reset();
         this.voiceSystem?.emit?.("ON_TOUCH_LOCKER", waifu);
         return true;
+      case "SKIP": {
+        const id = String(waifu?.character_id || waifu?.id || this.state.activeWaifuId || "");
+        const reaction = this.reactionRules.trigger({
+          signal: REACTION_SIGNAL.SKIP,
+          characterId: id,
+          context: "dialogue"
+        });
+        if (!reaction) return false;
+        this.voiceSystem?.emit?.(reaction.reaction, waifu);
+        return true;
+      }
       case "ON_TAP":
         this.voiceSystem?.emit?.("ON_TAP", waifu);
         return true;
@@ -440,6 +458,26 @@ export class LockerRoom {
 
   update(delta = 0) {
     const dt = Math.max(0, Number(delta) || 0);
+    const contextActive = Boolean(this.root && !this.root.hidden && this.state.activeWaifuId);
+    if (this.inactivityDetector.update(dt, contextActive)) {
+      const reaction = this.reactionRules.trigger({
+        signal: REACTION_SIGNAL.INACTIVITY,
+        characterId: this.state.activeWaifuId,
+        context: "locker"
+      });
+      if (reaction) {
+        const waifu = this.currentWaifu || this.getWaifu?.(this.state.activeWaifuId) || null;
+        this.message = this.voiceSystem?.getDialogue?.(waifu, reaction.reaction)
+          || "¿Todo bien? Pareces distraído.";
+        this.voiceSystem?.emit?.(reaction.reaction, waifu);
+        this.lastInteraction = {
+          event: REACTION_SIGNAL.INACTIVITY,
+          id: this.state.activeWaifuId,
+          reaction: reaction.ruleId
+        };
+        this._render();
+      }
+    }
     this.tapFlash = Math.max(0, this.tapFlash - dt * 3.5);
     this.tapPulse = Math.max(0, this.tapPulse - dt * 2.8);
     this.messageTimer = Math.max(0, this.messageTimer - dt);
