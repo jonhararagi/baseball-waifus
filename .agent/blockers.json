@@ -1,1 +1,17 @@
-{"task":"TAREA_007","blockers":[]}
+{
+  "task": "TAREA_007",
+  "blockers": [
+    {
+      "id": "runtime-execution-unavailable",
+      "status": "BLOCKED",
+      "description": "The execution environment cannot clone or access the GitHub repository through git/network, so the exact Agent Guard test cannot be executed against the actual checkout.",
+      "impact": "TAREA_007 cannot be promoted to COMPLETE under the NO CLAIM WITHOUT EVIDENCE rule."
+    },
+    {
+      "id": "ci-not-observable",
+      "status": "NOT_OBSERVED",
+      "description": "The available GitHub Actions connector cannot observe push-triggered runs for the validation commit; combined status returned no statuses.",
+      "impact": "CI cannot be represented as PASS_REAL."
+    }
+  ]
+}
