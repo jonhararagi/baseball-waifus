@@ -50,7 +50,7 @@ assert.equal(debuffed.batter.debuff, 5);
 
 const hit = resolveKytosHit(debuffed, { timingAccuracy: 1 });
 assert.equal(hit.damage, 60);
-assert.equal(hit.kytos.hp, 70);
+assert.equal(hit.kytos.hp, 40);
 
 const shielded = createCombatState({ shield: 100 });
 const pressured = applyKytosPressure(shielded, 41);
