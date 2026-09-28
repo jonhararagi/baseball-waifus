@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { classifyMetric, repairAttempt, CLAIM_STATUS, VERIFY_STATUS, METRIC_TYPE, verifyFile, verifyCommit, detectUnexpectedFiles } from "./agent_guard.mjs";
+import { classifyMetric, repairAttempt, CLAIM_STATUS, VERIFY_STATUS, METRIC_TYPE, verifyFile, verifyCommit, detectUnexpectedFiles, validateClaim, claim } from "./agent_guard.mjs";
 
 assert.equal(fs.existsSync(".agent/task.json"), true);
 assert.equal(fs.existsSync(".agent/state.json"), true);
@@ -13,7 +13,7 @@ assert.equal(fs.existsSync(existing), true, "existing file must be verifiable");
 const missing = path.join(".agent", "__definitely_missing__.json");\nconst missingClaim = verifyFile(missing);\nassert.notEqual(missingClaim.status, CLAIM_STATUS.VERIFIED);
 assert.equal(fs.existsSync(missing), false, "missing file must not verify");\nconst missingCommit = verifyCommit("0000000000000000000000000000000000000000");\nassert.notEqual(missingCommit.status, CLAIM_STATUS.VERIFIED);\nconst unexpected = detectUnexpectedFiles([".agent/state.json", "webapp/js/app.js"], [".agent/"]);\nassert.deepEqual(unexpected, ["webapp/js/app.js"]);
 
-assert.equal(CLAIM_STATUS.VERIFIED, "VERIFIED");
+assert.equal(CLAIM_STATUS.VERIFIED, "VERIFIED");\nassert.equal(validateClaim(CLAIM_STATUS.VERIFIED, { status: VERIFY_STATUS.PASS_REAL }).valid, true);\nassert.equal(validateClaim(CLAIM_STATUS.VERIFIED, { status: VERIFY_STATUS.PASS_INSPECTION }).valid, false);\nassert.throws(() => claim(CLAIM_STATUS.VERIFIED, { status: VERIFY_STATUS.NOT_RUN }), /requires PASS_REAL/);
 assert.equal(CLAIM_STATUS.INSPECTED, "INSPECTED");
 assert.equal(VERIFY_STATUS.PASS_REAL, "PASS_REAL");
 assert.equal(VERIFY_STATUS.NOT_RUN, "NOT_RUN");
