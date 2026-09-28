@@ -108,7 +108,7 @@ assert.equal(resolveTimingGrade("GREAT"), "HOME_RUN");
 
 const combatCoreJs = await fs.readFile(new URL("./combat_core.js", import.meta.url), "utf8");
 const timingRingJs = await fs.readFile(new URL("./timing_ring.js", import.meta.url), "utf8");
-assert.doesNotMatch(combatCoreJs, /document\\.|window\\.|HTMLCanvasElement|CanvasRenderingContext2D/);
+assert.doesNotMatch(combatCoreJs, /document\.|window\.|HTMLCanvasElement|CanvasRenderingContext2D/);
 assert.doesNotMatch(combatCoreJs, /CombatRenderer|AudioManager|CombatHUD|BatterRenderer|CombatEffects/);
 assert.doesNotMatch(timingRingJs, /damage|boss|victory|defeat|HOME_RUN|STRIKE/);
 
