@@ -24,9 +24,7 @@ assert.equal(ARC0_TEAM11_FIRST_TEST.common.dialogue_lines.length, 4);
 
 function advanceUntilChoice(presentation) {
   presentation.start();
-  while (!presentation.getChoiceState().visible) {
-    presentation.advance();
-  }
+  while (!presentation.getChoiceState().visible) presentation.advance();
   return presentation.getChoiceState();
 }
 
@@ -40,37 +38,33 @@ function runChoice(choiceId) {
   const selected = presentation.choose(choiceId);
   assert.equal(selected.state, NARRATIVE_STATE.PLAYING);
   assert.equal(presentation.selectedChoice, choiceId);
-  assert.equal(presentation.runtime.getCurrentLine().character_id, "protagonist");
 
-  while (!presentation.isFinished()) {
-    presentation.advance();
-  }
+  const branchFirstLine = presentation.runtime.getCurrentLine();
+  assert.equal(branchFirstLine.character_id, "protagonist");
+
+  while (!presentation.isFinished()) presentation.advance();
 
   assert.equal(presentation.runtime.getState().state, NARRATIVE_STATE.COMPLETED);
   assert.equal(presentation.phase, "COMMON");
   assert.equal(presentation.isFinished(), true);
-  return presentation;
+  return { presentation, branchFirstLine };
 }
 
 const optionA = runChoice("A");
-assert.match(optionA.runtime.scene.dialogue_lines[0].text, /Aiko/);
-assert.equal(optionA.selectedChoice, "A");
+assert.match(optionA.branchFirstLine.text, /Aiko/);
+assert.equal(optionA.presentation.selectedChoice, "A");
 
 const optionB = runChoice("B");
-assert.match(optionB.runtime.scene.dialogue_lines[0].text, /Nao/);
-assert.equal(optionB.selectedChoice, "B");
+assert.match(optionB.branchFirstLine.text, /Nao/);
+assert.equal(optionB.presentation.selectedChoice, "B");
 
 assert.notEqual(
   ARC0_TEAM11_FIRST_TEST.branches.A.dialogue_lines[0].text,
   ARC0_TEAM11_FIRST_TEST.branches.B.dialogue_lines[0].text
 );
 
-const deterministicA1 = runChoice("A").selectedChoice;
-const deterministicA2 = runChoice("A").selectedChoice;
-const deterministicB1 = runChoice("B").selectedChoice;
-const deterministicB2 = runChoice("B").selectedChoice;
-assert.equal(deterministicA1, deterministicA2);
-assert.equal(deterministicB1, deterministicB2);
+assert.equal(runChoice("A").presentation.selectedChoice, runChoice("A").presentation.selectedChoice);
+assert.equal(runChoice("B").presentation.selectedChoice, runChoice("B").presentation.selectedChoice);
 
 const skipPresentation = new Team11ChoicePresentation();
 advanceUntilChoice(skipPresentation);
