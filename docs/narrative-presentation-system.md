@@ -4,7 +4,7 @@
 > TAREA 018  
 > Estado: **DOCUMENTATION ONLY**  
 > Alcance: auditoría de infraestructura narrativa y contrato técnico mínimo.  
-> Runtime narrativo: **NO IMPLEMENTADO**.  
+> Runtime narrativo: **VERTICAL SLICE MÍNIMO IMPLEMENTADO**.  
 > Autoridad de comportamiento de personajes: `docs/character-living-system.md`.  
 > Autoridad de identidad de roster: `game/characters/character_archetypes.json`.
 
@@ -19,11 +19,11 @@ Existe `webapp/js/voice_system.js`, con líneas preescritas y resolución por ev
 ### Cutscene — NOT_FOUND
 No se encontró pipeline de cutscenes/cinematics narrativas.
 
-### Skip — PARTIAL
-T017 define `REACTION_SIGNAL.SKIP` y `LockerRoom.handleEvent("SKIP")` puede consumir la señal. No existe una escena o diálogo que produzca Skip de forma real. No se inventa una fuente.
+### Skip — FOUND
+T017 define `REACTION_SIGNAL.SKIP` y el vertical slice narrativo ahora posee `NarrativeRuntime.skip()` como productor real. `LockerRoom` mantiene su consumo independiente.
 
-### Advance — NOT_FOUND
-No existe avance de unidad narrativa. Los eventos del Locker Room no equivalen a `ADVANCE`.
+### Advance — FOUND
+`webapp/js/narrative_runtime.js` implementa `advance()` con cursor de diálogo y emisión de `DIALOGUE_ADVANCED`/completion.
 
 ### Character Presentation — PARTIAL
 Existe presentación en Locker Room, Gallery/CardRenderer, CombatRenderer y RosterPanel. No existe una capa narrativa que controle personaje, expresión, portrait, entrada/salida o animación mediante datos de escena.
@@ -51,7 +51,7 @@ APP
  └─ SaveSystem → persistence
 ```
 
-Existe suficiente infraestructura de presentación para reutilizarla, pero no un runtime narrativo.
+Existe suficiente infraestructura de presentación para reutilizarla y ahora existe un runtime narrativo mínimo aislado, limitado al vertical slice de T019.
 
 ## 3. T017 Audit
 
@@ -252,7 +252,9 @@ Faltan actualmente runtime de escenas, estado de diálogo, input ADVANCE, produc
 
 ## 14. Implementation Boundary
 
-T018 es documental. No implementa DialogueManager, SceneManager, runtime de escenas, UI de diálogo, botón Skip, branching, editor, localization, lip sync, cinematic pipeline, nuevo VoiceSystem, EventBus global, save narrativo ni contenido narrativo grande.
+T019 implementa únicamente el runtime narrativo mínimo y su presentación de prueba. No crea DialogueManager general, SceneManager global, branching, editor, localization, lip sync, cinematic pipeline, nuevo VoiceSystem, EventBus global, save narrativo ni contenido narrativo grande.
+
+El vertical slice está compuesto por `narrative_runtime.js`, `narrative_presentation.js` y sus tests. La demo de presentación se activa mediante `?narrative_test=1` y no forma parte de la navegación normal.
 
 No se modifica canon.
 
@@ -273,6 +275,6 @@ Todas quedan PENDING.
 
 ## 16. Decision
 
-**RESULTADO T018: DOCUMENTATION ONLY.**
+**RESULTADO T019: MINIMAL SAFE FOUNDATION.**
 
-Hay infraestructura suficiente para definir un contrato coherente, pero no existe todavía base narrativa suficiente para justificar un runtime. La próxima implementación narrativa debe ser un vertical slice pequeño y aislado, no una novela visual completa.
+El contrato de T018 fue ejecutado mediante un vertical slice pequeño: una escena técnica, cuatro líneas, `ADVANCE`, `SKIP`, eventos locales, integración con `ReactionRuleSystem` y presentación reutilizando `VoiceSystem`. No se implementó branching, editor, localization, cinematic pipeline ni un EventBus global.
