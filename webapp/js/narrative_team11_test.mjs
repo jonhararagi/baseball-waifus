@@ -17,7 +17,7 @@ const started = runtime.startScene(ARC0_TEAM11_RECRUITMENT);
 
 assert.equal(started.state, NARRATIVE_STATE.PLAYING);
 assert.equal(started.cursor, 0);
-assert.equal(ARC0_TEAM11_RECRUITMENT.dialogue_lines.length, 24);
+assert.equal(ARC0_TEAM11_RECRUITMENT.dialogue_lines.length, 23);
 
 const participantRosterIds = ARC0_TEAM11_RECRUITMENT.participants.filter((id) => rosterIds.has(id));
 assert.deepEqual(participantRosterIds, ["bw001", "bw003", "bw008"]);
