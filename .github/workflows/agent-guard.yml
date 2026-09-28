@@ -1,0 +1,58 @@
+name: Agent Guard
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".agent/**"
+      - "tools/agent_guard.mjs"
+      - "tools/agent_guard_test.mjs"
+      - ".github/workflows/agent-guard.yml"
+  pull_request:
+    paths:
+      - ".agent/**"
+      - "tools/agent_guard.mjs"
+      - "tools/agent_guard_test.mjs"
+      - ".github/workflows/agent-guard.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Validate guard syntax
+        run: |
+          set -euo pipefail
+          node --experimental-default-type=module --check tools/agent_guard.mjs
+          node --experimental-default-type=module --check tools/agent_guard_test.mjs
+
+      - name: Validate persistent state
+        run: |
+          set -euo pipefail
+          node --experimental-default-type=module -e '
+            const fs = require("node:fs");
+            for (const file of [
+              ".agent/task.json",
+              ".agent/state.json",
+              ".agent/discoveries.json",
+              ".agent/decisions.json",
+              ".agent/evidence.json",
+              ".agent/tests.json",
+              ".agent/blockers.json"
+            ]) JSON.parse(fs.readFileSync(file, "utf8"));
+          '
+
+      - name: Run Agent Guard tests
+        run: node --experimental-default-type=module tools/agent_guard_test.mjs
