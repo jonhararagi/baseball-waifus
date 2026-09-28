@@ -65,11 +65,16 @@ assert.equal(model.interrupted, true);
 assert.equal(model.result, "INTERRUPTED_SUPPORT");
 presentation.render(fakeContext, 720, 1280, state, { time: 500 });
 
+const beforeEmergencyPresentation = structuredClone(state);
 state = chargeKytosEmergency(state, 30);
 model = presentation.buildModel(state, 720, 1280);
 assert.equal(model.emergency, true);
 assert.equal(model.phase, KYTOS_PHASE.EMERGENCY);
 presentation.render(fakeContext, 720, 1280, state, { time: 750 });
+assert.notDeepEqual(state, beforeEmergencyPresentation);
+const afterEmergencyPresentation = structuredClone(state);
+presentation.render(fakeContext, 720, 1280, state, { time: 800 });
+assert.deepEqual(state, afterEmergencyPresentation, "presentation must not modify emergency gameplay result");
 
 state = {
   ...state,
@@ -91,5 +96,5 @@ assert.equal(model.hp, 0);
 assert.equal(model.result, "KYTOS_DEFEATED");
 presentation.render(fakeContext, 720, 1280, state, { time: 1250 });
 
-assert.deepEqual(state, state, "presentation must preserve the gameplay result object");
+
 console.log("kytos_combat_presentation_test: ok");
