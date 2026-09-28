@@ -3,13 +3,17 @@ const DEFAULT_LINES = Object.freeze({
   ON_SUPER_SWING: "¡Mira bien! ¡Este es mi Super Swing!",
   ON_VICTORY: "¡Ganamos! Sabía que podíamos hacerlo.",
   ON_TOUCH_LOCKER: "¿Me estabas buscando?",
+  REACTION_INACTIVITY: "¿Todo bien? Pareces distraído.",
+  REACTION_SKIP: "¿Me estás prestando atención?",
 });
 
 const EVENT_KEYS = Object.freeze([
   "ON_TAP",
   "ON_SUPER_SWING",
   "ON_VICTORY",
-  "ON_TOUCH_LOCKER"
+  "ON_TOUCH_LOCKER",
+  "REACTION_INACTIVITY",
+  "REACTION_SKIP"
 ]);
 
 function normalizeEvent(event) {
