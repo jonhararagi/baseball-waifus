@@ -1546,3 +1546,72 @@ No se implementa romance, bond points, memoria persistente ni relationship engin
 - Las relaciones permanentes entre personajes permanecen **PENDING**.
 - El historial personal no documentado de estos tres personajes permanece **UNKNOWN**.
 - Azusa continúa como soporte recurrente y no pasa a ser integrante permanente del Equipo 11.
+
+
+## T025 · Team 11 First Playable Interaction
+
+**Estado: DESIGN PROPOSAL / WORKING IMPLEMENTATION**
+
+T025 introduce la primera decisión interactiva local de Arc 0 dentro de la prueba inicial del Equipo 11. La implementación es experimental y no crea persistencia de elecciones, relaciones, puntuación ni un branching engine general.
+
+### Flujo
+
+```
+Aiko cuestiona
+↓
+Miu propone una alternativa
+↓
+Nao analiza riesgos y timing
+↓
+JUGADOR DECIDE
+↓
+PROTAGONISTA COORDINA
+↓
+RESULTADO A / RESULTADO B
+↓
+CONTINUACIÓN COMÚN
+```
+
+### Decisión
+
+```
+[A] Seguir el plan de Aiko
+[B] Seguir el análisis de Nao
+```
+
+Miu participa en la propuesta y en las consecuencias, pero no se convierte en una tercera opción.
+
+### Resultado A
+
+El protagonista prioriza presión y velocidad. Aiko lidera, Miu abre el giro y Nao cubre. La prueba se completa rápidamente, pero el equipo pierde parte de la lectura del segundo punto.
+
+### Resultado B
+
+El protagonista prioriza la lectura de Nao. Nao marca la ventana, Aiko espera la señal y Miu conserva una ruta alternativa. La prueba se completa con una lectura más limpia, pero esperar casi cuesta la oportunidad.
+
+Ninguna rama establece una respuesta canónica correcta ni modifica estadísticas, relaciones o progresión.
+
+### Convergencia
+
+Ambas ramas terminan en una continuación común donde el equipo reconoce que ninguna aproximación es suficiente por sí sola y que el valor del protagonista está en coordinar cuándo actuar.
+
+### Boundary
+
+La elección vive únicamente durante la escena.
+
+No se modifica:
+
+- SaveSystem.
+- character_archetypes.json.
+- combat.
+- gacha/economy.
+- relaciones persistentes.
+- romance.
+- player personality.
+- branching general.
+
+La implementación reutiliza NarrativeRuntime y NarrativePresentation mediante un controlador de presentación local para Team 11. ReactionRuleSystem y VoiceSystem siguen siendo los sistemas existentes.
+
+### Pendiente
+
+La elección no determina todavía preferencias futuras del protagonista ni relaciones permanentes. La composición definitiva del Equipo 11 continúa **PENDING** y las relaciones permanentes continúan **PENDING**.
