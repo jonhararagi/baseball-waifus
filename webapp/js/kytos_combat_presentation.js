@@ -156,7 +156,6 @@ export class KytosCombatPresentation {
     this._drawBases(ctx, model);
     this._drawSupports(ctx, model);
     this._drawKytos(ctx, model, time);
-    this._drawBatterMarker(ctx, model);
     if (model.energyBall) this._drawEnergyBall(ctx, model.energyBall, time);
     this._drawStatus(ctx, model);
     this.lastResult = model.result;
@@ -280,22 +279,6 @@ export class KytosCombatPresentation {
     ctx.fillStyle = this.theme.muted;
     ctx.font = "700 8px Rajdhani, system-ui, sans-serif";
     ctx.fillText(`HP ${Math.round(model.hp)}/${Math.round(model.maxHp)} • ENERGY ${Math.round(model.energy)}%`, 0, radius + 47);
-    ctx.restore();
-  }
-
-  _drawBatterMarker(ctx, model) {
-    ctx.save();
-    ctx.fillStyle = "rgba(7, 12, 25, .78)";
-    ctx.strokeStyle = this.theme.cyan;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.ellipse(model.batter.x, model.batter.y, 54, 20, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = this.theme.white;
-    ctx.font = "900 10px Orbitron, system-ui, sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText(`BATTER • ${model.formation.batterId}`, model.batter.x, model.batter.y + 4);
     ctx.restore();
   }
 
