@@ -41,6 +41,7 @@ import { ShopUI } from "./shop_ui.js";
 import { NarrativePresentation } from "./narrative_presentation.js";
 import { Team11ChoicePresentation } from "./narrative_team11_choice_presentation.js";
 import { ARC0_TEAM11_RECRUITMENT } from "./narrative_arc0_team11.js";
+import { KytosCombatDemo } from "./kytos_combat_demo.js";
 
 function initializeTelegramNativeShell() {
   const webApp = window.Telegram?.WebApp || null;
@@ -370,6 +371,43 @@ const rosterPanel = new RosterPanel({
     syncRosterControls();
     saveSystem.save();
   }
+});
+
+const kytosDemoPanel = document.querySelector("#kytos-demo-panel");
+const kytosDemoPhase = document.querySelector("#kytos-demo-phase");
+const kytosDemoEvent = document.querySelector("#kytos-demo-event");
+const kytosDemoNext = document.querySelector("#kytos-demo-next");
+const kytosDemoRestart = document.querySelector("#kytos-demo-restart");
+
+const kytosDemo = new KytosCombatDemo({ renderer });
+
+function renderKytosDemoControls() {
+  if (!kytosDemoPanel) return;
+  const snapshot = kytosDemo.snapshot();
+  const phase = snapshot.phase;
+  kytosDemoPanel.hidden = phase === "IDLE";
+  if (kytosDemoPhase) kytosDemoPhase.textContent = phase;
+  if (kytosDemoEvent) {
+    const result = snapshot.state?.lastResult || "READY";
+    kytosDemoEvent.textContent = result === "KYTOS_DEFEATED"
+      ? "KYTOS DEFEATED • deterministic victory"
+      : result;
+  }
+  if (kytosDemoNext) {
+    kytosDemoNext.disabled = !kytosDemo.canAdvance();
+    kytosDemoNext.textContent = kytosDemo.canAdvance() ? "NEXT STEP" : "COMPLETE";
+  }
+}
+
+kytosDemoNext?.addEventListener("click", () => {
+  kytosDemo.step();
+  renderKytosDemoControls();
+});
+
+kytosDemoRestart?.addEventListener("click", () => {
+  kytosDemo.restart();
+  kytosDemo.step();
+  renderKytosDemoControls();
 });
 
 
@@ -1260,6 +1298,11 @@ async function initializeGallery() {
 async function bootstrap() {
   const query = new URLSearchParams(window.location.search);
   matchId = query.get("match") || "";
+
+  if (query.get("kytos_demo") === "1") {
+    kytosDemo.step();
+    renderKytosDemoControls();
+  }
 
   if (query.get("narrative_test") === "1") {
     if (query.get("narrative_scene") === "team11_choice") {
