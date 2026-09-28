@@ -38,6 +38,7 @@ import { RosterPanel } from "./roster_panel.js";
 import { createTelegramNativeBridge } from "./telegramBridge.js";
 import { ShopManager } from "./shopManager.js";
 import { ShopUI } from "./shop_ui.js";
+import { NarrativePresentation } from "./narrative_presentation.js";
 
 function initializeTelegramNativeShell() {
   const webApp = window.Telegram?.WebApp || null;
@@ -194,6 +195,19 @@ const teamManager = new TeamManager({
 });
 
 const voiceSystem = new VoiceSystem();
+
+const narrativeTestView = document.querySelector("#narrative-test-view");
+const narrativeTestPresentation = new NarrativePresentation({
+  root: narrativeTestView,
+  voiceSystem,
+  character: {
+    character_id: "azusa",
+    canonical: { display_name: "Azusa" },
+    dialogue: {
+      REACTION_SKIP: "¿Me estás prestando atención?!"
+    }
+  }
+});
 
 const upgradeSystem = new UpgradeSystem({
   storage: gachaController.storage,
@@ -1238,6 +1252,19 @@ async function initializeGallery() {
 async function bootstrap() {
   const query = new URLSearchParams(window.location.search);
   matchId = query.get("match") || "";
+
+  if (query.get("narrative_test") === "1") {
+    narrativeTestPresentation.mount();
+    narrativeTestPresentation.start({
+      scene_id: "narrative-runtime-vertical-slice",
+      dialogue_lines: [
+        { speaker: "SYSTEM TEST", text: "Narrative runtime initialized." },
+        { speaker: "SYSTEM TEST", text: "ADVANCE moved the dialogue cursor." },
+        { speaker: "SYSTEM TEST", text: "SKIP will emit a narrative signal." },
+        { speaker: "SYSTEM TEST", text: "This line remains outside the test path." }
+      ]
+    });
+  }
   try {
     await initializeWaifuDatabase();
     await gachaController.initialize();
