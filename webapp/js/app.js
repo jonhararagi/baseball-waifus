@@ -32,7 +32,7 @@ import {
 import { LockerRoom } from "./locker_room.js";
 import { VoiceSystem } from "./voice_system.js";
 import { AdminPanel, INFINITE_SCRAP_VALUE } from "./admin_panel.js";
-import { localResultForTimingGrade } from "./timing_ring.js";
+import { resolveTimingGrade } from "./combat_core.js";
 import { GachaRecruitmentUI } from "./gacha_recruitment.js";
 import { RosterPanel } from "./roster_panel.js";
 import { createTelegramNativeBridge } from "./telegramBridge.js";
@@ -734,7 +734,7 @@ function startGameMode(mode, biome) {
 function simulateLocalTurn(timing = {}) {
   const state = gameModes.getState();
   const grade = String(timing.grade || "MISS").toUpperCase();
-  const result = localResultForTimingGrade(grade);
+  const result = resolveTimingGrade(grade);
   const current = renderer.state?.state || {};
   const isStrike = result === "STRIKE";
   const dto = {
