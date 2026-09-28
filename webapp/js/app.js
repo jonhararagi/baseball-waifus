@@ -39,6 +39,7 @@ import { createTelegramNativeBridge } from "./telegramBridge.js";
 import { ShopManager } from "./shopManager.js";
 import { ShopUI } from "./shop_ui.js";
 import { NarrativePresentation } from "./narrative_presentation.js";
+import { Team11ChoicePresentation } from "./narrative_team11_choice_presentation.js";
 import { ARC0_TEAM11_RECRUITMENT } from "./narrative_arc0_team11.js";
 
 function initializeTelegramNativeShell() {
@@ -198,16 +199,22 @@ const teamManager = new TeamManager({
 const voiceSystem = new VoiceSystem();
 
 const narrativeTestView = document.querySelector("#narrative-test-view");
+const narrativeCharacter = {
+  character_id: "azusa",
+  canonical: { display_name: "Azusa" },
+  dialogue: {
+    REACTION_SKIP: "¿Me estás prestando atención?!"
+  }
+};
 const narrativeTestPresentation = new NarrativePresentation({
   root: narrativeTestView,
   voiceSystem,
-  character: {
-    character_id: "azusa",
-    canonical: { display_name: "Azusa" },
-    dialogue: {
-      REACTION_SKIP: "¿Me estás prestando atención?!"
-    }
-  }
+  character: narrativeCharacter
+});
+const team11ChoicePresentation = new Team11ChoicePresentation({
+  root: narrativeTestView,
+  voiceSystem,
+  character: narrativeCharacter
 });
 
 const upgradeSystem = new UpgradeSystem({
@@ -1255,19 +1262,24 @@ async function bootstrap() {
   matchId = query.get("match") || "";
 
   if (query.get("narrative_test") === "1") {
-    narrativeTestPresentation.mount();
-    const narrativeScene = query.get("narrative_scene") === "team11"
-      ? ARC0_TEAM11_RECRUITMENT
-      : {
-        scene_id: "narrative-runtime-vertical-slice",
-        dialogue_lines: [
-          { speaker: "SYSTEM TEST", text: "Narrative runtime initialized." },
-          { speaker: "SYSTEM TEST", text: "ADVANCE moved the dialogue cursor." },
-          { speaker: "SYSTEM TEST", text: "SKIP will emit a narrative signal." },
-          { speaker: "SYSTEM TEST", text: "This line remains outside the test path." }
-        ]
-      };
-    narrativeTestPresentation.start(narrativeScene);
+    if (query.get("narrative_scene") === "team11_choice") {
+      team11ChoicePresentation.mount();
+      team11ChoicePresentation.start();
+    } else {
+      narrativeTestPresentation.mount();
+      const narrativeScene = query.get("narrative_scene") === "team11"
+        ? ARC0_TEAM11_RECRUITMENT
+        : {
+          scene_id: "narrative-runtime-vertical-slice",
+          dialogue_lines: [
+            { speaker: "SYSTEM TEST", text: "Narrative runtime initialized." },
+            { speaker: "SYSTEM TEST", text: "ADVANCE moved the dialogue cursor." },
+            { speaker: "SYSTEM TEST", text: "SKIP will emit a narrative signal." },
+            { speaker: "SYSTEM TEST", text: "This line remains outside the test path." }
+          ]
+        };
+      narrativeTestPresentation.start(narrativeScene);
+    }
   }
   try {
     await initializeWaifuDatabase();
