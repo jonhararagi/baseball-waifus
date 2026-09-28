@@ -2,9 +2,9 @@
   "task": "TAREA_007",
   "phase": "VERIFY",
   "status": "IN_PROGRESS",
-  "repo_head": "61946a24535c78e5e9f9417043a84f546ab377ae",
+  "repo_head": "8de8071b44f51cf7cdcbac52b997f0af2ff51b41",
   "started_at": "",
-  "updated_at": "2026-09-28T04:52:52.967Z",
+  "updated_at": "2026-09-28T04:53:32.547Z",
   "files_inspected": [
     ".agent/task.json",
     ".agent/state.json",
@@ -28,5 +28,5 @@
   "blockers": [
     "Local command execution is unavailable; GitHub workflow result is not yet observable through the available connector."
   ],
-  "next_action": "Run .github/workflows/agent-guard.yml or node tools/agent_guard_test.mjs in a real checkout; then update state to COMPLETE only after PASS_REAL."
+  "next_action": "Run the Agent Guard workflow or node tools/agent_guard_test.mjs in a real checkout; only PASS_REAL may move phase to COMPLETE."
 }
