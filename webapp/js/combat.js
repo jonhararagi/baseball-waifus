@@ -1,4 +1,5 @@
 import { isCombatInitDTO, isTurnResultDTO } from "./api.js";
+import { resolveClimaxTurn, resolveTacticalTurn } from "./combat_core.js";
 import { AreaThemeManager } from "./area_theme_manager.js";
 import { BatterRenderer } from "./batter_renderer.js";
 import { CombatEffects } from "./combat_effects.js";
@@ -42,31 +43,6 @@ const SCRAP_REWARDS = Object.freeze({
 export function getScrapRewardForResult(result) {
   return Number(SCRAP_REWARDS[String(result || "").toUpperCase()]) || 0;
 }
-export function calculateTacticalTurn({ turn = 1, power = 70, contact = 70, speed = 70, eye = 70 } = {}) {
-  const t = clamp(Number(turn) || 1, 1, 5);
-  const offense = clamp((Number(power) + Number(contact) + Number(speed) + Number(eye)) / 4, 1, 100);
-  const cardPower = clamp(offense * 0.55 + Number(power) * 0.45, 1, 100);
-  const mobCount = 2 + (t % 2) + (cardPower >= 82 ? 1 : 0);
-  const damage = Math.round(clamp(7 + cardPower * 0.12 + t * 1.5, 6, 24));
-  const charge = Math.round(clamp(10 + Number(contact) * 0.08 + Number(eye) * 0.04, 8, 22));
-  const effectiveness = Math.round(clamp(damage * 2.2 + charge * 1.4, 0, 100));
-  return { turn: t, mob_count: mobCount, damage, charge, effectiveness };
-}
-
-export function calculateClimaxDamage({ grade = "MISS", effectiveness = 0, internalEnergy = 0 } = {}) {
-  const g = String(grade).toUpperCase();
-  const eff = clamp(Number(effectiveness) || 0, 0, 100);
-  const energy = clamp(Number(internalEnergy) || 0, 0, 100);
-  if (g === "GREAT") {
-    return Math.round(clamp(42 + eff * 0.38 + energy * 0.28, 42, 95));
-  }
-  if (g === "HIT") {
-    return Math.round(clamp(18 + eff * 0.20 + energy * 0.12, 18, 50));
-  }
-  return 0;
-}
-
-
 function cloneDTO(value) {
   return JSON.parse(JSON.stringify(value));
 }
@@ -428,23 +404,24 @@ export class CombatRenderer {
 
     const batter = this.state?.batter || {};
     const stats = batter.stats || batter.base_stats || {};
-    const result = calculateTacticalTurn({
+    const result = resolveTacticalTurn({
       turn: this.tacticalTurn + 1,
       power: stats.power ?? batter.power ?? 70,
       contact: stats.contact ?? batter.contact ?? 70,
       speed: stats.speed ?? batter.speed ?? 70,
-      eye: stats.eye ?? batter.eye ?? 70
+      eye: stats.eye ?? batter.eye ?? 70,
+      bossHp: this.bossHp,
+      bossMaxHp: this.bossMaxHp,
+      internalEnergy: this.internalEnergy,
+      tacticalEffectiveness: this.tacticalEffectiveness,
+      tacticalMaxTurns: this.tacticalMaxTurns
     });
 
-    this.tacticalTurn = result.turn;
-    this.bossHp = clamp(this.bossHp - result.damage, 1, this.bossMaxHp);
-    this.bossConcentration = Math.round(clamp((this.bossHp / this.bossMaxHp) * 100, 0, 100));
-    this.internalEnergy = Math.round(clamp(this.internalEnergy + result.charge, 0, 100));
-    this.tacticalEffectiveness = Math.round(clamp(
-      this.tacticalEffectiveness * 0.55 + result.effectiveness * 0.45,
-      0,
-      100
-    ));
+    this.tacticalTurn = result.tactical_turn_after;
+    this.bossHp = result.boss_hp_after;
+    this.bossConcentration = result.boss_concentration_after;
+    this.internalEnergy = result.energy_after;
+    this.tacticalEffectiveness = result.effectiveness_after;
     this.lastTacticalEvent = result;
 
     this.audioBridge?.playTacticalCard?.();
@@ -473,42 +450,43 @@ export class CombatRenderer {
   }
 
   _resolveClimaxDamage(grade) {
-    const damage = calculateClimaxDamage({
+    const result = resolveClimaxTurn({
       grade,
-      effectiveness: this.tacticalEffectiveness,
-      internalEnergy: this.internalEnergy
+      bossHp: this.bossHp,
+      bossMaxHp: this.bossMaxHp,
+      internalEnergy: this.internalEnergy,
+      tacticalEffectiveness: this.tacticalEffectiveness,
+      round: this.round
     });
-    if (damage > 0) {
-      this.bossHp = Math.max(0, this.bossHp - damage);
-      this.bossConcentration = Math.round(clamp((this.bossHp / this.bossMaxHp) * 100, 0, 100));
-      this.impactTimer = grade === "GREAT" ? 0.42 : 0.28;
-      this.cameraShakeTimer = grade === "GREAT" ? 0.32 : 0.18;
-      this.impactKind = grade === "GREAT" ? "HOME_RUN" : "HIT";
-      this._spawnImpactParticles(grade === "GREAT" ? 28 : 14);
-      this._playAudio(grade === "GREAT" ? "result.home_run" : "result.hit");
+
+    this.bossHp = result.boss_hp_after;
+    this.bossConcentration = result.boss_concentration_after;
+    this.impactTimer = result.outcome === "HOME_RUN" ? 0.42 : result.outcome === "HIT" ? 0.28 : 0.18;
+    this.cameraShakeTimer = result.outcome === "HOME_RUN" ? 0.32 : result.outcome === "HIT" ? 0.18 : 0.12;
+    this.impactKind = result.outcome === "HOME_RUN" ? "HOME_RUN" : result.outcome === "HIT" ? "HIT" : "STRIKE";
+
+    if (result.damage > 0) {
+      this._spawnImpactParticles(result.outcome === "HOME_RUN" ? 28 : 14);
+      this._playAudio(result.outcome === "HOME_RUN" ? "result.home_run" : "result.hit");
     } else {
-      this.impactKind = "STRIKE";
-      this.impactTimer = 0.18;
-      this.cameraShakeTimer = 0.12;
       this._playAudio("result.miss");
     }
 
-    if (this.bossHp <= 0) {
+    this.internalEnergy = result.energy_after;
+    this.tacticalEffectiveness = result.effectiveness_after;
+    if (result.victory) {
       this.battlePhase = "VICTORY";
-      this.internalEnergy = 100;
-      this.tacticalEffectiveness = 100;
+      this.tacticalTurn = result.tactical_turn_after;
       this.onState?.(this.state);
-      return;
+      return result;
     }
 
-    this.round += 1;
-    this.tacticalTurn = 0;
-    this.battlePhase = "TACTICAL";
-    this.internalEnergy = 0;
-    this.tacticalEffectiveness = 0;
-    this.bossConcentration = Math.round(clamp((this.bossHp / this.bossMaxHp) * 100, 0, 100));
+    this.round = result.round_after;
+    this.tacticalTurn = result.tactical_turn_after;
+    this.battlePhase = result.phase;
     this.lastTacticalEvent = null;
     this.onState?.(this.state);
+    return result;
   }
 
   getBattleLoopState() {
