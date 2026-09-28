@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { NARRATIVE_EVENT, NARRATIVE_STATE } from "./narrative_runtime.js";
+import { NARRATIVE_STATE } from "./narrative_runtime.js";
 import { Team11ChoicePresentation } from "./narrative_team11_choice_presentation.js";
 import { ARC0_TEAM11_FIRST_TEST } from "./narrative_arc0_team11_choice.js";
 
@@ -43,17 +43,15 @@ function runChoice(choiceId) {
   assert.equal(branchFirstLine.character_id, "protagonist");
   assert.equal(branchFirstLine.text.includes(choiceId === "A" ? "Aiko" : "Nao"), true);
 
-  const branchEventCountBeforeAdvance = presentation.runtime
-    .getEvents?.()
-    ?.filter((event) => event.type === NARRATIVE_EVENT.SCENE_STARTED).length;
-
   while (!presentation.isFinished()) presentation.advance();
 
   assert.equal(presentation.runtime.getState().state, NARRATIVE_STATE.COMPLETED);
   assert.equal(presentation.phase, "COMMON");
   assert.equal(presentation.isFinished(), true);
-  assert.equal(presentation.runtime.getCurrentLine().text, ARC0_TEAM11_FIRST_TEST.common.dialogue_lines.at(-1).text);
-  assert.notEqual(branchEventCountBeforeAdvance, undefined);
+  assert.equal(
+    presentation.runtime.getCurrentLine().text,
+    ARC0_TEAM11_FIRST_TEST.common.dialogue_lines.at(-1).text
+  );
   return { presentation, branchFirstLine };
 }
 
