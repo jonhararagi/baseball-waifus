@@ -24,13 +24,3 @@ export function timingRingRadius(elapsedMs) {
     + (TIMING_RING_MAX_RADIUS - TIMING_RING_TARGET_RADIUS) * (1 - progress);
 }
 
-export function localResultForTimingGrade(grade) {
-  switch (String(grade || "").toUpperCase()) {
-    case "GREAT":
-      return "HOME_RUN";
-    case "HIT":
-      return "HIT";
-    default:
-      return "STRIKE";
-  }
-}
