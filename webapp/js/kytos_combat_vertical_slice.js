@@ -61,13 +61,13 @@ export function createCombatState(options = {}) {
   return {
     phase: KYTOS_PHASE.FORMATION,
     formation,
-    shield: clamp(Number(options.shield) ?? 100, 0, 100),
+    shield: clamp(Number.isFinite(Number(options.shield)) ? Number(options.shield) : 100, 0, 100),
     kytos: {
       hp: kytosMaxHp,
       maxHp: kytosMaxHp,
       energy: clamp(Number(options.kytosEnergy) || 0, 0, kytosMaxEnergy),
       maxEnergy: kytosMaxEnergy,
-      emergencyThreshold: clamp(Number(options.emergencyThreshold) ?? 30, 1, 100)
+      emergencyThreshold: clamp(Number.isFinite(Number(options.emergencyThreshold)) ? Number(options.emergencyThreshold) : 30, 1, 100)
     },
     batter: {
       id: formation.batter.id,
