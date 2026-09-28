@@ -1362,3 +1362,66 @@ button {
 .narrative-test-controls button:disabled{opacity:.35;cursor:default}
 @media(max-width:380px){.narrative-test-panel{padding:14px}.narrative-test-text{min-height:60px}}
 @media(prefers-reduced-motion:reduce){.narrative-test-view{backdrop-filter:none;-webkit-backdrop-filter:none}}
+
+.kytos-demo-panel {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 10px;
+  z-index: 9;
+  padding: 10px;
+  border: 1px solid rgba(0, 243, 255, 0.48);
+  border-radius: 9px;
+  background: rgba(8, 10, 22, 0.88);
+  box-shadow: var(--glow-cyan);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.kytos-demo-panel[hidden] {
+  display: none;
+}
+
+.kytos-demo-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-family: var(--font-header);
+}
+
+.kytos-demo-kicker {
+  color: var(--border-neon-cyan);
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+}
+
+#kytos-demo-phase {
+  color: var(--accent-yellow);
+  font-size: 0.72rem;
+}
+
+.kytos-demo-event {
+  min-height: 20px;
+  margin: 5px 0 7px;
+  color: var(--text-muted);
+  font-size: 0.68rem;
+}
+
+.kytos-demo-actions {
+  display: flex;
+  gap: 7px;
+}
+
+.kytos-demo-actions .cyber-btn {
+  min-height: 38px;
+  padding: 7px 10px;
+}
+
+.kytos-demo-actions .btn-primary-swing {
+  flex: 1.7;
+}
+
+.kytos-demo-actions .btn-super-swing {
+  flex: 0.8;
+}
