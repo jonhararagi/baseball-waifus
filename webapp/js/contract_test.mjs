@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import fs from "node:fs/promises";
 import { CHARACTER_FACTIONS, isCombatInitDTO, isTurnResultDTO } from "./api.js";
 import {
   calculateClimaxDamage,
@@ -107,7 +108,6 @@ assert.equal(climax.damage, calculateClimaxDamage({
 assert.equal(resolveTimingGrade("GREAT"), "HOME_RUN");
 
 const combatCoreJs = await fs.readFile(new URL("./combat_core.js", import.meta.url), "utf8");
-const combatJs = await fs.readFile(new URL("./combat.js", import.meta.url), "utf8");
 assert.match(combatJs, /resolveTacticalTurn/);
 assert.match(combatJs, /resolveClimaxTurn/);
 assert.match(combatJs, /async applyTurnResult\(dto\)/);
@@ -119,7 +119,6 @@ assert.doesNotMatch(timingRingJs, /damage|boss|victory|defeat|HOME_RUN|STRIKE/);
 console.log("[webapp-contract] combat core separation contract passed");
 
 
-const fs = await import("node:fs/promises");
 const indexHtml = await fs.readFile(new URL("../index.html", import.meta.url), "utf8");
 
 const queue = JSON.parse(
