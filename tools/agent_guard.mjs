@@ -7,69 +7,48 @@ export const CLAIM_STATUS = Object.freeze({
   VERIFIED: "VERIFIED", INSPECTED: "INSPECTED", INFERRED: "INFERRED",
   UNKNOWN: "UNKNOWN", BLOCKED: "BLOCKED", NOT_RUN: "NOT_RUN"
 });
-
 export const VERIFY_STATUS = Object.freeze({
   PASS_REAL: "PASS_REAL", PASS_INSPECTION: "PASS_INSPECTION",
   NOT_RUN: "NOT_RUN", NOT_OBSERVED: "NOT_OBSERVED",
   BLOCKED: "BLOCKED", FAILURE: "FAILURE"
 });
-
-export const METRIC_TYPE = Object.freeze({
-  REAL: "REAL", ESTIMATED: "ESTIMATED", UNKNOWN: "UNKNOWN"
-});
-
+export const METRIC_TYPE = Object.freeze({ REAL: "REAL", ESTIMATED: "ESTIMATED", UNKNOWN: "UNKNOWN" });
 export const MAX_AUTO_REPAIR_ATTEMPTS = 3;
 
 const ROOT = process.cwd();
 const AGENT_DIR = path.join(ROOT, ".agent");
 const files = {
-  task: path.join(AGENT_DIR, "task.json"),
   state: path.join(AGENT_DIR, "state.json"),
   evidence: path.join(AGENT_DIR, "evidence.json"),
-  tests: path.join(AGENT_DIR, "tests.json"),
-  blockers: path.join(AGENT_DIR, "blockers.json")
+  tests: path.join(AGENT_DIR, "tests.json")
 };
-
-function ensureAgentDir() {
-  fs.mkdirSync(AGENT_DIR, { recursive: true });
-}
 
 function readJson(file, fallback = {}) {
   try { return JSON.parse(fs.readFileSync(file, "utf8")); }
   catch { return fallback; }
 }
-
 function writeJson(file, value) {
-  ensureAgentDir();
+  fs.mkdirSync(AGENT_DIR, { recursive: true });
   const tmp = file + ".tmp";
   fs.writeFileSync(tmp, JSON.stringify(value, null, 2) + "\n", "utf8");
   fs.renameSync(tmp, file);
 }
-
 function now() { return new Date().toISOString(); }
 
 export function loadState() {
   return readJson(files.state, { task: "UNKNOWN", phase: "INIT", status: "IN_PROGRESS" });
 }
-
 export function updateState(patch = {}) {
   const state = { ...loadState(), ...patch, updated_at: now() };
   writeJson(files.state, state);
   return state;
 }
-
 export function recordEvidence(entry) {
   const data = readJson(files.evidence, { task: "UNKNOWN", evidence: [] });
-  const evidence = {
-    timestamp: now(),
-    status: VERIFY_STATUS.NOT_OBSERVED,
-    ...entry
-  };
-  data.evidence = [...(Array.isArray(data.evidence) ? data.evidence : []), evidence];
+  data.evidence = [...(Array.isArray(data.evidence) ? data.evidence : []), { timestamp: now(), status: VERIFY_STATUS.NOT_OBSERVED, ...entry }];
   writeJson(files.evidence, data);
-  return evidence;
+  return data.evidence.at(-1);
 }
-
 export function recordTest(entry) {
   const data = readJson(files.tests, { task: "UNKNOWN", tests: [] });
   data.tests = [...(Array.isArray(data.tests) ? data.tests : []), { timestamp: now(), ...entry }];
@@ -81,50 +60,40 @@ export function verifyFile(filePath) {
   const absolute = path.resolve(ROOT, filePath);
   const exists = fs.existsSync(absolute) && fs.statSync(absolute).isFile();
   const result = {
-    type: "file_exists",
-    source: "filesystem",
-    target: filePath,
+    type: "file_exists", source: "filesystem", target: filePath,
     status: exists ? CLAIM_STATUS.VERIFIED : CLAIM_STATUS.UNKNOWN,
-    result: exists ? "file exists" : "file does not exist",
-    timestamp: now()
+    result: exists ? "file exists" : "file does not exist", timestamp: now()
   };
   recordEvidence({ ...result, status: exists ? VERIFY_STATUS.PASS_REAL : VERIFY_STATUS.FAILURE });
   return result;
 }
 
 function git(args) {
-  return execFileSync("git", args, { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
+  return execFileSync("git", args, {
+    cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"]
+  }).trim();
 }
-
 export function gitSnapshot() {
-  const snapshot = {
-    branch: "UNKNOWN",
-    head: "UNKNOWN",
-    status: [],
-    diffStat: "",
-    timestamp: now()
-  };
   try {
-    snapshot.branch = git(["branch", "--show-current"]) || "DETACHED";
-    snapshot.head = git(["rev-parse", "HEAD"]);
-    snapshot.status = git(["status", "--short"]).split("\n").filter(Boolean);
-    snapshot.diffStat = git(["diff", "--stat"]);
+    const snapshot = {
+      branch: git(["branch", "--show-current"]) || "DETACHED",
+      head: git(["rev-parse", "HEAD"]),
+      status: git(["status", "--short"]).split("\n").filter(Boolean),
+      diffStat: git(["diff", "--stat"]),
+      timestamp: now()
+    };
     recordEvidence({
       type: "git_snapshot", source: "git",
       command: "git status --short; git diff --stat; git rev-parse HEAD",
       result: snapshot, status: VERIFY_STATUS.PASS_REAL
     });
+    return snapshot;
   } catch (error) {
-    snapshot.error = error.message;
-    recordEvidence({
-      type: "git_snapshot", source: "git",
-      command: "git status --short; git diff --stat; git rev-parse HEAD",
-      result: error.message, status: VERIFY_STATUS.BLOCKED
-    });
+    const result = { type: "git_snapshot", source: "git", result: error.message, timestamp: now() };
+    recordEvidence({ ...result, status: VERIFY_STATUS.BLOCKED });
+    return result;
   }
-  return snapshot;
 }
-
 export function verifyCommit(commit) {
   let exists = false;
   try {
@@ -132,32 +101,29 @@ export function verifyCommit(commit) {
     exists = true;
   } catch {}
   const result = {
-    type: "git_commit",
-    source: "git",
-    target: commit,
+    type: "git_commit", source: "git", target: commit,
     status: exists ? CLAIM_STATUS.VERIFIED : CLAIM_STATUS.UNKNOWN,
-    result: exists ? "commit exists" : "commit not found",
-    timestamp: now()
+    result: exists ? "commit exists" : "commit not found", timestamp: now()
   };
   recordEvidence({ ...result, status: exists ? VERIFY_STATUS.PASS_REAL : VERIFY_STATUS.FAILURE });
   return result;
 }
-
-export function detectUnexpectedFiles(changedFiles = [], allowedPaths = []) {\n  return changedFiles.filter(file => !allowedPaths.some(prefix => file === prefix || file.startsWith(prefix.endsWith("/") ? prefix : prefix + "/")));\n}\n\nexport function verifyScope(baseCommit, allowedPaths = []) {
+export function detectUnexpectedFiles(changedFiles = [], allowedPaths = []) {
+  return changedFiles.filter(file =>
+    !allowedPaths.some(prefix => file === prefix || file.startsWith(prefix.endsWith("/") ? prefix : prefix + "/"))
+  );
+}
+export function verifyScope(baseCommit, allowedPaths = []) {
   let changed = [];
   try {
-    const range = baseCommit ? [baseCommit + "...HEAD", "--name-only"] : ["--name-only"];
-    changed = git(["diff", ...range]).split("\n").filter(Boolean);
-  } catch {
-    changed = [];
-  }
+    const args = baseCommit ? ["diff", baseCommit + "...HEAD", "--name-only"] : ["diff", "--name-only"];
+    changed = git(args).split("\n").filter(Boolean);
+  } catch {}
   const unexpected = detectUnexpectedFiles(changed, allowedPaths);
   const result = {
-    type: "scope_check",
-    source: "git",
+    type: "scope_check", source: "git",
     command: baseCommit ? "git diff " + baseCommit + "...HEAD --name-only" : "git diff --name-only",
-    changed_files: changed,
-    unexpected_files: unexpected,
+    changed_files: changed, unexpected_files: unexpected,
     status: unexpected.length ? "OUT_OF_SCOPE_CHANGE" : VERIFY_STATUS.PASS_REAL,
     timestamp: now()
   };
@@ -168,13 +134,14 @@ export function detectUnexpectedFiles(changedFiles = [], allowedPaths = []) {\n 
 export function runTest(name, command, args = [], options = {}) {
   const started = Date.now();
   const result = spawnSync(command, args, {
-    cwd: ROOT,
-    encoding: "utf8",
+    cwd: ROOT, encoding: "utf8",
     timeout: options.timeoutMs ?? 120000,
     env: { ...process.env, ...(options.env || {}) }
   });
   const finished = Date.now();
-  const status = result.error ? VERIFY_STATUS.NOT_RUN : (result.status === 0 ? VERIFY_STATUS.PASS_REAL : VERIFY_STATUS.FAILURE);
+  const status = result.error
+    ? VERIFY_STATUS.NOT_RUN
+    : result.status === 0 ? VERIFY_STATUS.PASS_REAL : VERIFY_STATUS.FAILURE;
   const test = {
     name, command: [command, ...args].join(" "),
     started_at: new Date(started).toISOString(),
@@ -189,29 +156,24 @@ export function runTest(name, command, args = [], options = {}) {
   recordTest(test);
   recordEvidence({
     type: "test", source: "process", command: test.command,
-    exit_code: test.exit_code, result: test.stdout_summary,
-    status
+    exit_code: test.exit_code, result: test.stdout_summary, status
   });
   return test;
 }
-
 export function markNotRun(name, reason) {
   return recordTest({
     name, command: "", exit_code: null, status: VERIFY_STATUS.NOT_RUN,
     reason, stdout_summary: "", stderr_summary: ""
   });
 }
-
 export function repairAttempt(current = 0) {
-  const next = Number(current) + 1;
+  const attempt = Number(current) + 1;
   return {
-    attempt: next,
-    max_attempts: MAX_AUTO_REPAIR_ATTEMPTS,
-    allowed: next <= MAX_AUTO_REPAIR_ATTEMPTS,
-    status: next <= MAX_AUTO_REPAIR_ATTEMPTS ? "CONTINUE_REPAIR" : VERIFY_STATUS.BLOCKED
+    attempt, max_attempts: MAX_AUTO_REPAIR_ATTEMPTS,
+    allowed: attempt <= MAX_AUTO_REPAIR_ATTEMPTS,
+    status: attempt <= MAX_AUTO_REPAIR_ATTEMPTS ? "CONTINUE_REPAIR" : VERIFY_STATUS.BLOCKED
   };
 }
-
 export function classifyMetric(input = {}) {
   if (Number.isFinite(input.prompt_tokens) || Number.isFinite(input.completion_tokens) || Number.isFinite(input.total_tokens)) {
     return { ...input, measurement_type: METRIC_TYPE.REAL };
@@ -221,9 +183,19 @@ export function classifyMetric(input = {}) {
   }
   return { ...input, measurement_type: METRIC_TYPE.UNKNOWN };
 }
-
-export function claim(status, evidence = null) {
+export function validateClaim(status, evidence = null) {
   if (!Object.values(CLAIM_STATUS).includes(status)) throw new Error("Invalid claim status");
+  if (status === CLAIM_STATUS.VERIFIED && evidence?.status !== VERIFY_STATUS.PASS_REAL) {
+    return { valid: false, reason: "VERIFIED requires PASS_REAL evidence" };
+  }
+  if (status === CLAIM_STATUS.INSPECTED && evidence?.status !== VERIFY_STATUS.PASS_INSPECTION) {
+    return { valid: false, reason: "INSPECTED requires PASS_INSPECTION evidence" };
+  }
+  return { valid: true, reason: "evidence satisfies claim level" };
+}
+export function claim(status, evidence = null) {
+  const validation = validateClaim(status, evidence);
+  if (!validation.valid) throw new Error(validation.reason);
   return { status, evidence };
 }
 
@@ -233,22 +205,18 @@ function main(argv) {
   if (command === "file") return console.log(JSON.stringify(verifyFile(rest[0]), null, 2));
   if (command === "commit") return console.log(JSON.stringify(verifyCommit(rest[0]), null, 2));
   if (command === "scope") {
-    const base = rest[0] || "";
-    const task = readJson(files.task, {});
-    return console.log(JSON.stringify(verifyScope(base, task.scope || []), null, 2));
+    const task = readJson(path.join(AGENT_DIR, "task.json"), {});
+    return console.log(JSON.stringify(verifyScope(rest[0] || "", task.scope || []), null, 2));
   }
   if (command === "test") {
     const name = rest.shift();
-    const executable = rest.shift();
-    return console.log(JSON.stringify(runTest(name, executable, rest), null, 2));
+    return console.log(JSON.stringify(runTest(name, rest.shift(), rest), null, 2));
   }
   if (command === "repair") return console.log(JSON.stringify(repairAttempt(Number(rest[0] || 0)), null, 2));
-  if (command === "metric") {
-    const payload = JSON.parse(rest[0] || "{}");
-    return console.log(JSON.stringify(classifyMetric(payload), null, 2));
-  }
+  if (command === "metric") return console.log(JSON.stringify(classifyMetric(JSON.parse(rest[0] || "{}")), null, 2));
   console.error("Usage: agent_guard.mjs <snapshot|file|commit|scope|test|repair|metric>");
   process.exitCode = 2;
 }
-
-if (import.meta.url === new URL(process.argv[1], "file:").href) main(process.argv.slice(2));
+if (process.argv[1] && import.meta.url === new URL(process.argv[1], "file:").href) {
+  main(process.argv.slice(2));
+}
