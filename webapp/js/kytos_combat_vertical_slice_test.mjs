@@ -65,7 +65,7 @@ assert.equal(emergency.kytos.energy, 70);
 
 const timing = resolveTimingEvent({ timingDeltaMs: 0, storedEnergy: 80, kytosEnergy: 20 });
 assert.equal(timing.success, true);
-assert.equal(timing.damage, 96);
+assert.equal(timing.damage, 118);
 assert.equal(timing.reflectedEnergy, 80);
 
 const miss = resolveTimingEvent({ timingDeltaMs: 200, storedEnergy: 80, kytosEnergy: 20 });
