@@ -6,6 +6,7 @@ import {
   REACTION_SIGNAL,
   ReactionRuleSystem
 } from "./reaction_rules.js";
+import { ARC0_PROLOGUE_TEAM11 } from "./narrative_arc0_prologue.js";
 
 export class NarrativePresentation {
   constructor({
@@ -77,7 +78,10 @@ export class NarrativePresentation {
 
   start(scene) {
     this.reactionMessage = "";
-    return this.runtime.startScene(scene);
+    const activeScene = scene?.scene_id === "narrative-runtime-vertical-slice"
+      ? ARC0_PROLOGUE_TEAM11
+      : scene;
+    return this.runtime.startScene(activeScene);
   }
 
   advance() {
