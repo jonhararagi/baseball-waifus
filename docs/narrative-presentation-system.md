@@ -365,3 +365,49 @@ VOICE / PRESENTATION
 No se encontró control de cursor narrativo desde VoiceSystem, control de escena desde ReactionRuleSystem, ni mutación de datos de personaje desde Presentation.
 
 **QA T020: sin correcciones funcionales requeridas.**
+
+
+## 18. T022-B Browser QA Readiness
+
+**RESULTADO T022-B: BROWSER QA PENDING EXTERNAL ENVIRONMENT.**
+
+Se auditó la infraestructura disponible del repositorio para una ejecución reproducible en navegador. No se encontró Playwright, Puppeteer, Cypress, WebDriver ni otro harness browser automatizado existente en el árbol del proyecto. Tampoco existe `package.json`/lockfile que justifique introducir una dependencia browser nueva únicamente para esta tarea.
+
+El vertical slice sí expone una ruta de prueba estable:
+
+`?narrative_test=1`
+
+y monta la vista técnica únicamente cuando ese parámetro está presente. La presentación crea actualmente los elementos funcionales por DOM y conserva controles estables por clase/rol/texto, pero no se añadieron `data-testid` porque sin un runner browser existente no aportarían una ejecución reproducible por sí solos.
+
+El flujo que debe ejecutarse cuando exista un entorno browser accesible es:
+
+```
+OPEN ?narrative_test=1
+→ SCENE LOAD
+→ capture initial dialogue
+→ ADVANCE
+→ verify dialogue changed
+→ SKIP
+→ verify SKIPPED
+→ verify Azusa test reaction
+→ collect relevant console errors
+```
+
+Configuraciones objetivo:
+
+- Desktop: 1366x768.
+- Mobile: 390x844.
+- `BASE_URL` configurable para GitHub Pages o servidor local.
+- La prueba debe tratar una URL inaccesible como bloqueo/fallo de entorno, nunca como PASS.
+- La validación de reproducción física de audio continúa siendo manual; el harness puede comprobar que VoiceSystem/speechSynthesis no produzca excepciones.
+
+No se creó un harness nuevo porque hacerlo requiere introducir una herramienta de automatización browser que no existe actualmente en el repositorio y que no puede aportar evidencia real dentro del entorno bloqueado de T022. No se modificó el workflow principal ni se introdujeron servicios externos.
+
+**Estado de validación:**
+
+```
+CI automated tests = PASS_REAL
+Browser QA = PENDING EXTERNAL ENVIRONMENT
+```
+
+Este resultado mantiene separadas las garantías de CI de la evidencia visual/interactiva de navegador. No implica Browser QA PASS.
