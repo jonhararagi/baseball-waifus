@@ -78,7 +78,7 @@ assert.deepEqual(state, afterEmergencyPresentation, "presentation must not modif
 
 state = {
   ...state,
-  batter: { ...state.batter, storedEnergy: 100 }
+  batter: { ...state.batter, storedEnergy: 45 }
 };
 state = resolveKytosHit(state, { timingAccuracy: 1 });
 model = presentation.buildModel(state, 720, 1280);
