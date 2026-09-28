@@ -8,6 +8,8 @@ on:
       - "webapp/js/combat*.js"
       - "webapp/js/kytos_combat_vertical_slice.js"
       - "webapp/js/kytos_combat_vertical_slice_test.mjs"
+      - "webapp/js/kytos_combat_presentation.js"
+      - "webapp/js/kytos_combat_presentation_test.mjs"
       - "webapp/js/timing_ring.js"
       - ".github/workflows/combat-tests.yml"
   workflow_dispatch:
@@ -33,6 +35,7 @@ jobs:
           set -euo pipefail
           node --version
           node --experimental-default-type=module webapp/js/kytos_combat_vertical_slice_test.mjs
+          node --experimental-default-type=module webapp/js/kytos_combat_presentation_test.mjs
           node --experimental-default-type=module webapp/js/combat_core_test.mjs
           node --experimental-default-type=module webapp/js/combat_effects_test.mjs
           node --experimental-default-type=module webapp/js/batter_renderer_test.mjs
@@ -42,6 +45,8 @@ jobs:
         run: |
           set -euo pipefail
           node --experimental-default-type=module --check webapp/js/kytos_combat_vertical_slice.js
+          node --experimental-default-type=module --check webapp/js/kytos_combat_presentation.js
+          node --experimental-default-type=module --check webapp/js/combat.js
           node --experimental-default-type=module --check webapp/js/combat_core.js
           node --experimental-default-type=module --check webapp/js/timing_ring.js
           node --experimental-default-type=module --check webapp/js/combat.js
