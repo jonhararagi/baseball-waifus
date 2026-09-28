@@ -115,6 +115,7 @@ export class Team11ChoicePresentation extends NarrativePresentation {
 
   isFinished() {
     return this.phase === "SKIPPED"
+      || this.runtime.getState().state === NARRATIVE_STATE.SKIPPED
       || (this.phase === "COMMON" && this.runtime.getState().state === NARRATIVE_STATE.COMPLETED);
   }
 
