@@ -1510,3 +1510,39 @@ La siguiente tarea técnica, si corresponde, debe recibir los elementos narrativ
 **Gameplay changes:** NONE.
 
 **Market claims:** NONE. Cualquier afirmación comercial continúa fuera de alcance y bajo `MARKET VALIDATION PENDING`.
+
+## T024 · Team 11 Character Integration
+
+**Estado: DESIGN PROPOSAL / WORKING IMPLEMENTATION**
+
+T024 introduce por primera vez tres personajes reales del roster como primeras integrantes conocidas del Equipo 11. Esta selección no cierra la composición completa del equipo ni convierte estas relaciones en canon permanente.
+
+### Selección
+
+- **bw001 · Aiko Hanamori**: arquetipo `powerful_firebrand`, identidad competitiva y directa. Seleccionada para aportar fricción con el protagonista y una postura orientada a la presión.
+- **bw003 · Miu Tachibana**: arquetipo `quick_witted_lightning_shortstop`, energética, aguda y orientada a crear oportunidades. Seleccionada como puente social y contraste dinámico.
+- **bw008 · Nao Fujimoto**: arquetipo `quiet_blue_contact_analyst`, reservada y observadora. Seleccionada para representar el valor de la lectura y el análisis, alineado con la fantasía estratégica del protagonista.
+
+La selección deriva de `game/characters/character_archetypes.json` y no modifica IDs, rarezas, estadísticas, gameplay identity ni personalidad de roster.
+
+### Relaciones utilizadas en la escena
+
+Estas relaciones son **contexto narrativo de T024**, no niveles persistentes:
+
+```
+Protagonista → Aiko: desconfianza / desafío
+Protagonista → Miu: curiosidad / apertura
+Protagonista → Nao: evaluación cautelosa / respeto inicial
+Aiko ↔ Miu: fricción competitiva ligera
+Nao → Aiko/Miu: observación y mediación
+Azusa → Equipo 11: supervisión externa
+```
+
+No se implementa romance, bond points, memoria persistente ni relationship engine.
+
+### Estado pendiente
+
+- La composición completa del Equipo 11 permanece **PENDING**.
+- Las relaciones permanentes entre personajes permanecen **PENDING**.
+- El historial personal no documentado de estos tres personajes permanece **UNKNOWN**.
+- Azusa continúa como soporte recurrente y no pasa a ser integrante permanente del Equipo 11.

@@ -39,6 +39,7 @@ import { createTelegramNativeBridge } from "./telegramBridge.js";
 import { ShopManager } from "./shopManager.js";
 import { ShopUI } from "./shop_ui.js";
 import { NarrativePresentation } from "./narrative_presentation.js";
+import { ARC0_TEAM11_RECRUITMENT } from "./narrative_arc0_team11.js";
 
 function initializeTelegramNativeShell() {
   const webApp = window.Telegram?.WebApp || null;
@@ -1255,15 +1256,18 @@ async function bootstrap() {
 
   if (query.get("narrative_test") === "1") {
     narrativeTestPresentation.mount();
-    narrativeTestPresentation.start({
-      scene_id: "narrative-runtime-vertical-slice",
-      dialogue_lines: [
-        { speaker: "SYSTEM TEST", text: "Narrative runtime initialized." },
-        { speaker: "SYSTEM TEST", text: "ADVANCE moved the dialogue cursor." },
-        { speaker: "SYSTEM TEST", text: "SKIP will emit a narrative signal." },
-        { speaker: "SYSTEM TEST", text: "This line remains outside the test path." }
-      ]
-    });
+    const narrativeScene = query.get("narrative_scene") === "team11"
+      ? ARC0_TEAM11_RECRUITMENT
+      : {
+        scene_id: "narrative-runtime-vertical-slice",
+        dialogue_lines: [
+          { speaker: "SYSTEM TEST", text: "Narrative runtime initialized." },
+          { speaker: "SYSTEM TEST", text: "ADVANCE moved the dialogue cursor." },
+          { speaker: "SYSTEM TEST", text: "SKIP will emit a narrative signal." },
+          { speaker: "SYSTEM TEST", text: "This line remains outside the test path." }
+        ]
+      };
+    narrativeTestPresentation.start(narrativeScene);
   }
   try {
     await initializeWaifuDatabase();
