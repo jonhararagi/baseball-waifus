@@ -246,9 +246,9 @@ T018 no modifica SaveSystem. Una futura narrativa podría persistir escenas vist
 
 ## 13. Known Limitations
 
-Faltan actualmente runtime de escenas, estado de diálogo, input ADVANCE, productor real de SKIP, modelo de presentación narrativa, eventos de escena y pruebas específicas de runtime narrativo.
+El vertical slice de T019 ya dispone de runtime de escena, estado de diálogo, ADVANCE, productor real de SKIP, eventos locales y presentación de prueba. Las limitaciones restantes son deliberadas: no existe SceneManager narrativo general, branching, replay, persistencia narrativa, editor, localization, cinematic pipeline ni EventBus global.
 
-`MainMenu` no es SceneManager narrativo. `VoiceSystem` no controla progresión. `messageLabel` del Locker Room es feedback contextual, no textbox narrativo. SKIP continúa preparado por T017 pero sin fuente real.
+`MainMenu` no es SceneManager narrativo. `VoiceSystem` no controla progresión. `messageLabel` del Locker Room es feedback contextual, no textbox narrativo. La validación de navegador, audio real, móvil y Telegram permanece pendiente cuando no existe un entorno de ejecución adecuado.
 
 ## 14. Implementation Boundary
 
@@ -278,3 +278,90 @@ Todas quedan PENDING.
 **RESULTADO T019: MINIMAL SAFE FOUNDATION.**
 
 El contrato de T018 fue ejecutado mediante un vertical slice pequeño: una escena técnica, cuatro líneas, `ADVANCE`, `SKIP`, eventos locales, integración con `ReactionRuleSystem` y presentación reutilizando `VoiceSystem`. No se implementó branching, editor, localization, cinematic pipeline ni un EventBus global.
+
+
+## 17. T020 Validation Status
+
+**RESULTADO T020: QA DEL VERTICAL SLICE COMPLETADO SIN CAMBIOS FUNCIONALES.**
+
+### Runtime QA Results
+
+La ejecución real disponible fue la GitHub Action de T019 sobre el workflow de Pages. El job alcanzó y ejecutó realmente:
+
+- `reaction_rules_test.mjs` — PASS_REAL.
+- `narrative_runtime_test.mjs` — PASS_REAL.
+- `narrative_presentation_test.mjs` — PASS_REAL.
+- Los checks de sintaxis de `narrative_runtime.js`, `narrative_presentation.js` y `app.js` fueron ejecutados sin fallo.
+- La ejecución completa del workflow terminó FAIL en `webapp/js/contract_test.mjs` por una declaración duplicada existente de `combatJs`. T019 no modifica ese archivo ni `combat.js`; el fallo es ajeno al vertical slice narrativo.
+
+Secuencia verificada por los tests reales:
+
+```
+SCENE_STARTED
+→ DIALOGUE_ADVANCED
+→ DIALOGUE_ADVANCED
+→ DIALOGUE_COMPLETED
+→ SCENE_COMPLETED
+```
+
+y para Skip:
+
+```
+SCENE_STARTED
+→ SKIP
+→ SCENE_COMPLETED
+```
+
+El runtime termina en `COMPLETED` o `SKIPPED` y no permite `advance()` después de finalizar.
+
+### Reaction / Azusa
+
+`SKIP` llega a `ReactionRuleSystem` con contexto `dialogue` y el personaje de prueba `azusa`. La reacción experimental `REACTION_SKIP` se resuelve como:
+
+> “¿Me estás prestando atención?!”
+
+La prueba de `once` evita una segunda reacción dentro de la misma instancia. No se añadieron datos a fuentes canónicas de personajes.
+
+### Voice
+
+La presentación reutiliza `VoiceSystem`; no existe un sistema de voz duplicado. La integración fue verificada mediante el test de presentación con un adaptador de voz de prueba. La reproducción de archivo de audio real y el fallback `speechSynthesis` en navegador no fueron ejecutados y quedan NOT_RUN.
+
+### Presentation / Navigation
+
+La integración mediante `?narrative_test=1` permanece aislada del flujo normal. La revisión estática confirma que el montaje ocurre únicamente cuando el parámetro está presente y que la vista de prueba se oculta por defecto.
+
+La validación interactiva en navegador, incluyendo ADVANCE/SKIP visual, reacción visible y estados DOM, queda NOT_RUN por ausencia de un navegador automatizado disponible en el entorno de esta tarea.
+
+### Locker Room / INACTIVITY
+
+T019 no modificó `webapp/js/locker_room.js`. El compare de T018→T019 contiene cero cambios en Locker Room, por lo que la detección INACTIVITY conserva su aislamiento respecto de `NarrativeRuntime`. La ejecución interactiva del Locker Room queda NOT_RUN.
+
+### Mobile / PWA / Telegram
+
+No hubo navegador móvil, instalación PWA ni Telegram Mini App real disponibles para ejecución. Resultado: NOT_RUN.
+
+La revisión estática confirma que:
+
+- `sw.js` conserva su estrategia genérica cache-first y puede cachear los módulos narrativos al solicitarlos.
+- `NarrativeRuntime` no depende de Telegram, CloudStorage, HapticFeedback, BackButton ni pagos.
+- La nueva vista narrativa no altera la navegación normal cuando `narrative_test` no está presente.
+
+### Boundary Audit
+
+La frontera permanece:
+
+```
+DATA
+ ↓
+NARRATIVE RUNTIME
+ ↓
+LOCAL NARRATIVE EVENT
+ ↓
+REACTION RULE
+ ↓
+VOICE / PRESENTATION
+```
+
+No se encontró control de cursor narrativo desde VoiceSystem, control de escena desde ReactionRuleSystem, ni mutación de datos de personaje desde Presentation.
+
+**QA T020: sin correcciones funcionales requeridas.**
