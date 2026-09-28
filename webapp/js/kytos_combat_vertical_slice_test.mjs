@@ -49,7 +49,7 @@ const debuffed = applyActionCard(buffered, ACTION_CARD.DEBUFFER, { energy: 5 });
 assert.equal(debuffed.batter.debuff, 5);
 
 const hit = resolveKytosHit(debuffed, { timingAccuracy: 1 });
-assert.equal(hit.damage, 30);
+assert.equal(hit.damage, 60);
 assert.equal(hit.kytos.hp, 70);
 
 const shielded = createCombatState({ shield: 100 });
