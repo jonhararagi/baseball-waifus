@@ -1,1 +1,45 @@
-{"task":"TAREA_007","evidence":[],"note":"Evidence must be appended by the local guard or calling agent. Empty evidence is not proof of execution."}
+{
+  "task": "TAREA_007",
+  "evidence": [
+    {
+      "type": "repo_head",
+      "source": "GitHub compare",
+      "target": "main",
+      "base": "ebec5fba26c674c2005065bc30901d08c7b4781c",
+      "head": "b6a783967b760e6bb398d28d96af493524e40015",
+      "status": "PASS_REAL",
+      "result": "main is ahead by exactly one commit; the only changed file is .agent/context.md."
+    },
+    {
+      "type": "protected_scope",
+      "source": "GitHub compare",
+      "status": "PASS_REAL",
+      "result": "No protected gameplay, economy, PWA, Telegram, asset, or Pages files are present in the task delta."
+    },
+    {
+      "type": "persistent_state_inspection",
+      "source": "GitHub fetch_file",
+      "status": "PASS_INSPECTION",
+      "result": "All required .agent JSON files were fetched successfully; Markdown context was fetched successfully."
+    },
+    {
+      "type": "agent_guard_source_inspection",
+      "source": "GitHub fetch_file",
+      "status": "PASS_INSPECTION",
+      "result": "Agent Guard implementation, test suite, and workflow were inspected. The workflow defines Checkout, Node 20, syntax validation, JSON validation, and Agent Guard test execution."
+    },
+    {
+      "type": "agent_guard_runtime",
+      "source": "process/CI",
+      "status": "BLOCKED",
+      "result": "No real execution result was observable."
+    },
+    {
+      "type": "ci_workflow",
+      "source": "GitHub Actions connector",
+      "status": "NOT_OBSERVED",
+      "result": "No observable workflow run/status was returned for the validation commit; the available fetch_commit_workflow_runs endpoint filters to pull-request-triggered runs."
+    }
+  ],
+  "note": "Evidence does not claim runtime PASS_REAL without an observed exit code 0."
+}
