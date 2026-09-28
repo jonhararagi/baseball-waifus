@@ -31,7 +31,7 @@ assert.equal(first.demo.state.timing.success, true);
 assert.equal(first.demo.state.lastResult, "KYTOS_DEFEATED");
 assert.equal(first.demo.state.batter.storedEnergy, 0);
 assert.ok(first.demo.state.shield <= 100);
-assert.ok(first.demo.state.kytos.energy >= 30);
+
 
 const timingSnapshot = first.snapshots.find((snapshot) => snapshot.phase === KYTOS_DEMO_PHASE.TIMING);
 assert.equal(timingSnapshot.presentation.timing.active, true);
@@ -46,6 +46,7 @@ assert.equal(hitSnapshot.state.lastResult, "KYTOS_HIT");
 
 const emergencySnapshot = first.snapshots.find((snapshot) => snapshot.phase === KYTOS_DEMO_PHASE.EMERGENCY);
 assert.equal(emergencySnapshot.state.phase, "EMERGENCY");
+assert.equal(emergencySnapshot.state.kytos.energy, 30);
 
 const presentation = new KytosCombatPresentation();
 const gameplayBefore = structuredClone(first.demo.state);
