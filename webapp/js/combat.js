@@ -4,6 +4,7 @@ import { AreaThemeManager } from "./area_theme_manager.js";
 import { BatterRenderer } from "./batter_renderer.js";
 import { CombatEffects } from "./combat_effects.js";
 import { CombatHUD } from "./combat_hud.js";
+import { KytosCombatPresentation } from "./kytos_combat_presentation.js";
 import { PerformanceAdapter } from "./performance_adapter.js";
 import { AssetLoader, isHttpsUrl } from "./asset_loader.js";
 import { getWaifuAssets, getWaifu } from "./waifu_database.js";
@@ -224,6 +225,8 @@ export class CombatRenderer {
     });
     this.combatEffects = new CombatEffects();
     this.combatHud = new CombatHUD({ getResources: getHudResources });
+    this.kytosPresentation = new KytosCombatPresentation();
+    this.kytosPresentationState = null;
 
     this.state = null;
     this.lastTurn = null;
@@ -569,6 +572,19 @@ export class CombatRenderer {
     const id = String(character?.card_id || character?.id || "");
     const descriptor = (this.state?.assets?.sprites || []).find((item) => item?.id === id);
     return descriptorPath(descriptor, "sprite") || String(character?.sprite_url || "");
+  }
+
+  setKytosPresentationState(state = null) {
+    this.kytosPresentationState = state ? state : null;
+    return this.kytosPresentationState;
+  }
+
+  clearKytosPresentationState() {
+    this.kytosPresentationState = null;
+  }
+
+  getKytosPresentationState() {
+    return this.kytosPresentationState;
   }
 
   setAudioBridge(audioBridge) {
@@ -1015,6 +1031,10 @@ export class CombatRenderer {
     if (this.matchReady && this.state) {
       this._drawMatchState(target, w, h);
       this._drawBattleLoopHud(target, w, h);
+    }
+
+    if (this.kytosPresentationState) {
+      this.kytosPresentation.render(target, w, h, this.kytosPresentationState, { time });
     }
 
     this._drawTimingRing(target, w, h, time);
