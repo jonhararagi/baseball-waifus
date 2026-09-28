@@ -1,1 +1,18 @@
-{"task":"TAREA_007","tests":[],"note":"Only executed commands with exit code and recorded output may receive PASS_REAL."}
+{
+  "task": "TAREA_007",
+  "tests": [
+    {
+      "name": "tools/agent_guard_test.mjs",
+      "command": "node --experimental-default-type=module tools/agent_guard_test.mjs",
+      "started_at": null,
+      "finished_at": null,
+      "duration_ms": null,
+      "exit_code": null,
+      "status": "NOT_RUN",
+      "stdout_summary": "",
+      "stderr_summary": "",
+      "reason": "BLOCKED: the available execution environment cannot access a checkout of the GitHub repository; local git/network access is unavailable. The GitHub workflow execution could not be observed through the available connector."
+    }
+  ],
+  "note": "No NOT_RUN result is promoted to PASS_REAL."
+}
