@@ -143,7 +143,7 @@ export function verifyCommit(commit) {
   return result;
 }
 
-export function verifyScope(baseCommit, allowedPaths = []) {
+export function detectUnexpectedFiles(changedFiles = [], allowedPaths = []) {\n  return changedFiles.filter(file => !allowedPaths.some(prefix => file === prefix || file.startsWith(prefix.endsWith("/") ? prefix : prefix + "/")));\n}\n\nexport function verifyScope(baseCommit, allowedPaths = []) {
   let changed = [];
   try {
     const range = baseCommit ? [baseCommit + "...HEAD", "--name-only"] : ["--name-only"];
@@ -151,7 +151,7 @@ export function verifyScope(baseCommit, allowedPaths = []) {
   } catch {
     changed = [];
   }
-  const unexpected = changed.filter(file => !allowedPaths.some(prefix => file === prefix || file.startsWith(prefix.endsWith("/") ? prefix : prefix + "/")));
+  const unexpected = detectUnexpectedFiles(changed, allowedPaths);
   const result = {
     type: "scope_check",
     source: "git",
