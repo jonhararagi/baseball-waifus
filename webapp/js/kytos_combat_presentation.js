@@ -1,3 +1,4 @@
+import { TIMING_RING_TARGET_RADIUS, TIMING_RING_MAX_RADIUS, timingRingRadius } from "./timing_ring.js";
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
 const PHASE_LABELS = Object.freeze({
@@ -145,6 +146,7 @@ export class KytosCombatPresentation {
       interrupted: String(state?.phase || "").toUpperCase() === "INTERRUPTED"
         || String(state?.lastResult || "").toUpperCase() === "INTERRUPTED_SUPPORT",
       energyBall,
+      timing: state?.presentation?.timing ? Object.freeze({ ...state.presentation.timing }) : null,
       pointDistance
     });
   }
@@ -157,6 +159,7 @@ export class KytosCombatPresentation {
     this._drawSupports(ctx, model);
     this._drawKytos(ctx, model, time);
     if (model.energyBall) this._drawEnergyBall(ctx, model.energyBall, time);
+    if (model.timing) this._drawTiming(ctx, model.timing, time, width, height);
     this._drawStatus(ctx, model);
     this.lastResult = model.result;
     this.lastPhase = model.phase;
@@ -310,6 +313,52 @@ export class KytosCombatPresentation {
     ctx.font = "900 8px Rajdhani, system-ui, sans-serif";
     ctx.textAlign = "center";
     ctx.fillText(ENERGY_LABELS[ball.energyType] || "ENERGY", ball.x, ball.y - ball.radius - 9);
+    ctx.restore();
+  }
+
+  _drawTiming(ctx, timing, time, width, height) {
+    if (!timing?.active) return;
+
+    const progress = clamp(Number(timing.progress) || 0, 0, 1);
+    const elapsedMs = progress * 720;
+    const radius = timingRingRadius(elapsedMs);
+    const cx = width * 0.5;
+    const cy = height * 0.56;
+    const pulse = 0.76 + Math.sin(safeNumber(time, 0) * 0.012) * 0.12;
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    ctx.globalAlpha = 0.24;
+    ctx.strokeStyle = this.theme.cyan;
+    ctx.lineWidth = 10;
+    ctx.beginPath();
+    ctx.arc(cx, cy, TIMING_RING_TARGET_RADIUS, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.globalAlpha = 0.75;
+    ctx.strokeStyle = this.theme.yellow;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.globalAlpha = pulse;
+    ctx.strokeStyle = this.theme.white;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, TIMING_RING_MAX_RADIUS * 0.16, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = this.theme.white;
+    ctx.font = "900 12px Orbitron, system-ui, sans-serif";
+    ctx.fillText("TIMING", cx, cy - 18);
+    ctx.font = "800 9px Rajdhani, system-ui, sans-serif";
+    ctx.fillStyle = this.theme.muted;
+    ctx.fillText("INPUT WINDOW", cx, cy + 18);
     ctx.restore();
   }
 
