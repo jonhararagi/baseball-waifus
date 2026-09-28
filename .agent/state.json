@@ -1,32 +1,40 @@
 {
   "task": "TAREA_007",
   "phase": "VERIFY",
-  "status": "IN_PROGRESS",
-  "repo_head": "8de8071b44f51cf7cdcbac52b997f0af2ff51b41",
+  "status": "BLOCKED",
+  "repo_head": "b6a783967b760e6bb398d28d96af493524e40015",
   "started_at": "",
-  "updated_at": "2026-09-28T04:53:32.547Z",
+  "updated_at": "2026-09-28T05:00:00.000Z",
   "files_inspected": [
     ".agent/task.json",
     ".agent/state.json",
+    ".agent/discoveries.json",
+    ".agent/decisions.json",
+    ".agent/evidence.json",
+    ".agent/tests.json",
+    ".agent/blockers.json",
+    ".agent/context.md",
     "tools/agent_guard.mjs",
     "tools/agent_guard_test.mjs",
     ".github/workflows/agent-guard.yml"
   ],
   "files_modified": [
-    ".agent/",
-    "tools/agent_guard.mjs",
-    "tools/agent_guard_test.mjs",
-    ".github/workflows/agent-guard.yml"
+    ".agent/context.md",
+    ".agent/tests.json",
+    ".agent/evidence.json",
+    ".agent/blockers.json",
+    ".agent/state.json"
   ],
   "tests": [
     {
       "name": "tools/agent_guard_test.mjs",
       "status": "NOT_RUN",
-      "reason": "Local repository checkout/runtime was unavailable to this agent execution environment."
+      "reason": "Actual repository runtime unavailable."
     }
   ],
   "blockers": [
-    "Local command execution is unavailable; GitHub workflow result is not yet observable through the available connector."
+    "Actual repository runtime unavailable for the exact Node test.",
+    "GitHub Actions execution is not observable through the available connector."
   ],
-  "next_action": "Run the Agent Guard workflow or node tools/agent_guard_test.mjs in a real checkout; only PASS_REAL may move phase to COMPLETE."
+  "next_action": "Run node --experimental-default-type=module tools/agent_guard_test.mjs in an actual checkout of main, then record the real exit code and promote to COMPLETE only if exit_code=0 and scope/state remain coherent."
 }
