@@ -25,8 +25,8 @@ function perfectRoleInput(battle) {
     case "DEBUFFER":
       return {
         targetId: state.current_target.id,
-        targetType: state.current_target.type,
-        position: { x: state.current_target.x, y: state.current_target.y },
+        x: state.current_target.x,
+        y: state.current_target.y,
         timestampMs: state.current_target.target_ms
       };
     default:
