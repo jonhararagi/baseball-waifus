@@ -14,6 +14,8 @@ on:
       - "webapp/js/kytos_combat_demo_test.mjs"
       - "webapp/js/app.js"
       - "webapp/js/timing_ring.js"
+      - "webapp/js/batter_renderer.js"
+      - "webapp/js/batter_renderer_test.mjs"
       - ".github/workflows/combat-tests.yml"
   workflow_dispatch:
 
