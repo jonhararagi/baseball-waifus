@@ -30,7 +30,7 @@ assert.equal(first.presentation.deterministic, true);
 
 const other = run("T042-INTEGRATION-002");
 assert.equal(other.seed, "T042-INTEGRATION-002");
-assert.equal(other.roleResults.BUFFER.seed, "T042-INTEGRATION-002::BUFFER");
+assert.equal(other.roleResults.BUFFER.seed, "T042-INTEGRATION-002");
 assert.notDeepEqual(other.roleResults, first.roleResults);
 
 const reset = new Student4v4Integration({ seed: "T042-RESET" });
