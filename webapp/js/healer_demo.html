@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>BaseWarriors // Healer Demo</title>
+  <style>
+    :root{background:#080910;color:#e9f8ff;font-family:Arial,sans-serif}body{margin:0;min-height:100vh;display:grid;place-items:center;background:radial-gradient(circle at 50% 20%,#18213d,#080910 60%)}#healer-demo{width:min(760px,94vw)}
+  </style>
+</head>
+<body>
+  <main id="healer-demo"></main>
+  <script type="module">
+    import { HealerDefensiveSupport } from "./js/healer_defensive_support.js";
+    import { healerRoleResultToCombatResult } from "./js/healer_combat_adapter.js";
+    import { HealerDefensivePresentation } from "./js/healer_defensive_presentation.js";
+
+    const root = document.querySelector("#healer-demo");
+    const view = new HealerDefensivePresentation(root);
+    const seed = "T035-HEALER-DEMO";
+    let game = null;
+    let startedAt = 0;
+    let lastGrade = "";
+    let finalResult = null;
+
+    function start() {
+      game = new HealerDefensiveSupport({ seed, count: 6, spacingMs: 900 });
+      game.start();
+      startedAt = performance.now();
+      lastGrade = "";
+      finalResult = null;
+      render();
+      requestAnimationFrame(frame);
+    }
+
+    function elapsed() {
+      return performance.now() - startedAt;
+    }
+
+    function submitZone(zone) {
+      const threat = game?.getCurrentThreat();
+      if (!threat) return;
+      const response = game.submitInput({
+        threatId: threat.id,
+        zone,
+        timestampMs: elapsed()
+      });
+      lastGrade = response.grade || response.reason || "MISS";
+      finalResult = response.result || null;
+      render();
+      if (finalResult) {
+        root.dataset.combatResult = JSON.stringify(
+          healerRoleResultToCombatResult(finalResult, { shieldBefore: 25, shieldMax: 100 })
+        );
+      }
+    }
+
+    function render() {
+      view.render({ state: game.getState(), elapsedMs: elapsed(), lastGrade, result: finalResult });
+      view.bind({ onZone: submitZone, onRestart: start });
+    }
+
+    function frame() {
+      if (!game?.completed) {
+        render();
+        requestAnimationFrame(frame);
+      }
+    }
+
+    start();
+  </script>
+</body>
+</html>

@@ -19,6 +19,11 @@ on:
       - "webapp/js/buffer_energy_creator_presentation.js"
       - "webapp/js/buffer_energy_creator_test.mjs"
       - "webapp/js/buffer_demo.html"
+      - "webapp/js/healer_defensive_support.js"
+      - "webapp/js/healer_combat_adapter.js"
+      - "webapp/js/healer_defensive_presentation.js"
+      - "webapp/js/healer_defensive_test.mjs"
+      - "webapp/js/healer_demo.html"
       - "webapp/js/app.js"
       - "webapp/index.html"
       - "webapp/css/styles.css"
@@ -56,6 +61,7 @@ jobs:
           node --experimental-default-type=module webapp/js/combat_effects_test.mjs
           node --experimental-default-type=module webapp/js/batter_renderer_test.mjs
           node --experimental-default-type=module webapp/js/buffer_energy_creator_test.mjs
+          node --experimental-default-type=module webapp/js/healer_defensive_test.mjs
 
       - name: Validate combat syntax
         shell: bash
@@ -71,4 +77,7 @@ jobs:
           node --experimental-default-type=module --check webapp/js/buffer_energy_creator.js
           node --experimental-default-type=module --check webapp/js/buffer_combat_adapter.js
           node --experimental-default-type=module --check webapp/js/buffer_energy_creator_presentation.js
+          node --experimental-default-type=module --check webapp/js/healer_defensive_support.js
+          node --experimental-default-type=module --check webapp/js/healer_combat_adapter.js
+          node --experimental-default-type=module --check webapp/js/healer_defensive_presentation.js
           node --experimental-default-type=module --check webapp/js/app.js
