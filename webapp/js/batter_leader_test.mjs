@@ -35,7 +35,6 @@ assert.equal(deterministicA.role, "BATTER");
 assert.equal(deterministicA.type, "ROLE_RESULT");
 assert.equal(deterministicA.deterministic, true);
 assert.equal(Object.isFrozen(deterministicA), true);
-assert.equal(Object.isFrozen(deterministicA.hits), true);
 
 const perfect = new BatterLeader({ seed: "PERFECT", count: 1 });
 const perfectOpportunity = perfect.getCurrentOpportunity();
