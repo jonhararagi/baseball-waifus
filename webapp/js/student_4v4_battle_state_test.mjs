@@ -130,13 +130,8 @@ assert.throws(() => battle.submitRoleResult("BUFFER", duplicateResult), /ALREADY
 
 const invalidDuplicate = new Student4v4BattleState({ seed: "T043-DUPLICATE" });
 invalidDuplicate.start();
-const firstBuffer = invalidDuplicate.getCurrentRoleGame();
-const firstInput = {
-  noteId: firstBuffer.getState().current_note.id,
-  timestampMs: firstBuffer.getState().current_note.target_ms
-};
-const firstResponse = invalidDuplicate.submitInput(firstInput);
-assert.equal(firstResponse.accepted, true);
+completeCurrentRole(invalidDuplicate);
+assert.equal(invalidDuplicate.currentPhase, "HEALER");
 assert.throws(() => invalidDuplicate.submitRoleResult("BUFFER", invalidDuplicate.roleResults.BUFFER), /DUPLICATE_ROLE_RESULT:BUFFER/);
 
 const deterministicA = runBattle("T043-DETERMINISTIC");
