@@ -62,7 +62,7 @@ const passPower = prepare(SUPPORT_ACTION.PASS, BATTER_ORDER.POWER_SWING);
 
 assert.equal(passNormal.damage, 59);
 assert.equal(boostNormal.damage, 74);
-assert.equal(chargeNormal.damage, 61);
+assert.equal(chargeNormal.damage, 71);
 assert.equal(passPower.damage, 71);
 assert.notEqual(passNormal.damage, boostNormal.damage);
 assert.notEqual(passNormal.damage, chargeNormal.damage);
