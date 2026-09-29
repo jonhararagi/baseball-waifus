@@ -29,19 +29,14 @@ async function waitForPhase(page, expected, timeoutMs = 5000) {
 }
 
 async function clickSelector(page, selector, attempts = 80) {
+  const locator = page.locator(selector).first();
   for (let attempt = 0; attempt < attempts; attempt += 1) {
-    const result = await page.evaluate(function (value) {
-      const element = document.querySelector(value);
-      if (!element) return { ok: false, reason: "NOT_FOUND" };
-      const style = window.getComputedStyle(element);
-      if (element.disabled) return { ok: false, reason: "DISABLED" };
-      if (style.display === "none" || style.visibility === "hidden") return { ok: false, reason: "HIDDEN" };
-      element.scrollIntoView({ block: "center", inline: "center" });
-      element.click();
-      return { ok: true };
-    }, selector);
-    if (result.ok) return;
-    await page.waitForTimeout(25);
+    try {
+      await locator.click({ force: true, timeout: 250 });
+      return;
+    } catch {
+      await page.waitForTimeout(25);
+    }
   }
   throw new Error("cannot click " + selector + ": timeout");
 }
