@@ -58,8 +58,8 @@ function runInteractiveBattle(seed) {
     phases.push(role);
     const adapter = adapters[role] || (adapters[role] = buildInput(role, battle));
     const started = adapter.start();
-    assert.equal(started.currentPhase, "BUFFER");
-    assert.equal(battle.currentPhase, role === "BUFFER" ? "BUFFER" : role);
+    assert.equal(started.currentPhase, role);
+    assert.equal(battle.currentPhase, role);
     while (battle.currentPhase === role) {
       const response = submitThroughAdapter(role, adapter);
       assert.equal(response.accepted, true, role + " rejected valid input: " + (response.reason || "unknown"));
