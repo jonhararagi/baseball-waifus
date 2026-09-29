@@ -29,20 +29,21 @@ async function waitForPhase(page, expected, timeoutMs = 5000) {
 }
 
 async function clickSelector(page, selector) {
-  const locator = page.locator(selector).first();
-  await locator.waitFor({ state: "attached", timeout: 3000 });
-  const state = await locator.evaluate(function (element) {
+  const result = await page.evaluate(function (value) {
+    const element = document.querySelector(value);
+    if (!element) return { ok: false, reason: "NOT_FOUND" };
     const style = window.getComputedStyle(element);
-    return {
-      disabled: Boolean(element.disabled),
-      rendered: style.visibility !== "hidden" && style.display !== "none"
-    };
-  });
-  assert.equal(state.disabled, false, "disabled interactive element: " + selector);
-  assert.equal(state.rendered, true, "non-rendered interactive element: " + selector);
-  await locator.evaluate(function (element) {
+    if (element.disabled) return { ok: false, reason: "DISABLED" };
+    if (style.display === "none" || style.visibility === "hidden") {
+      return { ok: false, reason: "HIDDEN" };
+    }
+    element.scrollIntoView({ block: "center", inline: "center" });
+    const rect = element.getBoundingClientRect();
+    if (!rect.width || !rect.height) return { ok: false, reason: "ZERO_RECT" };
     element.click();
-  });
+    return { ok: true, x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+  }, selector);
+  assert.equal(result.ok, true, "cannot click " + selector + ": " + result.reason);
 }
 
 async function clickDynamicBuffer(page) {
