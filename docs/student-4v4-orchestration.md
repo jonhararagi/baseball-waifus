@@ -1,70 +1,52 @@
 # Student 4v4 Orchestration Foundation
 
-**Status:** WORKING IMPLEMENTATION / DESIGN PROPOSAL
+**Status:** IMPLEMENTED / VERIFIED FOUNDATION
 
-T038 composes the four isolated Student 4v4 role results without introducing a second combat core.
+## Integrated architecture
 
-## Architecture
+PLAYER INPUT → ROLE GAMEPLAY → ROLE_RESULT → Student4v4Orchestrator → STUDENT_4V4_RESULT → COMBAT_RESULT adapter → PRESENTATION
 
-```text
-BUFFER ROLE_RESULT ─┐
-HEALER ROLE_RESULT ─┤
-DEBUFFER ROLE_RESULT├─> Student4v4Orchestrator
-BATTER ROLE_RESULT ─┘          |
-                               v
-                       STUDENT_4V4_RESULT
-                               |
-                               v
-                    COMBAT_RESULT adapter
-                               |
-                               v
-                    presentation model
-```
+The implemented T042 integration uses the real T034 Buffer, T035 Healer, T036 Debuffer, and T037/T039 Batter modules. `Student4v4Integration` owns only sequence control and result collection. It does not calculate role scoring, timing, energy, protection, disruption, impact, damage, or victory.
 
-The orchestrator consumes completed role results. It does not execute timing, input, scoring, damage, healing, energy generation, or disruption gameplay.
-
-## Resolution order
-
-The fixed deterministic order is:
+## Fixed integration order
 
 1. BUFFER
 2. HEALER
 3. DEBUFFER
 4. BATTER
-5. Combined result
+5. COMBINED RESULT
 
-There are no turns or concurrent role simulations in T038.
+Each role receives a deterministic derived seed in the form `<integration-seed>::<ROLE>`. The orchestrator receives the integration seed and validates the four role results before combining them.
 
-## Contract
+## Combined result
 
-`STUDENT_4V4_RESULT` contains the seed, optional team snapshot, the four frozen role results, each role's contribution, combined score/accuracy, success, and `deterministic: true`.
+The existing T038 formula remains authoritative:
 
-The first working formula is intentionally simple:
-
-- `combinedScore` = sum of the four role scores.
-- `combinedAccuracy` = arithmetic mean of the four role accuracies, rounded to an integer.
+- `combinedScore` = sum of role scores.
+- `combinedAccuracy` = arithmetic mean of role accuracies.
 - `energyContribution` = Buffer `energy_points`.
 - `protectionContribution` = Healer `protectedPoints`.
 - `disruptionContribution` = Debuffer `disruptionPoints`.
 - `impactContribution` = Batter `impactPoints`.
-- `success` = true when at least one validated role reports success.
 
-These values are implementation-level design proposals, not final balance and not narrative canon.
+No Kytos formula or common combat core was modified.
+
+## Playable development demo
+
+`webapp/student_4v4_demo.html` is isolated from the normal application flow. START begins the real Buffer role. Each EXECUTE action completes the current real role with deterministic perfect inputs and advances to the next role. After Batter, the real `Student4v4Orchestrator` resolves the four results and the existing Student 4v4 adapter produces a `COMBAT_RESULT`. RESTART reconstructs all four role instances from the same seed.
+
+The demo UI is presentation only. It does not calculate gameplay results.
 
 ## Validation
 
-The orchestrator rejects missing roles, duplicate roles, malformed role results, mismatched seeds, non-deterministic role results, and a second resolution after completion. Input role results are never mutated.
+`student_4v4_integration_test.mjs` proves that all four role systems emit `ROLE_RESULT`, the orchestrator consumes them, the combined result converts to the existing `COMBAT_RESULT`, the presentation model consumes the result, repeated runs with the same seed are identical, a different seed is propagated to role instances, and reset clears the integrated result.
 
-`reset()` clears the orchestrator resolution state so the same seed and role results can be resolved again identically.
+## Visual QA boundary
 
-## Kytos separation
+Student 4v4 integration is implemented in the webapp JavaScript layer. The existing Godot Visual QA pipeline targets Godot scenes and cannot execute these JavaScript role systems without introducing a second gameplay implementation. T042 therefore does not add a parallel Godot combat implementation or fake a Godot PASS. Browser/webapp visual QA remains a separate environment concern.
 
-The Student 4v4 layer imports only the existing `COMBAT_RESULT` type for its adapter. It does not modify `combat_core.js`, Kytos formulas, `resolveKytosHit()`, or Kytos presentation/gameplay.
+## Scope boundary
 
-Kytos remains on its existing boss-combat framework. Student 4v4 is a separate composition layer.
+Future: concurrent 4v4 interaction, turn/battle orchestration beyond this sequential integration, PvP, matchmaking, ranking, progression, deckbuilding, economy, professionals, Valkyrias, humanoid Kytos, and definitive balance.
 
-## Future / Proposal
-
-The following remain outside T038 and are not implemented: full 4v4 battle UI/orchestration, PvP, matchmaking, ranking, progression, deckbuilding, economy, professionals, Valkyrias, humanoid Kytos, advanced AI, tournaments, and definitive balance.
-
-No canon changes are made by this implementation.
+No canon changes are made.
