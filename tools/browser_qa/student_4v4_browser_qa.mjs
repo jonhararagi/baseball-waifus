@@ -29,9 +29,12 @@ async function waitForPhase(page, expected, timeoutMs = 5000) {
 }
 
 async function clickSelector(page, selector, attempts = 80) {
+  const locator = page.locator(selector).first();
   for (let attempt = 0; attempt < attempts; attempt += 1) {
     try {
-      const locator = page.locator(selector).first();
+      await locator.evaluate(function (element) {
+        element.scrollIntoView({ block: "center", inline: "center" });
+      });
       const box = await locator.boundingBox();
       if (!box) throw new Error("NOT_CLICKABLE");
       await page.mouse.click(
