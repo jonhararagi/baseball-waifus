@@ -143,7 +143,12 @@ export class KytosCombatDemo {
 
     this.stepIndex += 1;
     const phase = STEP_ORDER[this.stepIndex];
-    this.presentation = { timing: null, event: phase };
+    this.presentation = {
+      timing: null,
+      event: phase,
+      selectedSupportAction: this.presentation.selectedSupportAction || null,
+      selectedBatterOrder: this.presentation.selectedBatterOrder || null
+    };
 
     switch (phase) {
       case KYTOS_DEMO_PHASE.FORMATION:
