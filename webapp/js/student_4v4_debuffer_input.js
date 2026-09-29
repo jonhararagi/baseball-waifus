@@ -91,12 +91,11 @@ export class Student4v4DebufferInput {
     }
 
     const targetId = String(payload.targetId ?? "");
-    if (!targetId || targetId !== target.id) {
-      return this._reject("INVALID_TARGET");
-    }
-
     if (this.resolvedTargetIds.has(targetId)) {
       return this._reject("DUPLICATE_INPUT");
+    }
+    if (!targetId || targetId !== target.id) {
+      return this._reject("INVALID_TARGET");
     }
 
     const targetType = String(payload.targetType ?? "").toUpperCase();
