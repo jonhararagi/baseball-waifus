@@ -17,6 +17,10 @@ const pose = renderer.getBatPose(360, 640);
 assert.ok(Number.isFinite(pose.rotation));
 assert.ok(pose.length > 0);
 
+const anchoredPose = renderer.getBatPose(720, 1280, { anchorX: 360, anchorY: 998.4 });
+assert.equal(anchoredPose.x, 360);
+assert.equal(anchoredPose.y, 998.4);
+
 renderer.update(0.08);
 renderer.update(0.08);
 renderer.update(0.08);
