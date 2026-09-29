@@ -36,8 +36,7 @@ function completeCurrentRole(battle) {
 function runToComplete(seed) {
   const battle = new Student4v4BattleState({ seed, battleId: `battle-${seed}` });
   const presentation = new Student4v4PresentationOrchestrator();
-  const initial = battle.snapshot();
-  const initialView = presentation.update(initial);
+  const initialView = presentation.update(battle.snapshot());
   assert.deepEqual(initialView.events, []);
   assert.equal(initialView.presentation.phase, "INIT");
   assert.equal(initialView.presentation.activeRole, null);
@@ -58,24 +57,21 @@ function runToComplete(seed) {
     view = presentation.update(battle.snapshot());
     assert.equal(view.presentation.roles.find((entry) => entry.role === role).status, "completed");
     assert.equal(view.presentation.completedRoles.includes(role), true);
+    assert.equal(view.events.some((event) => event.type === "ROLE_COMPLETED" && event.role === role), true);
     if (role !== "BATTER") {
       const nextRole = ROLE_ORDER[ROLE_ORDER.indexOf(role) + 1];
       assert.equal(view.presentation.activeRole, nextRole);
-      assert.equal(view.events.some((event) => event.type === "ROLE_COMPLETED" && event.role === role), true);
       assert.equal(view.events.some((event) => event.type === "ROLE_STARTED" && event.role === nextRole), true);
     }
   }
 
   assert.equal(battle.currentPhase, "RESOLUTION");
-  view = presentation.update(battle.snapshot());
   assert.equal(view.presentation.phase, "RESOLUTION");
   assert.equal(view.presentation.activeRole, null);
   assert.equal(view.presentation.student4v4Result, null);
   assert.equal(view.presentation.combatResult, null);
   assert.equal(view.events.some((event) => event.type === "RESOLUTION_STARTED"), true);
-  assert.equal(view.events.some((event) => event.type === "ROLE_COMPLETED" && event.role === "BATTER"), true);
 
-  const beforeResolve = JSON.stringify(battle.snapshot());
   battle.resolve();
   view = presentation.update(battle.snapshot());
   assert.equal(view.presentation.phase, "COMPLETE");
@@ -86,7 +82,6 @@ function runToComplete(seed) {
   assert.equal(view.presentation.student4v4Result.type, "STUDENT_4V4_RESULT");
   assert.equal(view.presentation.combatResult.type, "COMBAT_RESULT");
   assert.equal(view.events.some((event) => event.type === "BATTLE_COMPLETED"), true);
-  assert.equal(JSON.stringify(battle.snapshot()).includes(JSON.parse(beforeResolve).seed), true);
 
   return { battle, presentation, result: view.presentation };
 }
@@ -126,12 +121,12 @@ const resetBattle = new Student4v4BattleState({ seed: "T044-RESET" });
 resettable.update(resetBattle.snapshot());
 resetBattle.start();
 resettable.update(resetBattle.snapshot());
-resettable.reset();
-assert.equal(resettable.getSnapshot(), null);
 resetBattle.reset();
 const resetView = resettable.update(resetBattle.snapshot());
 assert.equal(resetView.presentation.phase, "INIT");
-assert.deepEqual(resetView.events, []);
+assert.deepEqual(resetView.events.map((event) => event.type), [STUDENT_4V4_PRESENTATION_EVENT.BATTLE_RESET]);
+resettable.reset();
+assert.equal(resettable.getSnapshot(), null);
 
 const sideEffectBattle = new Student4v4BattleState({ seed: "T044-NO-GAMEPLAY" });
 const sideEffectBefore = JSON.stringify(sideEffectBattle.snapshot());

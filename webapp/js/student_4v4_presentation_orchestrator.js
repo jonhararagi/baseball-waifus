@@ -1,4 +1,4 @@
-import { STUDENT_4V4_BATTLE_PHASE, } from "./student_4v4_battle_state.js";
+import { STUDENT_4V4_BATTLE_PHASE } from "./student_4v4_battle_state.js";
 import { STUDENT_4V4_BATTLE_PRESENTATION_PHASES } from "./student_4v4_battle_state_presentation.js";
 
 const ROLE_ORDER = Object.freeze(["BUFFER", "HEALER", "DEBUFFER", "BATTER"]);
