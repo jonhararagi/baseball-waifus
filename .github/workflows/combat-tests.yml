@@ -48,6 +48,8 @@ on:
       - "webapp/js/student_4v4_presentation_orchestrator_test.mjs"
       - "webapp/js/student_4v4_role_adapters.js"
       - "webapp/js/student_4v4_role_adapters_test.mjs"
+      - "webapp/js/student_4v4_ui.js"
+      - "webapp/js/student_4v4_ui_test.mjs"
       - "webapp/student_4v4_demo.html"
       - "docs/student-4v4-orchestration.md"
       - "webapp/js/app.js"
@@ -95,6 +97,7 @@ jobs:
           node --experimental-default-type=module webapp/js/student_4v4_battle_state_test.mjs
           node --experimental-default-type=module webapp/js/student_4v4_presentation_orchestrator_test.mjs
           node --experimental-default-type=module webapp/js/student_4v4_role_adapters_test.mjs
+          node --experimental-default-type=module webapp/js/student_4v4_ui_test.mjs
 
       - name: Validate combat syntax
         shell: bash
@@ -128,4 +131,5 @@ jobs:
           node --experimental-default-type=module --check webapp/js/student_4v4_battle_state_presentation.js
           node --experimental-default-type=module --check webapp/js/student_4v4_presentation_orchestrator.js
           node --experimental-default-type=module --check webapp/js/student_4v4_role_adapters.js
+          node --experimental-default-type=module --check webapp/js/student_4v4_ui.js
           node --experimental-default-type=module --check webapp/js/app.js
