@@ -290,7 +290,6 @@ assert.throws(() => missing.resolve(), /MISSING_ROLE_RESULT/);
 assert.equal(missing.currentPhase, "BUFFER");
 
 const reset = new Student4v4BattleState({ seed: "T052-RESET" });
-reset.start();
 const resetBuffer = new Student4v4BufferInput({ battle: reset, clock: () => 1000 });
 resetBuffer.start();
 completeActiveRole(reset, resetBuffer);
