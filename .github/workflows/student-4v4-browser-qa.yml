@@ -56,7 +56,7 @@ jobs:
       - name: Run Student 4v4 Browser QA
         env:
           BASE_URL: http://127.0.0.1:4173/student_4v4_demo.html
-          ARTIFACT_DIR: \${{ github.workspace }}/qa_artifacts
+          ARTIFACT_DIR: ${{ github.workspace }}/qa_artifacts
         run: node tools/browser_qa/student_4v4_browser_qa.mjs
 
       - name: Upload Browser QA evidence
