@@ -18,8 +18,11 @@ const SAFETY_TIMEOUT_SECONDS := 5.0
 
 var _finished := false
 
+func _capture_requested() -> bool:
+	return "--run-qa-capture" in OS.get_cmdline_user_args() or "--run-qa-capture" in OS.get_cmdline_args()
+
 func _ready() -> void:
-	if "--run-qa-capture" not in OS.get_cmdline_args():
+	if not _capture_requested():
 		return
 
 	get_tree().create_timer(SAFETY_TIMEOUT_SECONDS).timeout.connect(_on_safety_timeout)
