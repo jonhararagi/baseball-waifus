@@ -32,13 +32,24 @@ Browser automation and deployed-site access remain external to this repository e
 
 ## Godot Visual QA scene execution
 
-Classification: REPO_BUGS, resolved in T041.
+Classification: REPO BUGS + CI CONFIGURATION BUG, resolved in T041.
 
-Run 36584777048 (2026-09-29) showed the affected character-presentation jobs reaching the scene command but timing out at the 15s shell guard. The common exporter path attempted ViewportTexture.get_image() before waiting for RenderingServer.frame_post_draw; this could stall the headless capture path, preventing the exporter watchdog from running. T041 changed the exporter to use the existing frame-post-draw capture path directly.
+Run 36584777048 (2026-09-29) established the initial symptom: the character-presentation jobs reached their scene command and timed out at the 15s shell guard. The exporter also was not reliably recognizing the custom argument passed after "--"; T041 now reads Godot user arguments explicitly through get_cmdline_user_args().
 
-Additional isolated failures in the same run were repository defects:
-- bw007: the fixture cast CardScript.new() to BaseballCharacterCard and asserted the result non-null. Runtime evidence showed that cast produced null; the fixture now uses the instantiated Control and the existing setup() contract.
-- bw009: the CI job downloaded Godot from a repository release URL that returned HTTP 404. It now uses the pinned official Godot release URL used by the other jobs.
-- bw015: the test incorrectly rejected the word watermark in base_prompt, even though the actual prompt intentionally contains no watermark; the policy belongs in negative_prompt, so the assertion now checks that field.
+After that was corrected, the runtime evidence isolated the renderer problem. On GitHub Actions, the capture job used Godot with --headless. Godot reported:
 
-The run also exposed unrelated import warnings for the corrupt webapp/assets/icons/icon-512.png, plus parse errors in situation_evaluator_test.tscn and tactical_calculator_test.tscn. These did not identify the character-scene root cause and were not modified by T041.
+Parameter "t" is null.
+at: texture_2d_get (servers/rendering/dummy/storage/texture_storage.h:106)
+GDScript backtrace:
+[0] _try_capture (res://game/ui/visual_qa_exporter.gd:59)
+
+This proves the capture path was running against Godot's dummy rendering storage, so the viewport texture was not available for PNG capture. The correct CI repair was to run only the screenshot jobs under Xvfb with the project's normal gl_compatibility renderer, while keeping import/contract/generation jobs headless.
+
+Additional isolated repository defects in the same QA block were repaired:
+- bw007: PlayerData skill_roles were not loaded from character_identity.skill_roles. The scene assertion exposed the real catalog loader bug. The loader now reads the canonical nested skill-role field.
+- bw009: the CI job downloaded Godot from a repository release URL that returned HTTP 404. It now uses the pinned official Godot release URL.
+- bw015: the test's watermark assertion was incompatible with the actual prompt contract. The base prompt intentionally contains "no watermark"; the test now validates that phrase and normalizes catalog stat comparisons numerically to avoid JSON number-type equality issues.
+
+Validation run 36587046887, head 4841fc05fa32ed5de4c5e200f0b79e118f9d0fb0, completed successfully for all Visual QA jobs and the accumulated frontend/P10 checks. The character presentation artifacts for bw004-bw012 were produced successfully.
+
+The run also continues to emit unrelated import warnings for the corrupt webapp/assets/icons/icon-512.png and parse errors in situation_evaluator_test.tscn / tactical_calculator_test.tscn during project scanning. Those did not block the repaired Visual QA jobs and were not modified by T041.
