@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Student 4v4 - Batter Demo</title>
+  <style>
+    :root{font-family:system-ui,sans-serif;color:#f4f7ff;background:#05070d}html,body{margin:0;min-height:100%;background:#05070d}body{display:grid;place-items:center;padding:20px;box-sizing:border-box}button{font:inherit;font-weight:800;letter-spacing:.04em;padding:12px 18px;border:1px solid #00f0ff;background:#0b1220;color:#f4f7ff;border-radius:10px;cursor:pointer}button:disabled{opacity:.4;cursor:default}canvas{max-width:100%;height:auto;border-radius:14px}.batter-demo-card{width:min(720px,100%);padding:18px;border:1px solid rgba(0,240,255,.35);border-radius:18px;background:linear-gradient(160deg,#0b1020,#100814);box-shadow:0 20px 70px rgba(0,0,0,.45)}header h1{margin:4px 0 14px}.batter-kicker{font-size:12px;color:#00f0ff;font-weight:900}.batter-status,.batter-result,.batter-controls{display:flex;justify-content:space-between;gap:12px;align-items:center}.batter-status{font-size:12px;opacity:.75;margin-bottom:12px}.batter-field{position:relative}.batter-timing{position:absolute;left:72%;top:45%;width:0;height:0}.batter-ring,.batter-target{position:absolute;border-radius:50%;transform:translate(-50%,-50%)}.batter-ring{width:calc(var(--ring-radius)*2);height:calc(var(--ring-radius)*2);border:2px solid rgba(0,240,255,.7);box-shadow:0 0 24px rgba(0,240,255,.22)}.batter-target{width:68px;height:68px;border:3px solid #ff00be;box-shadow:0 0 22px rgba(255,0,190,.35)}.batter-grade{position:absolute;left:72%;top:58%;transform:translate(-50%,-50%);font-size:18px;font-weight:900}.batter-controls{margin-top:12px}.batter-result{margin-top:14px;padding:12px;border-radius:10px;background:#090d17}.batter-result strong{color:#ff00be}.batter-result span{opacity:.75;font-size:13px}
+  </style>
+</head>
+<body>
+  <main id="app"></main>
+  <script type="module">
+    import { BatterLeader } from "./batter_leader.js";
+    import { batterRoleResultToCombatResult } from "./batter_combat_adapter.js";
+    import { BatterLeaderPresentation } from "./batter_leader_presentation.js";
+
+    const root = document.querySelector("#app");
+    const presentation = new BatterLeaderPresentation(root);
+    const seed = "T037-DEMO";
+    let game = new BatterLeader({ seed, count: 4 });
+    let startedAt = performance.now();
+    let lastGrade = "READY";
+    let result = null;
+
+    function elapsedMs() { return performance.now() - startedAt; }
+
+    function render() {
+      presentation.render({ state: game.getState(), elapsedMs: elapsedMs(), lastGrade, result });
+      presentation.bind({ onSwing: swing, onRestart: restart });
+    }
+
+    function swing() {
+      const opportunity = game.getCurrentOpportunity();
+      if (!opportunity) return;
+      const response = game.submitInput({ opportunityId: opportunity.id, timestampMs: elapsedMs() });
+      if (response.accepted) {
+        lastGrade = response.grade;
+        result = response.result;
+        presentation.triggerSwing();
+      }
+      render();
+    }
+
+    function restart() {
+      game.start();
+      startedAt = performance.now();
+      lastGrade = "READY";
+      result = null;
+      render();
+    }
+
+    function frame(now) {
+      presentation.update(1 / 60);
+      if (!result) presentation.render({ state: game.getState(), elapsedMs: now - startedAt, lastGrade, result });
+      presentation.bind({ onSwing: swing, onRestart: restart });
+      requestAnimationFrame(frame);
+    }
+
+    render();
+    requestAnimationFrame(frame);
+    window.batterDemo = {
+      getRoleResult: () => result,
+      getCombatResult: () => result ? batterRoleResultToCombatResult(result) : null,
+      restart
+    };
+  </script>
+</body>
+</html>
