@@ -592,3 +592,49 @@ jobs:
     steps:
       - name: RC1 release gate
         run: echo "P10 frontend validation passed; release may proceed to GitHub Pages."
+
+  student-4v4-integration-visual-qa:
+    runs-on: ubuntu-22.04
+    env:
+      GODOT_VERSION: "4.5.1-stable"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl unzip libfontconfig1 xvfb
+
+      - name: Install pinned Godot
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip" -o godot.zip
+          unzip -q godot.zip -d godot
+          chmod +x "godot/Godot_v${GODOT_VERSION}_linux.x86_64"
+          "godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64" --version || "godot/Godot_v${GODOT_VERSION}_linux.x86_64" --version
+
+      - name: Import project
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout --signal=TERM 30s "godot/Godot_v${GODOT_VERSION}_linux.x86_64" --headless --editor --path . --quit
+
+      - name: Run Student 4v4 visual QA
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p qa_captures
+          timeout --signal=TERM 15s xvfb-run -a --server-args="-screen 0 1280x720x24" "godot/Godot_v${GODOT_VERSION}_linux.x86_64" --path . --resolution 1280x720 res://scenes/student_4v4_integration_visual_qa_test.tscn -- --run-qa-capture
+
+      - name: Verify Student 4v4 capture
+        run: |
+          test -s qa_captures/student_4v4_integration.png
+
+      - name: Upload Student 4v4 visual QA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: student-4v4-integration-visual-qa
+          path: qa_captures/student_4v4_integration.png
+          if-no-files-found: error
