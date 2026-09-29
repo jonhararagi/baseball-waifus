@@ -39,7 +39,7 @@ jobs:
       - name: Install runtime dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y curl unzip libfontconfig1
+          sudo apt-get install -y curl unzip libfontconfig1 xvfb
 
       - name: Install pinned Godot
         shell: bash
@@ -67,7 +67,7 @@ jobs:
       - name: Install runtime dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y curl unzip libfontconfig1
+          sudo apt-get install -y curl unzip libfontconfig1 xvfb
 
       - name: Install pinned Godot
         shell: bash
@@ -89,7 +89,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p qa_captures
-          timeout --signal=TERM 15s             "godot/Godot_v${GODOT_VERSION}_linux.x86_64"             --headless             --path .             --resolution 1280x720             res://scenes/bw004_character_presentation_test.tscn             --             --run-qa-capture
+          timeout --signal=TERM 15s             xvfb-run -a --server-args="-screen 0 1280x720x24"             "godot/Godot_v${GODOT_VERSION}_linux.x86_64"             --path .             --resolution 1280x720             res://scenes/bw004_character_presentation_test.tscn             --             --run-qa-capture
 
       - name: Verify capture
         run: |
@@ -113,7 +113,7 @@ jobs:
       - name: Install runtime dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y curl unzip libfontconfig1
+          sudo apt-get install -y curl unzip libfontconfig1 xvfb
 
       - name: Install pinned Godot
         shell: bash
@@ -135,7 +135,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p qa_captures
-          timeout --signal=TERM 15s             "godot/Godot_v${GODOT_VERSION}_linux.x86_64"             --headless             --path .             --resolution 1280x720             res://scenes/bw005_character_presentation_test.tscn             --             --run-qa-capture
+          timeout --signal=TERM 15s             xvfb-run -a --server-args="-screen 0 1280x720x24"             "godot/Godot_v${GODOT_VERSION}_linux.x86_64"             --path .             --resolution 1280x720             res://scenes/bw005_character_presentation_test.tscn             --             --run-qa-capture
 
       - name: Verify capture
         run: |
@@ -159,7 +159,7 @@ jobs:
       - name: Install runtime dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y curl unzip libfontconfig1
+          sudo apt-get install -y curl unzip libfontconfig1 xvfb
 
       - name: Install pinned Godot
         shell: bash
@@ -181,7 +181,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p qa_captures
-          timeout --signal=TERM 15s             "godot/Godot_v${GODOT_VERSION}_linux.x86_64"             --headless             --path .             --resolution 1280x720             res://scenes/bw006_character_presentation_test.tscn             --             --run-qa-capture
+          timeout --signal=TERM 15s             xvfb-run -a --server-args="-screen 0 1280x720x24"             "godot/Godot_v${GODOT_VERSION}_linux.x86_64"             --path .             --resolution 1280x720             res://scenes/bw006_character_presentation_test.tscn             --             --run-qa-capture
 
       - name: Verify capture
         run: |
@@ -204,7 +204,7 @@ jobs:
       - name: Install runtime dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y curl unzip libfontconfig1
+          sudo apt-get install -y curl unzip libfontconfig1 xvfb
       - name: Install pinned Godot
         shell: bash
         run: |
@@ -223,7 +223,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p qa_captures
-          timeout --signal=TERM 15s "godot/Godot_v${GODOT_VERSION}_linux.x86_64" --headless --path . --resolution 1280x720 res://scenes/bw007_character_presentation_test.tscn -- --run-qa-capture
+          timeout --signal=TERM 15s xvfb-run -a --server-args="-screen 0 1280x720x24" "godot/Godot_v${GODOT_VERSION}_linux.x86_64" --path . --resolution 1280x720 res://scenes/bw007_character_presentation_test.tscn -- --run-qa-capture
       - name: Verify capture
         run: |
           test -s qa_captures/bw007_character_presentation.png
@@ -244,7 +244,7 @@ jobs:
       - name: Install runtime dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y curl unzip libfontconfig1
+          sudo apt-get install -y curl unzip libfontconfig1 xvfb
       - name: Install pinned Godot
         shell: bash
         run: |
@@ -263,7 +263,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p qa_captures
-          timeout --signal=TERM 15s "godot/Godot_v${GODOT_VERSION}_linux.x86_64" --headless --path . --resolution 1280x720 res://scenes/bw008_character_presentation_test.tscn -- --run-qa-capture
+          timeout --signal=TERM 15s xvfb-run -a --server-args="-screen 0 1280x720x24" "godot/Godot_v${GODOT_VERSION}_linux.x86_64" --path . --resolution 1280x720 res://scenes/bw008_character_presentation_test.tscn -- --run-qa-capture
       - name: Verify capture
         run: |
           test -s qa_captures/bw008_character_presentation.png
@@ -285,7 +285,7 @@ jobs:
       - name: Install runtime dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y curl unzip libfontconfig1
+          sudo apt-get install -y curl unzip libfontconfig1 xvfb
       - name: Install pinned Godot
         shell: bash
         run: |
@@ -304,7 +304,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p qa_captures
-          timeout --signal=TERM 15s "godot/Godot_v${GODOT_VERSION}_linux.x86_64" --headless --path . --resolution 1280x720 res://scenes/bw009_character_presentation_test.tscn -- --run-qa-capture
+          timeout --signal=TERM 15s xvfb-run -a --server-args="-screen 0 1280x720x24" "godot/Godot_v${GODOT_VERSION}_linux.x86_64" --path . --resolution 1280x720 res://scenes/bw009_character_presentation_test.tscn -- --run-qa-capture
       - name: Verify capture
         run: |
           test -s qa_captures/bw009_character_presentation.png
@@ -326,7 +326,7 @@ jobs:
       - name: Install runtime dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y curl unzip libfontconfig1
+          sudo apt-get install -y curl unzip libfontconfig1 xvfb
       - name: Install pinned Godot
         shell: bash
         run: |
@@ -345,7 +345,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p qa_captures
-          timeout --signal=TERM 15s "godot/Godot_v${GODOT_VERSION}_linux.x86_64" --headless --path . --resolution 1280x720 res://scenes/bw010_character_presentation_test.tscn -- --run-qa-capture
+          timeout --signal=TERM 15s xvfb-run -a --server-args="-screen 0 1280x720x24" "godot/Godot_v${GODOT_VERSION}_linux.x86_64" --path . --resolution 1280x720 res://scenes/bw010_character_presentation_test.tscn -- --run-qa-capture
       - name: Verify capture
         run: |
           test -s qa_captures/bw010_character_presentation.png
@@ -366,7 +366,7 @@ jobs:
       - name: Install runtime dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y curl unzip libfontconfig1
+          sudo apt-get install -y curl unzip libfontconfig1 xvfb
       - name: Install pinned Godot
         shell: bash
         run: |
@@ -385,7 +385,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p qa_captures
-          timeout --signal=TERM 15s "godot/Godot_v${GODOT_VERSION}_linux.x86_64" --headless --path . --resolution 1280x720 res://scenes/bw011_character_presentation_test.tscn -- --run-qa-capture
+          timeout --signal=TERM 15s xvfb-run -a --server-args="-screen 0 1280x720x24" "godot/Godot_v${GODOT_VERSION}_linux.x86_64" --path . --resolution 1280x720 res://scenes/bw011_character_presentation_test.tscn -- --run-qa-capture
       - name: Verify capture
         run: |
           test -s qa_captures/bw011_character_presentation.png
@@ -407,7 +407,7 @@ jobs:
       - name: Install runtime dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y curl unzip libfontconfig1
+          sudo apt-get install -y curl unzip libfontconfig1 xvfb
       - name: Install pinned Godot
         shell: bash
         run: |
@@ -426,7 +426,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p qa_captures
-          timeout --signal=TERM 15s "godot/Godot_v${GODOT_VERSION}_linux.x86_64" --headless --path . --resolution 1280x720 res://scenes/bw012_character_presentation_test.tscn -- --run-qa-capture
+          timeout --signal=TERM 15s xvfb-run -a --server-args="-screen 0 1280x720x24" "godot/Godot_v${GODOT_VERSION}_linux.x86_64" --path . --resolution 1280x720 res://scenes/bw012_character_presentation_test.tscn -- --run-qa-capture
       - name: Verify capture
         run: |
           test -s qa_captures/bw012_character_presentation.png
@@ -448,7 +448,7 @@ jobs:
       - name: Install runtime dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y curl unzip libfontconfig1
+          sudo apt-get install -y curl unzip libfontconfig1 xvfb
       - name: Install pinned Godot
         shell: bash
         run: |
@@ -479,7 +479,7 @@ jobs:
       - name: Install runtime dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y curl unzip libfontconfig1
+          sudo apt-get install -y curl unzip libfontconfig1 xvfb
       - name: Install pinned Godot
         shell: bash
         run: |
@@ -509,7 +509,7 @@ jobs:
       - name: Install runtime dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y curl unzip libfontconfig1
+          sudo apt-get install -y curl unzip libfontconfig1 xvfb
       - name: Install pinned Godot
         shell: bash
         run: |
