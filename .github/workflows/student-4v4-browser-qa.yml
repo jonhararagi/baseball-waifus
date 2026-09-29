@@ -1,0 +1,74 @@
+name: Student 4v4 Browser QA
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "webapp/student_4v4_demo.html"
+      - "webapp/js/student_4v4_*.js"
+      - "webapp/js/buffer_*.js"
+      - "webapp/js/healer_*.js"
+      - "webapp/js/debuffer_*.js"
+      - "webapp/js/batter_*.js"
+      - "tools/browser_qa/**"
+      - ".github/workflows/student-4v4-browser-qa.yml"
+  workflow_dispatch:
+
+jobs:
+  browser-qa:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Browser QA dependencies
+        working-directory: tools/browser_qa
+        run: npm install --no-audit --no-fund
+
+      - name: Install Chromium
+        working-directory: tools/browser_qa
+        run: npx playwright install --with-deps chromium
+
+      - name: Start local web server
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 4173 --directory webapp > /tmp/student4v4-http.log 2>&1 &
+          echo $! > /tmp/student4v4-http.pid
+          for attempt in $(seq 1 20); do
+            if curl -fsS "http://127.0.0.1:4173/student_4v4_demo.html" >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/student4v4-http.log
+          exit 1
+
+      - name: Run Student 4v4 Browser QA
+        env:
+          BASE_URL: http://127.0.0.1:4173/student_4v4_demo.html
+          ARTIFACT_DIR: \${{ github.workspace }}/qa_artifacts
+        run: node tools/browser_qa/student_4v4_browser_qa.mjs
+
+      - name: Upload Browser QA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: student-4v4-browser-qa
+          path: qa_artifacts/
+          if-no-files-found: warn
+
+      - name: Stop local web server
+        if: always()
+        run: |
+          if test -f /tmp/student4v4-http.pid; then
+            kill "$(cat /tmp/student4v4-http.pid)" || true
+          fi
+          cat /tmp/student4v4-http.log || true
