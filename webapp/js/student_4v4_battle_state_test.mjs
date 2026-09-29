@@ -35,7 +35,8 @@ function currentPerfectInput(state) {
 }
 
 function completeCurrentRole(state) {
-  while (!state.completed && state.currentPhase !== STUDENT_4V4_BATTLE_PHASE.RESOLUTION) {
+  const rolePhase = state.currentPhase;
+  while (!state.completed && state.currentPhase === rolePhase) {
     const response = state.submitInput(currentPerfectInput(state));
     assert.equal(response.accepted, true);
   }
