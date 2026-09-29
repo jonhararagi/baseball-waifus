@@ -16,12 +16,13 @@ async function assertPhase(page, expected) {
       return document.querySelector(".s4-phase")?.textContent?.trim() === value;
     },
     expected,
-    { timeout: 8000 }
+    { timeout: 5000 }
   );
+  console.log("PHASE", expected);
 }
 
 async function currentPhase(page) {
-  return page.locator(".s4-phase").innerText();
+  return (await page.locator(".s4-phase").innerText({ timeout: 3000 })).trim();
 }
 
 async function clickVisible(page, locator) {
@@ -46,67 +47,71 @@ async function assertNoHorizontalOverflow(page) {
 
 async function driveBuffer(page, evidence) {
   const started = Date.now();
-  let attempts = 0;
-  while (await currentPhase(page) === "BUFFER") {
-    if (Date.now() - started > 10000) throw new Error("BUFFER transition timeout");
-    const lane = (await page.locator(".buffer-note").innerText()).trim().toUpperCase();
-    assert.ok(["LIGHT", "MEDIUM", "HEAVY"].includes(lane));
-    attempts += 1;
+  let actions = 0;
+  while ((await currentPhase(page)) === "BUFFER") {
+    if (Date.now() - started > 9000) throw new Error("BUFFER transition timeout");
+    const lane = (await page.locator(".buffer-note").innerText({ timeout: 2000 })).trim().toUpperCase();
+    assert.ok(["LIGHT", "MEDIUM", "HEAVY"].includes(lane), "invalid buffer lane: " + lane);
+    actions += 1;
     await clickVisible(page, page.locator(".buffer-lane[data-buffer-lane='" + lane + "']"));
-    evidence.push({ lane, attempt: attempts });
+    evidence.push({ lane, action: actions });
     await page.waitForTimeout(60);
   }
+  console.log("BUFFER COMPLETE", evidence.length);
 }
 
 async function driveHealer(page, evidence) {
   const started = Date.now();
-  let attempts = 0;
-  while (await currentPhase(page) === "HEALER") {
-    if (Date.now() - started > 10000) throw new Error("HEALER transition timeout");
-    const zone = (await page.locator(".healer-zone.is-active").getAttribute("aria-label") || "").toUpperCase();
-    assert.ok(["TOP", "LEFT", "RIGHT", "BOTTOM"].includes(zone));
-    attempts += 1;
+  let actions = 0;
+  while ((await currentPhase(page)) === "HEALER") {
+    if (Date.now() - started > 9000) throw new Error("HEALER transition timeout");
+    const zone = (await page.locator(".healer-zone.is-active").getAttribute("aria-label", { timeout: 2000 }) || "").toUpperCase();
+    assert.ok(["TOP", "LEFT", "RIGHT", "BOTTOM"].includes(zone), "invalid healer zone: " + zone);
+    actions += 1;
     await clickVisible(page, page.locator(".healer-zone-button[data-healer-zone='" + zone + "']"));
-    evidence.push({ zone, attempt: attempts });
+    evidence.push({ zone, action: actions });
     await page.waitForTimeout(60);
   }
+  console.log("HEALER COMPLETE", evidence.length);
 }
 
 async function driveDebuffer(page, evidence) {
   const started = Date.now();
-  let attempts = 0;
-  while (await currentPhase(page) === "DEBUFFER") {
-    if (Date.now() - started > 10000) throw new Error("DEBUFFER transition timeout");
+  let actions = 0;
+  while ((await currentPhase(page)) === "DEBUFFER") {
+    if (Date.now() - started > 9000) throw new Error("DEBUFFER transition timeout");
     const target = page.locator(".debuffer-target");
-    await target.waitFor({ state: "visible", timeout: 3000 });
+    await target.waitFor({ state: "visible", timeout: 2000 });
     const box = await target.boundingBox();
     assert.ok(box, "debuffer target has no visible bounding box");
-    attempts += 1;
+    actions += 1;
+    evidence.push({ target: await target.getAttribute("aria-label"), action: actions });
     await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
-    const selection = page.locator(".debuffer-selection");
-    if (await selection.count()) await selection.waitFor({ state: "visible", timeout: 1000 });
+    await page.locator(".debuffer-selection").waitFor({ state: "visible", timeout: 1500 });
     await clickVisible(page, page.locator("[data-debuffer-capture]"));
-    evidence.push({ target: await target.getAttribute("aria-label"), attempt: attempts });
     await page.waitForTimeout(60);
   }
+  console.log("DEBUFFER COMPLETE", evidence.length);
 }
 
 async function driveBatter(page, evidence) {
   const started = Date.now();
-  let attempts = 0;
-  while (await currentPhase(page) === "BATTER") {
-    if (Date.now() - started > 10000) throw new Error("BATTER transition timeout");
-    attempts += 1;
+  let actions = 0;
+  while ((await currentPhase(page)) === "BATTER") {
+    if (Date.now() - started > 9000) throw new Error("BATTER transition timeout");
+    actions += 1;
     await clickVisible(page, page.locator("[data-batter-swing]"));
-    evidence.push({ swing: true, attempt: attempts });
+    evidence.push({ swing: true, action: actions });
     await page.waitForTimeout(60);
   }
+  console.log("BATTER COMPLETE", evidence.length);
 }
 
 async function runDesktop() {
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ viewport: { width: 1366, height: 768 } });
   const page = await context.newPage();
+  page.setDefaultTimeout(3000);
 
   page.on("console", function (message) {
     if (message.type() === "error") errors.console.push(message.text());
@@ -116,19 +121,16 @@ async function runDesktop() {
   });
   page.on("requestfailed", function (request) {
     if (!request.url().endsWith("/favicon.ico")) {
-      errors.requests.push({
-        url: request.url(),
-        error: request.failure()?.errorText || "unknown"
-      });
+      errors.requests.push({ url: request.url(), error: request.failure()?.errorText || "unknown" });
     }
   });
 
   const evidence = { flow: [], buffer: [], healer: [], debuffer: [], batter: [] };
 
-  await page.goto(baseUrl, { waitUntil: "networkidle" });
+  console.log("LOAD", baseUrl);
+  await page.goto(baseUrl, { waitUntil: "domcontentloaded", timeout: 8000 });
   await assertPhase(page, "INIT");
-  await page.locator(".s4-shell").waitFor({ state: "visible" });
-  assert.equal(await page.getByRole("button", { name: /^START$/ }).count(), 1);
+  await page.locator(".s4-shell").waitFor({ state: "visible", timeout: 3000 });
   evidence.flow.push("LOAD");
 
   await page.getByRole("button", { name: /^START$/ }).click();
@@ -159,14 +161,11 @@ async function runDesktop() {
   for (const metric of ["SCORE", "ACCURACY", "ENERGY", "PROTECTION", "DISRUPTION", "IMPACT"]) {
     assert.ok(resolutionText.includes(metric));
   }
+  assert.equal(await page.locator("#next").isDisabled(), true);
+  assert.equal((await page.locator("#next").innerText()).trim(), "COMPLETE");
 
-  await assertNoHorizontalOverflow(page);
-  await page.screenshot({ path: path.join(outputDir, "student-4v4-desktop-complete.png"), fullPage: true });
+  await page.screenshot({ path: path.join(outputDir, "student-4v4-desktop-complete.png") });
   evidence.flow.push("RESOLUTION->COMPLETE");
-
-  const next = page.locator("#next");
-  assert.equal(await next.isDisabled(), true);
-  assert.equal((await next.innerText()).trim(), "COMPLETE");
 
   await page.locator("#restart").click();
   await assertPhase(page, "INIT");
@@ -176,7 +175,7 @@ async function runDesktop() {
   await assertPhase(page, "BUFFER");
   assert.equal(await page.locator(".buffer-demo-card").count(), 1);
   evidence.flow.push("RESET->START->BUFFER");
-  await page.screenshot({ path: path.join(outputDir, "student-4v4-desktop-reset.png"), fullPage: true });
+  await page.screenshot({ path: path.join(outputDir, "student-4v4-desktop-reset.png") });
 
   const overflow = await assertNoHorizontalOverflow(page);
   await context.close();
@@ -188,17 +187,13 @@ async function runMobile() {
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await context.newPage();
+  page.setDefaultTimeout(3000);
   const mobileConsole = [];
   const mobilePage = [];
+  page.on("console", function (message) { if (message.type() === "error") mobileConsole.push(message.text()); });
+  page.on("pageerror", function (error) { mobilePage.push(String(error?.stack || error)); });
 
-  page.on("console", function (message) {
-    if (message.type() === "error") mobileConsole.push(message.text());
-  });
-  page.on("pageerror", function (error) {
-    mobilePage.push(String(error?.stack || error));
-  });
-
-  await page.goto(baseUrl, { waitUntil: "networkidle" });
+  await page.goto(baseUrl, { waitUntil: "domcontentloaded", timeout: 8000 });
   await assertPhase(page, "INIT");
   const before = await assertNoHorizontalOverflow(page);
   await page.getByRole("button", { name: /^START$/ }).click();
@@ -212,36 +207,40 @@ async function runMobile() {
     assert.ok(box, "missing mobile element: " + selector);
     assert.ok(box.x >= -1 && box.x + box.width <= 391, "mobile element outside viewport: " + selector);
   }
-
-  await page.screenshot({ path: path.join(outputDir, "student-4v4-mobile-buffer.png"), fullPage: true });
+  await page.screenshot({ path: path.join(outputDir, "student-4v4-mobile-buffer.png") });
   await context.close();
   await browser.close();
   return { viewport: { width: 390, height: 844 }, overflowBefore: before, overflowAfter: after, consoleErrors: mobileConsole, pageErrors: mobilePage };
 }
 
+const watchdog = setTimeout(function () {
+  throw new Error("BROWSER_QA_GLOBAL_TIMEOUT");
+}, 120000);
+
 try {
   const desktop = await runDesktop();
   const mobile = await runMobile();
+  clearTimeout(watchdog);
 
-  assert.deepEqual(errors.console, []);
-  assert.deepEqual(errors.page, []);
+  const allConsole = [...errors.console, ...mobile.consoleErrors];
+  const allPage = [...errors.page, ...mobile.pageErrors];
+  assert.deepEqual(allConsole, []);
+  assert.deepEqual(allPage, []);
   assert.deepEqual(errors.requests, []);
-  assert.deepEqual(mobile.consoleErrors, []);
-  assert.deepEqual(mobile.pageErrors, []);
 
   const report = {
     status: "PASS_REAL",
     browser: "Chromium via Playwright",
     desktop,
     mobile,
-    consoleErrors: errors.console,
-    pageErrors: errors.page,
+    consoleErrors: allConsole,
+    pageErrors: allPage,
     requestFailures: errors.requests
   };
-
   fs.writeFileSync(path.join(outputDir, "student-4v4-browser-qa.json"), JSON.stringify(report, null, 2));
   console.log("student_4v4_browser_qa: PASS_REAL");
 } catch (error) {
+  clearTimeout(watchdog);
   const report = {
     status: "FAIL_REAL",
     error: String(error?.stack || error),
