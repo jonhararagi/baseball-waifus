@@ -29,10 +29,15 @@ async function waitForPhase(page, expected, timeoutMs = 5000) {
 }
 
 async function clickSelector(page, selector, attempts = 80) {
-  const locator = page.locator(selector).first();
   for (let attempt = 0; attempt < attempts; attempt += 1) {
     try {
-      await locator.click({ force: true, timeout: 250 });
+      const locator = page.locator(selector).first();
+      const box = await locator.boundingBox();
+      if (!box) throw new Error("NOT_CLICKABLE");
+      await page.mouse.click(
+        box.x + box.width / 2,
+        box.y + box.height / 2
+      );
       return;
     } catch {
       await page.waitForTimeout(25);
