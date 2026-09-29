@@ -78,8 +78,8 @@ jobs:
           node --experimental-default-type=module webapp/js/buffer_energy_creator_test.mjs
           node --experimental-default-type=module webapp/js/healer_defensive_test.mjs
           node --experimental-default-type=module webapp/js/debuffer_disruptor_test.mjs
-          node --experimental-default-type=module webapp/js/batter_leader_test.mjs
           node --experimental-default-type=module webapp/js/student_4v4_orchestrator_test.mjs
+          node --experimental-default-type=module webapp/js/batter_leader_test.mjs
 
       - name: Validate combat syntax
         shell: bash
