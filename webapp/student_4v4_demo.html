@@ -19,6 +19,7 @@ header{display:flex;justify-content:space-between;align-items:end;gap:16px}.kick
 <script type="module">
 import { Student4v4Integration } from "./js/student_4v4_integration.js";
 import { Student4v4PresentationOrchestrator } from "./js/student_4v4_presentation_orchestrator.js";
+import { buildStudent4v4RoleAdapterModels } from "./js/student_4v4_role_adapters.js";
 
 const app=document.querySelector("#app");
 const flow=new Student4v4Integration({seed:"T044-DEMO-001",team:{id:"student-demo-team"}});
@@ -28,10 +29,18 @@ function render(){
  const s=flow.snapshot();
  const view=presentation.update(s);
  const m=view.presentation;
+ const adapters=buildStudent4v4RoleAdapterModels(m);
+ const contributionField={
+   BUFFER:"energy_points",
+   HEALER:"protectedPoints",
+   DEBUFFER:"disruptionPoints",
+   BATTER:"impactPoints"
+ };
  const roles=m.roles.map(function(entry){
-   const result=m.roleResults[entry.role];
-   const value=result ? (entry.role==="BUFFER"?result.energy_points:entry.role==="HEALER"?result.protectedPoints:entry.role==="DEBUFFER"?result.disruptionPoints:result.impactPoints) : 0;
-   return '<article class="role '+(entry.active?'active ':'')+(entry.completed?'complete':'')+'"><strong>'+entry.role+'</strong><span>'+(entry.completed?'DONE':'READY')+'</span><small>'+entry.status.toUpperCase()+(entry.completed?' · +'+value:'')+'</small></article>';
+   const adapter=adapters[entry.role];
+   const result=adapter.result;
+   const value=result ? Number(result[contributionField[entry.role]]) : 0;
+   return '<article class="role '+(adapter.active?'active ':'')+(adapter.completed?'complete':'')+'"><strong>'+adapter.role+'</strong><span>'+(adapter.completed?'DONE':'READY')+'</span><small>'+adapter.status.toUpperCase()+(adapter.completed?' · +'+value:'')+'</small></article>';
  }).join("");
  const r=m.student4v4Result;
  const current=m.activeRole||m.phase;
