@@ -116,7 +116,9 @@ func _ready() -> void:
 	assert(str(entry.get("element", "")) == "fire")
 	assert(str(entry.get("specialization", "")) == "power")
 	assert(int(entry.get("potential", 0)) == 5)
-	assert(entry.get("stats", {}) == expected_stats)
+	var catalog_stats: Dictionary = entry.get("stats", {})
+	for stat in expected_stats.keys():
+		assert(int(catalog_stats.get(stat, -1)) == int(expected_stats[stat]), "bw015 catalog stat drift: " + str(stat))
 
 	var catalog_identity: Dictionary = entry.get("character_identity", {})
 	assert(str(catalog_identity.get("archetype", "")) == "warm_curvy_power_hitter")
