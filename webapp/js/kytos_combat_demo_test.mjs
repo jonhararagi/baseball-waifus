@@ -16,7 +16,11 @@ function runDemo() {
   assert.equal(demo.canAdvance(), true);
 
   const snapshots = [];
-  while (demo.canAdvance()) snapshots.push(demo.step());
+  while (demo.stepIndex < STEP_ORDER.length - 1) {
+    if (demo.phase === KYTOS_DEMO_PHASE.SUPPORT_DECISION) demo.selectSupportAction("PASS");
+    if (demo.phase === KYTOS_DEMO_PHASE.BATTER_DECISION) demo.selectBatterOrder("NORMAL_SWING");
+    snapshots.push(demo.step({ autoSelectDefaults: true }));
+  }
 
   return { demo, snapshots, rendererCalls };
 }
@@ -29,6 +33,8 @@ assert.equal(first.demo.state.phase, "VICTORY");
 assert.equal(first.demo.state.kytos.hp, 0);
 assert.equal(first.demo.state.timing.success, true);
 assert.equal(first.demo.state.lastResult, "KYTOS_DEFEATED");
+assert.equal(first.demo.state.tactical.supportAction, "PASS");
+assert.equal(first.demo.state.tactical.batterOrder, "NORMAL_SWING");
 assert.equal(first.demo.state.batter.storedEnergy, 0);
 assert.ok(first.demo.state.shield <= 100);
 
