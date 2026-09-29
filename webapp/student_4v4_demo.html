@@ -215,16 +215,6 @@ function renderHealerSurface(){
     update();
   }
  });
-
- if(battle.currentPhase==="HEALER" && !healerFrameId){
-  const frame=()=>{
-    healerFrameId=0;
-    if(battle.currentPhase!=="HEALER") return;
-    renderHealerSurface();
-    healerFrameId=requestAnimationFrame(frame);
-  };
-  healerFrameId=requestAnimationFrame(frame);
- }
 }
 
 function ensureBatterStarted(){
@@ -272,16 +262,6 @@ function renderBatterSurface(){
     update();
   }
  });
-
- if(battle.currentPhase==="BATTER" && !batterFrameId){
-  const frame=()=>{
-    batterFrameId=0;
-    if(battle.currentPhase!=="BATTER") return;
-    renderBatterSurface();
-    batterFrameId=requestAnimationFrame(frame);
-  };
-  batterFrameId=requestAnimationFrame(frame);
- }
 }
 
 function update(){
