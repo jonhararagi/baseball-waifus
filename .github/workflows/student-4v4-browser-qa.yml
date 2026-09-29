@@ -18,6 +18,8 @@ on:
 jobs:
   browser-qa:
     runs-on: ubuntu-22.04
+    env:
+      BROWSER_QA_TARGET: student-4v4
     timeout-minutes: 10
     steps:
       - name: Checkout
