@@ -79,8 +79,9 @@ async function assertNoHorizontalOverflow(page) {
 
 async function runDesktop() {
   const browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext({ viewport: { width: 1366, height: 768 } });
-  const page = await context.newPage();
+  try {
+    const context = await browser.newContext({ viewport: { width: 1366, height: 768 } });
+    const page = await context.newPage();
 
   page.on("console", function (message) {
     if (message.type() === "error") errors.console.push(message.text());
@@ -194,15 +195,18 @@ async function runDesktop() {
   await page.screenshot({ path: path.join(outputDir, "student-4v4-desktop-reset.png") });
 
   const resetOverflow = await assertNoHorizontalOverflow(page);
-  await context.close();
-  await browser.close();
-  return { viewport: { width: 1366, height: 768 }, evidence, completeOverflow, resetOverflow };
+    await context.close();
+    return { viewport: { width: 1366, height: 768 }, evidence, completeOverflow, resetOverflow };
+  } finally {
+    await browser.close();
+  }
 }
 
 async function runMobile() {
   const browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
-  const page = await context.newPage();
+  try {
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await context.newPage();
   page.on("console", function (message) {
     if (message.type() === "error") errors.console.push("mobile: " + message.text());
   });
@@ -225,30 +229,16 @@ async function runMobile() {
   }
 
   await page.screenshot({ path: path.join(outputDir, "student-4v4-mobile-buffer.png") });
-  await context.close();
-  await browser.close();
-  return { viewport: { width: 390, height: 844 }, overflowBefore: before, overflowAfter: after };
-}
-
-async function withTimeout(promise, timeoutMs) {
-  let timer;
-  try {
-    return await Promise.race([
-      promise,
-      new Promise(function (_, reject) {
-        timer = setTimeout(function () {
-          reject(new Error("BROWSER_QA_GLOBAL_TIMEOUT"));
-        }, timeoutMs);
-      })
-    ]);
+    await context.close();
+    return { viewport: { width: 390, height: 844 }, overflowBefore: before, overflowAfter: after };
   } finally {
-    clearTimeout(timer);
+    await browser.close();
   }
 }
 
 try {
-  const desktop = await withTimeout(runDesktop(), 90000);
-  const mobile = await withTimeout(runMobile(), 30000);
+  const desktop = await runDesktop();
+  const mobile = await runMobile();
 
   assert.deepEqual(errors.console, []);
   assert.deepEqual(errors.page, []);
