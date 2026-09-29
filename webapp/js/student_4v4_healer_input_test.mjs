@@ -98,7 +98,9 @@ const invalidBattle = new Student4v4BattleState({ seed: "T048-INVALID" });
 completeBuffer(invalidBattle);
 let clock = 2000;
 const input = new Student4v4HealerInput({ battle: invalidBattle, clock: () => clock });
+assert.equal(input.isActive(), false);
 assert.equal(input.start().currentPhase, "HEALER");
+assert.equal(input.isActive(), true);
 
 const currentThreat = invalidBattle.getCurrentRoleGame().getState().current_threat;
 const invalidStructure = input.submitThreat(null);
