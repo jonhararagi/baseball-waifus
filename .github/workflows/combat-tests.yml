@@ -59,6 +59,7 @@ on:
       - "webapp/js/student_4v4_batter_input.js"
       - "webapp/js/student_4v4_batter_input_test.mjs"
       - "webapp/js/student_4v4_full_resolution_test.mjs"
+      - "webapp/js/student_4v4_production_gate_test.mjs"
       - "webapp/student_4v4_demo.html"
       - "docs/student-4v4-orchestration.md"
       - "webapp/js/app.js"
@@ -112,6 +113,7 @@ jobs:
           node --experimental-default-type=module webapp/js/student_4v4_debuffer_input_test.mjs
           node --experimental-default-type=module webapp/js/student_4v4_batter_input_test.mjs
           node --experimental-default-type=module webapp/js/student_4v4_full_resolution_test.mjs
+          node --experimental-default-type=module webapp/js/student_4v4_production_gate_test.mjs
 
       - name: Validate combat syntax
         shell: bash
@@ -151,5 +153,6 @@ jobs:
           node --experimental-default-type=module --check webapp/js/student_4v4_debuffer_input.js
           node --experimental-default-type=module --check webapp/js/student_4v4_batter_input.js
           node --experimental-default-type=module --check webapp/js/student_4v4_full_resolution_test.mjs
+          node --experimental-default-type=module --check webapp/js/student_4v4_production_gate_test.mjs
           node --experimental-default-type=module --check webapp/js/debuffer_disruptor_presentation.js
           node --experimental-default-type=module --check webapp/js/app.js
