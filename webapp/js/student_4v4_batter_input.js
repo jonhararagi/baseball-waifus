@@ -37,6 +37,7 @@ export class Student4v4BatterInput {
     this.clock = clock;
     this.batterStartedAt = null;
     this.lastResponse = null;
+    this.resolvedOpportunityIds = new Set();
   }
 
   start() {
@@ -50,6 +51,7 @@ export class Student4v4BatterInput {
       const now = Number(this.clock());
       this.batterStartedAt = Number.isFinite(now) ? now : 0;
       this.lastResponse = null;
+      this.resolvedOpportunityIds.clear();
     }
 
     return snapshotOf(this.battle);
@@ -82,12 +84,16 @@ export class Student4v4BatterInput {
       return this._reject("NO_ACTIVE_BATTER");
     }
 
+    const opportunityId = String(payload.opportunityId ?? "");
+    if (this.resolvedOpportunityIds.has(opportunityId)) {
+      return this._reject("OPPORTUNITY_ALREADY_RESOLVED");
+    }
+
     const opportunity = this.getCurrentOpportunity();
     if (!opportunity) {
       return this._reject("NO_ACTIVE_OPPORTUNITY");
     }
 
-    const opportunityId = String(payload.opportunityId ?? "");
     if (!opportunityId || opportunityId !== opportunity.id) {
       return this._reject("INVALID_OPPORTUNITY");
     }
@@ -107,6 +113,10 @@ export class Student4v4BatterInput {
 
     this.lastResponse = response;
 
+    if (response.accepted) {
+      this.resolvedOpportunityIds.add(opportunityId);
+    }
+
     if (response.accepted && this.battle.currentPhase !== STUDENT_4V4_BATTLE_PHASE.BATTER) {
       this.batterStartedAt = null;
     }
@@ -117,6 +127,7 @@ export class Student4v4BatterInput {
   reset() {
     this.batterStartedAt = null;
     this.lastResponse = null;
+    this.resolvedOpportunityIds.clear();
     return this;
   }
 
