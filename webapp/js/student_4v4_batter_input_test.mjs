@@ -37,8 +37,9 @@ function perfectRoleInput(battle) {
 function completePreBatter(battle) {
   battle.start();
   while (battle.currentPhase !== "BATTER") {
+    const phase = battle.currentPhase;
     const response = battle.submitInput(perfectRoleInput(battle));
-    assert.equal(response.accepted, true);
+    assert.equal(response.accepted, true, `pre-batter phase ${phase} rejected: ${response.reason || "unknown"}`);
   }
 }
 
