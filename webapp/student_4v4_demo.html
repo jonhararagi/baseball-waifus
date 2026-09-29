@@ -85,8 +85,12 @@ function renderBufferSurface(){
     presentation.reset();
     bufferInput.reset();
     healerInput.reset();
+    debufferInput.reset();
     healerFinalState=null;
     healerFinalResult=null;
+    debufferFinalState=null;
+    debufferFinalResult=null;
+    debufferSelectedPosition=null;
     update();
   }
  });
@@ -206,7 +210,6 @@ function renderHealerSurface(){
     healerFrameId=0;
     if(battle.currentPhase!=="HEALER") return;
     renderHealerSurface();
- renderDebufferSurface();
     healerFrameId=requestAnimationFrame(frame);
   };
   healerFrameId=requestAnimationFrame(frame);
@@ -220,6 +223,7 @@ function update(){
  ui.render(view);
  renderBufferSurface();
  renderHealerSurface();
+ renderDebufferSurface();
  const action=document.querySelector("#next");
  const restart=document.querySelector("#restart");
  action.onclick=()=>{
