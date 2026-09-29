@@ -153,7 +153,7 @@ export class Student4v4DebufferInput {
   }
 
   isActive() {
-    return this.battle.currentPhase === STUDENT_4V4_BATTLE_PHASE.DEBUFFER;
+    return this.battle.currentPhase === STUDENT_4V4_BATTLE_PHASE.DEBUFFER && this.debufferStartedAt !== null;
   }
 
   _reject(reason) {
