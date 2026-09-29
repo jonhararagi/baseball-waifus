@@ -76,7 +76,9 @@ assert.equal(invalidInput.getLastResponse().reason, "INVALID_INPUT");
 assert.equal(JSON.stringify(initial.snapshot()), beforeStart);
 
 completeRolePerfect(initial);
+assert.equal(invalidInput.isActive(), false);
 invalidInput.start();
+assert.equal(invalidInput.isActive(), true);
 const target = initial.getCurrentRoleGame().getState().current_target;
 const beforeInvalid = JSON.stringify(initial.snapshot());
 
