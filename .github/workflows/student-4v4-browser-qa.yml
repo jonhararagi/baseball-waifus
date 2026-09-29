@@ -11,6 +11,8 @@ on:
       - "webapp/js/healer_*.js"
       - "webapp/js/debuffer_*.js"
       - "webapp/js/batter_*.js"
+      - "webapp/js/batter_leader_presentation.js"
+      - "tools/browser_qa/student_4v4_browser_qa.mjs"
       - "tools/browser_qa/**"
       - ".github/workflows/student-4v4-browser-qa.yml"
   workflow_dispatch:
