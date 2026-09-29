@@ -16,7 +16,7 @@ The implemented T042 integration uses the real T034 Buffer, T035 Healer, T036 De
 4. BATTER
 5. COMBINED RESULT
 
-Each role receives a deterministic derived seed in the form `<integration-seed>::<ROLE>`. The orchestrator receives the integration seed and validates the four role results before combining them.
+All four roles receive the same integration seed. This is required by the existing orchestrator contract, which rejects mixed role seeds. The seed therefore propagates unchanged through every ROLE_RESULT and into the combined result.
 
 ## Combined result
 
