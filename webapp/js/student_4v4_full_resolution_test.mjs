@@ -1,1 +1,188 @@
-import assert from "node:assert/strict";\nimport { Student4v4BattleState } from "./student_4v4_battle_state.js";\nimport { Student4v4PresentationOrchestrator } from "./student_4v4_presentation_orchestrator.js";\nimport { buildStudent4v4UiModel } from "./student_4v4_ui.js";\nimport { Student4v4BufferInput } from "./student_4v4_buffer_input.js";\nimport { Student4v4HealerInput } from "./student_4v4_healer_input.js";\nimport { Student4v4DebufferInput } from "./student_4v4_debuffer_input.js";\nimport { Student4v4BatterInput } from "./student_4v4_batter_input.js";\nimport { STUDENT_4V4_ROLE_ORDER, STUDENT_4V4_RESULT_TYPE } from "./student_4v4_orchestrator.js";\nimport { COMBAT_RESULT_TYPE } from "./combat_core.js";\n\nconst ROLE_INPUTS = Object.freeze({\n  BUFFER: Student4v4BufferInput,\n  HEALER: Student4v4HealerInput,\n  DEBUFFER: Student4v4DebufferInput,\n  BATTER: Student4v4BatterInput\n});\n\nfunction buildInput(role, battle) {\n  return new ROLE_INPUTS[role]({ battle, clock: () => 1000 });\n}\n\nfunction perfectPayload(battle) {\n  const state = battle.getCurrentRoleGame()?.getState?.();\n  assert.ok(state, "active role state is required");\n\n  switch (battle.currentPhase) {\n    case "BUFFER":\n      return { noteId: state.current_note.id, lane: state.current_note.lane, timestampMs: state.current_note.target_ms };\n    case "HEALER":\n      return { threatId: state.current_threat.id, zone: state.current_threat.zone, timestampMs: state.current_threat.target_ms };\n    case "DEBUFFER":\n      return { targetId: state.current_target.id, targetType: state.current_target.type, position: { x: state.current_target.x, y: state.current_target.y }, timestampMs: state.current_target.target_ms };\n    case "BATTER":\n      return { opportunityId: state.current_opportunity.id, timestampMs: state.current_opportunity.target_ms };\n    default:\n      throw new Error("NO_ACTIVE_ROLE:" + battle.currentPhase);\n  }\n}\n\nfunction submitThroughAdapter(role, adapter) {\n  const payload = perfectPayload(adapter.battle);\n  switch (role) {\n    case "BUFFER": return adapter.submitLane(payload.lane, payload.timestampMs);\n    case "HEALER": return adapter.submitThreat(payload);\n    case "DEBUFFER": return adapter.submitTarget(payload);\n    case "BATTER": return adapter.submitSwing(payload);\n    default: throw new Error("UNKNOWN_ROLE:" + role);\n  }\n}\n\nfunction runInteractiveBattle(seed) {\n  const battle = new Student4v4BattleState({ seed, battleId: "t051-" + seed });\n  const adapters = {};\n  const phases = [];\n  battle.start();\n\n  while (battle.currentPhase !== "RESOLUTION") {\n    const role = battle.currentPhase;\n    phases.push(role);\n    const adapter = adapters[role] || (adapters[role] = buildInput(role, battle));\n    assert.equal(adapter.start().currentPhase, role);\n    while (battle.currentPhase === role) {\n      const response = submitThroughAdapter(role, adapter);\n      assert.equal(response.accepted, true, role + " rejected valid input: " + (response.reason || "unknown"));\n    }\n  }\n\n  phases.push("RESOLUTION");\n  return { battle, adapters, phases };\n}\n\nfunction resolveInteractive(seed) {\n  const run = runInteractiveBattle(seed);\n  const battle = run.battle;\n  const beforeResolve = battle.snapshot();\n\n  assert.deepEqual(run.phases, ["BUFFER", "HEALER", "DEBUFFER", "BATTER", "RESOLUTION"]);\n  assert.equal(beforeResolve.completed, false);\n  assert.equal(beforeResolve.resolved, false);\n  assert.deepEqual(Object.keys(beforeResolve.roleResults), STUDENT_4V4_ROLE_ORDER);\n\n  const presentation = new Student4v4PresentationOrchestrator();\n  const resolutionView = presentation.update(beforeResolve);\n  assert.equal(resolutionView.presentation.phase, "RESOLUTION");\n  assert.equal(resolutionView.presentation.activeRole, null);\n  assert.equal(resolutionView.presentation.student4v4Result, null);\n  assert.equal(resolutionView.presentation.combatResult, null);\n\n  const gameplayBeforeUi = JSON.stringify(battle.snapshot());\n  const uiModelBeforeResolve = buildStudent4v4UiModel(resolutionView);\n  assert.equal(uiModelBeforeResolve.phase, "RESOLUTION");\n  assert.equal(uiModelBeforeResolve.resolution, null);\n  assert.equal(JSON.stringify(battle.snapshot()), gameplayBeforeUi);\n\n  const resolved = battle.resolve();\n  assert.equal(resolved.currentPhase, "COMPLETE");\n  assert.equal(resolved.completed, true);\n  assert.equal(resolved.resolved, true);\n  assert.equal(resolved.student4v4Result.type, STUDENT_4V4_RESULT_TYPE);\n  assert.equal(resolved.combatResult.type, COMBAT_RESULT_TYPE);\n  assert.equal(resolved.combatResult.phase, "STUDENT_4V4");\n  assert.equal(resolved.combatResult.student_4v4_result.type, STUDENT_4V4_RESULT_TYPE);\n\n  for (const role of STUDENT_4V4_ROLE_ORDER) {\n    const result = resolved.roleResults[role];\n    assert.equal(result.type, "ROLE_RESULT");\n    assert.equal(result.role, role);\n    assert.equal(result.seed, seed);\n    assert.equal(result.deterministic, true);\n    assert.equal(Object.isFrozen(result), true);\n  }\n\n  assert.equal(Object.isFrozen(resolved.student4v4Result), true);\n  assert.equal(Object.isFrozen(resolved.combatResult), true);\n  assert.equal(Object.isFrozen(resolved.combatResult.student_4v4_result), true);\n\n  const completedView = presentation.update(resolved);\n  const uiModelAfterResolve = buildStudent4v4UiModel(completedView);\n  assert.equal(uiModelAfterResolve.phase, "COMPLETE");\n  assert.equal(uiModelAfterResolve.completed, true);\n  assert.ok(uiModelAfterResolve.resolution);\n  assert.equal(uiModelAfterResolve.student4v4Result.type, STUDENT_4V4_RESULT_TYPE);\n  assert.equal(uiModelAfterResolve.combatResult.type, COMBAT_RESULT_TYPE);\n\n  const resultSnapshot = JSON.stringify(battle.snapshot());\n  assert.throws(() => { resolved.student4v4Result.combinedScore = -1; }, TypeError);\n  assert.throws(() => { resolved.combatResult.score = -1; }, TypeError);\n  assert.throws(() => { resolved.roleResults.BUFFER.score = -1; }, TypeError);\n  assert.equal(JSON.stringify(battle.snapshot()), resultSnapshot);\n\n  assert.throws(() => battle.resolve(), /ALREADY_RESOLVED/);\n  const stale = run.adapters.BUFFER.submitLane("LIGHT", 0);\n  assert.equal(stale.accepted, false);\n  assert.equal(stale.reason, "INVALID_PHASE");\n\n  return resolved;\n}\n\nconst first = resolveInteractive("T051-FULL-001");\nconst second = resolveInteractive("T051-FULL-001");\nassert.deepEqual(first.student4v4Result, second.student4v4Result);\nassert.deepEqual(first.combatResult, second.combatResult);\nassert.deepEqual(first.roleResults, second.roleResults);\n\nconst varied = resolveInteractive("T051-FULL-002");\nassert.notEqual(varied.student4v4Result.seed, first.student4v4Result.seed);\n\nconst incomplete = new Student4v4BattleState({ seed: "T051-INCOMPLETE" });\nincomplete.start();\nassert.throws(() => incomplete.resolve(), /MISSING_ROLE_RESULT/);\nassert.equal(incomplete.currentPhase, "BUFFER");\n\nconst invalidRole = new Student4v4BattleState({ seed: "T051-INVALID-ROLE" });\ninvalidRole.start();\nconst invalidSnapshot = JSON.stringify(invalidRole.snapshot());\nassert.throws(() => invalidRole.submitRoleResult("HEALER", {\n  type: "ROLE_RESULT", role: "HEALER", seed: "T051-INVALID-ROLE", score: 1, accuracy: 100,\n  protectedPoints: 1, success: true, deterministic: true\n}), /INVALID_PHASE/);\nassert.equal(JSON.stringify(invalidRole.snapshot()), invalidSnapshot);\n\nconst duplicateRun = runInteractiveBattle("T051-DUPLICATE");\nassert.throws(() => duplicateRun.battle.submitRoleResult("BUFFER", duplicateRun.battle.roleResults.BUFFER), /DUPLICATE_ROLE_RESULT:BUFFER/);\n\nconst resetBattle = new Student4v4BattleState({ seed: "T051-RESET" });\nconst resetAdapters = {};\nresetBattle.start();\nwhile (resetBattle.currentPhase !== "RESOLUTION") {\n  const role = resetBattle.currentPhase;\n  const adapter = resetAdapters[role] || (resetAdapters[role] = buildInput(role, resetBattle));\n  adapter.start();\n  while (resetBattle.currentPhase === role) assert.equal(submitThroughAdapter(role, adapter).accepted, true);\n}\nresetBattle.resolve();\nassert.equal(resetBattle.currentPhase, "COMPLETE");\nresetBattle.reset();\nconst resetSnapshot = resetBattle.snapshot();\nassert.equal(resetSnapshot.currentPhase, "INIT");\nassert.equal(resetSnapshot.started, false);\nassert.equal(resetSnapshot.completed, false);\nassert.equal(resetSnapshot.resolved, false);\nassert.deepEqual(resetSnapshot.roleResults, {});\nassert.equal(resetSnapshot.student4v4Result, null);\nassert.equal(resetSnapshot.combatResult, null);\nfor (const role of STUDENT_4V4_ROLE_ORDER) assert.equal(resetBattle.roles[role].getState().completed, false);\n\nconsole.log("student_4v4_full_resolution_test: PASS");\n
+import assert from "node:assert/strict";
+import { Student4v4BattleState } from "./student_4v4_battle_state.js";
+import { Student4v4PresentationOrchestrator } from "./student_4v4_presentation_orchestrator.js";
+import { buildStudent4v4UiModel } from "./student_4v4_ui.js";
+import { Student4v4BufferInput } from "./student_4v4_buffer_input.js";
+import { Student4v4HealerInput } from "./student_4v4_healer_input.js";
+import { Student4v4DebufferInput } from "./student_4v4_debuffer_input.js";
+import { Student4v4BatterInput } from "./student_4v4_batter_input.js";
+import { STUDENT_4V4_ROLE_ORDER, STUDENT_4V4_RESULT_TYPE } from "./student_4v4_orchestrator.js";
+import { COMBAT_RESULT_TYPE } from "./combat_core.js";
+
+const ROLE_INPUTS = Object.freeze({
+  BUFFER: Student4v4BufferInput,
+  HEALER: Student4v4HealerInput,
+  DEBUFFER: Student4v4DebufferInput,
+  BATTER: Student4v4BatterInput
+});
+
+function buildInput(role, battle) {
+  return new ROLE_INPUTS[role]({ battle, clock: () => 1000 });
+}
+
+function perfectPayload(battle) {
+  const state = battle.getCurrentRoleGame()?.getState?.();
+  assert.ok(state, "active role state is required");
+
+  switch (battle.currentPhase) {
+    case "BUFFER":
+      return { noteId: state.current_note.id, lane: state.current_note.lane, timestampMs: state.current_note.target_ms };
+    case "HEALER":
+      return { threatId: state.current_threat.id, zone: state.current_threat.zone, timestampMs: state.current_threat.target_ms };
+    case "DEBUFFER":
+      return { targetId: state.current_target.id, targetType: state.current_target.type, position: { x: state.current_target.x, y: state.current_target.y }, timestampMs: state.current_target.target_ms };
+    case "BATTER":
+      return { opportunityId: state.current_opportunity.id, timestampMs: state.current_opportunity.target_ms };
+    default:
+      throw new Error("NO_ACTIVE_ROLE:" + battle.currentPhase);
+  }
+}
+
+function submitThroughAdapter(role, adapter) {
+  const payload = perfectPayload(adapter.battle);
+  switch (role) {
+    case "BUFFER": return adapter.submitLane(payload.lane, payload.timestampMs);
+    case "HEALER": return adapter.submitThreat(payload);
+    case "DEBUFFER": return adapter.submitTarget(payload);
+    case "BATTER": return adapter.submitSwing(payload);
+    default: throw new Error("UNKNOWN_ROLE:" + role);
+  }
+}
+
+function runInteractiveBattle(seed) {
+  const battle = new Student4v4BattleState({ seed, battleId: "t051-" + seed });
+  const adapters = {};
+  const phases = [];
+  battle.start();
+
+  while (battle.currentPhase !== "RESOLUTION") {
+    const role = battle.currentPhase;
+    phases.push(role);
+    const adapter = adapters[role] || (adapters[role] = buildInput(role, battle));
+    assert.equal(adapter.start().currentPhase, role);
+    while (battle.currentPhase === role) {
+      const response = submitThroughAdapter(role, adapter);
+      assert.equal(response.accepted, true, role + " rejected valid input: " + (response.reason || "unknown"));
+    }
+  }
+
+  phases.push("RESOLUTION");
+  return { battle, adapters, phases };
+}
+
+function resolveInteractive(seed) {
+  const run = runInteractiveBattle(seed);
+  const battle = run.battle;
+  const beforeResolve = battle.snapshot();
+
+  assert.deepEqual(run.phases, ["BUFFER", "HEALER", "DEBUFFER", "BATTER", "RESOLUTION"]);
+  assert.equal(beforeResolve.completed, false);
+  assert.equal(beforeResolve.resolved, false);
+  assert.deepEqual(Object.keys(beforeResolve.roleResults), STUDENT_4V4_ROLE_ORDER);
+
+  const presentation = new Student4v4PresentationOrchestrator();
+  const resolutionView = presentation.update(beforeResolve);
+  assert.equal(resolutionView.presentation.phase, "RESOLUTION");
+  assert.equal(resolutionView.presentation.activeRole, null);
+  assert.equal(resolutionView.presentation.student4v4Result, null);
+  assert.equal(resolutionView.presentation.combatResult, null);
+
+  const gameplayBeforeUi = JSON.stringify(battle.snapshot());
+  const uiModelBeforeResolve = buildStudent4v4UiModel(resolutionView);
+  assert.equal(uiModelBeforeResolve.phase, "RESOLUTION");
+  assert.equal(uiModelBeforeResolve.resolution, null);
+  assert.equal(JSON.stringify(battle.snapshot()), gameplayBeforeUi);
+
+  const resolved = battle.resolve();
+  assert.equal(resolved.currentPhase, "COMPLETE");
+  assert.equal(resolved.completed, true);
+  assert.equal(resolved.resolved, true);
+  assert.equal(resolved.student4v4Result.type, STUDENT_4V4_RESULT_TYPE);
+  assert.equal(resolved.combatResult.type, COMBAT_RESULT_TYPE);
+  assert.equal(resolved.combatResult.phase, "STUDENT_4V4");
+  assert.equal(resolved.combatResult.student_4v4_result.type, STUDENT_4V4_RESULT_TYPE);
+
+  for (const role of STUDENT_4V4_ROLE_ORDER) {
+    const result = resolved.roleResults[role];
+    assert.equal(result.type, "ROLE_RESULT");
+    assert.equal(result.role, role);
+    assert.equal(result.seed, seed);
+    assert.equal(result.deterministic, true);
+    assert.equal(Object.isFrozen(result), true);
+  }
+
+  assert.equal(Object.isFrozen(resolved.student4v4Result), true);
+  assert.equal(Object.isFrozen(resolved.combatResult), true);
+  assert.equal(Object.isFrozen(resolved.combatResult.student_4v4_result), true);
+
+  const completedView = presentation.update(resolved);
+  const uiModelAfterResolve = buildStudent4v4UiModel(completedView);
+  assert.equal(uiModelAfterResolve.phase, "COMPLETE");
+  assert.equal(uiModelAfterResolve.completed, true);
+  assert.ok(uiModelAfterResolve.resolution);
+  assert.equal(uiModelAfterResolve.student4v4Result.type, STUDENT_4V4_RESULT_TYPE);
+  assert.equal(uiModelAfterResolve.combatResult.type, COMBAT_RESULT_TYPE);
+
+  const resultSnapshot = JSON.stringify(battle.snapshot());
+  assert.throws(() => { resolved.student4v4Result.combinedScore = -1; }, TypeError);
+  assert.throws(() => { resolved.combatResult.score = -1; }, TypeError);
+  assert.throws(() => { resolved.roleResults.BUFFER.score = -1; }, TypeError);
+  assert.equal(JSON.stringify(battle.snapshot()), resultSnapshot);
+
+  assert.throws(() => battle.resolve(), /ALREADY_RESOLVED/);
+  const stale = run.adapters.BUFFER.submitLane("LIGHT", 0);
+  assert.equal(stale.accepted, false);
+  assert.equal(stale.reason, "INVALID_PHASE");
+
+  return resolved;
+}
+
+const first = resolveInteractive("T051-FULL-001");
+const second = resolveInteractive("T051-FULL-001");
+assert.deepEqual(first.student4v4Result, second.student4v4Result);
+assert.deepEqual(first.combatResult, second.combatResult);
+assert.deepEqual(first.roleResults, second.roleResults);
+
+const varied = resolveInteractive("T051-FULL-002");
+assert.notEqual(varied.student4v4Result.seed, first.student4v4Result.seed);
+
+const incomplete = new Student4v4BattleState({ seed: "T051-INCOMPLETE" });
+incomplete.start();
+assert.throws(() => incomplete.resolve(), /MISSING_ROLE_RESULT/);
+assert.equal(incomplete.currentPhase, "BUFFER");
+
+const invalidRole = new Student4v4BattleState({ seed: "T051-INVALID-ROLE" });
+invalidRole.start();
+const invalidSnapshot = JSON.stringify(invalidRole.snapshot());
+assert.throws(() => invalidRole.submitRoleResult("HEALER", {
+  type: "ROLE_RESULT", role: "HEALER", seed: "T051-INVALID-ROLE", score: 1, accuracy: 100,
+  protectedPoints: 1, success: true, deterministic: true
+}), /INVALID_PHASE/);
+assert.equal(JSON.stringify(invalidRole.snapshot()), invalidSnapshot);
+
+const duplicateRun = runInteractiveBattle("T051-DUPLICATE");
+assert.throws(() => duplicateRun.battle.submitRoleResult("BUFFER", duplicateRun.battle.roleResults.BUFFER), /DUPLICATE_ROLE_RESULT:BUFFER/);
+
+const resetBattle = new Student4v4BattleState({ seed: "T051-RESET" });
+const resetAdapters = {};
+resetBattle.start();
+while (resetBattle.currentPhase !== "RESOLUTION") {
+  const role = resetBattle.currentPhase;
+  const adapter = resetAdapters[role] || (resetAdapters[role] = buildInput(role, resetBattle));
+  adapter.start();
+  while (resetBattle.currentPhase === role) assert.equal(submitThroughAdapter(role, adapter).accepted, true);
+}
+resetBattle.resolve();
+assert.equal(resetBattle.currentPhase, "COMPLETE");
+resetBattle.reset();
+const resetSnapshot = resetBattle.snapshot();
+assert.equal(resetSnapshot.currentPhase, "INIT");
+assert.equal(resetSnapshot.started, false);
+assert.equal(resetSnapshot.completed, false);
+assert.equal(resetSnapshot.resolved, false);
+assert.deepEqual(resetSnapshot.roleResults, {});
+assert.equal(resetSnapshot.student4v4Result, null);
+assert.equal(resetSnapshot.combatResult, null);
+for (const role of STUDENT_4V4_ROLE_ORDER) assert.equal(resetBattle.roles[role].getState().completed, false);
+
+console.log("student_4v4_full_resolution_test: PASS");
