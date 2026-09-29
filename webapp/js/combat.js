@@ -1049,7 +1049,9 @@ export class CombatRenderer {
       this.kytosPresentation.render(target, w, h, this.kytosPresentationState, { time });
       this.batterRenderer.draw(target, w, h, {
         accentColor: this.themeManager.getStrikeZoneColor(),
-        scale: 0.86
+        scale: 0.86,
+        anchorX: w * 0.5,
+        anchorY: h * 0.78
       });
     }
 
