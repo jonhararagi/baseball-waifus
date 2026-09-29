@@ -1425,3 +1425,61 @@ button {
 .kytos-demo-actions .btn-super-swing {
   flex: 0.8;
 }
+
+.kytos-tactical-decision {
+  margin: 7px 0;
+  padding: 8px;
+  border: 1px solid rgba(255, 0, 127, 0.34);
+  border-radius: 8px;
+  background: rgba(255, 0, 127, 0.06);
+}
+
+.kytos-tactical-decision[hidden] {
+  display: none;
+}
+
+.kytos-tactical-title {
+  margin-bottom: 6px;
+  color: var(--accent-pink);
+  font: 800 0.58rem var(--font-header);
+  letter-spacing: 0.12em;
+}
+
+.kytos-tactical-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.kytos-decision-btn {
+  min-height: 34px;
+  padding: 6px 7px;
+  font: 800 0.58rem var(--font-header);
+  letter-spacing: 0.05em;
+}
+
+.kytos-decision-btn.is-selected {
+  border-color: var(--accent-yellow);
+  color: var(--accent-yellow);
+  box-shadow: 0 0 14px rgba(255, 223, 0, 0.28);
+}
+
+@media (max-width: 520px) {
+  .kytos-demo-panel {
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+  }
+
+  .kytos-tactical-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .kytos-demo-actions {
+    flex-wrap: wrap;
+  }
+
+  .kytos-demo-actions .cyber-btn {
+    flex: 1 1 140px;
+  }
+}
