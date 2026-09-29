@@ -522,7 +522,7 @@ export function resetWaifuDatabaseToMemory({
   persist = false,
   storage = typeof globalThis !== "undefined" ? globalThis.localStorage : null
 } = {}) {
-  activeConfig = cloneConfig(MEMORY_FALLBACK_CONFIG);
+  activeConfig = normalizeConfig(MEMORY_FALLBACK_CONFIG);
   configSource = "memory";
   rebuildDatabase();
   if (persist) persistLocalConfig(storage);
