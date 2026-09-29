@@ -67,7 +67,9 @@ assert.deepEqual(first.battle.roleResults.HEALER, second.battle.roleResults.HEAL
 assert.deepEqual(first.adapter.result, second.adapter.result);
 assert.equal(first.adapter.status, "completed");
 assert.equal(first.adapter.completed, true);
+assert.equal(first.presentation.getSnapshot().completedRoles.includes("HEALER"), true);
 assert.equal(first.presentation.getSnapshot().activeRole, "DEBUFFER");
+assert.deepEqual(first.adapter.result, first.battle.snapshot().roleResults.HEALER);
 
 const grades = new Set(first.responses.map((response) => response.grade));
 assert.deepEqual(grades, new Set(["PERFECT", "GREAT", "GOOD", "MISS"]));
