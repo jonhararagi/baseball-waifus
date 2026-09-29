@@ -65,7 +65,7 @@ assert.equal(first.view.events.some((event) => event.type === "ROLE_STARTED" && 
 const varied = run(seed, referenceEvents.map((event, index) => ({
   lane: event.lane,
   atMs: event.atMs + (index === 0 ? 200 : 0)
-}));
+})));
 assert.notDeepEqual(varied.battle.snapshot().roleResults.BUFFER, first.battle.snapshot().roleResults.BUFFER);
 
 const invalid = new Student4v4BattleState({ seed: "T047-INVALID" });
