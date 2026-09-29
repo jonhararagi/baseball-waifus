@@ -1,0 +1,8 @@
+{
+  "name": "baseball-waifus-student-4v4-browser-qa",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "playwright": "1.55.0"
+  }
+}
