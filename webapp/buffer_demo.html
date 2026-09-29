@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>BaseWarriors // Buffer Demo</title>
+  <style>
+    :root{background:#080910;color:#e9f8ff;font-family:Arial,sans-serif}body{margin:0;min-height:100vh;display:grid;place-items:center;background:radial-gradient(circle at 50% 20%,#18213d,#080910 60%)}#buffer-demo{width:min(720px,94vw)}.buffer-demo-card{padding:24px;border:1px solid #00eaff;background:#0b1020;box-shadow:0 0 30px #00eaff33}.buffer-demo-card header{display:flex;align-items:end;justify-content:space-between;gap:16px}.buffer-kicker{font-size:12px;letter-spacing:.16em;color:#00eaff}.buffer-demo-card h1{margin:4px 0 0;font-size:28px}.buffer-status{display:flex;justify-content:space-between;margin:20px 0;color:#9eb4c7;font-size:12px}.buffer-field{height:300px;display:grid;place-items:center;background:#070a13;border:1px solid #262e4a}.buffer-ring{width:220px;height:220px;display:grid;place-items:center;border:3px solid #ff3df2;border-radius:50%;position:relative}.buffer-ring:after{content:"";position:absolute;width:var(--ring-radius);height:var(--ring-radius);border:3px solid #00eaff;border-radius:50%;transition:width .06s linear,height .06s linear}.buffer-note{position:relative;z-index:2;font-weight:800;letter-spacing:.1em}.buffer-lanes{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}.buffer-lane,.buffer-restart{border:1px solid #00eaff;background:#11192b;color:#e9f8ff;padding:14px;font-weight:800;letter-spacing:.08em;cursor:pointer}.buffer-lane:hover,.buffer-restart:hover{background:#17263f}.buffer-result{display:flex;justify-content:space-between;gap:12px;padding:16px;margin-top:14px;border-left:3px solid #ff3df2;background:#111525}.buffer-result strong{color:#ff3df2}.buffer-restart{width:100%;margin-top:10px;border-color:#ff3df2}.buffer-lane:disabled{opacity:.45;cursor:default}@media(max-width:500px){.buffer-demo-card{padding:16px}.buffer-demo-card header{display:block}.buffer-field{height:240px}.buffer-lanes{gap:6px}.buffer-lane{padding:12px 4px;font-size:12px}.buffer-result{display:block}.buffer-result span{display:block;margin-top:6px}}
+  </style>
+</head>
+<body>
+  <main id="buffer-demo"></main>
+  <script type="module">
+    import { BufferEnergyCreator } from "./js/buffer_energy_creator.js";
+    import { bufferRoleResultToCombatResult } from "./js/buffer_combat_adapter.js";
+    import { BufferEnergyCreatorPresentation } from "./js/buffer_energy_creator_presentation.js";
+
+    const root = document.querySelector("#buffer-demo");
+    const view = new BufferEnergyCreatorPresentation(root);
+    const seed = "T034-BUFFER-DEMO";
+    let game = null;
+    let startedAt = 0;
+    let lastGrade = "";
+    let finalResult = null;
+
+    function start() {
+      game = new BufferEnergyCreator({ seed, count: 6, spacingMs: 900 });
+      game.start();
+      startedAt = performance.now();
+      lastGrade = "";
+      finalResult = null;
+      render();
+      requestAnimationFrame(frame);
+    }
+
+    function elapsed() {
+      return performance.now() - startedAt;
+    }
+
+    function submitLane(lane) {
+      const note = game?.getCurrentNote();
+      if (!note || note.lane !== lane) {
+        lastGrade = "MISS";
+        render();
+        return;
+      }
+      const response = game.submitInput({ noteId: note.id, timestampMs: elapsed() });
+      lastGrade = response.grade || response.reason || "MISS";
+      finalResult = response.result || null;
+      render();
+      if (finalResult) {
+        const combatResult = bufferRoleResultToCombatResult(finalResult, { energyBefore: 0, maxEnergy: 100 });
+        root.dataset.combatResult = JSON.stringify(combatResult);
+      }
+    }
+
+    function render() {
+      view.render({ state: game.getState(), elapsedMs: elapsed(), lastGrade, result: finalResult });
+      view.bind({ onLane: submitLane, onRestart: start });
+    }
+
+    function frame() {
+      if (!game?.completed) {
+        render();
+        requestAnimationFrame(frame);
+      }
+    }
+
+    start();
+  </script>
+</body>
+</html>
