@@ -6,6 +6,7 @@ import {
   buildHealerPresentationAdapter,
   buildDebufferPresentationAdapter,
   buildBatterPresentationAdapter,
+  buildStudent4v4RoleAdapter,
   buildStudent4v4RoleAdapterModels
 } from "./student_4v4_role_adapters.js";
 
@@ -136,8 +137,6 @@ assert.throws(() => buildHealerPresentationAdapter(missingRole), /MISSING_ROLE:H
 
 assert.throws(() => buildStudent4v4RoleAdapterModels(null), /INVALID_PRESENTATION_SNAPSHOT/);
 assert.throws(() => buildStudent4v4RoleAdapterModels(undefined), /INVALID_PRESENTATION_SNAPSHOT/);
-assert.throws(() => buildStudent4v4RoleAdapterModels(baseSnapshot), /Invalid/); // sanity: full model is valid, replaced below
-
 assert.throws(() => {
   buildBufferPresentationAdapter({ ...baseSnapshot, phase: "BROKEN" });
 }, /INVALID_PRESENTATION_STATE/);
@@ -157,7 +156,7 @@ assert.throws(() => {
 }, /INVALID_ROLE_RESULT:BUFFER/);
 
 assert.throws(() => {
-  buildBufferPresentationAdapter(baseSnapshot, "UNKNOWN");
+  buildStudent4v4RoleAdapter(baseSnapshot, "UNKNOWN");
 }, /UNKNOWN_ROLE/);
 
 assert.throws(() => {
