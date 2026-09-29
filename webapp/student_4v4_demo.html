@@ -3,53 +3,62 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Student 4v4 Presentation Demo</title>
+<title>Student 4v4 Integrated UI</title>
 <style>
 :root{color-scheme:dark;font-family:Arial,sans-serif;background:#070a13;color:#e9f8ff}
-body{margin:0;min-height:100vh;display:grid;place-items:center;background:radial-gradient(circle at 50% 20%,#15122b 0,#070a13 65%)}
-#app{width:min(920px,94vw)}.card{border:1px solid #00eaff;background:#0b1020;padding:24px;box-shadow:0 0 40px #00eaff22}
-header{display:flex;justify-content:space-between;align-items:end;gap:16px}.kicker{color:#00eaff;font-size:12px;letter-spacing:.16em}h1{margin:5px 0 0;font-size:30px}
-.current{margin:18px 0;padding:14px;border-left:3px solid #ff3df2;background:#111525}.current b{color:#ff3df2}
-.roles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.role{border:1px solid #26314c;padding:16px;background:#0a0f1d}.role.active{border-color:#ff3df2}.role.complete{border-color:#00eaff}.role strong,.role span,.role small{display:block}.role span{margin-top:8px;font-size:20px}.role small{margin-top:5px;color:#91a4b7}
-.flow{margin:18px 0;padding:12px;border:1px dashed #26314c;text-align:center;color:#91a4b7;font-size:12px}.readout{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.readout span{padding:14px;background:#111525}.readout b{display:block;margin-top:4px}.actions{display:flex;gap:10px;margin-top:18px}.actions button{flex:1;padding:14px;border:1px solid #00eaff;background:#11192b;color:#e9f8ff;font-weight:800;cursor:pointer}.actions button:last-child{border-color:#ff3df2}.note{margin-top:12px;color:#91a4b7;font-size:12px}.events{margin-top:12px;color:#91a4b7;font-size:12px}
-@media(max-width:600px){header{display:block}.roles{grid-template-columns:repeat(2,1fr)}.readout{grid-template-columns:1fr 1fr}.actions{flex-direction:column}}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:18px;background:radial-gradient(circle at 50% 10%,#15122b 0,#070a13 65%)}
+#app{width:min(980px,100%)}.s4-shell{border:1px solid #00eaff;background:linear-gradient(145deg,#0b1020,#080b16);padding:20px;box-shadow:0 0 40px #00eaff22}
+.s4-header{display:flex;justify-content:space-between;align-items:end;gap:16px}.s4-kicker,.s4-label,.s4-section-title{color:#00eaff;font-size:11px;letter-spacing:.14em}.s4-header h1{margin:5px 0 0;font-size:28px}.s4-phase{color:#ff3df2;font-weight:900}
+.s4-meta{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}.s4-meta span,.s4-metrics span{padding:9px 11px;background:#111525;border:1px solid #26314c;font-size:11px}.s4-meta b{color:#fff}
+.s4-section{margin-top:14px}.s4-section-title{margin-bottom:7px}.s4-roles{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.s4-role{padding:13px;border:1px solid #26314c;background:#0a0f1d;min-width:0}.s4-role.is-active{border-color:#ff3df2;box-shadow:0 0 16px #ff3df222}.s4-role.is-complete{border-color:#00eaff}.s4-role-top{display:flex;justify-content:space-between;gap:6px;align-items:center}.s4-role strong{font-size:12px}.s4-status{font-size:9px;color:#91a4b7}.s4-role.is-active .s4-status{color:#ff3df2}.s4-role.is-complete .s4-status{color:#00eaff}.s4-role small{display:block;margin-top:8px;color:#91a4b7;font-size:10px}
+.s4-active{margin-top:14px;padding:15px;border-left:3px solid #ff3df2;background:#111525}.s4-active-copy{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}.s4-active-copy strong{font-size:20px;color:#ff3df2}.s4-active-copy span:last-child{color:#91a4b7;font-size:11px}.s4-flow{margin-top:10px;color:#91a4b7;font-size:10px}
+.s4-panel-copy{padding:13px;background:#0a0f1d;border:1px solid #26314c;color:#91a4b7;font-size:12px;line-height:1.45}
+.s4-metrics{display:grid;grid-template-columns:repeat(6,1fr);gap:7px}.s4-metrics span{display:block;color:#91a4b7}.s4-metrics b{display:block;margin-top:5px;color:#fff;font-size:15px}.s4-complete{padding:15px;border:1px solid #00eaff;background:#0a0f1d}.s4-complete strong,.s4-complete span,.s4-complete small{display:block}.s4-complete strong{margin-top:4px}.s4-complete span{margin-top:6px;color:#00eaff}.s4-complete small{margin-top:4px;color:#91a4b7}.s4-events{margin-top:12px;color:#91a4b7;font-size:10px;min-height:16px}
+.s4-controls{display:flex;gap:8px;margin-top:14px}.s4-controls button{flex:1;padding:12px;border:1px solid #00eaff;background:#11192b;color:#e9f8ff;font-weight:900;cursor:pointer}.s4-controls button:last-child{border-color:#ff3df2}
+@media(max-width:700px){.s4-roles{grid-template-columns:repeat(2,1fr)}.s4-metrics{grid-template-columns:repeat(2,1fr)}.s4-header{display:block}.s4-phase{margin-top:8px}.s4-controls{flex-direction:column}}
+@media(max-width:380px){body{padding:9px}.s4-shell{padding:13px}.s4-header h1{font-size:22px}.s4-meta{display:grid;grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body><main id="app"></main>
 <script type="module">
-import { Student4v4Integration } from "./js/student_4v4_integration.js";
+import { Student4v4BattleState } from "./js/student_4v4_battle_state.js";
 import { Student4v4PresentationOrchestrator } from "./js/student_4v4_presentation_orchestrator.js";
-import { buildStudent4v4RoleAdapterModels } from "./js/student_4v4_role_adapters.js";
+import { Student4v4IntegratedUi } from "./js/student_4v4_ui.js";
 
-const app=document.querySelector("#app");
-const flow=new Student4v4Integration({seed:"T044-DEMO-001",team:{id:"student-demo-team"}});
+const root=document.querySelector("#app");
+const battle=new Student4v4BattleState({seed:"T046-UI-DEMO-001",battleId:"student-4v4-demo"});
 const presentation=new Student4v4PresentationOrchestrator();
+const ui=new Student4v4IntegratedUi(root);
 
-function render(){
- const s=flow.snapshot();
- const view=presentation.update(s);
- const m=view.presentation;
- const adapters=buildStudent4v4RoleAdapterModels(m);
- const contributionField={
-   BUFFER:"energy_points",
-   HEALER:"protectedPoints",
-   DEBUFFER:"disruptionPoints",
-   BATTER:"impactPoints"
- };
- const roles=m.roles.map(function(entry){
-   const adapter=adapters[entry.role];
-   const result=adapter.result;
-   const value=result ? Number(result[contributionField[entry.role]]) : 0;
-   return '<article class="role '+(adapter.active?'active ':'')+(adapter.completed?'complete':'')+'"><strong>'+adapter.role+'</strong><span>'+(adapter.completed?'DONE':'READY')+'</span><small>'+adapter.status.toUpperCase()+(adapter.completed?' · +'+value:'')+'</small></article>';
- }).join("");
- const r=m.student4v4Result;
- const current=m.activeRole||m.phase;
- const label=m.phase==="INIT"?"START":m.phase==="COMPLETE"?"DONE":m.phase==="RESOLUTION"?"RESOLVE":"EXECUTE "+m.activeRole;
- const events=view.events.map(function(event){return event.type+(event.role?" / "+event.role:"");}).join(" · ")||"NO PRESENTATION EVENTS";
- app.innerHTML='<section class="card"><header><div><span class="kicker">BASEWARRIORS // STUDENT 4V4</span><h1>PRESENTATION ORCHESTRATION</h1></div><strong>'+current+'</strong></header><div class="current">PRESENTATION STATE <b>'+m.phase+'</b> · SEED <b>'+m.seed+'</b></div><div class="roles">'+roles+'</div><div class="flow">GAMEPLAY STATE → PRESENTATION MODEL → UI / RENDERER</div><div class="readout"><span>SCORE<b>'+(r?r.combinedScore:0)+'</b></span><span>ACCURACY<b>'+(r?r.combinedAccuracy:0)+'%</b></span><span>RESOLVED<b>'+String(m.resolved)+'</b></span><span>COMPLETE<b>'+String(m.completed)+'</b></span></div><div class="actions"><button id="next">'+label+'</button><button id="restart">RESTART</button></div><div class="events">EVENTS: '+events+'</div><div class="note">Development fixture: the UI consumes the Student4v4PresentationOrchestrator snapshot. It does not calculate gameplay, score, timing, RNG, or combat results.</div></section>';
- document.querySelector("#next").onclick=function(){if(m.phase==="INIT")flow.start();else if(m.phase!=="RESOLUTION"&&m.phase!=="COMPLETE")flow.completeCurrentRolePerfect();else if(m.phase==="RESOLUTION")flow.advance();render();};
- document.querySelector("#restart").onclick=function(){flow.reset();presentation.reset();render();};
+function perfectInput(){
+ const state=battle.getCurrentRoleGame().getState();
+ switch(battle.currentPhase){
+  case "BUFFER":return {noteId:state.current_note.id,timestampMs:state.current_note.target_ms};
+  case "HEALER":return {threatId:state.current_threat.id,zone:state.current_threat.zone,timestampMs:state.current_threat.target_ms};
+  case "DEBUFFER":return {targetId:state.current_target.id,x:state.current_target.x,y:state.current_target.y,timestampMs:state.current_target.target_ms};
+  case "BATTER":return {opportunityId:state.current_opportunity.id,timestampMs:state.current_opportunity.target_ms};
+  default:throw new Error("NO_ACTIVE_ROLE");
+ }
 }
-render();
+function update(){
+ const view=presentation.update(battle.snapshot());
+ const model=ui.render(view);
+ const action=document.querySelector("#next");
+ const restart=document.querySelector("#restart");
+ action.onclick=()=>{
+  if(battle.currentPhase==="INIT") battle.start();
+  else if(["BUFFER","HEALER","DEBUFFER","BATTER"].includes(battle.currentPhase)){
+   const role=battle.currentPhase;
+   while(battle.currentPhase===role) battle.submitInput(perfectInput());
+  } else if(battle.currentPhase==="RESOLUTION") battle.resolve();
+  update();
+ };
+ restart.onclick=()=>{battle.reset();presentation.reset();update();};
+ const label=battle.currentPhase==="INIT"?"START":battle.currentPhase==="RESOLUTION"?"RESOLVE":battle.currentPhase==="COMPLETE"?"COMPLETE":"EXECUTE "+battle.currentPhase;
+ action.textContent=label;
+ action.disabled=battle.currentPhase==="COMPLETE";
+}
+update();
 </script>
+<div id="controls" style="position:fixed;left:12px;right:12px;bottom:12px;display:flex;gap:8px;justify-content:center;pointer-events:none"><button id="next" style="pointer-events:auto;min-width:180px;padding:12px;border:1px solid #00eaff;background:#11192b;color:#fff;font-weight:900">START</button><button id="restart" style="pointer-events:auto;min-width:120px;padding:12px;border:1px solid #ff3df2;background:#11192b;color:#fff;font-weight:900">RESTART</button></div>
 </body></html>
