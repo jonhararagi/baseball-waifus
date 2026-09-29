@@ -53,13 +53,13 @@ function runInteractiveBattle(seed) {
   const battle = new Student4v4BattleState({ seed, battleId: "t051-" + seed });
   const adapters = {};
   const phases = [];
-  battle.start();
-
   while (battle.currentPhase !== "RESOLUTION") {
-    const role = battle.currentPhase;
+    const role = battle.currentPhase === "INIT" ? "BUFFER" : battle.currentPhase;
     phases.push(role);
     const adapter = adapters[role] || (adapters[role] = buildInput(role, battle));
-    assert.equal(adapter.start().currentPhase, role);
+    const started = adapter.start();
+    assert.equal(started.currentPhase, "BUFFER");
+    assert.equal(battle.currentPhase, role === "BUFFER" ? "BUFFER" : role);
     while (battle.currentPhase === role) {
       const response = submitThroughAdapter(role, adapter);
       assert.equal(response.accepted, true, role + " rejected valid input: " + (response.reason || "unknown"));
@@ -165,9 +165,8 @@ assert.throws(() => duplicateRun.battle.submitRoleResult("BUFFER", duplicateRun.
 
 const resetBattle = new Student4v4BattleState({ seed: "T051-RESET" });
 const resetAdapters = {};
-resetBattle.start();
 while (resetBattle.currentPhase !== "RESOLUTION") {
-  const role = resetBattle.currentPhase;
+  const role = resetBattle.currentPhase === "INIT" ? "BUFFER" : resetBattle.currentPhase;
   const adapter = resetAdapters[role] || (resetAdapters[role] = buildInput(role, resetBattle));
   adapter.start();
   while (resetBattle.currentPhase === role) assert.equal(submitThroughAdapter(role, adapter).accepted, true);
