@@ -83,6 +83,10 @@ function buildAdapter(snapshot, role) {
   return Object.freeze(output);
 }
 
+export function buildStudent4v4RoleAdapter(snapshot, role) {
+  return buildAdapter(snapshot, role);
+}
+
 export function buildBufferPresentationAdapter(snapshot) {
   return buildAdapter(snapshot, "BUFFER");
 }
