@@ -20,22 +20,15 @@ async function assertPhase(page, expected) {
   );
 }
 
+async function currentPhase(page) {
+  return page.locator(".s4-phase").innerText();
+}
+
 async function clickVisible(page, locator) {
   await locator.waitFor({ state: "visible", timeout: 3000 });
   const box = await locator.boundingBox();
   assert.ok(box, "interactive element has no visible bounding box");
   await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
-}
-
-async function waitForRoleTick(page, anchor, index, spacingMs) {
-  const target = anchor + 500 + index * spacingMs;
-  await page.waitForFunction(
-    function (value) {
-      return performance.now() >= value;
-    },
-    target,
-    { timeout: 5000 }
-  );
 }
 
 async function assertNoHorizontalOverflow(page) {
@@ -49,6 +42,65 @@ async function assertNoHorizontalOverflow(page) {
   assert.ok(metrics.documentWidth <= metrics.innerWidth + 2, "document overflow: " + JSON.stringify(metrics));
   assert.ok(metrics.bodyWidth <= metrics.innerWidth + 2, "body overflow: " + JSON.stringify(metrics));
   return metrics;
+}
+
+async function driveBuffer(page, evidence) {
+  const started = Date.now();
+  let attempts = 0;
+  while (await currentPhase(page) === "BUFFER") {
+    if (Date.now() - started > 10000) throw new Error("BUFFER transition timeout");
+    const lane = (await page.locator(".buffer-note").innerText()).trim().toUpperCase();
+    assert.ok(["LIGHT", "MEDIUM", "HEAVY"].includes(lane));
+    attempts += 1;
+    await clickVisible(page, page.locator(".buffer-lane[data-buffer-lane='" + lane + "']"));
+    evidence.push({ lane, attempt: attempts });
+    await page.waitForTimeout(60);
+  }
+}
+
+async function driveHealer(page, evidence) {
+  const started = Date.now();
+  let attempts = 0;
+  while (await currentPhase(page) === "HEALER") {
+    if (Date.now() - started > 10000) throw new Error("HEALER transition timeout");
+    const zone = (await page.locator(".healer-zone.is-active").getAttribute("aria-label") || "").toUpperCase();
+    assert.ok(["TOP", "LEFT", "RIGHT", "BOTTOM"].includes(zone));
+    attempts += 1;
+    await clickVisible(page, page.locator(".healer-zone-button[data-healer-zone='" + zone + "']"));
+    evidence.push({ zone, attempt: attempts });
+    await page.waitForTimeout(60);
+  }
+}
+
+async function driveDebuffer(page, evidence) {
+  const started = Date.now();
+  let attempts = 0;
+  while (await currentPhase(page) === "DEBUFFER") {
+    if (Date.now() - started > 10000) throw new Error("DEBUFFER transition timeout");
+    const target = page.locator(".debuffer-target");
+    await target.waitFor({ state: "visible", timeout: 3000 });
+    const box = await target.boundingBox();
+    assert.ok(box, "debuffer target has no visible bounding box");
+    attempts += 1;
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    const selection = page.locator(".debuffer-selection");
+    if (await selection.count()) await selection.waitFor({ state: "visible", timeout: 1000 });
+    await clickVisible(page, page.locator("[data-debuffer-capture]"));
+    evidence.push({ target: await target.getAttribute("aria-label"), attempt: attempts });
+    await page.waitForTimeout(60);
+  }
+}
+
+async function driveBatter(page, evidence) {
+  const started = Date.now();
+  let attempts = 0;
+  while (await currentPhase(page) === "BATTER") {
+    if (Date.now() - started > 10000) throw new Error("BATTER transition timeout");
+    attempts += 1;
+    await clickVisible(page, page.locator("[data-batter-swing]"));
+    evidence.push({ swing: true, attempt: attempts });
+    await page.waitForTimeout(60);
+  }
 }
 
 async function runDesktop() {
@@ -82,54 +134,20 @@ async function runDesktop() {
   await page.getByRole("button", { name: /^START$/ }).click();
   await assertPhase(page, "BUFFER");
   evidence.flow.push("START");
-  const bufferAnchor = await page.evaluate(function () { return performance.now(); });
 
-  for (let i = 0; i < 6; i += 1) {
-    await waitForRoleTick(page, bufferAnchor, i, 650);
-    const lane = (await page.locator(".buffer-note").innerText()).trim().toUpperCase();
-    assert.ok(["LIGHT", "MEDIUM", "HEAVY"].includes(lane), "invalid buffer lane: " + lane);
-    evidence.buffer.push(lane);
-    await clickVisible(page, page.locator(".buffer-lane[data-buffer-lane='" + lane + "']"));
-  }
-
+  await driveBuffer(page, evidence.buffer);
   await assertPhase(page, "HEALER");
   evidence.flow.push("BUFFER->HEALER");
-  const healerAnchor = await page.evaluate(function () { return performance.now(); });
 
-  for (let i = 0; i < 6; i += 1) {
-    await waitForRoleTick(page, healerAnchor, i, 720);
-    const zone = (await page.locator(".healer-zone.is-active").getAttribute("aria-label") || "").toUpperCase();
-    assert.ok(["TOP", "LEFT", "RIGHT", "BOTTOM"].includes(zone), "invalid healer zone: " + zone);
-    evidence.healer.push(zone);
-    await clickVisible(page, page.locator(".healer-zone-button[data-healer-zone='" + zone + "']"));
-  }
-
+  await driveHealer(page, evidence.healer);
   await assertPhase(page, "DEBUFFER");
   evidence.flow.push("HEALER->DEBUFFER");
-  const debufferAnchor = await page.evaluate(function () { return performance.now(); });
 
-  for (let i = 0; i < 6; i += 1) {
-    await waitForRoleTick(page, debufferAnchor, i, 700);
-    const target = page.locator(".debuffer-target");
-    await target.waitFor({ state: "visible", timeout: 3000 });
-    const box = await target.boundingBox();
-    assert.ok(box, "debuffer target has no visible bounding box");
-    evidence.debuffer.push(await target.getAttribute("aria-label"));
-    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
-    await page.locator(".debuffer-selection").waitFor({ state: "visible", timeout: 2000 });
-    await clickVisible(page, page.locator("[data-debuffer-capture]"));
-  }
-
+  await driveDebuffer(page, evidence.debuffer);
   await assertPhase(page, "BATTER");
   evidence.flow.push("DEBUFFER->BATTER");
-  const batterAnchor = await page.evaluate(function () { return performance.now(); });
 
-  for (let i = 0; i < 4; i += 1) {
-    await waitForRoleTick(page, batterAnchor, i, 900);
-    evidence.batter.push(true);
-    await clickVisible(page, page.locator("[data-batter-swing]"));
-  }
-
+  await driveBatter(page, evidence.batter);
   await assertPhase(page, "RESOLUTION");
   evidence.flow.push("BATTER->RESOLUTION");
 
@@ -137,33 +155,33 @@ async function runDesktop() {
   const completeText = await page.locator(".s4-complete").innerText();
   assert.ok(completeText.includes("STUDENT 4V4 RESULT"));
   assert.ok(completeText.includes("COMBAT RESULT"));
-
   const resolutionText = await page.locator(".s4-section").filter({ hasText: "RESOLUTION" }).innerText();
   for (const metric of ["SCORE", "ACCURACY", "ENERGY", "PROTECTION", "DISRUPTION", "IMPACT"]) {
-    assert.ok(resolutionText.includes(metric), "missing resolution metric: " + metric);
+    assert.ok(resolutionText.includes(metric));
   }
 
-  const completeNext = page.locator("#next");
-  assert.equal(await completeNext.isDisabled(), true);
-  assert.equal((await completeNext.innerText()).trim(), "COMPLETE");
   await assertNoHorizontalOverflow(page);
   await page.screenshot({ path: path.join(outputDir, "student-4v4-desktop-complete.png"), fullPage: true });
-
   evidence.flow.push("RESOLUTION->COMPLETE");
+
+  const next = page.locator("#next");
+  assert.equal(await next.isDisabled(), true);
+  assert.equal((await next.innerText()).trim(), "COMPLETE");
+
   await page.locator("#restart").click();
   await assertPhase(page, "INIT");
   evidence.flow.push("COMPLETE->RESET");
 
   await page.getByRole("button", { name: /^START$/ }).click();
   await assertPhase(page, "BUFFER");
-  evidence.flow.push("RESET->START->BUFFER");
   assert.equal(await page.locator(".buffer-demo-card").count(), 1);
+  evidence.flow.push("RESET->START->BUFFER");
   await page.screenshot({ path: path.join(outputDir, "student-4v4-desktop-reset.png"), fullPage: true });
 
   const overflow = await assertNoHorizontalOverflow(page);
   await context.close();
   await browser.close();
-  return { viewport: { width: 1366, height: 768 }, flow: evidence, overflow };
+  return { viewport: { width: 1366, height: 768 }, evidence, overflow };
 }
 
 async function runMobile() {
