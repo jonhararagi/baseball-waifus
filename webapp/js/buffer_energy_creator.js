@@ -98,7 +98,7 @@ export class BufferEnergyCreator {
     });
   }
 
-  submitInput({ noteId, timestampMs } = {}) {
+  submitInput({ noteId, timestampMs, lane } = {}) {
     if (this.completed) return this._reject("POST_COMPLETION");
     const current = this.getCurrentNote();
     if (!current) {
@@ -106,15 +106,22 @@ export class BufferEnergyCreator {
       return this._reject("NO_ACTIVE_NOTE");
     }
     if (String(noteId || "") !== current.id) return this._reject("INVALID_NOTE");
+    if (lane !== undefined && !BUFFER_LANES.includes(String(lane).toUpperCase())) {
+      return this._reject("INVALID_LANE");
+    }
     if (!Number.isFinite(Number(timestampMs))) return this._reject("INVALID_TIMESTAMP");
 
+    const normalizedLane = lane === undefined ? current.lane : String(lane).toUpperCase();
+    const laneMatches = normalizedLane === current.lane;
     const deltaMs = Number(timestampMs) - current.target_ms;
-    const grade = classifyBufferTiming(deltaMs, current);
+    const grade = laneMatches ? classifyBufferTiming(deltaMs, current) : "MISS";
     const score = GRADE_SCORE[grade];
     const energyDelta = calculateEnergyDelta(current.lane, grade);
     const hit = Object.freeze({
       note_id: current.id,
       lane: current.lane,
+      input_lane: normalizedLane,
+      lane_match: laneMatches,
       target_ms: current.target_ms,
       input_ms: Number(timestampMs),
       delta_ms: Math.round(deltaMs),
