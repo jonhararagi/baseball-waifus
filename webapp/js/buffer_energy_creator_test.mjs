@@ -37,6 +37,31 @@ const invalidTimestamp = invalid.submitInput({ noteId: invalidNote.id, timestamp
 assert.equal(invalidTimestamp.accepted, false);
 assert.equal(invalidTimestamp.reason, "INVALID_TIMESTAMP");
 
+
+const laneInput = new BufferEnergyCreator({ seed: "LANE-INPUT", count: 1 });
+const laneNote = laneInput.getCurrentNote();
+const wrongLane = BUFFER_LANES.find((lane) => lane !== laneNote.lane);
+const wrongLaneHit = laneInput.submitInput({
+  noteId: laneNote.id,
+  lane: wrongLane,
+  timestampMs: laneNote.target_ms
+});
+assert.equal(wrongLaneHit.accepted, true);
+assert.equal(wrongLaneHit.grade, "MISS");
+assert.equal(wrongLaneHit.hit.lane_match, false);
+assert.equal(wrongLaneHit.hit.input_lane, wrongLane);
+
+const invalidLane = new BufferEnergyCreator({ seed: "INVALID-LANE", count: 1 });
+const invalidLaneNote = invalidLane.getCurrentNote();
+const invalidLaneInput = invalidLane.submitInput({
+  noteId: invalidLaneNote.id,
+  lane: "ULTRA",
+  timestampMs: invalidLaneNote.target_ms
+});
+assert.equal(invalidLaneInput.accepted, false);
+assert.equal(invalidLaneInput.reason, "INVALID_LANE");
+assert.equal(invalidLane.getState().current_index, 0);
+
 const completed = new BufferEnergyCreator({ seed: "COMPLETE", count: 1 });
 const completedNote = completed.getCurrentNote();
 completed.submitInput({ noteId: completedNote.id, timestampMs: completedNote.target_ms });
