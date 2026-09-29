@@ -147,6 +147,34 @@ while (postCompletion.currentPhase === "DEBUFFER") {
   assert.equal(postInput.submitTarget(perfectTargetInput(postCompletion)).accepted, true);
 }
 assert.equal(postCompletion.currentPhase, "BATTER");
+const duringBatter = postInput.submitTarget({
+  targetId: "anything",
+  targetType: "ORB",
+  position: { x: 0.5, y: 0.5 },
+  timestampMs: 500
+});
+assert.equal(duringBatter.accepted, false);
+assert.equal(duringBatter.reason, "INVALID_PHASE");
+
+while (postCompletion.currentPhase === "BATTER") {
+  const opportunity = postCompletion.getCurrentRoleGame().getState().current_opportunity;
+  postCompletion.submitInput({
+    opportunityId: opportunity.id,
+    timestampMs: opportunity.target_ms
+  });
+}
+assert.equal(postCompletion.currentPhase, "RESOLUTION");
+const duringResolution = postInput.submitTarget({
+  targetId: "anything",
+  targetType: "ORB",
+  position: { x: 0.5, y: 0.5 },
+  timestampMs: 500
+});
+assert.equal(duringResolution.accepted, false);
+assert.equal(duringResolution.reason, "INVALID_PHASE");
+
+postCompletion.resolve();
+assert.equal(postCompletion.currentPhase, "COMPLETE");
 const afterComplete = postInput.submitTarget({
   targetId: "anything",
   targetType: "ORB",
@@ -187,11 +215,11 @@ const variedFirst = variedInput.getCurrentTarget();
 const variedResponse = variedInput.submitTarget({
   targetId: variedFirst.id,
   targetType: variedFirst.type,
-  position: { x: Math.min(1, variedFirst.x + 0.2), y: variedFirst.y },
-  timestampMs: variedFirst.target_ms + variedFirst.interaction_window_ms
+  position: { x: variedFirst.x, y: variedFirst.y },
+  timestampMs: variedFirst.target_ms + 190
 });
 assert.equal(variedResponse.accepted, true);
-assert.equal(["MISS", "GOOD"].includes(variedResponse.grade), true);
+assert.equal(variedResponse.grade, "MISS");
 assert.notDeepEqual(
   variedBattle.snapshot().roleResults.DEBUFFER,
   first.snapshot.roleResults.DEBUFFER
