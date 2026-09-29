@@ -15,5 +15,6 @@ func _ready() -> void:
 	assert(source.contains(EXPECTED_FAILURE_EXIT), "Safety/failure paths must terminate with exit code 1.")
 	assert(source.contains(EXPECTED_TIMEOUT_LOG), "Timeout error log must remain explicit and auditable.")
 	assert(source.contains("RenderingServer.frame_post_draw.connect"), "Capture must remain frame-post-draw based.")
+	assert(source.contains("get_cmdline_user_args"), "VisualQAExporter must read custom user arguments after --.")
 	print("VisualQAExporter safety contract checks passed.")
 	get_tree().quit(0)
