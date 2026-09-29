@@ -4,7 +4,7 @@ const CardScript = preload("res://game/ui/character_card.gd")
 const Catalog: Script = preload("res://game/characters/character_archetype_catalog.gd")
 const CHARACTER_ID := "bw007"
 const EXPRESSION_LABELS := {"neutral":"NEUTRAL","happy":"HAPPY","focused":"FOCUSED","surprised":"SURPRISED","disappointed":"DISAPPOINTED"}
-var card: BaseballCharacterCard
+var card: Control
 func _ready() -> void:
 	_validate_canonical_data()
 	_build_visual_test()
@@ -73,13 +73,13 @@ func _build_visual_test() -> void:
 	subtitle.add_theme_font_size_override("font_size", 14)
 	subtitle.add_theme_color_override("font_color", Color("#8b5cf6"))
 	add_child(subtitle)
-	card = CardScript.new() as BaseballCharacterCard
+	card = CardScript.new()
 	card.position = Vector2(52, 112)
 	card.scale = Vector2(0.82, 0.82)
 	add_child(card)
 	assert(card != null)
 	assert(card.has_method("setup") and card.has_method("set_expression") and card.has_method("current_expression"))
-	card.setup(Catalog.create_player(CHARACTER_ID))
+	card.call("setup", Catalog.create_player(CHARACTER_ID))
 	var panel := Panel.new()
 	panel.position = Vector2(548, 120)
 	panel.size = Vector2(650, 510)
