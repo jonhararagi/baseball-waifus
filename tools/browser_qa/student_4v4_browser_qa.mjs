@@ -97,6 +97,27 @@ async function driveUntilPhase(page, activePhase, nextPhase, evidence, action, i
   let actions = 0;
   while (await readPhase(page) === activePhase) {
     if (Date.now() - started > maxMs) {
+      try {
+        const diagnostics = await page.evaluate(function () {
+          const activeButton = document.querySelector(".healer-zone-button:not([disabled])");
+          const activeZone = document.querySelector(".healer-zone.is-active");
+          const buttonRect = activeButton?.getBoundingClientRect();
+          const zoneRect = activeZone?.getBoundingClientRect();
+          return {
+            phase: document.querySelector(".s4-phase")?.textContent?.trim() || "",
+            threatText: document.querySelector(".healer-status")?.textContent?.trim() || "",
+            activeZone: activeZone?.getAttribute("aria-label") || "",
+            activeButton: activeButton?.getAttribute("data-healer-zone") || "",
+            buttonRect: buttonRect ? { x: buttonRect.x, y: buttonRect.y, width: buttonRect.width, height: buttonRect.height } : null,
+            zoneRect: zoneRect ? { x: zoneRect.x, y: zoneRect.y, width: zoneRect.width, height: zoneRect.height } : null
+          };
+        });
+        console.error("ROLE_TIMEOUT_DIAGNOSTICS", JSON.stringify(diagnostics));
+        await page.screenshot({
+          path: path.join(outputDir, activePhase.toLowerCase() + "-transition-timeout.png"),
+          fullPage: true
+        });
+      } catch {}
       throw new Error(activePhase + "_TRANSITION_TIMEOUT");
     }
     actions += 1;
