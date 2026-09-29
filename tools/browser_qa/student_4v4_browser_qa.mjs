@@ -54,6 +54,32 @@ async function clickSelector(page, selector, attempts = 80) {
       await page.waitForTimeout(25);
     }
   }
+  const diagnostics = await page.evaluate(function (value) {
+    return {
+      selector: value,
+      phase: document.querySelector(".s4-phase")?.textContent?.trim() || "",
+      scrollY: Math.round(window.scrollY),
+      innerHeight: window.innerHeight,
+      elements: Array.from(document.querySelectorAll(value)).map(function (element) {
+        const rect = element.getBoundingClientRect();
+        const style = window.getComputedStyle(element);
+        return {
+          text: element.textContent?.trim() || "",
+          disabled: element.disabled === true,
+          display: style.display,
+          visibility: style.visibility,
+          pointerEvents: style.pointerEvents,
+          rect: {
+            x: Math.round(rect.x),
+            y: Math.round(rect.y),
+            width: Math.round(rect.width),
+            height: Math.round(rect.height)
+          }
+        };
+      })
+    };
+  }, selector);
+  console.error("CLICK_DIAGNOSTICS", JSON.stringify(diagnostics));
   throw new Error("cannot click " + selector + ": timeout");
 }
 
