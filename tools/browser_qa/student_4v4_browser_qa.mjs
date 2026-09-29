@@ -233,6 +233,8 @@ async function runDesktop() {
   );
   evidence.flow.push("BATTER->RESOLUTION");
 
+  await clickSelector(page, "#next");
+  await waitForPhase(page, "COMPLETE");
   assert.equal(await page.locator(".s4-role.is-complete").count(), 4);
   const completeText = await page.locator(".s4-complete").innerText();
   assert.ok(completeText.includes("STUDENT 4V4 RESULT"));
