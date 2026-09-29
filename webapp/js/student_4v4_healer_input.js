@@ -113,6 +113,6 @@ export class Student4v4HealerInput {
   }
 
   isActive() {
-    return this.battle.currentPhase === STUDENT_4V4_BATTLE_PHASE.HEALER;
+    return this.battle.currentPhase === STUDENT_4V4_BATTLE_PHASE.HEALER && this.healerStartedAt !== null;
   }
 }
