@@ -57,7 +57,10 @@ export class BatterLeaderPresentation {
   }
 
   triggerSwing() {
-    this.renderer.beginWindup();
+    if (this.renderer.getState() === "FOLLOW_THROUGH") {
+      this.renderer.setState("IDLE");
+    }
+    return this.renderer.beginWindup();
   }
 
   bind({ onSwing, onRestart } = {}) {
