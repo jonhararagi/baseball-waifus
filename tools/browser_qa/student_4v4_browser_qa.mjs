@@ -29,15 +29,10 @@ async function waitForPhase(page, expected, timeoutMs = 5000) {
 }
 
 async function clickSelector(page, selector) {
-  const point = await page.evaluate(function (value) {
-    const element = document.querySelector(value);
-    if (!element) return null;
-    const rect = element.getBoundingClientRect();
-    if (!rect.width || !rect.height) return null;
-    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-  }, selector);
-  assert.ok(point, "no clickable visible element: " + selector);
-  await page.mouse.click(point.x, point.y);
+  const locator = page.locator(selector).first();
+  await locator.waitFor({ state: "visible", timeout: 3000 });
+  assert.equal(await locator.isEnabled(), true, "disabled interactive element: " + selector);
+  await locator.click({ force: true });
 }
 
 async function clickDynamicBuffer(page) {
