@@ -17,10 +17,12 @@
 .s4-controls{display:flex;gap:8px;margin-top:14px}.s4-controls button{flex:1;padding:12px;border:1px solid #00eaff;background:#11192b;color:#e9f8ff;font-weight:900;cursor:pointer}.s4-controls button:last-child{border-color:#ff3df2}
 @media(max-width:700px){.s4-roles{grid-template-columns:repeat(2,1fr)}.s4-metrics{grid-template-columns:repeat(2,1fr)}.s4-header{display:block}.s4-phase{margin-top:8px}.s4-controls{flex-direction:column}}
 @media(max-width:380px){body{padding:9px}.s4-shell{padding:13px}.s4-header h1{font-size:22px}.s4-meta{display:grid;grid-template-columns:1fr 1fr}}
-.s4-buffer-surface{margin-top:14px}.buffer-demo-card{padding:15px;border:1px solid #00eaff;background:#09101c}.buffer-demo-card header{display:flex;justify-content:space-between;align-items:end;gap:12px}.buffer-demo-card h2{margin:4px 0 0;color:#fff}.buffer-kicker{color:#00eaff;font-size:10px;letter-spacing:.14em}.buffer-status{display:flex;justify-content:space-between;gap:8px;margin-top:10px;color:#91a4b7;font-size:10px}.buffer-field{height:170px;margin-top:10px;display:grid;place-items:center;position:relative;overflow:hidden;background:radial-gradient(circle,#18253a,#070a13 68%);border:1px solid #26314c}.buffer-ring{width:120px;height:120px;border:2px solid #00eaff;border-radius:50%;display:grid;place-items:center;box-shadow:0 0 24px #00eaff44;animation:buffer-pulse 900ms ease-in-out infinite}.buffer-target{position:absolute;width:38px;height:38px;border:2px solid #ff3df2;border-radius:50%;box-shadow:0 0 16px #ff3df266}.buffer-note{position:relative;z-index:1;font-size:11px;font-weight:900;color:#fff;text-align:center}.buffer-lanes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.buffer-lane{padding:11px;border:1px solid #26314c;background:#111525;color:#e9f8ff;font-weight:900;cursor:pointer}.buffer-lane[data-buffer-lane="LIGHT"]{border-color:#7de7ff}.buffer-lane[data-buffer-lane="MEDIUM"]{border-color:#ffdf00}.buffer-lane[data-buffer-lane="HEAVY"]{border-color:#ff3df2}.buffer-lane:active{transform:scale(.98)}.buffer-result{display:flex;justify-content:space-between;gap:8px;margin-top:10px;padding:9px;background:#111525;border:1px solid #26314c}.buffer-result strong{color:#fff}.buffer-result span{color:#91a4b7;font-size:10px}.buffer-restart{margin-top:10px;width:100%;padding:10px;border:1px solid #ff3df2;background:#111525;color:#fff;font-weight:900;cursor:pointer}@keyframes buffer-pulse{0%,100%{transform:scale(.92);opacity:.75}50%{transform:scale(1);opacity:1}}@media(max-width:560px){.buffer-demo-card header,.buffer-status,.buffer-result{display:block}.buffer-status span,.buffer-result span{display:block;margin-top:4px}}
+.s4-buffer-surface{margin-top:14px}
+.batter-demo-card{padding:15px;border:1px solid #ff3df2;background:#090d18}.batter-demo-card header{display:flex;justify-content:space-between;align-items:end;gap:12px}.batter-kicker{color:#ff3df2;font-size:10px;letter-spacing:.14em}.batter-demo-card h1{margin:4px 0 0}.batter-status,.batter-result,.batter-controls{display:flex;justify-content:space-between;gap:8px;align-items:center}.batter-status{margin-top:10px;color:#91a4b7;font-size:10px}.batter-field{position:relative;margin-top:10px;min-height:240px;overflow:hidden;background:radial-gradient(circle,#19233c,#070a13 68%);border:1px solid #26314c}.batter-field canvas{display:block;width:100%;height:auto;max-height:320px}.batter-timing{position:absolute;left:72%;top:45%;width:0;height:0}.batter-ring,.batter-target{position:absolute;border-radius:50%;transform:translate(-50%,-50%)}.batter-ring{width:calc(var(--ring-radius)*2);height:calc(var(--ring-radius)*2);border:2px solid rgba(0,240,255,.75);box-shadow:0 0 24px rgba(0,240,255,.24)}.batter-target{width:68px;height:68px;border:3px solid #ff3df2;box-shadow:0 0 22px rgba(255,61,242,.35)}.batter-grade{position:absolute;left:72%;top:60%;transform:translate(-50%,-50%);font-size:18px;font-weight:900;color:#fff;text-shadow:0 0 12px #ff3df2}.batter-controls{margin-top:10px}.batter-controls button{flex:1;padding:11px;border:1px solid #00eaff;background:#11192b;color:#fff;font-weight:900;cursor:pointer}.batter-controls button:last-child{border-color:#ff3df2}.batter-controls button:disabled{opacity:.4;cursor:default}.batter-result{margin-top:10px;padding:10px;background:#111525;border:1px solid #26314c}.batter-result strong{color:#ff3df2}.batter-result span{color:#91a4b7;font-size:10px}
+@media(max-width:560px){.batter-demo-card header,.batter-status,.batter-result{display:block}.batter-status span,.batter-result span{display:block;margin-top:4px}.batter-field{min-height:190px}.batter-demo-card{padding:12px}}.buffer-demo-card{padding:15px;border:1px solid #00eaff;background:#09101c}.buffer-demo-card header{display:flex;justify-content:space-between;align-items:end;gap:12px}.buffer-demo-card h2{margin:4px 0 0;color:#fff}.buffer-kicker{color:#00eaff;font-size:10px;letter-spacing:.14em}.buffer-status{display:flex;justify-content:space-between;gap:8px;margin-top:10px;color:#91a4b7;font-size:10px}.buffer-field{height:170px;margin-top:10px;display:grid;place-items:center;position:relative;overflow:hidden;background:radial-gradient(circle,#18253a,#070a13 68%);border:1px solid #26314c}.buffer-ring{width:120px;height:120px;border:2px solid #00eaff;border-radius:50%;display:grid;place-items:center;box-shadow:0 0 24px #00eaff44;animation:buffer-pulse 900ms ease-in-out infinite}.buffer-target{position:absolute;width:38px;height:38px;border:2px solid #ff3df2;border-radius:50%;box-shadow:0 0 16px #ff3df266}.buffer-note{position:relative;z-index:1;font-size:11px;font-weight:900;color:#fff;text-align:center}.buffer-lanes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.buffer-lane{padding:11px;border:1px solid #26314c;background:#111525;color:#e9f8ff;font-weight:900;cursor:pointer}.buffer-lane[data-buffer-lane="LIGHT"]{border-color:#7de7ff}.buffer-lane[data-buffer-lane="MEDIUM"]{border-color:#ffdf00}.buffer-lane[data-buffer-lane="HEAVY"]{border-color:#ff3df2}.buffer-lane:active{transform:scale(.98)}.buffer-result{display:flex;justify-content:space-between;gap:8px;margin-top:10px;padding:9px;background:#111525;border:1px solid #26314c}.buffer-result strong{color:#fff}.buffer-result span{color:#91a4b7;font-size:10px}.buffer-restart{margin-top:10px;width:100%;padding:10px;border:1px solid #ff3df2;background:#111525;color:#fff;font-weight:900;cursor:pointer}@keyframes buffer-pulse{0%,100%{transform:scale(.92);opacity:.75}50%{transform:scale(1);opacity:1}}@media(max-width:560px){.buffer-demo-card header,.buffer-status,.buffer-result{display:block}.buffer-status span,.buffer-result span{display:block;margin-top:4px}}
 </style>
 </head>
-<body><main id="app"></main><div id="buffer-role-root" class="s4-buffer-surface"></div><div id="healer-role-root" class="s4-buffer-surface"></div><div id="debuffer-role-root" class="s4-buffer-surface"></div>
+<body><main id="app"></main><div id="buffer-role-root" class="s4-buffer-surface"></div><div id="healer-role-root" class="s4-buffer-surface"></div><div id="debuffer-role-root" class="s4-buffer-surface"></div><div id="batter-role-root" class="s4-buffer-surface"></div>
 <script type="module">
 import { Student4v4BattleState } from "./js/student_4v4_battle_state.js";
 import { Student4v4PresentationOrchestrator } from "./js/student_4v4_presentation_orchestrator.js";
@@ -31,26 +33,34 @@ import { HealerDefensivePresentation } from "./js/healer_defensive_presentation.
 import { Student4v4HealerInput } from "./js/student_4v4_healer_input.js";
 import { DebufferDisruptorPresentation } from "./js/debuffer_disruptor_presentation.js";
 import { Student4v4DebufferInput } from "./js/student_4v4_debuffer_input.js";
+import { BatterLeaderPresentation } from "./js/batter_leader_presentation.js";
+import { Student4v4BatterInput } from "./js/student_4v4_batter_input.js";
 
 const root=document.querySelector("#app");
 const bufferRoot=document.querySelector("#buffer-role-root");
 const healerRoot=document.querySelector("#healer-role-root");
 const debufferRoot=document.querySelector("#debuffer-role-root");
+const batterRoot=document.querySelector("#batter-role-root");
 const bufferPresentation=new BufferEnergyCreatorPresentation(bufferRoot);
 const healerPresentation=new HealerDefensivePresentation(healerRoot);
 const debufferPresentation=new DebufferDisruptorPresentation(debufferRoot);
+const batterPresentation=new BatterLeaderPresentation(batterRoot);
 const battle=new Student4v4BattleState({seed:"T048-UI-DEMO-001",battleId:"student-4v4-demo"});
 const presentation=new Student4v4PresentationOrchestrator();
 const ui=new Student4v4IntegratedUi(root);
 const bufferInput=new Student4v4BufferInput({battle});
 const healerInput=new Student4v4HealerInput({battle});
 const debufferInput=new Student4v4DebufferInput({battle});
+const batterInput=new Student4v4BatterInput({battle});
 let healerFinalState=null;
 let healerFinalResult=null;
 let healerFrameId=0;
 let debufferFinalState=null;
 let debufferFinalResult=null;
 let debufferSelectedPosition=null;
+let batterFinalState=null;
+let batterFinalResult=null;
+let batterFrameId=0;
 
 function perfectInput(){
  const state=battle.getCurrentRoleGame().getState();
@@ -128,6 +138,7 @@ function renderDebufferSurface(){
   onPosition: (position) => {
     debufferSelectedPosition=position;
     renderDebufferSurface();
+  renderBatterSurface();
   },
   onCapture: () => {
     if (!debufferSelectedPosition) return;
@@ -216,6 +227,79 @@ function renderHealerSurface(){
  }
 }
 
+function ensureBatterStarted(){
+ if(battle.currentPhase==="BATTER" && !batterInput.isActive()){
+  batterInput.start();
+ }
+}
+
+function renderBatterSurface(){
+ if(battle.currentPhase!=="BATTER" && !batterFinalResult){
+  batterRoot.innerHTML="";
+  return;
+ }
+
+ const roleState=battle.currentPhase==="BATTER"
+  ? battle.getCurrentRoleGame().getState()
+  : batterFinalState;
+ const elapsed=battle.currentPhase==="BATTER" ? batterInput.elapsedMs() : 0;
+ const response=batterInput.getLastResponse();
+
+ batterPresentation.update(1 / 60);
+ batterPresentation.render({
+  state: roleState,
+  elapsedMs: elapsed,
+  lastGrade: response?.grade || response?.reason || "READY",
+  result: batterFinalResult
+ });
+ batterPresentation.bind({
+  onSwing: () => {
+    const opportunity=batterInput.getCurrentOpportunity();
+    if(!opportunity) return;
+    const response=batterInput.submitSwing({
+      opportunityId: opportunity.id,
+      timestampMs: batterInput.elapsedMs()
+    });
+    if(response.accepted){
+      batterFinalState=response.state;
+      if(response.result) batterFinalResult=response.result;
+      batterPresentation.triggerSwing();
+    }
+    update();
+  },
+  onRestart: () => {
+    battle.reset();
+    presentation.reset();
+    bufferInput.reset();
+    healerInput.reset();
+    debufferInput.reset();
+    batterInput.reset();
+    healerFinalState=null;
+    healerFinalResult=null;
+    debufferFinalState=null;
+    debufferFinalResult=null;
+    debufferSelectedPosition=null;
+    batterFinalState=null;
+    batterFinalResult=null;
+    if(batterFrameId){
+      cancelAnimationFrame(batterFrameId);
+      batterFrameId=0;
+    }
+    update();
+  }
+ });
+
+ if(battle.currentPhase==="BATTER" && !batterFrameId){
+  const frame=()=>{
+    batterFrameId=0;
+    if(battle.currentPhase!=="BATTER") return;
+    renderBatterSurface();
+    batterFrameId=requestAnimationFrame(frame);
+  };
+  batterFrameId=requestAnimationFrame(frame);
+ }
+}
+
 function update(){
  ensureHealerStarted();
  ensureDebufferStarted();
@@ -239,20 +323,27 @@ function update(){
   bufferInput.reset();
   healerInput.reset();
   debufferInput.reset();
+  batterInput.reset();
   healerFinalState=null;
   healerFinalResult=null;
   debufferFinalState=null;
   debufferFinalResult=null;
   debufferSelectedPosition=null;
+  batterFinalState=null;
+  batterFinalResult=null;
+  if(batterFrameId){
+    cancelAnimationFrame(batterFrameId);
+    batterFrameId=0;
+  }
   if(healerFrameId){
     cancelAnimationFrame(healerFrameId);
     healerFrameId=0;
   }
   update();
  };
- const label=battle.currentPhase==="INIT"?"START BUFFER":battle.currentPhase==="BUFFER"?"INPUT BUFFER":battle.currentPhase==="HEALER"?"HEALER ACTIVE":battle.currentPhase==="DEBUFFER"?"DEBUFFER ACTIVE":battle.currentPhase==="RESOLUTION"?"RESOLVE":battle.currentPhase==="COMPLETE"?"COMPLETE":"EXECUTE "+battle.currentPhase;
+ const label=battle.currentPhase==="INIT"?"START BUFFER":battle.currentPhase==="BUFFER"?"INPUT BUFFER":battle.currentPhase==="HEALER"?"HEALER ACTIVE":battle.currentPhase==="DEBUFFER"?"DEBUFFER ACTIVE":battle.currentPhase==="BATTER"?"BATTER ACTIVE":battle.currentPhase==="RESOLUTION"?"RESOLVE":battle.currentPhase==="COMPLETE"?"COMPLETE":"EXECUTE "+battle.currentPhase;
  action.textContent=label;
- action.disabled=["BUFFER","HEALER","DEBUFFER","COMPLETE"].includes(battle.currentPhase);
+ action.disabled=["BUFFER","HEALER","DEBUFFER","BATTER","COMPLETE"].includes(battle.currentPhase);
 }
 update();
 </script>
