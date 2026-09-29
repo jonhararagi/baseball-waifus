@@ -9,16 +9,16 @@ import { buildStudent4v4PresentationModel } from "./student_4v4_presentation.js"
 export const STUDENT_4V4_INTEGRATION_PHASE = Object.freeze({ IDLE: "IDLE", BUFFER: "BUFFER", HEALER: "HEALER", DEBUFFER: "DEBUFFER", BATTER: "BATTER", RESULT: "RESULT" });
 
 function cloneFreeze(value) { return Object.freeze(JSON.parse(JSON.stringify(value))); }
-function roleSeed(seed, role) { return String(seed) + "::" + role; }
+function roleSeed(seed) { return String(seed); }
 
 export class Student4v4Integration {
   constructor({ seed = "STUDENT-4V4-001", team = null } = {}) { this.seed = String(seed); this.team = team ? cloneFreeze(team) : null; this.reset(); }
   reset() {
     this.roles = {
-      BUFFER: new BufferEnergyCreator({ seed: roleSeed(this.seed, "BUFFER") }),
-      HEALER: new HealerDefensiveSupport({ seed: roleSeed(this.seed, "HEALER") }),
-      DEBUFFER: new DebufferDisruptor({ seed: roleSeed(this.seed, "DEBUFFER") }),
-      BATTER: new BatterLeader({ seed: roleSeed(this.seed, "BATTER") })
+      BUFFER: new BufferEnergyCreator({ seed: roleSeed(this.seed) }),
+      HEALER: new HealerDefensiveSupport({ seed: roleSeed(this.seed) }),
+      DEBUFFER: new DebufferDisruptor({ seed: roleSeed(this.seed) }),
+      BATTER: new BatterLeader({ seed: roleSeed(this.seed) })
     };
     this.roleResults = {}; this.phase = "IDLE"; this.combinedResult = null; this.combatResult = null; return this.snapshot();
   }
