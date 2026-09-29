@@ -254,7 +254,7 @@ async function runDesktop() {
   await waitForPhase(page, "INIT");
   evidence.flow.push("COMPLETE->RESET");
 
-  await page.getByRole("button", { name: /^START$/ }).click();
+  await clickSelector(page, "#next");
   await waitForPhase(page, "BUFFER");
   assert.equal(await page.locator(".buffer-demo-card").count(), 1);
   evidence.flow.push("RESET->START->BUFFER");
@@ -283,7 +283,7 @@ async function runMobile() {
   await page.goto(baseUrl, { waitUntil: "domcontentloaded", timeout: 8000 });
   await waitForPhase(page, "INIT");
   const before = await assertNoHorizontalOverflow(page);
-  await page.getByRole("button", { name: /^START$/ }).click();
+  await clickSelector(page, "#next");
   await waitForPhase(page, "BUFFER");
   const after = await assertNoHorizontalOverflow(page);
 
