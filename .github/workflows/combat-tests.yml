@@ -52,6 +52,8 @@ on:
       - "webapp/js/student_4v4_ui_test.mjs"
       - "webapp/js/student_4v4_buffer_input.js"
       - "webapp/js/student_4v4_buffer_input_test.mjs"
+      - "webapp/js/student_4v4_healer_input.js"
+      - "webapp/js/student_4v4_healer_input_test.mjs"
       - "webapp/student_4v4_demo.html"
       - "docs/student-4v4-orchestration.md"
       - "webapp/js/app.js"
@@ -101,6 +103,7 @@ jobs:
           node --experimental-default-type=module webapp/js/student_4v4_role_adapters_test.mjs
           node --experimental-default-type=module webapp/js/student_4v4_ui_test.mjs
           node --experimental-default-type=module webapp/js/student_4v4_buffer_input_test.mjs
+          node --experimental-default-type=module webapp/js/student_4v4_healer_input_test.mjs
 
       - name: Validate combat syntax
         shell: bash
@@ -136,4 +139,6 @@ jobs:
           node --experimental-default-type=module --check webapp/js/student_4v4_role_adapters.js
           node --experimental-default-type=module --check webapp/js/student_4v4_ui.js
           node --experimental-default-type=module --check webapp/js/student_4v4_buffer_input.js
+          node --experimental-default-type=module --check webapp/js/student_4v4_healer_input.js
+          node --experimental-default-type=module --check webapp/student_4v4_demo.html
           node --experimental-default-type=module --check webapp/js/app.js
