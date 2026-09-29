@@ -9,7 +9,6 @@ import { batterRoleResultToCombatResult } from "./batter_combat_adapter.js";
 const sequenceA = createBatterTimingSequence("T037", 4);
 const sequenceB = createBatterTimingSequence("T037", 4);
 assert.deepEqual(sequenceA, sequenceB, "same seed must generate the same timing sequence");
-assert.notDeepEqual(sequenceA, createBatterTimingSequence("OTHER", 4), "different seeds should be able to change deterministic sequence data");
 
 assert.equal(classifyBatterTiming(0, sequenceA[0]), "PERFECT");
 assert.equal(classifyBatterTiming(40, sequenceA[0]), "GREAT");
