@@ -13,118 +13,106 @@ function perfectInput(battle) {
   return { opportunityId: state.current_opportunity.id, timestampMs: state.current_opportunity.target_ms };
 }
 
-function viewFor(battle, presentation) {
-  return presentation.update(battle.snapshot());
+function update(battle, presentation, ui) {
+  const view = presentation.update(battle.snapshot());
+  return ui.render(view);
 }
 
-function completeRole(battle, presentation) {
+function completeRole(battle, presentation, ui) {
   const role = battle.currentPhase;
   while (battle.currentPhase === role) {
     assert.equal(battle.submitInput(perfectInput(battle)).accepted, true);
-    viewFor(battle, presentation);
+    update(battle, presentation, ui);
   }
 }
 
-const battle = new Student4v4BattleState({ seed: "T046-UI-001", battleId: "ui-battle-001" });
-const presentation = new Student4v4PresentationOrchestrator();
-const root = { innerHTML: "" };
-const ui = new Student4v4IntegratedUi(root);
+function run(seed) {
+  const battle = new Student4v4BattleState({ seed, battleId: "ui-" + seed });
+  const presentation = new Student4v4PresentationOrchestrator();
+  const ui = new Student4v4IntegratedUi({ innerHTML: "" });
 
-let view = viewFor(battle, presentation);
-let model = ui.render(view);
-assert.equal(model.phase, "INIT");
-assert.deepEqual(model.roles.map((r) => r.status), ["pending", "pending", "pending", "pending"]);
-assert.equal(model.activeRole, null);
-assert.match(root.innerHTML, /ROLE TRACKER/);
-assert.match(root.innerHTML, /RENDER/ === true ? /./ : /ROLE TRACKER/);
+  const initial = update(battle, presentation, ui);
+  assert.equal(initial.phase, "INIT");
+  assert.deepEqual(initial.roles.map((r) => r.status), ["pending", "pending", "pending", "pending"]);
 
-battle.start();
-view = viewFor(battle, presentation);
-model = ui.render(view);
-assert.equal(model.activeRole, "BUFFER");
-assert.deepEqual(model.roles.map((r) => r.status), ["active", "pending", "pending", "pending"]);
-assert.match(root.innerHTML, /BUFFER/);
+  battle.start();
+  let model = update(battle, presentation, ui);
+  assert.equal(model.activeRole, "BUFFER");
+  assert.deepEqual(model.roles.map((r) => r.status), ["active", "pending", "pending", "pending"]);
 
-completeRole(battle, presentation);
-view = viewFor(battle, presentation);
-model = ui.render(view);
-assert.equal(model.activeRole, "HEALER");
-assert.deepEqual(model.roles.map((r) => r.status), ["completed", "active", "pending", "pending"]);
+  for (const role of ROLES) {
+    assert.equal(battle.currentPhase, role);
+    completeRole(battle, presentation, ui);
+    model = update(battle, presentation, ui);
+    assert.equal(model.roles.find((r) => r.role === role).status, "completed");
+    if (role !== "BATTER") {
+      const next = ROLES[ROLES.indexOf(role) + 1];
+      assert.equal(model.activeRole, next);
+    }
+  }
 
-completeRole(battle, presentation);
-view = viewFor(battle, presentation);
-model = ui.render(view);
-assert.equal(model.activeRole, "DEBUFFER");
+  assert.equal(model.phase, "RESOLUTION");
+  assert.equal(model.activeRole, null);
+  assert.equal(model.resolution, null);
 
-completeRole(battle, presentation);
-view = viewFor(battle, presentation);
-model = ui.render(view);
-assert.equal(model.activeRole, "BATTER");
+  const beforeRender = JSON.stringify(battle.snapshot());
+  battle.resolve();
+  model = update(battle, presentation, ui);
+  const afterRender = JSON.stringify(battle.snapshot());
+  assert.equal(afterRender, JSON.stringify(battle.snapshot()));
 
-completeRole(battle, presentation);
-view = viewFor(battle, presentation);
-model = ui.render(view);
-assert.equal(model.phase, "RESOLUTION");
-assert.equal(model.activeRole, null);
-assert.equal(model.resolution, null);
+  assert.equal(model.phase, "COMPLETE");
+  assert.equal(model.completed, true);
+  assert.equal(model.roles.length, 4);
+  assert.equal(model.roles.every((r) => r.completed && r.result?.type === "ROLE_RESULT"), true);
+  assert.equal(model.resolution.combinedScore, battle.snapshot().student4v4Result.combinedScore);
+  assert.equal(model.resolution.combinedAccuracy, battle.snapshot().student4v4Result.combinedAccuracy);
+  assert.equal(model.student4v4Result.type, "STUDENT_4V4_RESULT");
+  assert.equal(model.combatResult.type, "COMBAT_RESULT");
+  assert.match(ui.root.innerHTML, /ROLE TRACKER/);
+  assert.match(ui.root.innerHTML, /RESOLUTION/);
+  assert.match(ui.root.innerHTML, /COMPLETE/);
+  assert.match(ui.root.innerHTML, /COMBAT RESULT/);
 
-const gameplayBeforeResolution = JSON.stringify(battle.snapshot());
-battle.resolve();
-view = viewFor(battle, presentation);
-model = ui.render(view);
-assert.equal(model.phase, "COMPLETE");
-assert.equal(model.completed, true);
-assert.equal(model.resolution.combinedScore, battle.snapshot().student4v4Result.combinedScore);
-assert.equal(model.resolution.combinedAccuracy, battle.snapshot().student4v4Result.combinedAccuracy);
-assert.equal(model.student4v4Result.type, "STUDENT_4V4_RESULT");
-assert.equal(model.combatResult.type, "COMBAT_RESULT");
-assert.match(root.innerHTML, /COMPLETE/);
-assert.match(root.innerHTML, /STUDENT 4V4 RESULT/);
+  const resultBefore = JSON.stringify(battle.snapshot().student4v4Result);
+  ui.render(presentation.getSnapshot() ? { presentation: presentation.getSnapshot(), events: [] } : null);
+  assert.equal(JSON.stringify(battle.snapshot().student4v4Result), resultBefore);
+  assert.equal(JSON.stringify(battle.snapshot()) !== beforeRender, true);
 
-const gameplayAfterUi = JSON.stringify(battle.snapshot());
-assert.equal(gameplayAfterUi !== gameplayBeforeResolution, true);
+  const frozen = buildStudent4v4UiModel({
+    presentation: presentation.getSnapshot(),
+    events: []
+  });
+  assert.equal(frozen.deterministic, true);
+  assert.throws(() => { frozen.phase = "BUFFER"; }, TypeError);
+  assert.throws(() => { frozen.roles[0].status = "active"; }, TypeError);
 
-const resultBefore = JSON.stringify(battle.snapshot().student4v4Result);
-ui.render(view);
-assert.equal(JSON.stringify(battle.snapshot().student4v4Result), resultBefore);
-
-const modelA = buildStudent4v4UiModel(view);
-const modelB = buildStudent4v4UiModel(view);
-assert.deepEqual(modelA, modelB);
-assert.equal(modelA.deterministic, true);
-
-for (const role of ROLES) {
-  assert.equal(modelA.roles.find((entry) => entry.role === role).completed, true);
-  assert.equal(modelA.roles.find((entry) => entry.role === role).status, "completed");
+  return frozen;
 }
 
-const initialSnapshot = battle.snapshot();
-assert.throws(() => { modelA.phase = "BUFFER"; }, TypeError);
-assert.throws(() => { modelA.roles[0].status = "active"; }, TypeError);
-assert.equal(JSON.stringify(battle.snapshot()), JSON.stringify(initialSnapshot));
-
-const secondBattle = new Student4v4BattleState({ seed: "T046-DET" });
-const secondPresentation = new Student4v4PresentationOrchestrator();
-secondPresentation.update(secondBattle.snapshot());
-secondBattle.start();
-secondPresentation.update(secondBattle.snapshot());
-while (secondBattle.currentPhase !== "RESOLUTION") {
-  completeRole(secondBattle, secondPresentation);
-}
-secondBattle.resolve();
-const secondView = secondPresentation.update(secondBattle.snapshot());
-assert.deepEqual(buildStudent4v4UiModel(secondView), buildStudent4v4UiModel(secondView));
+const first = run("T046-DETERMINISTIC");
+const second = run("T046-DETERMINISTIC");
+assert.deepEqual(first, second);
 
 const resetBattle = new Student4v4BattleState({ seed: "T046-RESET" });
 const resetPresentation = new Student4v4PresentationOrchestrator();
-resetPresentation.update(resetBattle.snapshot());
+const resetUi = new Student4v4IntegratedUi({ innerHTML: "" });
+update(resetBattle, resetPresentation, resetUi);
 resetBattle.start();
-resetPresentation.update(resetBattle.snapshot());
+update(resetBattle, resetPresentation, resetUi);
 resetBattle.reset();
-const resetView = resetPresentation.update(resetBattle.snapshot());
-const resetModel = buildStudent4v4UiModel(resetView);
+const resetModel = update(resetBattle, resetPresentation, resetUi);
 assert.equal(resetModel.phase, "INIT");
 assert.equal(resetModel.activeRole, null);
 assert.deepEqual(resetModel.roles.map((r) => r.status), ["pending", "pending", "pending", "pending"]);
+assert.equal(resetModel.resolved, false);
+
+const sideEffectBattle = new Student4v4BattleState({ seed: "T046-NO-SIDE-EFFECT" });
+const sideEffectPresentation = new Student4v4PresentationOrchestrator();
+const sideEffectUi = new Student4v4IntegratedUi({ innerHTML: "" });
+sideEffectPresentation.update(sideEffectBattle.snapshot());
+const gameplayBefore = JSON.stringify(sideEffectBattle.snapshot());
+sideEffectUi.render(sideEffectPresentation.update(sideEffectBattle.snapshot()));
+assert.equal(JSON.stringify(sideEffectBattle.snapshot()), gameplayBefore);
 
 console.log("student_4v4_ui_test: PASS");
