@@ -29,7 +29,7 @@ static func create_player(character_id: String) -> PlayerData:
 	player.specialization = str(entry.specialization)
 	player.faction = str(entry.character_identity.get("faction", ""))
 	player.skill_roles.clear()
-	var skill_roles: Array = entry.get("skill_roles", [])
+	var skill_roles: Array = entry.get("character_identity", {}).get("skill_roles", [])
 	for skill_role in skill_roles:
 		player.skill_roles.append(str(skill_role))
 	player.potential = int(entry.potential)
