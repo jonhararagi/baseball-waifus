@@ -29,3 +29,16 @@ This does not fake provider responses, bypass validation, or modify the provider
 ## Browser QA
 
 Browser automation and deployed-site access remain external to this repository environment. Static inspection is not treated as Browser QA.
+
+## Godot Visual QA scene execution
+
+Classification: REPO_BUGS, resolved in T041.
+
+Run 36584777048 (2026-09-29) showed the affected character-presentation jobs reaching the scene command but timing out at the 15s shell guard. The common exporter path attempted ViewportTexture.get_image() before waiting for RenderingServer.frame_post_draw; this could stall the headless capture path, preventing the exporter watchdog from running. T041 changed the exporter to use the existing frame-post-draw capture path directly.
+
+Additional isolated failures in the same run were repository defects:
+- bw007: the fixture cast CardScript.new() to BaseballCharacterCard and asserted the result non-null. Runtime evidence showed that cast produced null; the fixture now uses the instantiated Control and the existing setup() contract.
+- bw009: the CI job downloaded Godot from a repository release URL that returned HTTP 404. It now uses the pinned official Godot release URL used by the other jobs.
+- bw015: the test incorrectly rejected the word watermark in base_prompt, even though the actual prompt intentionally contains no watermark; the policy belongs in negative_prompt, so the assertion now checks that field.
+
+The run also exposed unrelated import warnings for the corrupt webapp/assets/icons/icon-512.png, plus parse errors in situation_evaluator_test.tscn and tactical_calculator_test.tscn. These did not identify the character-scene root cause and were not modified by T041.
