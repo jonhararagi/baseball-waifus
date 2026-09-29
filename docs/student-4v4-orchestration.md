@@ -31,22 +31,34 @@ The existing T038 formula remains authoritative:
 
 No Kytos formula or common combat core was modified.
 
+## T044 presentation orchestration
+
+`Student4v4PresentationOrchestrator` is a presentation-only boundary over `Student4v4BattleState.snapshot()`.
+
+The presentation pipeline is:
+
+GAMEPLAY STATE → `Student4v4PresentationOrchestrator` → `STUDENT_4V4_PRESENTATION_STATE` → future UI / renderer / animation / audio
+
+The orchestrator never advances a battle, executes a role, calculates score, generates RNG, or modifies any ROLE_RESULT, STUDENT_4V4_RESULT, or COMBAT_RESULT. It creates isolated frozen snapshots containing the current phase, derived `activeRole`, completed roles, role status, role results, combined result, and combat result.
+
+Presentation events are descriptive only: `BATTLE_STARTED`, `ROLE_STARTED`, `ROLE_COMPLETED`, `RESOLUTION_STARTED`, `BATTLE_COMPLETED`, and `BATTLE_RESET`. They contain no gameplay commands.
+
 ## Playable development demo
 
-`webapp/student_4v4_demo.html` is isolated from the normal application flow. START begins the real Buffer role. Each EXECUTE action completes the current real role with deterministic perfect inputs and advances to the next role. After Batter, the real `Student4v4Orchestrator` resolves the four results and the existing Student 4v4 adapter produces a `COMBAT_RESULT`. RESTART reconstructs all four role instances from the same seed.
+`webapp/student_4v4_demo.html` is isolated from the normal application flow. It still executes the real T034 Buffer, T035 Healer, T036 Debuffer, and T037/T039 Batter through `Student4v4Integration`, but its UI now consumes `Student4v4PresentationOrchestrator` exclusively for presentation state and descriptive events. RESTART resets both the gameplay fixture and presentation snapshot history.
 
-The demo UI is presentation only. It does not calculate gameplay results.
+The demo UI does not calculate gameplay results.
 
 ## Validation
 
-`student_4v4_integration_test.mjs` proves that all four role systems emit `ROLE_RESULT`, the orchestrator consumes them, the combined result converts to the existing `COMBAT_RESULT`, the presentation model consumes the result, repeated runs with the same seed are identical, a different seed is propagated to role instances, and reset clears the integrated result.
+The role and battle-state tests cover deterministic gameplay and integration. `student_4v4_presentation_orchestrator_test.mjs` additionally proves role progression, resolution, completion, reset, deterministic presentation snapshots, snapshot isolation/freeze, descriptive events, and absence of gameplay side effects.
 
 ## Visual QA boundary
 
-Student 4v4 integration is implemented in the webapp JavaScript layer. The existing Godot Visual QA pipeline targets Godot scenes and cannot execute these JavaScript role systems without introducing a second gameplay implementation. T042 therefore does not add a parallel Godot combat implementation or fake a Godot PASS. Browser/webapp visual QA remains a separate environment concern.
+Student 4v4 integration and presentation orchestration are implemented in the webapp JavaScript layer. The existing Godot Visual QA pipeline targets Godot scenes and cannot execute these JavaScript role systems without introducing a second gameplay implementation. T044 therefore does not add a parallel Godot combat implementation or fake a Godot PASS. Browser/webapp visual QA remains a separate environment concern.
 
 ## Scope boundary
 
-Future: concurrent 4v4 interaction, turn/battle orchestration beyond this sequential integration, PvP, matchmaking, ranking, progression, deckbuilding, economy, professionals, Valkyrias, humanoid Kytos, and definitive balance.
+Future: concurrent 4v4 interaction, turn/battle orchestration beyond this sequential integration, PvP, matchmaking, ranking, progression, deckbuilding, economy, professionals, Valkyrias, humanoid Kytos, definitive balance, and the final visual UI.
 
 No canon changes are made.
