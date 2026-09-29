@@ -41,10 +41,32 @@ jobs:
       - name: Install artwork processing dependency
         run: python -m pip install --disable-pip-version-check --no-input Pillow
 
-      - name: Generate production anime artwork
+      - name: Ensure production anime artwork is available
+        shell: bash
         env:
           PYTHONUNBUFFERED: "1"
-        run: python tools/generate_production_artwork.py
+        run: |
+          set -euo pipefail
+
+          production_assets_complete() {
+            test -s assets/production/cards/bw001--normal.jpg
+            test -s assets/production/cards/bw002--normal.jpg
+            test -s assets/production/sprites/bw001_idle.png
+            test -s assets/production/sprites/bw002_idle.png
+            for id in bw021 bw022 bw023 bw024 bw025 bw026 bw027 bw028 bw029 bw030; do
+              test -s "assets/production/cards/${id}--normal.jpg"
+              test -s "assets/production/sprites/${id}_idle.png"
+              test -s "assets/production/sprites/${id}_attack.png"
+              test -s "assets/production/sprites/${id}_hit.png"
+            done
+          }
+
+          if production_assets_complete; then
+            echo "Committed production artwork fixtures are complete; skipping remote artwork generation."
+          else
+            echo "Production artwork fixtures are incomplete; invoking the configured generator."
+            python tools/generate_production_artwork.py
+          fi
 
       - name: Verify raster production assets
         shell: bash
