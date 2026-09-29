@@ -42,6 +42,7 @@ import { NarrativePresentation } from "./narrative_presentation.js";
 import { Team11ChoicePresentation } from "./narrative_team11_choice_presentation.js";
 import { ARC0_TEAM11_RECRUITMENT } from "./narrative_arc0_team11.js";
 import { KytosCombatDemo } from "./kytos_combat_demo.js";
+import { BATTER_ORDER, SUPPORT_ACTION } from "./kytos_tactical_decision.js";
 
 function initializeTelegramNativeShell() {
   const webApp = window.Telegram?.WebApp || null;
@@ -378,6 +379,13 @@ const kytosDemoPhase = document.querySelector("#kytos-demo-phase");
 const kytosDemoEvent = document.querySelector("#kytos-demo-event");
 const kytosDemoNext = document.querySelector("#kytos-demo-next");
 const kytosDemoRestart = document.querySelector("#kytos-demo-restart");
+const kytosTacticalDecision = document.querySelector("#kytos-tactical-decision");
+const kytosTacticalTitle = document.querySelector("#kytos-tactical-title");
+const kytosSupportBoost = document.querySelector("#kytos-support-boost");
+const kytosSupportCharge = document.querySelector("#kytos-support-charge");
+const kytosSupportPass = document.querySelector("#kytos-support-pass");
+const kytosBatterNormal = document.querySelector("#kytos-batter-normal");
+const kytosBatterPower = document.querySelector("#kytos-batter-power");
 
 const kytosDemo = new KytosCombatDemo({ renderer });
 
@@ -385,6 +393,9 @@ function renderKytosDemoControls() {
   if (!kytosDemoPanel) return;
   const snapshot = kytosDemo.snapshot();
   const phase = snapshot.phase;
+  const supportDecision = phase === "SUPPORT_DECISION";
+  const batterDecision = phase === "BATTER_DECISION";
+  const tacticalDecision = supportDecision || batterDecision;
   kytosDemoPanel.hidden = phase === "IDLE";
   if (kytosDemoPhase) kytosDemoPhase.textContent = phase;
   if (kytosDemoEvent) {
@@ -393,11 +404,41 @@ function renderKytosDemoControls() {
       ? "KYTOS DEFEATED • deterministic victory"
       : result;
   }
+  if (kytosTacticalDecision) kytosTacticalDecision.hidden = !tacticalDecision;
+  if (kytosTacticalTitle) kytosTacticalTitle.textContent = supportDecision ? "SUPPORT ACTION" : "BATTER ORDER";
+  for (const button of [kytosSupportBoost, kytosSupportCharge, kytosSupportPass]) {
+    if (!button) continue;
+    button.hidden = !supportDecision;
+    button.disabled = Boolean(snapshot.presentation?.selectedSupportAction);
+    button.classList.toggle("is-selected", snapshot.presentation?.selectedSupportAction === button.dataset.tacticalSupport);
+  }
+  for (const button of [kytosBatterNormal, kytosBatterPower]) {
+    if (!button) continue;
+    button.hidden = !batterDecision;
+    button.disabled = Boolean(snapshot.presentation?.selectedBatterOrder);
+    button.classList.toggle("is-selected", snapshot.presentation?.selectedBatterOrder === button.dataset.tacticalBatter);
+  }
   if (kytosDemoNext) {
     kytosDemoNext.disabled = !kytosDemo.canAdvance();
     kytosDemoNext.textContent = kytosDemo.canAdvance() ? "NEXT STEP" : "COMPLETE";
   }
 }
+
+function selectKytosSupport(action) {
+  kytosDemo.selectSupportAction(action);
+  renderKytosDemoControls();
+}
+
+function selectKytosBatter(order) {
+  kytosDemo.selectBatterOrder(order);
+  renderKytosDemoControls();
+}
+
+kytosSupportBoost?.addEventListener("click", () => selectKytosSupport(SUPPORT_ACTION.BOOST));
+kytosSupportCharge?.addEventListener("click", () => selectKytosSupport(SUPPORT_ACTION.CHARGE));
+kytosSupportPass?.addEventListener("click", () => selectKytosSupport(SUPPORT_ACTION.PASS));
+kytosBatterNormal?.addEventListener("click", () => selectKytosBatter(BATTER_ORDER.NORMAL_SWING));
+kytosBatterPower?.addEventListener("click", () => selectKytosBatter(BATTER_ORDER.POWER_SWING));
 
 kytosDemoNext?.addEventListener("click", () => {
   kytosDemo.step();
