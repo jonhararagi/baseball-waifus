@@ -290,7 +290,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          curl -fsSL "https://github.com/jonhararagi/baseball-waifus/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip" -o godot.zip
+          curl -fsSL "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip" -o godot.zip
           unzip -q godot.zip -d godot
           chmod +x "godot/Godot_v${GODOT_VERSION}_linux.x86_64"
           "godot/Godot_v${GODOT_VERSION}_linux.x86_64" --version
