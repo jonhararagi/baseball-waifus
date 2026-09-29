@@ -39,6 +39,9 @@ func _begin_capture() -> void:
 	if _finished:
 		return
 
+	if _try_capture():
+		return
+
 	RenderingServer.frame_post_draw.connect(_capture_frame, CONNECT_ONE_SHOT)
 
 func _try_capture() -> bool:
