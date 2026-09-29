@@ -24,6 +24,11 @@ on:
       - "webapp/js/healer_defensive_presentation.js"
       - "webapp/js/healer_defensive_test.mjs"
       - "webapp/js/healer_demo.html"
+      - "webapp/js/debuffer_disruptor.js"
+      - "webapp/js/debuffer_combat_adapter.js"
+      - "webapp/js/debuffer_disruptor_presentation.js"
+      - "webapp/js/debuffer_disruptor_test.mjs"
+      - "webapp/js/debuffer_demo.html"
       - "webapp/js/app.js"
       - "webapp/index.html"
       - "webapp/css/styles.css"
@@ -62,6 +67,7 @@ jobs:
           node --experimental-default-type=module webapp/js/batter_renderer_test.mjs
           node --experimental-default-type=module webapp/js/buffer_energy_creator_test.mjs
           node --experimental-default-type=module webapp/js/healer_defensive_test.mjs
+          node --experimental-default-type=module webapp/js/debuffer_disruptor_test.mjs
 
       - name: Validate combat syntax
         shell: bash
@@ -80,4 +86,7 @@ jobs:
           node --experimental-default-type=module --check webapp/js/healer_defensive_support.js
           node --experimental-default-type=module --check webapp/js/healer_combat_adapter.js
           node --experimental-default-type=module --check webapp/js/healer_defensive_presentation.js
+          node --experimental-default-type=module --check webapp/js/debuffer_disruptor.js
+          node --experimental-default-type=module --check webapp/js/debuffer_combat_adapter.js
+          node --experimental-default-type=module --check webapp/js/debuffer_disruptor_presentation.js
           node --experimental-default-type=module --check webapp/js/app.js

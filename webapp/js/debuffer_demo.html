@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Student 4v4 - Debuffer Demo</title>
+  <style>html,body{margin:0;min-height:100%;background:#05070d}body{display:grid;place-items:center;padding:20px;box-sizing:border-box}button{font:inherit}</style>
+</head>
+<body>
+  <main id="app"></main>
+  <script type="module">
+    import { DebufferDisruptor } from "./debuffer_disruptor.js";
+    import { debufferRoleResultToCombatResult } from "./debuffer_combat_adapter.js";
+    import { DebufferDisruptorPresentation } from "./debuffer_disruptor_presentation.js";
+
+    const root = document.querySelector("#app");
+    const presentation = new DebufferDisruptorPresentation(root);
+    const seed = "T036-DEMO";
+    let game = new DebufferDisruptor({ seed, count: 6 });
+    let startedAt = performance.now();
+    let lastGrade = "READY";
+    let result = null;
+
+    function elapsedMs() { return performance.now() - startedAt; }
+
+    function render() {
+      presentation.render({ state: game.getState(), result, lastGrade });
+      presentation.bind({ onCapture: capture, onRestart: restart });
+    }
+
+    function capture() {
+      const target = game.getCurrentTarget();
+      if (!target) return;
+      const response = game.submitInput({
+        targetId: target.id,
+        x: target.x,
+        y: target.y,
+        timestampMs: elapsedMs()
+      });
+      if (response.accepted) {
+        lastGrade = response.grade;
+        result = response.result;
+      }
+      render();
+    }
+
+    function restart() {
+      game.start();
+      startedAt = performance.now();
+      lastGrade = "READY";
+      result = null;
+      render();
+    }
+
+    render();
+    window.debufferDemo = {
+      getRoleResult: () => result,
+      getCombatResult: () => result ? debufferRoleResultToCombatResult(result) : null,
+      restart
+    };
+  </script>
+</body>
+</html>
