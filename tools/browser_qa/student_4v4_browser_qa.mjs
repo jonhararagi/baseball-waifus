@@ -103,7 +103,7 @@ async function runDesktop() {
   assert.equal(await page.locator(".s4-shell").count(), 1);
   evidence.flow.push("LOAD");
 
-  await page.getByRole("button", { name: /^START$/ }).click();
+  await page.locator("#next").click();
   await waitForPhase(page, "BUFFER");
   evidence.flow.push("START");
 
