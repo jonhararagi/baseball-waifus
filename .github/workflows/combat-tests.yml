@@ -34,6 +34,11 @@ on:
       - "webapp/js/batter_leader_presentation.js"
       - "webapp/js/batter_leader_test.mjs"
       - "webapp/js/batter_demo.html"
+      - "webapp/js/student_4v4_orchestrator.js"
+      - "webapp/js/student_4v4_combat_adapter.js"
+      - "webapp/js/student_4v4_presentation.js"
+      - "webapp/js/student_4v4_orchestrator_test.mjs"
+      - "docs/student-4v4-orchestration.md"
       - "webapp/js/app.js"
       - "webapp/index.html"
       - "webapp/css/styles.css"
@@ -74,6 +79,7 @@ jobs:
           node --experimental-default-type=module webapp/js/healer_defensive_test.mjs
           node --experimental-default-type=module webapp/js/debuffer_disruptor_test.mjs
           node --experimental-default-type=module webapp/js/batter_leader_test.mjs
+          node --experimental-default-type=module webapp/js/student_4v4_orchestrator_test.mjs
 
       - name: Validate combat syntax
         shell: bash
@@ -98,4 +104,7 @@ jobs:
           node --experimental-default-type=module --check webapp/js/batter_leader.js
           node --experimental-default-type=module --check webapp/js/batter_combat_adapter.js
           node --experimental-default-type=module --check webapp/js/batter_leader_presentation.js
+          node --experimental-default-type=module --check webapp/js/student_4v4_orchestrator.js
+          node --experimental-default-type=module --check webapp/js/student_4v4_combat_adapter.js
+          node --experimental-default-type=module --check webapp/js/student_4v4_presentation.js
           node --experimental-default-type=module --check webapp/js/app.js
