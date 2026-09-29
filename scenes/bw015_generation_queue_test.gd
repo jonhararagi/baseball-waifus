@@ -65,7 +65,7 @@ func _ready() -> void:
 	var negative_prompt := str(pollinations.get("negative_prompt", "")).to_lower()
 	assert(negative_prompt.contains("child"))
 	assert(negative_prompt.contains("underage"))
-	assert(not str(pollinations.get("base_prompt", "")).contains("watermark"))
+	assert(not str(pollinations.get("negative_prompt", "")).contains("watermark"))
 	var expressions: Dictionary = pollinations.get("expressions", {})
 	for expression_id in ["neutral", "happy", "focused", "surprised", "disappointed"]:
 		assert(str(expressions.get(expression_id, "")) != "", "Missing bw015 expression prompt: " + expression_id)
