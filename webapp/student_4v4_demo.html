@@ -268,23 +268,7 @@ function renderBatterSurface(){
     update();
   },
   onRestart: () => {
-    battle.reset();
-    presentation.reset();
-    bufferInput.reset();
-    healerInput.reset();
-    debufferInput.reset();
-    batterInput.reset();
-    healerFinalState=null;
-    healerFinalResult=null;
-    debufferFinalState=null;
-    debufferFinalResult=null;
-    debufferSelectedPosition=null;
-    batterFinalState=null;
-    batterFinalResult=null;
-    if(batterFrameId){
-      cancelAnimationFrame(batterFrameId);
-      batterFrameId=0;
-    }
+    resetDemoState();
     update();
   }
  });
@@ -303,11 +287,13 @@ function renderBatterSurface(){
 function update(){
  ensureHealerStarted();
  ensureDebufferStarted();
+ ensureBatterStarted();
  const view=presentation.update(battle.snapshot());
  ui.render(view);
  renderBufferSurface();
  renderHealerSurface();
  renderDebufferSurface();
+ renderBatterSurface();
  const action=document.querySelector("#next");
  const restart=document.querySelector("#restart");
  action.onclick=()=>{
