@@ -72,6 +72,30 @@ function perfectInput(){
   default:throw new Error("NO_ACTIVE_ROLE");
  }
 }
+function resetDemoState(){
+ battle.reset();
+ presentation.reset();
+ bufferInput.reset();
+ healerInput.reset();
+ debufferInput.reset();
+ batterInput.reset();
+ healerFinalState=null;
+ healerFinalResult=null;
+ debufferFinalState=null;
+ debufferFinalResult=null;
+ debufferSelectedPosition=null;
+ batterFinalState=null;
+ batterFinalResult=null;
+ if(batterFrameId){
+  cancelAnimationFrame(batterFrameId);
+  batterFrameId=0;
+ }
+ if(healerFrameId){
+  cancelAnimationFrame(healerFrameId);
+  healerFrameId=0;
+ }
+}
+
 function renderBufferSurface(){
  if(battle.currentPhase!=="BUFFER"){
   bufferRoot.innerHTML="";
@@ -91,16 +115,7 @@ function renderBufferSurface(){
     update();
   },
   onRestart: () => {
-    battle.reset();
-    presentation.reset();
-    bufferInput.reset();
-    healerInput.reset();
-    debufferInput.reset();
-    healerFinalState=null;
-    healerFinalResult=null;
-    debufferFinalState=null;
-    debufferFinalResult=null;
-    debufferSelectedPosition=null;
+    resetDemoState();
     update();
   }
  });
@@ -138,7 +153,6 @@ function renderDebufferSurface(){
   onPosition: (position) => {
     debufferSelectedPosition=position;
     renderDebufferSurface();
-  renderBatterSurface();
   },
   onCapture: () => {
     if (!debufferSelectedPosition) return;
@@ -157,16 +171,7 @@ function renderDebufferSurface(){
     update();
   },
   onRestart: () => {
-    battle.reset();
-    presentation.reset();
-    bufferInput.reset();
-    healerInput.reset();
-    debufferInput.reset();
-    healerFinalState=null;
-    healerFinalResult=null;
-    debufferFinalState=null;
-    debufferFinalResult=null;
-    debufferSelectedPosition=null;
+    resetDemoState();
     update();
   }
  });
@@ -206,12 +211,7 @@ function renderHealerSurface(){
     update();
   },
   onRestart: () => {
-    battle.reset();
-    presentation.reset();
-    bufferInput.reset();
-    healerInput.reset();
-    healerFinalState=null;
-    healerFinalResult=null;
+    resetDemoState();
     update();
   }
  });
@@ -312,33 +312,11 @@ function update(){
  const restart=document.querySelector("#restart");
  action.onclick=()=>{
   if(battle.currentPhase==="INIT") bufferInput.start();
-  else if(battle.currentPhase==="BATTER"){
-   while(battle.currentPhase==="BATTER") battle.submitInput(perfectInput());
-  } else if(battle.currentPhase==="RESOLUTION") battle.resolve();
+  else if(battle.currentPhase==="RESOLUTION") battle.resolve();
   update();
  };
  restart.onclick=()=>{
-  battle.reset();
-  presentation.reset();
-  bufferInput.reset();
-  healerInput.reset();
-  debufferInput.reset();
-  batterInput.reset();
-  healerFinalState=null;
-  healerFinalResult=null;
-  debufferFinalState=null;
-  debufferFinalResult=null;
-  debufferSelectedPosition=null;
-  batterFinalState=null;
-  batterFinalResult=null;
-  if(batterFrameId){
-    cancelAnimationFrame(batterFrameId);
-    batterFrameId=0;
-  }
-  if(healerFrameId){
-    cancelAnimationFrame(healerFrameId);
-    healerFrameId=0;
-  }
+  resetDemoState();
   update();
  };
  const label=battle.currentPhase==="INIT"?"START BUFFER":battle.currentPhase==="BUFFER"?"INPUT BUFFER":battle.currentPhase==="HEALER"?"HEALER ACTIVE":battle.currentPhase==="DEBUFFER"?"DEBUFFER ACTIVE":battle.currentPhase==="BATTER"?"BATTER ACTIVE":battle.currentPhase==="RESOLUTION"?"RESOLVE":battle.currentPhase==="COMPLETE"?"COMPLETE":"EXECUTE "+battle.currentPhase;
