@@ -137,7 +137,7 @@ const firstInput = {
 };
 const firstResponse = invalidDuplicate.submitInput(firstInput);
 assert.equal(firstResponse.accepted, true);
-assert.throws(() => invalidDuplicate.submitRoleResult("BUFFER", firstResponse.result), /DUPLICATE_ROLE_RESULT:BUFFER/);
+assert.throws(() => invalidDuplicate.submitRoleResult("BUFFER", invalidDuplicate.roleResults.BUFFER), /DUPLICATE_ROLE_RESULT:BUFFER/);
 
 const deterministicA = runBattle("T043-DETERMINISTIC");
 const deterministicB = runBattle("T043-DETERMINISTIC");
