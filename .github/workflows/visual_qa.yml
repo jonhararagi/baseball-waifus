@@ -12,6 +12,7 @@ on:
     paths:
       - "assets/characters/expressions/**"
       - "game/ui/character_*.gd"
+      - "game/characters/character_roster_store.gd"
       - "game/ui/visual_qa_exporter.gd"
       - "scenes/bw004_character_presentation_test.*"
       - "scenes/bw005_character_presentation_test.*"
