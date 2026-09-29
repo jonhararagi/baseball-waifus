@@ -15,4 +15,4 @@ script = ExtResource("1")
 [node name="VisualQAExporter" type="Node" parent="."]
 script = ExtResource("2")
 output_path = "res://qa_captures/student_4v4_integration.png"
-settle_seconds = 1.8
+settle_seconds = 4.0
