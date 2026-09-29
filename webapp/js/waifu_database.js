@@ -208,7 +208,7 @@ const MEMORY_FALLBACK_CONFIG = {
   ]
 };
 
-let activeConfig = cloneConfig(MEMORY_FALLBACK_CONFIG);
+let activeConfig = normalizeConfig(MEMORY_FALLBACK_CONFIG);
 let configSource = "memory";
 let initialized = false;
 
