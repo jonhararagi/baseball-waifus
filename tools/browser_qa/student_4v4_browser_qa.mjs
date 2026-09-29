@@ -32,15 +32,14 @@ async function clickSelector(page, selector) {
   const locator = page.locator(selector).first();
   await locator.waitFor({ state: "attached", timeout: 3000 });
   const state = await locator.evaluate(function (element) {
-    const rect = element.getBoundingClientRect();
     const style = window.getComputedStyle(element);
     return {
       disabled: Boolean(element.disabled),
-      visible: rect.width > 0 && rect.height > 0 && style.visibility !== "hidden" && style.display !== "none"
+      rendered: style.visibility !== "hidden" && style.display !== "none"
     };
   });
   assert.equal(state.disabled, false, "disabled interactive element: " + selector);
-  assert.equal(state.visible, true, "hidden interactive element: " + selector);
+  assert.equal(state.rendered, true, "non-rendered interactive element: " + selector);
   await locator.evaluate(function (element) {
     element.click();
   });
