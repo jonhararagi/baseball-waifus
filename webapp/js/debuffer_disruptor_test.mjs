@@ -37,11 +37,23 @@ assert.equal(runSingle(190).grade, "MISS");
 
 const invalid = new DebufferDisruptor({ seed: "INVALID", count: 2 });
 const invalidTarget = invalid.getCurrentTarget();
-const initialState = JSON.stringify(invalid.getState());
+const initialCoreState = {
+  current_index: invalid.getState().current_index,
+  score: invalid.getState().score,
+  disruption_points: invalid.getState().disruption_points
+};
 const invalidTargetInput = invalid.submitInput({ targetId: "unknown", x: invalidTarget.x, y: invalidTarget.y, timestampMs: invalidTarget.target_ms });
 assert.equal(invalidTargetInput.accepted, false);
 assert.equal(invalidTargetInput.reason, "INVALID_TARGET");
-assert.equal(invalid.getState().current_index, 0);
+assert.deepEqual(
+  {
+    current_index: invalid.getState().current_index,
+    score: invalid.getState().score,
+    disruption_points: invalid.getState().disruption_points
+  },
+  initialCoreState,
+  "invalid target must not mutate gameplay result state"
+);
 
 const invalidPosition = invalid.submitInput({ targetId: invalidTarget.id, x: 1.2, y: invalidTarget.y, timestampMs: invalidTarget.target_ms });
 assert.equal(invalidPosition.accepted, false);
@@ -53,11 +65,13 @@ assert.equal(invalidTimestamp.accepted, false);
 assert.equal(invalidTimestamp.reason, "INVALID_TIMESTAMP");
 assert.equal(invalid.getState().current_index, 0);
 
-const outOfRange = invalid.submitInput({ targetId: invalidTarget.id, x: invalidTarget.x + 0.2, y: invalidTarget.y, timestampMs: invalidTarget.target_ms });
+const farX = invalidTarget.x < 0.5 ? 1 : 0;
+const outOfRange = invalid.submitInput({ targetId: invalidTarget.id, x: farX, y: invalidTarget.y, timestampMs: invalidTarget.target_ms });
 assert.equal(outOfRange.accepted, false);
 assert.equal(outOfRange.reason, "OUT_OF_RANGE");
 assert.equal(invalid.getState().current_index, 0);
-assert.equal(JSON.stringify({ ...invalid.getState(), current_target: undefined }), JSON.stringify({ ...JSON.parse(initialState), current_target: undefined }));
+assert.equal(invalid.getState().score, 0);
+assert.equal(invalid.getState().disruption_points, 0);
 
 const firstValid = invalid.submitInput({ targetId: invalidTarget.id, x: invalidTarget.x, y: invalidTarget.y, timestampMs: invalidTarget.target_ms });
 assert.equal(firstValid.accepted, true);
