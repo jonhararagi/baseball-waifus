@@ -20,7 +20,7 @@
 .s4-buffer-surface{margin-top:14px}.buffer-demo-card{padding:15px;border:1px solid #00eaff;background:#09101c}.buffer-demo-card header{display:flex;justify-content:space-between;align-items:end;gap:12px}.buffer-demo-card h2{margin:4px 0 0;color:#fff}.buffer-kicker{color:#00eaff;font-size:10px;letter-spacing:.14em}.buffer-status{display:flex;justify-content:space-between;gap:8px;margin-top:10px;color:#91a4b7;font-size:10px}.buffer-field{height:170px;margin-top:10px;display:grid;place-items:center;position:relative;overflow:hidden;background:radial-gradient(circle,#18253a,#070a13 68%);border:1px solid #26314c}.buffer-ring{width:120px;height:120px;border:2px solid #00eaff;border-radius:50%;display:grid;place-items:center;box-shadow:0 0 24px #00eaff44;animation:buffer-pulse 900ms ease-in-out infinite}.buffer-target{position:absolute;width:38px;height:38px;border:2px solid #ff3df2;border-radius:50%;box-shadow:0 0 16px #ff3df266}.buffer-note{position:relative;z-index:1;font-size:11px;font-weight:900;color:#fff;text-align:center}.buffer-lanes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.buffer-lane{padding:11px;border:1px solid #26314c;background:#111525;color:#e9f8ff;font-weight:900;cursor:pointer}.buffer-lane[data-buffer-lane="LIGHT"]{border-color:#7de7ff}.buffer-lane[data-buffer-lane="MEDIUM"]{border-color:#ffdf00}.buffer-lane[data-buffer-lane="HEAVY"]{border-color:#ff3df2}.buffer-lane:active{transform:scale(.98)}.buffer-result{display:flex;justify-content:space-between;gap:8px;margin-top:10px;padding:9px;background:#111525;border:1px solid #26314c}.buffer-result strong{color:#fff}.buffer-result span{color:#91a4b7;font-size:10px}.buffer-restart{margin-top:10px;width:100%;padding:10px;border:1px solid #ff3df2;background:#111525;color:#fff;font-weight:900;cursor:pointer}@keyframes buffer-pulse{0%,100%{transform:scale(.92);opacity:.75}50%{transform:scale(1);opacity:1}}@media(max-width:560px){.buffer-demo-card header,.buffer-status,.buffer-result{display:block}.buffer-status span,.buffer-result span{display:block;margin-top:4px}}
 </style>
 </head>
-<body><main id="app"></main>
+<body><main id="app"></main><div id="buffer-role-root" class="s4-buffer-surface"></div>
 <script type="module">
 import { Student4v4BattleState } from "./js/student_4v4_battle_state.js";
 import { Student4v4PresentationOrchestrator } from "./js/student_4v4_presentation_orchestrator.js";
@@ -29,9 +29,7 @@ import { BufferEnergyCreatorPresentation } from "./js/buffer_energy_creator_pres
 import { Student4v4BufferInput } from "./js/student_4v4_buffer_input.js";
 
 const root=document.querySelector("#app");
-const bufferRoot=document.createElement("div");
-bufferRoot.className="s4-buffer-surface";
-root.appendChild(bufferRoot);
+const bufferRoot=document.querySelector("#buffer-role-root");
 const bufferPresentation=new BufferEnergyCreatorPresentation(bufferRoot);
 const battle=new Student4v4BattleState({seed:"T046-UI-DEMO-001",battleId:"student-4v4-demo"});
 const presentation=new Student4v4PresentationOrchestrator();
