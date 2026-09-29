@@ -29,13 +29,21 @@ async function waitForPhase(page, expected, timeoutMs = 5000) {
 }
 
 async function clickSelector(page, selector, attempts = 80) {
-  const locator = page.locator(selector).first();
   for (let attempt = 0; attempt < attempts; attempt += 1) {
     try {
-      await locator.evaluate(function (element) {
+      const box = await page.evaluate(function (value) {
+        const element = document.querySelector(value);
+        if (!element || element.disabled) return null;
         element.scrollIntoView({ block: "center", inline: "center" });
-      });
-      const box = await locator.boundingBox();
+        const rect = element.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) return null;
+        return {
+          x: rect.left,
+          y: rect.top,
+          width: rect.width,
+          height: rect.height
+        };
+      }, selector);
       if (!box) throw new Error("NOT_CLICKABLE");
       await page.mouse.click(
         box.x + box.width / 2,
