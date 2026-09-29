@@ -57,7 +57,15 @@ export class Student4v4HealerInput {
     return Math.max(0, Math.round(current - this.healerStartedAt));
   }
 
-  submitThreat({ threatId, zone, timestampMs = null } = {}) {
+  submitThreat(payload = {}) {
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+      const response = rejection("INVALID_INPUT", this.battle);
+      this.lastResponse = response;
+      return response;
+    }
+
+    const { threatId, zone, timestampMs = null } = payload;
+
     if (this.battle.currentPhase !== STUDENT_4V4_BATTLE_PHASE.HEALER) {
       const response = rejection("INVALID_PHASE", this.battle);
       this.lastResponse = response;
