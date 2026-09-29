@@ -20,7 +20,7 @@
 .s4-buffer-surface{margin-top:14px}.buffer-demo-card{padding:15px;border:1px solid #00eaff;background:#09101c}.buffer-demo-card header{display:flex;justify-content:space-between;align-items:end;gap:12px}.buffer-demo-card h2{margin:4px 0 0;color:#fff}.buffer-kicker{color:#00eaff;font-size:10px;letter-spacing:.14em}.buffer-status{display:flex;justify-content:space-between;gap:8px;margin-top:10px;color:#91a4b7;font-size:10px}.buffer-field{height:170px;margin-top:10px;display:grid;place-items:center;position:relative;overflow:hidden;background:radial-gradient(circle,#18253a,#070a13 68%);border:1px solid #26314c}.buffer-ring{width:120px;height:120px;border:2px solid #00eaff;border-radius:50%;display:grid;place-items:center;box-shadow:0 0 24px #00eaff44;animation:buffer-pulse 900ms ease-in-out infinite}.buffer-target{position:absolute;width:38px;height:38px;border:2px solid #ff3df2;border-radius:50%;box-shadow:0 0 16px #ff3df266}.buffer-note{position:relative;z-index:1;font-size:11px;font-weight:900;color:#fff;text-align:center}.buffer-lanes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.buffer-lane{padding:11px;border:1px solid #26314c;background:#111525;color:#e9f8ff;font-weight:900;cursor:pointer}.buffer-lane[data-buffer-lane="LIGHT"]{border-color:#7de7ff}.buffer-lane[data-buffer-lane="MEDIUM"]{border-color:#ffdf00}.buffer-lane[data-buffer-lane="HEAVY"]{border-color:#ff3df2}.buffer-lane:active{transform:scale(.98)}.buffer-result{display:flex;justify-content:space-between;gap:8px;margin-top:10px;padding:9px;background:#111525;border:1px solid #26314c}.buffer-result strong{color:#fff}.buffer-result span{color:#91a4b7;font-size:10px}.buffer-restart{margin-top:10px;width:100%;padding:10px;border:1px solid #ff3df2;background:#111525;color:#fff;font-weight:900;cursor:pointer}@keyframes buffer-pulse{0%,100%{transform:scale(.92);opacity:.75}50%{transform:scale(1);opacity:1}}@media(max-width:560px){.buffer-demo-card header,.buffer-status,.buffer-result{display:block}.buffer-status span,.buffer-result span{display:block;margin-top:4px}}
 </style>
 </head>
-<body><main id="app"></main><div id="buffer-role-root" class="s4-buffer-surface"></div><div id="healer-role-root" class="s4-buffer-surface"></div>
+<body><main id="app"></main><div id="buffer-role-root" class="s4-buffer-surface"></div><div id="healer-role-root" class="s4-buffer-surface"></div><div id="debuffer-role-root" class="s4-buffer-surface"></div>
 <script type="module">
 import { Student4v4BattleState } from "./js/student_4v4_battle_state.js";
 import { Student4v4PresentationOrchestrator } from "./js/student_4v4_presentation_orchestrator.js";
@@ -29,20 +29,28 @@ import { BufferEnergyCreatorPresentation } from "./js/buffer_energy_creator_pres
 import { Student4v4BufferInput } from "./js/student_4v4_buffer_input.js";
 import { HealerDefensivePresentation } from "./js/healer_defensive_presentation.js";
 import { Student4v4HealerInput } from "./js/student_4v4_healer_input.js";
+import { DebufferDisruptorPresentation } from "./js/debuffer_disruptor_presentation.js";
+import { Student4v4DebufferInput } from "./js/student_4v4_debuffer_input.js";
 
 const root=document.querySelector("#app");
 const bufferRoot=document.querySelector("#buffer-role-root");
 const healerRoot=document.querySelector("#healer-role-root");
+const debufferRoot=document.querySelector("#debuffer-role-root");
 const bufferPresentation=new BufferEnergyCreatorPresentation(bufferRoot);
 const healerPresentation=new HealerDefensivePresentation(healerRoot);
+const debufferPresentation=new DebufferDisruptorPresentation(debufferRoot);
 const battle=new Student4v4BattleState({seed:"T048-UI-DEMO-001",battleId:"student-4v4-demo"});
 const presentation=new Student4v4PresentationOrchestrator();
 const ui=new Student4v4IntegratedUi(root);
 const bufferInput=new Student4v4BufferInput({battle});
 const healerInput=new Student4v4HealerInput({battle});
+const debufferInput=new Student4v4DebufferInput({battle});
 let healerFinalState=null;
 let healerFinalResult=null;
 let healerFrameId=0;
+let debufferFinalState=null;
+let debufferFinalResult=null;
+let debufferSelectedPosition=null;
 
 function perfectInput(){
  const state=battle.getCurrentRoleGame().getState();
@@ -88,6 +96,65 @@ function ensureHealerStarted(){
  if(battle.currentPhase==="HEALER" && !healerInput.isActive()){
   healerInput.start();
  }
+}
+
+function ensureDebufferStarted(){
+ if(battle.currentPhase==="DEBUFFER" && !debufferInput.isActive()){
+  debufferInput.start();
+ }
+}
+
+function renderDebufferSurface(){
+ if(battle.currentPhase!=="DEBUFFER" && !debufferFinalResult){
+  debufferRoot.innerHTML="";
+  return;
+ }
+
+ const roleState=battle.currentPhase==="DEBUFFER"
+  ? battle.getCurrentRoleGame().getState()
+  : debufferFinalState;
+ const response=debufferInput.getLastResponse();
+ debufferPresentation.render({
+  state: roleState,
+  lastGrade: response?.grade || response?.reason || "READY",
+  result: debufferFinalResult,
+  selectedPosition: debufferSelectedPosition
+ });
+ debufferPresentation.bind({
+  onPosition: (position) => {
+    debufferSelectedPosition=position;
+    renderDebufferSurface();
+  },
+  onCapture: () => {
+    if (!debufferSelectedPosition) return;
+    const target=debufferInput.getCurrentTarget();
+    if (!target) return;
+    const response=debufferInput.submitTarget({
+      targetId: target.id,
+      targetType: target.type,
+      position: debufferSelectedPosition
+    });
+    if (response.result) {
+      debufferFinalState=response.state;
+      debufferFinalResult=response.result;
+    }
+    if (response.accepted) debufferSelectedPosition=null;
+    update();
+  },
+  onRestart: () => {
+    battle.reset();
+    presentation.reset();
+    bufferInput.reset();
+    healerInput.reset();
+    debufferInput.reset();
+    healerFinalState=null;
+    healerFinalResult=null;
+    debufferFinalState=null;
+    debufferFinalResult=null;
+    debufferSelectedPosition=null;
+    update();
+  }
+ });
 }
 
 function renderHealerSurface(){
@@ -139,6 +206,7 @@ function renderHealerSurface(){
     healerFrameId=0;
     if(battle.currentPhase!=="HEALER") return;
     renderHealerSurface();
+ renderDebufferSurface();
     healerFrameId=requestAnimationFrame(frame);
   };
   healerFrameId=requestAnimationFrame(frame);
@@ -147,6 +215,7 @@ function renderHealerSurface(){
 
 function update(){
  ensureHealerStarted();
+ ensureDebufferStarted();
  const view=presentation.update(battle.snapshot());
  ui.render(view);
  renderBufferSurface();
@@ -155,9 +224,8 @@ function update(){
  const restart=document.querySelector("#restart");
  action.onclick=()=>{
   if(battle.currentPhase==="INIT") bufferInput.start();
-  else if(["DEBUFFER","BATTER"].includes(battle.currentPhase)){
-   const role=battle.currentPhase;
-   while(battle.currentPhase===role) battle.submitInput(perfectInput());
+  else if(battle.currentPhase==="BATTER"){
+   while(battle.currentPhase==="BATTER") battle.submitInput(perfectInput());
   } else if(battle.currentPhase==="RESOLUTION") battle.resolve();
   update();
  };
@@ -166,17 +234,21 @@ function update(){
   presentation.reset();
   bufferInput.reset();
   healerInput.reset();
+  debufferInput.reset();
   healerFinalState=null;
   healerFinalResult=null;
+  debufferFinalState=null;
+  debufferFinalResult=null;
+  debufferSelectedPosition=null;
   if(healerFrameId){
     cancelAnimationFrame(healerFrameId);
     healerFrameId=0;
   }
   update();
  };
- const label=battle.currentPhase==="INIT"?"START BUFFER":battle.currentPhase==="BUFFER"?"INPUT BUFFER":battle.currentPhase==="HEALER"?"HEALER ACTIVE":battle.currentPhase==="RESOLUTION"?"RESOLVE":battle.currentPhase==="COMPLETE"?"COMPLETE":"EXECUTE "+battle.currentPhase;
+ const label=battle.currentPhase==="INIT"?"START BUFFER":battle.currentPhase==="BUFFER"?"INPUT BUFFER":battle.currentPhase==="HEALER"?"HEALER ACTIVE":battle.currentPhase==="DEBUFFER"?"DEBUFFER ACTIVE":battle.currentPhase==="RESOLUTION"?"RESOLVE":battle.currentPhase==="COMPLETE"?"COMPLETE":"EXECUTE "+battle.currentPhase;
  action.textContent=label;
- action.disabled=["BUFFER","HEALER","COMPLETE"].includes(battle.currentPhase);
+ action.disabled=["BUFFER","HEALER","DEBUFFER","COMPLETE"].includes(battle.currentPhase);
 }
 update();
 </script>
