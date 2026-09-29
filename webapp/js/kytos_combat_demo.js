@@ -11,12 +11,20 @@ import {
   resolveKytosHit,
   transferToBatter
 } from "./kytos_combat_vertical_slice.js";
+import {
+  BATTER_ORDER,
+  SUPPORT_ACTION,
+  applyBatterDecision,
+  applySupportDecision
+} from "./kytos_tactical_decision.js";
 
 export const KYTOS_DEMO_PHASE = Object.freeze({
   IDLE: "IDLE",
   FORMATION: "FORMATION",
+  SUPPORT_DECISION: "SUPPORT_DECISION",
   ENERGY_TRANSFER: "ENERGY_TRANSFER",
   BUFF_DEBUFF: "BUFF_DEBUFF",
+  BATTER_DECISION: "BATTER_DECISION",
   BATTER_READY: "BATTER_READY",
   SWING: "SWING",
   HIT: "HIT",
@@ -28,8 +36,10 @@ export const KYTOS_DEMO_PHASE = Object.freeze({
 
 const STEP_ORDER = Object.freeze([
   KYTOS_DEMO_PHASE.FORMATION,
+  KYTOS_DEMO_PHASE.SUPPORT_DECISION,
   KYTOS_DEMO_PHASE.ENERGY_TRANSFER,
   KYTOS_DEMO_PHASE.BUFF_DEBUFF,
+  KYTOS_DEMO_PHASE.BATTER_DECISION,
   KYTOS_DEMO_PHASE.BATTER_READY,
   KYTOS_DEMO_PHASE.SWING,
   KYTOS_DEMO_PHASE.HIT,
@@ -51,7 +61,9 @@ export class KytosCombatDemo {
     this.state = null;
     this.presentation = {
       timing: null,
-      event: ""
+      event: "",
+      selectedSupportAction: null,
+      selectedBatterOrder: null
     };
     this.history = [];
     this.restart();
@@ -68,18 +80,66 @@ export class KytosCombatDemo {
       kytosMaxHp: 100,
       kytosMaxEnergy: 100
     });
-    this.presentation = { timing: null, event: "" };
+    this.presentation = {
+      timing: null,
+      event: "",
+      selectedSupportAction: null,
+      selectedBatterOrder: null
+    };
     this.history = [];
     this._syncPresentation();
     return this.snapshot();
   }
 
   canAdvance() {
-    return this.stepIndex < STEP_ORDER.length - 1;
+    if (this.stepIndex >= STEP_ORDER.length - 1) return false;
+    if (this.phase === KYTOS_DEMO_PHASE.SUPPORT_DECISION) return Boolean(this.presentation.selectedSupportAction);
+    if (this.phase === KYTOS_DEMO_PHASE.BATTER_DECISION) return Boolean(this.presentation.selectedBatterOrder);
+    return true;
   }
 
-  step() {
-    if (!this.canAdvance()) return this.snapshot();
+  getAvailableDecisions() {
+    if (this.phase === KYTOS_DEMO_PHASE.SUPPORT_DECISION) return Object.values(SUPPORT_ACTION);
+    if (this.phase === KYTOS_DEMO_PHASE.BATTER_DECISION) return Object.values(BATTER_ORDER);
+    return [];
+  }
+
+  selectSupportAction(action) {
+    if (this.phase !== KYTOS_DEMO_PHASE.SUPPORT_DECISION || this.presentation.selectedSupportAction) return this.snapshot();
+    this.state = applySupportDecision(this.state, action);
+    this.presentation = {
+      ...this.presentation,
+      selectedSupportAction: String(action).toUpperCase(),
+      event: String(action).toUpperCase() + " SELECTED"
+    };
+    this._recordDecision();
+    this._syncPresentation();
+    return this.snapshot();
+  }
+
+  selectBatterOrder(order) {
+    if (this.phase !== KYTOS_DEMO_PHASE.BATTER_DECISION || this.presentation.selectedBatterOrder) return this.snapshot();
+    this.state = applyBatterDecision(this.state, order);
+    this.presentation = {
+      ...this.presentation,
+      selectedBatterOrder: String(order).toUpperCase(),
+      event: String(order).toUpperCase() + " SELECTED"
+    };
+    this._recordDecision();
+    this._syncPresentation();
+    return this.snapshot();
+  }
+
+  step({ autoSelectDefaults = false } = {}) {
+    if (this.phase === KYTOS_DEMO_PHASE.SUPPORT_DECISION && !this.presentation.selectedSupportAction) {
+      if (!autoSelectDefaults) return this.snapshot();
+      this.selectSupportAction(SUPPORT_ACTION.PASS);
+    }
+    if (this.phase === KYTOS_DEMO_PHASE.BATTER_DECISION && !this.presentation.selectedBatterOrder) {
+      if (!autoSelectDefaults) return this.snapshot();
+      this.selectBatterOrder(BATTER_ORDER.NORMAL_SWING);
+    }
+    if (this.stepIndex >= STEP_ORDER.length - 1) return this.snapshot();
 
     this.stepIndex += 1;
     const phase = STEP_ORDER[this.stepIndex];
@@ -87,6 +147,10 @@ export class KytosCombatDemo {
 
     switch (phase) {
       case KYTOS_DEMO_PHASE.FORMATION:
+        break;
+
+      case KYTOS_DEMO_PHASE.SUPPORT_DECISION:
+        this.presentation.event = "CHOOSE SUPPORT ACTION";
         break;
 
       case KYTOS_DEMO_PHASE.ENERGY_TRANSFER:
@@ -113,6 +177,10 @@ export class KytosCombatDemo {
         this.state = launchEnergyBall(this.state, "bw001");
         this.state = applyActionCard(this.state, ACTION_CARD.BUFFER, { energy: 10 });
         this.state = applyActionCard(this.state, ACTION_CARD.DEBUFFER, { energy: 5 });
+        break;
+
+      case KYTOS_DEMO_PHASE.BATTER_DECISION:
+        this.presentation.event = "CHOOSE BATTER ORDER";
         break;
 
       case KYTOS_DEMO_PHASE.BATTER_READY:
@@ -177,6 +245,14 @@ export class KytosCombatDemo {
       presentation: clone(this.presentation),
       history: clone(this.history)
     };
+  }
+
+  _recordDecision() {
+    this.history.push({
+      phase: this.phase,
+      gameplay: clone(this.state),
+      presentation: clone(this.presentation)
+    });
   }
 
   _syncPresentation() {
