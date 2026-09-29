@@ -225,7 +225,7 @@ func _replace_character(character_id: String, record: Dictionary) -> Dictionary:
 		return {"ok": false, "reason": "invalid_character"}
 	var candidate := state.duplicate(true)
 	candidate["characters"][character_id] = record
-	if not save_state(candidate):
+	if not _write_state(candidate):
 		return {"ok": false, "reason": "save_failed"}
 	state = _sanitize(candidate)
 	return {"ok": true, "character_id": character_id}
