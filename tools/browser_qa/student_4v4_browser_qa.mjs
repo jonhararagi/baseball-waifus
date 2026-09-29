@@ -58,7 +58,7 @@ async function runDesktop() {
     await page.waitForTimeout(i === 0 ? 500 : 650);
     const lane = (await page.locator(".buffer-note").innerText()).trim().toUpperCase();
     assert.ok(["LIGHT", "MEDIUM", "HEAVY"].includes(lane));
-    await page.locator(\`.buffer-lane[data-buffer-lane="\${lane}"]\`).click();
+    await page.locator(`.buffer-lane[data-buffer-lane="${lane}"]`).click();
     evidence.buffer.push(lane);
   }
   await phase(page, "HEALER");
@@ -68,7 +68,7 @@ async function runDesktop() {
     await page.waitForTimeout(i === 0 ? 500 : 720);
     const zone = (await page.locator(".healer-zone.is-active").getAttribute("aria-label") || "").toUpperCase();
     assert.ok(["TOP", "LEFT", "RIGHT", "BOTTOM"].includes(zone));
-    await page.locator(\`.healer-zone-button[data-healer-zone="\${zone}"]\`).click();
+    await page.locator(`.healer-zone-button[data-healer-zone="${zone}"]`).click();
     evidence.healer.push(zone);
   }
   await phase(page, "DEBUFFER");
