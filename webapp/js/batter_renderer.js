@@ -137,9 +137,9 @@ export class BatterRenderer {
     return this.state;
   }
 
-  getBatPose(width = 360, height = 640) {
-    const baseX = width * 0.27;
-    const baseY = height * 0.76;
+  getBatPose(width = 360, height = 640, { anchorX = null, anchorY = null } = {}) {
+    const baseX = Number.isFinite(Number(anchorX)) ? Number(anchorX) : width * 0.27;
+    const baseY = Number.isFinite(Number(anchorY)) ? Number(anchorY) : height * 0.76;
     const swing = this.state === BATTER_STATES.SWING
       ? this.swingProgress
       : this.state === BATTER_STATES.FOLLOW_THROUGH
@@ -163,10 +163,15 @@ export class BatterRenderer {
     };
   }
 
-  draw(ctx, width, height, { accentColor = this.fallbackPalette.accent, scale = 1 } = {}) {
+  draw(ctx, width, height, {
+    accentColor = this.fallbackPalette.accent,
+    scale = 1,
+    anchorX = null,
+    anchorY = null
+  } = {}) {
     if (!ctx) return;
 
-    const pose = this.getBatPose(width, height);
+    const pose = this.getBatPose(width, height, { anchorX, anchorY });
     this.lastBatPose = pose;
 
     const spritePath = this.getSpritePath?.(this.batter);
