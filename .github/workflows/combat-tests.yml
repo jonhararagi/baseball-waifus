@@ -49,6 +49,7 @@ on:
       - "webapp/js/student_4v4_role_adapters.js"
       - "webapp/js/student_4v4_role_adapters_test.mjs"
       - "webapp/js/student_4v4_ui.js"
+      - "webapp/student_4v4_demo.html"
       - "webapp/js/student_4v4_ui_test.mjs"
       - "webapp/js/student_4v4_buffer_input.js"
       - "webapp/js/student_4v4_buffer_input_test.mjs"
