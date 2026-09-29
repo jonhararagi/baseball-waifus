@@ -613,7 +613,7 @@ jobs:
           curl -fsSL "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip" -o godot.zip
           unzip -q godot.zip -d godot
           chmod +x "godot/Godot_v${GODOT_VERSION}_linux.x86_64"
-          "godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64" --version || "godot/Godot_v${GODOT_VERSION}_linux.x86_64" --version
+          "godot/Godot_v${GODOT_VERSION}_linux.x86_64" --version
 
       - name: Import project
         shell: bash
