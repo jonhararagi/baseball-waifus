@@ -23,11 +23,14 @@ export function createCombatResultFromTurnResult({
     throw new TypeError("TurnResultDTO is required");
   }
   const normalizedMatchId = assertStableId(matchId, "matchId");
+  const explicitResult = String(turnResult.result || "").toUpperCase();
   const outcome = String(
     turnResult.outcome
-      || (turnResult.result === "VICTORY" || turnResult.match_end === true || turnResult.state?.match_complete === true
-        ? "VICTORY"
-        : "")
+      || (explicitResult === "DEFEAT"
+        ? "DEFEAT"
+        : explicitResult === "VICTORY" || turnResult.match_end === true || turnResult.state?.match_complete === true
+          ? "VICTORY"
+          : "")
   ).toUpperCase();
 
   if (!["VICTORY", "DEFEAT"].includes(outcome)) {
