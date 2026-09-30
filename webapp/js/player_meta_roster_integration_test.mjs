@@ -59,6 +59,7 @@ const teamManager = new TeamManager({
 });
 assert.deepEqual(teamManager.getRoster(), integration.getRoster());
 assert.deepEqual(teamManager.getActiveBatterId(), "bw001");
+assert.deepEqual(teamManager.getSupportWaifus().map((unit) => unit.character_id), ["bw003", "bw008"]);
 teamManager.setSupport(0, "bw003");
 assert.deepEqual(teamManager.getRoster(), { active_batter: "bw001", supports: ["bw003", "bw008"] });
 
