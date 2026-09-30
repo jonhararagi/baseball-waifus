@@ -65,20 +65,21 @@ export function applyRewardResultToPlayerMeta({
   }
 
   const before = authority.getSnapshot();
+  const actions = rewardResult.rewards
+    .flatMap((reward) => actionsForReward(reward));
+  actions.push({ type: "RECORD_REWARD", sourceEventId });
+
   try {
-    for (const reward of rewardResult.rewards) {
-      for (const action of actionsForReward(reward)) {
+    if (typeof authority.dispatchBatch === "function") {
+      const transaction = authority.dispatchBatch(actions);
+      if (!transaction.ok) {
+        throw new Error(transaction.reason || "PLAYER_META_ACTION_REJECTED");
+      }
+    } else {
+      for (const action of actions) {
         const result = authority.dispatch(action);
         if (!result.ok) throw new Error(result.reason || "PLAYER_META_ACTION_REJECTED");
       }
-    }
-
-    const marked = authority.dispatch({ type: "RECORD_REWARD", sourceEventId });
-    if (!marked.ok) {
-      if (marked.reason === "REWARD_ALREADY_APPLIED") {
-        return Object.freeze({ ok: true, duplicate: true, sourceEventId, snapshot: authority.getSnapshot(), appliedRewards: [] });
-      }
-      throw new Error(marked.reason || "REWARD_LEDGER_REJECTED");
     }
 
     const after = authority.getSnapshot();
@@ -98,4 +99,3 @@ export function applyRewardResultToPlayerMeta({
     authority.replaceSnapshot(before);
     throw error;
   }
-}
