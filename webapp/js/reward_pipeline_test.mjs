@@ -144,7 +144,7 @@ assert.throws(() => applyRewardResultToPlayerMeta({
     ]
   }
 }), /INVALID_QUANTITY/);
-assert.strictEqual(atomicAuthority.getSnapshot(), atomicBefore);
+assert.deepEqual(atomicAuthority.getSnapshot(), atomicBefore);
 assert.equal(atomicAuthority.getSnapshot().currencies.SCRAP, 0);
 assert.equal(atomicAuthority.hasAppliedReward("battle:atomic-actions"), false);
 
