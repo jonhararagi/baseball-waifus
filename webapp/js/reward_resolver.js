@@ -80,6 +80,8 @@ export function resolveBattleRewards({
     sourceEventId: String(sourceEventId),
     playerId: battleResult.playerId ? String(battleResult.playerId) : null,
     battleResultType: String(battleResult.type || "BATTLE_RESULT"),
+    battleOutcome: String(battleResult.outcome || "").toUpperCase() || null,
+    reason: "EXPLICIT_REWARD_TABLE",
     rewards: clone(normalized),
     deterministic: true
   });
