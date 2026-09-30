@@ -89,6 +89,7 @@ export function applyRewardResultToPlayerMeta({
 
     return Object.freeze({
       ok: true,
+      duplicate: false,
       sourceEventId: rewardResult.sourceEventId,
       snapshot: after,
       appliedRewards: clone(rewardResult.rewards)
