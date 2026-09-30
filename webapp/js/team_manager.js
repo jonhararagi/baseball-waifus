@@ -52,7 +52,7 @@ export class TeamManager {
   }
   getSupportIds() { return [...this.getRoster().supports]; }
   getSupportWaifus() {
-    return this.state.supports.filter(Boolean).map((id) => clone(this.getCharacter(id))).filter(Boolean);
+    return this.getSupportIds().filter(Boolean).map((id) => clone(this.getCharacter(id))).filter(Boolean);
   }
   setActiveBatter(waifuId) {
     const id = String(waifuId || "");
