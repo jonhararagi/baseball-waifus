@@ -50,10 +50,10 @@ jobs:
           node --version
           node --experimental-default-type=module webapp/js/player_meta_authority_test.mjs
           node --experimental-default-type=module webapp/js/player_meta_persistence_adapter_test.mjs
+          node --experimental-default-type=module webapp/js/reward_pipeline_test.mjs
           node --experimental-default-type=module webapp/js/player_meta_roster_integration_test.mjs
           node --experimental-default-type=module webapp/js/reward_meta_foundation_test.mjs
           node --experimental-default-type=module webapp/js/meta_presentation_contract_test.mjs
-          node --experimental-default-type=module webapp/js/reward_pipeline_test.mjs
 
       - name: Validate player meta syntax
         shell: bash
