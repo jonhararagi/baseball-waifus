@@ -79,9 +79,17 @@ export function resolveBattleRewards({
     type: REWARD_RESULT_TYPE,
     sourceEventId: String(sourceEventId),
     playerId: battleResult.playerId ? String(battleResult.playerId) : null,
+    battleId: String(battleResult.battleId || sourceEventId),
+    rewardId: String(sourceEventId),
     battleResultType: String(battleResult.type || "BATTLE_RESULT"),
     battleOutcome: String(battleResult.outcome || "").toUpperCase() || null,
-    reason: "EXPLICIT_REWARD_TABLE",
+    reason: String(
+      battleResult.outcome || ""
+    ).toUpperCase() === "VICTORY"
+      ? "BATTLE_VICTORY_BASELINE"
+      : String(battleResult.outcome || "").toUpperCase() === "DEFEAT"
+        ? "NO_REWARD_ON_DEFEAT"
+        : "EXPLICIT_REWARD_TABLE",
     rewards: clone(normalized),
     deterministic: true
   });
