@@ -7,7 +7,8 @@ const ACTION_TYPES = Object.freeze([
   "SPEND_CURRENCY",
   "SET_UNLOCK",
   "UPDATE_GACHA_STATE",
-  "SET_ROSTER"
+  "SET_ROSTER",
+  "RECORD_REWARD"
 ]);
 
 function isObject(value) {
@@ -75,7 +76,8 @@ export function createInitialPlayerMetaState(identity = createPlayerIdentity()) 
     currencies: { SCRAP: 0, FRAGMENTS: 0 },
     gacha: { pullsSinceUR: 0 },
     unlocks: {},
-    roster: { activeBatter: null, supports: [null, null] }
+    roster: { activeBatter: null, supports: [null, null] },
+    rewardLedger: {}
   });
 }
 
@@ -103,6 +105,11 @@ export function validatePlayerMetaState(state) {
     assertId(id, "unlock id");
     if (typeof value !== "boolean") throw new TypeError("Unlock flags must be boolean");
   }
+  if (!isObject(state.rewardLedger)) throw new TypeError("Invalid reward ledger");
+  for (const [eventId, applied] of Object.entries(state.rewardLedger)) {
+    assertId(eventId, "reward event id");
+    if (applied !== true) throw new TypeError("Reward ledger entries must be true");
+  }
   if (!isObject(state.roster) || !Array.isArray(state.roster.supports) || state.roster.supports.length !== 2) {
     throw new TypeError("Invalid roster");
   }
@@ -113,6 +120,7 @@ export function validatePlayerMetaState(state) {
 
 export function freezeSnapshot(state) {
   const snapshot = clone(state);
+  if (!isObject(snapshot.rewardLedger)) snapshot.rewardLedger = {};
   validatePlayerMetaState(snapshot);
   return deepFreeze(snapshot);
 }
@@ -167,6 +175,12 @@ function nextStateForAction(state, action) {
     next.gacha.pullsSinceUR = action.pullsSinceUR;
   }
 
+  if (type === "RECORD_REWARD") {
+    assertId(action.sourceEventId, "sourceEventId");
+    if (next.rewardLedger[action.sourceEventId] === true) return { ok: false, reason: "REWARD_ALREADY_APPLIED" };
+    next.rewardLedger[action.sourceEventId] = true;
+  }
+
   if (type === "SET_ROSTER") {
     if (action.activeBatter !== null) assertId(action.activeBatter, "activeBatter");
     if (!Array.isArray(action.supports) || action.supports.length !== 2) return { ok: false, reason: "INVALID_SUPPORTS" };
@@ -185,6 +199,11 @@ export class PlayerMetaAuthority {
 
   getSnapshot() {
     return this._state;
+  }
+
+  hasAppliedReward(sourceEventId) {
+    assertId(sourceEventId, "sourceEventId");
+    return this._state.rewardLedger[sourceEventId] === true;
   }
 
   dispatch(action) {
