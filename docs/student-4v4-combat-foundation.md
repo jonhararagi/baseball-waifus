@@ -1,6 +1,8 @@
 # Student 4v4 Combat Foundation
 
-> Status: FUTURE / PROPOSAL
+> Status: IMPLEMENTED / VERIFIED FOUNDATION
+>
+> T054 closure: the four role slices and sequential Student 4v4 resolution are implemented and Browser-QA verified. This document remains the architectural proposal/contract boundary; definitive competitive rules are still future work.
 >
 > This document defines the architecture boundary for the future student 4v4 competitive combat system. It is a design foundation, not an implementation specification for the complete combat system and not confirmed narrative canon.
 
@@ -423,11 +425,11 @@ The following remain outside this task:
 | Layer | Status | T033 action |
 |---|---|---|
 | Kytos boss combat | IMPLEMENTED / WORKING | Preserve |
-| Student 4v4 | FUTURE / PROPOSAL | Define architecture only |
-| Batter | FUTURE / PROPOSAL | Define contract only |
-| Healer | FUTURE / PROPOSAL | Define contract only |
-| Buffer | FUTURE / PROPOSAL | Define contract only |
-| Debuffer | FUTURE / PROPOSAL | Define contract only |
+| Student 4v4 | IMPLEMENTED / VERIFIED FOUNDATION | Preserve architecture; future product systems remain separate |
+| Batter | IMPLEMENTED / WORKING SLICE | Preserve isolated role contract |
+| Healer | IMPLEMENTED / WORKING SLICE | Preserve isolated role contract |
+| Buffer | IMPLEMENTED / WORKING SLICE | Preserve isolated role contract |
+| Debuffer | IMPLEMENTED / WORKING SLICE | Preserve isolated role contract |
 | Professional 4v4 | FUTURE / PROPOSAL | Document relationship only |
 | Valkyria boss | FUTURE / PROPOSAL | Document reuse only |
 | Humanoid Kytos | FUTURE / PROPOSAL | Document possible relationship only |

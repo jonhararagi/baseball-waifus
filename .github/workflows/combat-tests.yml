@@ -38,9 +38,6 @@ on:
       - "webapp/js/student_4v4_combat_adapter.js"
       - "webapp/js/student_4v4_presentation.js"
       - "webapp/js/student_4v4_orchestrator_test.mjs"
-      - "webapp/js/student_4v4_integration.js"
-      - "webapp/js/student_4v4_integration_test.mjs"
-      - "webapp/js/student_4v4_integration_presentation.js"
       - "webapp/js/student_4v4_battle_state.js"
       - "webapp/js/student_4v4_battle_state_presentation.js"
       - "webapp/js/student_4v4_battle_state_test.mjs"
@@ -103,7 +100,6 @@ jobs:
           node --experimental-default-type=module webapp/js/healer_defensive_test.mjs
           node --experimental-default-type=module webapp/js/debuffer_disruptor_test.mjs
           node --experimental-default-type=module webapp/js/student_4v4_orchestrator_test.mjs
-          node --experimental-default-type=module webapp/js/student_4v4_integration_test.mjs
           node --experimental-default-type=module webapp/js/batter_leader_test.mjs
           node --experimental-default-type=module webapp/js/student_4v4_battle_state_test.mjs
           node --experimental-default-type=module webapp/js/student_4v4_presentation_orchestrator_test.mjs
@@ -142,8 +138,6 @@ jobs:
           node --experimental-default-type=module --check webapp/js/student_4v4_orchestrator.js
           node --experimental-default-type=module --check webapp/js/student_4v4_combat_adapter.js
           node --experimental-default-type=module --check webapp/js/student_4v4_presentation.js
-          node --experimental-default-type=module --check webapp/js/student_4v4_integration.js
-          node --experimental-default-type=module --check webapp/js/student_4v4_integration_presentation.js
           node --experimental-default-type=module --check webapp/js/student_4v4_battle_state.js
           node --experimental-default-type=module --check webapp/js/student_4v4_battle_state_presentation.js
           node --experimental-default-type=module --check webapp/js/student_4v4_presentation_orchestrator.js

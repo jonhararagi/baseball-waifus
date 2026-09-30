@@ -6,7 +6,7 @@
 
 PLAYER INPUT → ROLE GAMEPLAY → ROLE_RESULT → Student4v4Orchestrator → STUDENT_4V4_RESULT → COMBAT_RESULT adapter → PRESENTATION
 
-The implemented T042 integration uses the real T034 Buffer, T035 Healer, T036 Debuffer, and T037/T039 Batter modules. `Student4v4Integration` owns only sequence control and result collection. It does not calculate role scoring, timing, energy, protection, disruption, impact, damage, or victory.
+The closed Student 4v4 foundation uses the real T034 Buffer, T035 Healer, T036 Debuffer, and T037/T039 Batter modules through `Student4v4BattleState` and `Student4v4Orchestrator`. The legacy `Student4v4Integration` compatibility state machine was removed during T054 because it duplicated the authoritative battle-state path.
 
 ## Fixed integration order
 
@@ -45,7 +45,7 @@ Presentation events are descriptive only: `BATTLE_STARTED`, `ROLE_STARTED`, `ROL
 
 ## Playable development demo
 
-`webapp/student_4v4_demo.html` is isolated from the normal application flow. It still executes the real T034 Buffer, T035 Healer, T036 Debuffer, and T037/T039 Batter through `Student4v4Integration`, but its UI now consumes `Student4v4PresentationOrchestrator` exclusively for presentation state and descriptive events. RESTART resets both the gameplay fixture and presentation snapshot history.
+`webapp/student_4v4_demo.html` is isolated from the normal application flow. It executes the real T034 Buffer, T035 Healer, T036 Debuffer, and T037/T039 Batter through `Student4v4BattleState`; `Student4v4PresentationOrchestrator` remains presentation-only. RESTART resets both gameplay and presentation snapshot history.
 
 The demo UI does not calculate gameplay results.
 
@@ -59,6 +59,6 @@ Student 4v4 integration and presentation orchestration are implemented in the we
 
 ## Scope boundary
 
-Future: concurrent 4v4 interaction, turn/battle orchestration beyond this sequential integration, PvP, matchmaking, ranking, progression, deckbuilding, economy, professionals, Valkyrias, humanoid Kytos, definitive balance, and the final visual UI.
+T054 closure boundary: Student 4v4 sequential foundation/vertical slice is closed and verified. Future work remains concurrent 4v4 interaction, PvP, matchmaking, ranking, progression, deckbuilding, economy, professionals, Valkyrias, humanoid Kytos, definitive balance, and final product UI.
 
 No canon changes are made.
