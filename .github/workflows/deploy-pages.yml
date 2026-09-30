@@ -203,6 +203,7 @@ jobs:
           node --experimental-default-type=module webapp/js/economy_test.mjs
           node --experimental-default-type=module webapp/js/tma_bridge_test.mjs
           node --experimental-default-type=module webapp/js/gacha_controller_test.mjs
+          node --experimental-default-type=module webapp/js/gacha_player_meta_migration_test.mjs
           node --experimental-default-type=module webapp/js/audio_bridge_test.mjs
           node --experimental-default-type=module webapp/js/contract_test.mjs
 

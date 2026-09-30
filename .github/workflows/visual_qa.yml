@@ -566,6 +566,7 @@ jobs:
             webapp/js/contract_test.mjs
             webapp/js/economy_test.mjs
             webapp/js/gacha_controller_test.mjs
+            webapp/js/gacha_player_meta_migration_test.mjs
             webapp/js/gacha_engine_test.mjs
             webapp/js/game_modes_test.mjs
             webapp/js/locker_room_test.mjs

@@ -59,9 +59,43 @@ A future migration from SaveSystem to Player Meta persistence requires an explic
 
 ### Gacha
 
-The active Gacha runtime remains `gacha_controller.js` / `gacha_controller_runtime.js` with Player Meta integration already established by previous work. T061 does not alter rates, pity, banners or Gacha formulas.
+The active Gacha runtime remains `gacha_controller.js` / `gacha_controller_runtime.js` with Player Meta integration already established by previous work. T063A does not alter rates, pity, banners or Gacha formulas.
 
-Gacha may determine an acquisition, but Player Meta is the ownership boundary.
+The canonical Gacha contract remains:
+
+- R 80%, SR 15%, SSR 4%, UR 1%;
+- soft pity starts at pull 61 and increases UR chance by 0.5 percentage points per pull;
+- hard pity is pull 80 with guaranteed UR.
+
+Gacha may determine an acquisition, but Player Meta is the modern ownership and pity authority.
+
+### Legacy Gacha migration
+
+Historical Gacha state may exist in Telegram CloudStorage under the legacy key `waifu_dex_state`. It is a migration source only.
+
+The modern startup rule is:
+
+```text
+LEGACY CLOUD STORAGE
+        ↓
+validate / normalize
+        ↓
+PlayerMetaAuthority
+        ↓
+PlayerMetaPersistenceAdapter
+        ↓
+modern Gacha reads Player Meta
+```
+
+If Player Meta already has persisted state for the player, that state has precedence and legacy CloudStorage is not rehydrated into the modern runtime. If Player Meta is absent, the legacy Gacha snapshot may be migrated once. Legacy pity is normalized into the valid Player Meta range `0..79`; invalid or non-numeric values resolve to the canonical default `0` rather than creating a new authority.
+
+Player Meta persistence is keyed by the stable player identity:
+
+`baseball_waifus_player_meta_v1:<encoded playerId>`
+
+This prevents legacy state from one Telegram player from being loaded into another player's Player Meta.
+
+After migration, modern Gacha mutations persist through Player Meta. CloudStorage remains a compatibility source and is not the modern pity authority.
 
 ### Reward pipeline
 
@@ -113,6 +147,15 @@ Collection ownership is derived from `PlayerMetaState.inventory.characters`. Fut
 T061 uses immutable domain events as a transport boundary. Events carry already-decided data. They do not execute gameplay mutations.
 
 `presentation_event_contract.js` also defines presentation commands for sprites, camera, FX, audio, UI, parallax, cut-ins, hit-stop and haptics. These are descriptive commands, not gameplay operations.
+
+## Contradictions / deferred work
+
+### T063A QA compatibility
+
+- **RESOLVED:** the historical Gacha test was seeding pity by mutating the legacy runtime state object after Player Meta became authoritative. The test now seeds pity through `PlayerMetaAuthority`, preserving the canonical pull-61/pull-80 contract.
+- **RESOLVED:** legacy Telegram CloudStorage state is migrated only when Player Meta has no persisted state for that player.
+- **RESOLVED:** when modern Player Meta exists, Gacha initialization does not rehydrate legacy local/CloudStorage state first.
+- **RESOLVED:** duplicate migration calls are idempotent, invalid legacy pity is normalized, and persistence remains player-isolated.
 
 ## Contradictions / deferred work
 

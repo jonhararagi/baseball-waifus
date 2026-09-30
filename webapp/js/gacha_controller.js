@@ -50,12 +50,39 @@ export class GachaController extends LegacyGachaController {
   }
 
   async initialize() {
-    await super.initialize();
-    if (!this.playerMetaIntegration) return this;
+    if (!this.playerMetaIntegration) {
+      await super.initialize();
+      return this;
+    }
+
     const integration = this.playerMetaIntegration;
-    const snapshot = integration.loadOrMigrate(this.state, (id) => this.queue.find((unit) => unit.character_id === id) || null);
+    const hasModernState = integration.hasPersistedState();
+    const legacyStorage = this.storage;
+    const legacyCloudStorage = this.cloudStorage;
+
+    // Player Meta is the modern authority. Once it exists, do not rehydrate
+    // legacy local/CloudStorage state before loading the authoritative snapshot.
+    if (hasModernState) {
+      this.storage = null;
+      this.cloudStorage = null;
+    }
+
+    try {
+      await super.initialize();
+    } finally {
+      this.storage = legacyStorage;
+      this.cloudStorage = legacyCloudStorage;
+    }
+
+    const snapshot = integration.loadOrMigrate(
+      this.state,
+      (id) => this.queue.find((unit) => unit.character_id === id) || null
+    );
     integration.authority.replaceSnapshot(snapshot);
-    this.state = integration.hydrateGachaState(this.state, (id) => this.queue.find((unit) => unit.character_id === id) || null);
+    this.state = integration.hydrateGachaState(
+      this.state,
+      (id) => this.queue.find((unit) => unit.character_id === id) || null
+    );
     super._emit();
     return this;
   }

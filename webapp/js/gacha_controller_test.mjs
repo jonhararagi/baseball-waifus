@@ -128,7 +128,12 @@ assert.equal(soft.UR, 1.5);
 assert.equal(soft.R, 79.5);
 assert.equal(soft.soft_pity_active, true);
 
-controller.state.pulls_since_UR = 60;
+const pitySeed = controller.playerMetaIntegration.authority.dispatch({
+  type: "UPDATE_GACHA_STATE",
+  pullsSinceUR: 60
+});
+assert.equal(pitySeed.ok, true);
+controller.playerMetaIntegration.persistenceAdapter.save(pitySeed.snapshot);
 rngValues.push(0.99, 0);
 controller.addScrap(1000);
 const softPull = await controller.rollGacha();
@@ -139,7 +144,12 @@ assert.equal(controller.getStatus().pulls_since_UR, 0);
 assert.equal(rendererCalls.at(-1).rarity, "UR");
 assert.deepEqual(audioCalls.slice(-2), ["ui.confirm", "gacha.reveal_ur"]);
 
-controller.state.pulls_since_UR = 79;
+const hardPitySeed = controller.playerMetaIntegration.authority.dispatch({
+  type: "UPDATE_GACHA_STATE",
+  pullsSinceUR: 79
+});
+assert.equal(hardPitySeed.ok, true);
+controller.playerMetaIntegration.persistenceAdapter.save(hardPitySeed.snapshot);
 rngValues.push(0);
 controller.addScrap(1000);
 const hard = await controller.rollGacha();
