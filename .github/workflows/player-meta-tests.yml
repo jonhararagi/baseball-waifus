@@ -1,0 +1,46 @@
+name: Player Meta Persistence Tests
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "webapp/js/player_meta_state.js"
+      - "webapp/js/player_meta_authority_test.mjs"
+      - "webapp/js/player_meta_persistence_adapter.js"
+      - "webapp/js/player_meta_persistence_adapter_test.mjs"
+      - "docs/player-meta-authority.md"
+      - ".github/workflows/player-meta-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  player-meta-tests:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run player meta tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --version
+          node --experimental-default-type=module webapp/js/player_meta_authority_test.mjs
+          node --experimental-default-type=module webapp/js/player_meta_persistence_adapter_test.mjs
+
+      - name: Validate player meta syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --experimental-default-type=module --check webapp/js/player_meta_state.js
+          node --experimental-default-type=module --check webapp/js/player_meta_authority_test.mjs
+          node --experimental-default-type=module --check webapp/js/player_meta_persistence_adapter.js
+          node --experimental-default-type=module --check webapp/js/player_meta_persistence_adapter_test.mjs
