@@ -20,6 +20,11 @@ on:
       - "webapp/js/reward_meta_foundation_test.mjs"
       - "webapp/js/presentation_event_contract.js"
       - "webapp/js/meta_presentation_contract_test.mjs"
+      - "webapp/js/reward_pipeline.js"
+      - "webapp/js/reward_pipeline_test.mjs"
+      - "webapp/js/player_meta_state.js"
+      - "webapp/js/player_meta_reward_adapter.js"
+      - "webapp/js/app.js"
       - ".github/workflows/player-meta-tests.yml"
   workflow_dispatch:
 
@@ -48,6 +53,7 @@ jobs:
           node --experimental-default-type=module webapp/js/player_meta_roster_integration_test.mjs
           node --experimental-default-type=module webapp/js/reward_meta_foundation_test.mjs
           node --experimental-default-type=module webapp/js/meta_presentation_contract_test.mjs
+          node --experimental-default-type=module webapp/js/reward_pipeline_test.mjs
 
       - name: Validate player meta syntax
         shell: bash
@@ -65,3 +71,6 @@ jobs:
           node --experimental-default-type=module --check webapp/js/reward_meta_foundation_test.mjs
           node --experimental-default-type=module --check webapp/js/presentation_event_contract.js
           node --experimental-default-type=module --check webapp/js/meta_presentation_contract_test.mjs
+          node --experimental-default-type=module --check webapp/js/reward_pipeline.js
+          node --experimental-default-type=module --check webapp/js/reward_pipeline_test.mjs
+          node --experimental-default-type=module --check webapp/js/app.js
