@@ -13,6 +13,13 @@ on:
       - "webapp/js/player_meta_roster_integration_test.mjs"
       - "webapp/js/team_manager.js"
       - "docs/player-meta-authority.md"
+      - "docs/meta-game-architecture.md"
+      - "docs/presentation-2d-architecture.md"
+      - "webapp/js/reward_resolver.js"
+      - "webapp/js/player_meta_reward_adapter.js"
+      - "webapp/js/reward_meta_foundation_test.mjs"
+      - "webapp/js/presentation_event_contract.js"
+      - "webapp/js/meta_presentation_contract_test.mjs"
       - ".github/workflows/player-meta-tests.yml"
   workflow_dispatch:
 
@@ -39,6 +46,8 @@ jobs:
           node --experimental-default-type=module webapp/js/player_meta_authority_test.mjs
           node --experimental-default-type=module webapp/js/player_meta_persistence_adapter_test.mjs
           node --experimental-default-type=module webapp/js/player_meta_roster_integration_test.mjs
+          node --experimental-default-type=module webapp/js/reward_meta_foundation_test.mjs
+          node --experimental-default-type=module webapp/js/meta_presentation_contract_test.mjs
 
       - name: Validate player meta syntax
         shell: bash
@@ -51,3 +60,8 @@ jobs:
           node --experimental-default-type=module --check webapp/js/player_meta_roster_integration.js
           node --experimental-default-type=module --check webapp/js/player_meta_roster_integration_test.mjs
           node --experimental-default-type=module --check webapp/js/team_manager.js
+          node --experimental-default-type=module --check webapp/js/reward_resolver.js
+          node --experimental-default-type=module --check webapp/js/player_meta_reward_adapter.js
+          node --experimental-default-type=module --check webapp/js/reward_meta_foundation_test.mjs
+          node --experimental-default-type=module --check webapp/js/presentation_event_contract.js
+          node --experimental-default-type=module --check webapp/js/meta_presentation_contract_test.mjs
