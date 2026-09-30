@@ -52,6 +52,18 @@ export function applyRewardResultToPlayerMeta({
   }
   validateRewardResult(rewardResult);
 
+  const sourceEventId = String(rewardResult.sourceEventId || "");
+  if (!sourceEventId) throw new TypeError("REWARD_RESULT sourceEventId is required");
+  if (typeof authority.hasAppliedReward === "function" && authority.hasAppliedReward(sourceEventId)) {
+    return Object.freeze({
+      ok: true,
+      duplicate: true,
+      sourceEventId,
+      snapshot: authority.getSnapshot(),
+      appliedRewards: []
+    });
+  }
+
   const before = authority.getSnapshot();
   try {
     for (const reward of rewardResult.rewards) {
@@ -59,6 +71,14 @@ export function applyRewardResultToPlayerMeta({
         const result = authority.dispatch(action);
         if (!result.ok) throw new Error(result.reason || "PLAYER_META_ACTION_REJECTED");
       }
+    }
+
+    const marked = authority.dispatch({ type: "RECORD_REWARD", sourceEventId });
+    if (!marked.ok) {
+      if (marked.reason === "REWARD_ALREADY_APPLIED") {
+        return Object.freeze({ ok: true, duplicate: true, sourceEventId, snapshot: authority.getSnapshot(), appliedRewards: [] });
+      }
+      throw new Error(marked.reason || "REWARD_LEDGER_REJECTED");
     }
 
     const after = authority.getSnapshot();
