@@ -11,9 +11,9 @@ import {
 } from "./reward_pipeline.js";
 
 class MemoryStorage {
-  constructor() { this.map = new Map(); }
+  constructor({ failWrites = false } = {}) { this.map = new Map(); this.failWrites = failWrites; }
   getItem(key) { return this.map.get(key) ?? null; }
-  setItem(key, value) { this.map.set(key, String(value)); }
+  setItem(key, value) { if (this.failWrites) throw new Error("PERSISTENCE_FAIL"); this.map.set(key, String(value)); }
   removeItem(key) { this.map.delete(key); }
 }
 
@@ -65,6 +65,17 @@ assert.equal(authority.getSnapshot().currencies.SCRAP, 100);
 const rehydrated = new PlayerMetaAuthority(persistence.load(identity));
 assert.equal(rehydrated.getSnapshot().currencies.SCRAP, 100);
 assert.equal(rehydrated.hasAppliedReward(combatResult.battleId), true);
+
+const failingAuthority = new PlayerMetaAuthority(createInitialPlayerMetaState(createPlayerIdentity({ playerId: "atomic-player" })));
+const failingStorage = new MemoryStorage({ failWrites: true });
+const failingPersistence = new PlayerMetaPersistenceAdapter({ storage: failingStorage });
+assert.throws(() => applyCombatRewardPipeline({
+  combatResult: { ...combatResult, battleId: "battle:atomic-001" },
+  authority: failingAuthority,
+  persistenceAdapter: failingPersistence
+}), /PERSISTENCE_FAIL/);
+assert.equal(failingAuthority.getSnapshot().currencies.SCRAP, 0);
+assert.equal(failingAuthority.hasAppliedReward("battle:atomic-001"), false);
 
 const defeat = createCombatResultFromTurnResult({
   turnResult: {
