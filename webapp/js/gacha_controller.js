@@ -232,14 +232,10 @@ export class GachaController extends LegacyGachaController {
       scrap: Math.max(0, Math.floor(Number(cost.scrap) || 0)),
       fragments: Math.max(0, Math.floor(Number(cost.fragments) || 0))
     });
-    this.state = this.playerMetaIntegration.hydrateGachaState(this.state, (id) => this.queue.find((unit) => this.queue.find((unit) => unit.character_id === id) || null)
-    );
+    this.state = this.playerMetaIntegration.hydrateGachaState(this.state, (id) => this.queue.find((unit) => unit.character_id === id) || null);
     this._emit();
     return { scrap: this.state.scavenger_scrap, fragments: this.state.fragment_bank };
   }
-
-  // Placeholder to be corrected below
-  
 }
 
 export function exposeGachaToWindow(controller) {
