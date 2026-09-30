@@ -132,6 +132,45 @@ assert.equal(first.character.character_id, second.character.character_id);
 assert.equal(afterDuplicate.inventory.characters[first.character.character_id].quantity, 2);
 assert.ok(afterDuplicate.currencies.FRAGMENTS >= beforeDuplicate.currencies.FRAGMENTS);
 
+// TEN-PULL: the existing 10x guarantee remains active without changing the canonical rates/cost.
+const tenPullStorage = new MemoryStorage();
+const tenPullController = seededController(tenPullStorage, "ten-pull-player", [0, 0]);
+await tenPullController.initialize();
+await tenPullController.addScrap(SCAVENGER_SCRAP_COST * 9);
+const tenPull = await tenPullController.rollGachaTen();
+assert.equal(tenPull.count, 10);
+assert.equal(tenPull.results.length, 10);
+assert.equal(tenPull.results.filter((entry) => entry.rarity === "SR").length, 1);
+assert.equal(tenPull.results.filter((entry) => entry.rarity === "R").length, 9);
+assert.equal(tenPull.results[9].ten_pull_guarantee, "SR");
+assert.equal(tenPull.state.scavenger_scrap, 0);
+assert.equal(tenPull.state.pulls_since_UR, 10);
+assert.equal(tenPullController.playerMetaIntegration.getSnapshot().gacha.pullsSinceUR, 10);
+
+// TEN-PULL ATOMICITY: a persistence rejection after an earlier successful pull must restore
+// both Player Meta authority and the persisted record to the pre-operation snapshot.
+const atomicStorage = new MemoryStorage();
+const atomicController = seededController(atomicStorage, "atomic-player", [0.1, 0]);
+await atomicController.initialize();
+await atomicController.addScrap(SCAVENGER_SCRAP_COST * 9);
+const atomicAdapter = atomicController.playerMetaIntegration.persistenceAdapter;
+const originalSave = atomicAdapter.save.bind(atomicAdapter);
+let saveCalls = 0;
+atomicAdapter.save = (state) => {
+  saveCalls += 1;
+  if (saveCalls === 2) throw new Error("SIMULATED_PERSISTENCE_FAILURE");
+  return originalSave(state);
+};
+const beforeAtomicMeta = atomicController.playerMetaIntegration.getSnapshot();
+const beforeAtomicState = atomicController.getState();
+await assert.rejects(() => atomicController.rollGachaTen(), /SIMULATED_PERSISTENCE_FAILURE/);
+assert.deepEqual(atomicController.playerMetaIntegration.getSnapshot(), beforeAtomicMeta);
+assert.deepEqual(atomicController.getState(), beforeAtomicState);
+assert.deepEqual(
+  new PlayerMetaPersistenceAdapter({ storage: atomicStorage }).load(beforeAtomicMeta.identity),
+  beforeAtomicMeta
+);
+
 // MULTI PLAYER: player A and player B remain isolated.
 const isolatedB = new PlayerMetaPersistenceAdapter({ storage: storageB }).load(createPlayerIdentity({ playerId: "player-b" }));
 assert.equal(isolatedB.inventory.characters[resultA.character.character_id].quantity, 1);
