@@ -24,14 +24,14 @@ export function createCombatResultFromTurnResult({
   }
   const normalizedMatchId = assertStableId(matchId, "matchId");
   const explicitResult = String(turnResult.result || "").toUpperCase();
-  const outcome = String(
-    turnResult.outcome
-      || (explicitResult === "DEFEAT"
+  const explicitOutcome = String(turnResult.outcome || turnResult.state?.outcome || "").toUpperCase();
+  const outcome = explicitOutcome || (
+    explicitResult === "VICTORY"
+      ? "VICTORY"
+      : explicitResult === "DEFEAT"
         ? "DEFEAT"
-        : explicitResult === "VICTORY" || turnResult.match_end === true || turnResult.state?.match_complete === true
-          ? "VICTORY"
-          : "")
-  ).toUpperCase();
+        : ""
+  );
 
   if (!["VICTORY", "DEFEAT"].includes(outcome)) {
     throw new TypeError("Turn result does not contain a terminal combat outcome");
@@ -79,30 +79,33 @@ export function applyCombatRewardPipeline({
     persistenceAdapter
   });
 
-  const rewardEvent = createDomainEvent({
-    type: "REWARD_GRANTED",
-    eventId: `${eventId}:reward`,
-    source: "reward-pipeline",
-    sequence: sequence + 1,
-    payload: {
-      combatEventId: combatEvent.eventId,
-      rewardResult
-    }
-  });
+  const rewardEvent = applied.duplicate
+    ? null
+    : createDomainEvent({
+      type: "REWARD_GRANTED",
+      eventId: `${eventId}:reward`,
+      source: "reward-pipeline",
+      sequence: sequence + 1,
+      payload: {
+        combatEventId: combatEvent.eventId,
+        rewardResult
+      }
+    });
 
-  const presentation = createPresentationCommand({
-    type: "UI",
-    eventId: rewardEvent.eventId,
-    target: "reward-status",
-    payload: {
-      kind: "REWARD_GRANTED",
-      outcome: combatResult.outcome,
-      duplicate: Boolean(applied.duplicate),
-      rewards: clone(applied.appliedRewards),
-      message: applied.duplicate ? "REWARD ALREADY CLAIMED" : "BATTLE REWARD"
-    },
-    durationMs: 1600
-  });
+  const presentation = rewardEvent
+    ? createPresentationCommand({
+      type: "UI",
+      eventId: rewardEvent.eventId,
+      target: "reward-status",
+      payload: {
+        kind: "REWARD_GRANTED",
+        outcome: combatResult.outcome,
+        rewards: clone(applied.appliedRewards),
+        message: "BATTLE REWARD"
+      },
+      durationMs: 1600
+    })
+    : null;
 
   return Object.freeze({
     combatEvent,
