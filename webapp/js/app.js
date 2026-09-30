@@ -18,6 +18,7 @@ import { requestScrapPurchase } from "./economy.js";
 import { CardRenderer } from "./card_renderer.js";
 import { UpgradeSystem } from "./upgrade_system.js";
 import { TeamManager } from "./team_manager.js";
+import { createPlayerMetaRosterIntegration } from "./player_meta_roster_integration.js";
 import { SaveSystem } from "./save_system.js";
 import { GameModeManager } from "./game_modes.js";
 import { MainMenu, VIEWS } from "./main_menu.js";
@@ -190,12 +191,17 @@ const shopUI = new ShopUI({
   onBalanceChange: () => updateGachaHud(gachaController.getStatus())
 });
 
+const playerMetaRosterIntegration = gachaController.playerMetaIntegration
+  ? createPlayerMetaRosterIntegration({ playerMetaIntegration: gachaController.playerMetaIntegration })
+  : null;
+
 const teamManager = new TeamManager({
   storage: gachaController.storage,
   getCharacter: (id) => gachaController.getCharacter(id),
   getInventory: () => gachaController.getState().inventory,
   getExternalActive: () => gachaController.getActiveBatter(),
-  persistActiveBatter: (id) => gachaController.setActiveBatter(id)
+  persistActiveBatter: (id) => gachaController.setActiveBatter(id),
+  playerMetaRosterIntegration
 });
 
 const voiceSystem = new VoiceSystem();
@@ -363,7 +369,6 @@ const rosterPanel = new RosterPanel({
   getActiveId: () => teamManager.getActiveBatterId(),
   onSetActive: async (characterId) => {
     teamManager.setActiveBatter(characterId);
-    gachaController.setActiveBatter(characterId);
     const active = teamManager.getActiveWaifu();
     refreshActiveWaifuCard();
     if (renderer.state && active) {
