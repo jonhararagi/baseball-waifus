@@ -164,3 +164,46 @@ Snapshots and action results are deeply frozen. `PlayerMetaPersistenceAdapter.lo
 ## Out of scope
 
 T057 does not replace SaveSystem, implement SaveSystem migration, migrate all existing persistence, introduce Telegram CloudStorage as a new authority, implement backend authority, authentication, payments, shop/gacha rewrites, progression, PvP, Student 4v4 changes, Kytos changes, narrative changes or economy balancing. T058 is the future controlled Gacha/Player Meta integration task and is not implemented here.
+
+
+## T059 · Roster integration
+
+Status: WORKING IMPLEMENTATION / DESIGN PROPOSAL.
+
+The existing Roster/TeamManager now consumes Player Meta through `PlayerMetaRosterIntegration` in the production webapp path. Character ownership remains `PlayerMetaState.inventory.characters[id] -> { quantity, unlocked }`; no second ownership collection is authoritative.
+
+Read path:
+
+```text
+PLAYER_META_STATE
+      ↓
+PlayerMetaRosterIntegration
+      ↓
+TeamManager / RosterPanel
+      ↓
+UI
+```
+
+Mutation path:
+
+```text
+ROSTER ACTION
+      ↓
+PlayerMetaRosterIntegration
+      ↓
+PlayerMetaAuthority.dispatch(SET_ROSTER)
+      ↓
+immutable PlayerMetaState
+      ↓
+PlayerMetaPersistenceAdapter
+```
+
+Ownership is read from Player Meta. `quantity > 0` represents current ownership while `unlocked` remains a separate state flag. The existing Gacha read model continues to be derived from Player Meta and remains compatible with the Roster.
+
+`TeamManager` uses the Player Meta roster boundary when available and therefore does not load or persist its legacy local roster in the production path. Its previous localStorage implementation remains only as a compatibility fallback for contexts that do not provide Player Meta.
+
+Roster mutations validate unlocked ownership, duplicate supports and active/support collisions before dispatching `SET_ROSTER`. Successful changes are persisted through the existing Player Meta persistence adapter. If persistence fails, the authority snapshot is restored.
+
+The Roster view is deterministic for a given Player Meta snapshot. Snapshots remain immutable and Roster views do not expose a mutable ownership authority.
+
+No character IDs, canonical character data, rarity, stats, Gacha rates/pity, economy rules, combat contracts or gameplay systems are changed by T059.
