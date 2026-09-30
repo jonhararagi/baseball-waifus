@@ -5,6 +5,8 @@ import {
   createPlayerIdentity
 } from "./player_meta_state.js";
 import { PlayerMetaPersistenceAdapter } from "./player_meta_persistence_adapter.js";
+import { resolveClimaxTurn } from "./combat_core.js";
+import { applyRewardResultToPlayerMeta } from "./player_meta_reward_adapter.js";
 import {
   applyCombatRewardPipeline,
   createCombatResultFromTurnResult
@@ -45,6 +47,8 @@ const first = applyCombatRewardPipeline({
   persistenceAdapter: persistence
 });
 assert.equal(first.rewardResult.type, "REWARD_RESULT");
+assert.equal(first.rewardResult.battleId, combatResult.battleId);
+assert.equal(first.rewardResult.reason, "BATTLE_VICTORY_BASELINE");
 assert.deepEqual(first.rewardResult.rewards, [{ kind: "CURRENCY", currency: "SCRAP", amount: 100 }]);
 assert.equal(first.applied.ok, true);
 assert.equal(first.applied.duplicate, false);
@@ -60,6 +64,8 @@ const duplicate = applyCombatRewardPipeline({
 });
 assert.equal(duplicate.applied.ok, true);
 assert.equal(duplicate.applied.duplicate, true);
+assert.equal(duplicate.rewardEvent, null);
+assert.equal(duplicate.presentation, null);
 assert.equal(authority.getSnapshot().currencies.SCRAP, 100);
 
 const rehydrated = new PlayerMetaAuthority(persistence.load(identity));
@@ -94,7 +100,64 @@ const defeatApplied = applyCombatRewardPipeline({
   persistenceAdapter: persistence
 });
 assert.deepEqual(defeatApplied.rewardResult.rewards, []);
+assert.equal(defeatApplied.rewardResult.reason, "NO_REWARD_ON_DEFEAT");
+assert.equal(defeatApplied.rewardEvent?.type, "REWARD_GRANTED");
+assert.equal(defeatApplied.presentation?.type, "UI");
 assert.equal(rehydrated.getSnapshot().currencies.SCRAP, 100);
+
+const realCombatCoreResult = resolveClimaxTurn({
+  grade: "GREAT",
+  bossHp: 1,
+  bossMaxHp: 100,
+  internalEnergy: 100,
+  tacticalEffectiveness: 100,
+  round: 1
+});
+assert.equal(realCombatCoreResult.type, "COMBAT_RESULT");
+assert.equal(realCombatCoreResult.victory, true);
+const realCombatResult = createCombatResultFromTurnResult({
+  turnResult: {
+    ...realCombatCoreResult,
+    match_id: "real-combat-core-001",
+    result: "VICTORY",
+    match_end: true,
+    state: { match_complete: true }
+  },
+  matchId: "real-combat-core-001",
+  playerId: identity.playerId
+});
+assert.equal(realCombatResult.outcome, "VICTORY");
+
+const atomicAuthority = new PlayerMetaAuthority(
+  createInitialPlayerMetaState(createPlayerIdentity({ playerId: "atomic-reward-player" }))
+);
+const atomicBefore = atomicAuthority.getSnapshot();
+assert.throws(() => applyRewardResultToPlayerMeta({
+  authority: atomicAuthority,
+  rewardResult: {
+    type: "REWARD_RESULT",
+    sourceEventId: "battle:atomic-actions",
+    deterministic: true,
+    rewards: [
+      { kind: "CURRENCY", currency: "SCRAP", amount: 50 },
+      { kind: "CHARACTER", characterId: "bw001", quantity: 0 }
+    ]
+  }
+}), /INVALID_QUANTITY/);
+assert.strictEqual(atomicAuthority.getSnapshot(), atomicBefore);
+assert.equal(atomicAuthority.getSnapshot().currencies.SCRAP, 0);
+assert.equal(atomicAuthority.hasAppliedReward("battle:atomic-actions"), false);
+
+assert.throws(() => createCombatResultFromTurnResult({
+  turnResult: {
+    ...turnResult,
+    result: "HOME_RUN",
+    match_end: true,
+    state: { match_complete: true }
+  },
+  matchId: "unknown-terminal-001",
+  playerId: identity.playerId
+}), /terminal combat outcome/);
 
 const isolated = new PlayerMetaAuthority(
   createInitialPlayerMetaState(createPlayerIdentity({ playerId: "other-player" }))
