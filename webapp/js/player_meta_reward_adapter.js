@@ -99,3 +99,4 @@ export function applyRewardResultToPlayerMeta({
     authority.replaceSnapshot(before);
     throw error;
   }
+}
