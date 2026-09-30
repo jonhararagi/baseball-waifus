@@ -32,9 +32,12 @@ Gameplay remains responsible for deciding the combat outcome. Reward resolution 
 
 ## Real integration
 
-The current runtime integration is connected at the authoritative combat-action completion path in `webapp/js/app.js`. When a real `TurnResultDTO` closes a match through `VICTORY`, `match_end`, or `state.match_complete`, the payload is converted to a `COMBAT_RESULT` and sent through `reward_pipeline.js`.
+The current runtime integration is connected at the terminal combat-result boundary in `webapp/js/app.js`.
 
-The integration does not use a fake battle result in runtime.
+- Server/embedded combat: a terminal `TurnResultDTO` with explicit `VICTORY` or `DEFEAT` is converted to `COMBAT_RESULT`.
+- Local playable combat: `CombatRenderer` exposes the real terminal result from its existing climax resolver through `onLocalCombatResult`, without changing combat formulas.
+
+Both paths use the same `reward_pipeline.js`. The runtime does not manufacture a fake battle result as a substitute for combat.
 
 ## T062 baseline reward table
 
@@ -69,13 +72,13 @@ This is an in-memory transaction plus one Player Meta persistence commit. It doe
 
 ## Presentation
 
-A successful or duplicate application produces a `REWARD_GRANTED` domain event and a descriptive `UI` presentation command. The command contains reward data for display only.
+A newly applied reward produces a `REWARD_GRANTED` domain event and a descriptive `UI` presentation command. Duplicate applications are successful no-ops and deliberately emit no new `REWARD_GRANTED` presentation event. The command contains reward data for display only.
 
 Presentation cannot modify currencies, inventory, combat state or reward identity.
 
 ## Legacy economy
 
-The historical per-turn `CombatRenderer.onScrapEarned` callback remains as a compatibility surface, but T062 removes its direct Player Meta credit path. It now reports the legacy turn-reward state without adding currency. Final battle rewards are granted only through the new Player Meta reward pipeline.
+The historical per-turn `CombatRenderer.onScrapEarned` callback remains as a compatibility surface, but T062 removes its direct Player Meta credit path. It reports legacy turn-reward data only and cannot grant currency. Final battle rewards are granted only through the new Player Meta reward pipeline.
 
 The legacy `SaveSystem` remains active and is not migrated in T062.
 
