@@ -22,6 +22,7 @@ export class TeamManager {
     getInventory = () => ({}),
     getExternalActive = () => null,
     persistActiveBatter = null,
+    playerMetaRosterIntegration = null,
     storage = typeof globalThis !== "undefined" ? globalThis.localStorage : null,
     storageKey = "baseball_waifus_team_v1"
   } = {}) {
@@ -29,27 +30,34 @@ export class TeamManager {
     this.getInventory = getInventory;
     this.getExternalActive = getExternalActive;
     this.persistActiveBatter = persistActiveBatter;
+    this.playerMetaRosterIntegration = playerMetaRosterIntegration;
     this.storage = storage;
     this.storageKey = storageKey;
-    this.state = this._load();
-    this._sanitizeState();
+    this.state = this.playerMetaRosterIntegration ? null : this._load();
+    if (!this.playerMetaRosterIntegration) this._sanitizeState();
   }
   sync() {
+    if (this.playerMetaRosterIntegration) return this.getRoster();
     this._sanitizeState();
     return this.getRoster();
   }
   getRoster() {
+    if (this.playerMetaRosterIntegration) return this.playerMetaRosterIntegration.getRoster();
     return { active_batter: this.state.active_batter, supports: [...this.state.supports] };
   }
-  getActiveBatterId() { return this.state.active_batter; }
-  getActiveWaifu() { return this.state.active_batter ? clone(this.getCharacter(this.state.active_batter)) : null; }
-  getSupportIds() { return [...this.state.supports]; }
+  getActiveBatterId() { return this.getRoster().active_batter; }
+  getActiveWaifu() {
+    const id = this.getActiveBatterId();
+    return id ? clone(this.getCharacter(id)) : null;
+  }
+  getSupportIds() { return [...this.getRoster().supports]; }
   getSupportWaifus() {
     return this.state.supports.filter(Boolean).map((id) => clone(this.getCharacter(id))).filter(Boolean);
   }
   setActiveBatter(waifuId) {
     const id = String(waifuId || "");
     if (!this._isUnlocked(id)) throw new Error("Only unlocked waifus can become the active batter");
+    if (this.playerMetaRosterIntegration) return this.playerMetaRosterIntegration.setActiveBatter(id);
     this.state.active_batter = id;
     this.state.supports = this.state.supports.filter((supportId) => supportId !== id);
     this._save();
@@ -61,10 +69,11 @@ export class TeamManager {
     if (index < 0 || index >= MAX_SUPPORT_WAIFUS) throw new Error("Support slot must be 0 or 1");
     const id = waifuId ? String(waifuId) : "";
     if (id && !this._isUnlocked(id)) throw new Error("Only unlocked waifus can enter the support roster");
-    if (id && id === this.state.active_batter) throw new Error("Active batter cannot also be a support");
-    if (id && this.state.supports.some((supportId, supportIndex) => supportId === id && supportIndex !== index)) {
+    if (id && id === this.getActiveBatterId()) throw new Error("Active batter cannot also be a support");
+    if (id && this.getSupportIds().some((supportId, supportIndex) => supportId === id && supportIndex !== index)) {
       throw new Error("A waifu can only occupy one support slot");
     }
+    if (this.playerMetaRosterIntegration) return this.playerMetaRosterIntegration.setSupport(index, id || null);
     this.state.supports[index] = id || null;
     this._save();
     return this.getRoster();
@@ -89,7 +98,10 @@ export class TeamManager {
       }
     };
   }
-  _isUnlocked(id) { return Boolean(id && this.getInventory()?.[id]); }
+  _isUnlocked(id) {
+    if (this.playerMetaRosterIntegration) return this.playerMetaRosterIntegration.isUnlocked(id);
+    return Boolean(id && this.getInventory()?.[id]);
+  }
   _sanitizeState() {
     const inventory = this.getInventory() || {};
     const externalActive = String(this.getExternalActive?.() || "");
