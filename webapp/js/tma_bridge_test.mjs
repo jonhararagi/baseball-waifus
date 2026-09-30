@@ -103,10 +103,39 @@ await controller.initialize();
 assert.equal(controller.getStatus().pulls_since_UR, 7);
 assert.equal(controller.getActiveBatter(), "bw024");
 assert.equal(controller.getScavengerScrap(), 900);
-assert.match(local.value, /bw024/);
+
+const playerMetaKey = controller.playerMetaIntegration.persistenceAdapter.keyFor(
+  controller.playerMetaIntegration.identity
+);
+const migratedMeta = JSON.parse(local.getItem(playerMetaKey));
+assert.equal(migratedMeta.gacha.pullsSinceUR, 7);
+assert.equal(migratedMeta.currencies.SCRAP, 900);
+assert.equal(migratedMeta.roster.activeBatter, "bw024");
+
 controller.addScrap(100);
 await controller.flushPersistence();
-assert.equal(JSON.parse(cloud.value).scavenger_scrap, 1000);
-assert.equal(cloud.writes.at(-1)[0], "waifu_dex_state");
+assert.equal(JSON.parse(local.getItem(playerMetaKey)).currencies.SCRAP, 1000);
 
-console.log("[tma] haptics and CloudStorage-first persistence passed");
+// CloudStorage remains legacy-only. Modern mutations persist through Player Meta.
+assert.equal(JSON.parse(cloud.value).scavenger_scrap, 900);
+assert.equal(cloud.writes.length, 0);
+
+// A later startup must prefer Player Meta even if legacy CloudStorage conflicts.
+const conflictingCloud = new MockCloudStorage(JSON.stringify({
+  pulls_since_UR: 2,
+  inventory: { bw017: { duplicate_count: 1 } },
+  active_batter: "bw017",
+  scavenger_scrap: 10
+}));
+const restored = new GachaController({
+  fetchImpl: async (url) => response(url.includes("schema") ? schema : queue),
+  storage: local,
+  cloudStorage: conflictingCloud
+});
+await restored.initialize();
+assert.equal(restored.getStatus().pulls_since_UR, 7);
+assert.equal(restored.getActiveBatter(), "bw024");
+assert.equal(restored.getScavengerScrap(), 1000);
+assert.equal(conflictingCloud.writes.length, 0);
+
+console.log("[tma] haptics, legacy migration and Player Meta precedence passed");
