@@ -20,9 +20,9 @@ export class RosterPanel {
   close(){ this.root?.classList.remove("is-open"); setTimeout(()=>{if(!this.root?.classList.contains("is-open"))this.root?.setAttribute("hidden","");},180); }
   refresh(){
     const chars=this.getCharacters?.()||[], inventory=this.getInventory?.()||{}, active=this.getActiveId?.();
-    if(!this.selectedId || !chars.some(c=>c.character_id===this.selectedId)) this.selectedId=active||chars.find(c=>inventory[c.character_id])?.character_id||chars[0]?.character_id||null;
+    if(!this.selectedId || !chars.some(c=>c.character_id===this.selectedId)) this.selectedId=active||chars.find(c=>inventory[c.character_id]?.quantity>0)?.character_id||chars[0]?.character_id||null;
     this.grid?.replaceChildren();
-    for(const unit of chars) this.renderCard(unit,Boolean(inventory[unit.character_id]),unit.character_id===active);
+    for(const unit of chars) this.renderCard(unit,Boolean(inventory[unit.character_id]?.unlocked),unit.character_id===active);
     this.renderDetail();
   }
   renderCard(unit,unlocked,isActive){
