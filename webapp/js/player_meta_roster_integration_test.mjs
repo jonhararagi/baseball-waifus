@@ -59,8 +59,8 @@ const teamManager = new TeamManager({
 });
 assert.deepEqual(teamManager.getRoster(), integration.getRoster());
 assert.deepEqual(teamManager.getActiveBatterId(), "bw001");
-teamManager.setSupport(0, "bw008");
-assert.deepEqual(teamManager.getRoster(), { active_batter: "bw001", supports: ["bw008", "bw008"] });
+teamManager.setSupport(0, "bw003");
+assert.deepEqual(teamManager.getRoster(), { active_batter: "bw001", supports: ["bw003", "bw008"] });
 
 const beforeInvalid = integration.getSnapshot(); assert.throws(() => integration.setRoster({ activeBatter: "bw999", supports: ["bw003", null] }), /ACTIVE_BATTER_NOT_UNLOCKED/); assert.deepEqual(integration.getSnapshot(), beforeInvalid);
 console.log("player_meta_roster_integration_test: PASS");
