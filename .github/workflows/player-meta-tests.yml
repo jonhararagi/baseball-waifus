@@ -9,6 +9,9 @@ on:
       - "webapp/js/player_meta_authority_test.mjs"
       - "webapp/js/player_meta_persistence_adapter.js"
       - "webapp/js/player_meta_persistence_adapter_test.mjs"
+      - "webapp/js/player_meta_roster_integration.js"
+      - "webapp/js/player_meta_roster_integration_test.mjs"
+      - "webapp/js/team_manager.js"
       - "docs/player-meta-authority.md"
       - ".github/workflows/player-meta-tests.yml"
   workflow_dispatch:
@@ -35,6 +38,7 @@ jobs:
           node --version
           node --experimental-default-type=module webapp/js/player_meta_authority_test.mjs
           node --experimental-default-type=module webapp/js/player_meta_persistence_adapter_test.mjs
+          node --experimental-default-type=module webapp/js/player_meta_roster_integration_test.mjs
 
       - name: Validate player meta syntax
         shell: bash
@@ -44,3 +48,6 @@ jobs:
           node --experimental-default-type=module --check webapp/js/player_meta_authority_test.mjs
           node --experimental-default-type=module --check webapp/js/player_meta_persistence_adapter.js
           node --experimental-default-type=module --check webapp/js/player_meta_persistence_adapter_test.mjs
+          node --experimental-default-type=module --check webapp/js/player_meta_roster_integration.js
+          node --experimental-default-type=module --check webapp/js/player_meta_roster_integration_test.mjs
+          node --experimental-default-type=module --check webapp/js/team_manager.js
