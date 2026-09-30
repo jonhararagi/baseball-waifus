@@ -14,7 +14,7 @@ function createFixture(playerId = "roster-player") {
   adapter.save(authority.getSnapshot());
   return { storage, identity, adapter, authority, integration: createPlayerMetaRosterIntegration({ playerMetaIntegration: { authority, persistenceAdapter: adapter } }) };
 }
-const { integration, adapter, identity } = createFixture();
+const { integration, adapter, identity, storage } = createFixture();
 assert.equal(integration.isOwned("bw001"), true);
 assert.equal(integration.getOwnership("bw003")?.quantity, 2);
 assert.equal(integration.isUnlocked("bw008"), true);
@@ -53,7 +53,7 @@ assert.equal(isolatedIntegration.isOwned("bw001"), false);
 
 const teamManager = new TeamManager({
   playerMetaRosterIntegration: integration,
-  storage: fixture.storage,
+  storage,
   getCharacter: (id) => ({ character_id: id, canonical: { display_name: id } }),
   getInventory: () => integration.getInventory()
 });
