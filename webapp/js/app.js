@@ -249,7 +249,7 @@ const lockerRoom = new LockerRoom({
 
 function handleScrapEarned({ amount, result }) {
   if (amount <= 0) return;
-  leaderboard.record({ homeRuns: String(result).toUpperCase() === "HOME_RUN" ? 1 : 0, scrapEarned: amount });
+  leaderboard.record({ homeRuns: String(result).toUpperCase() === "HOME_RUN" ? 1 : 0, scrapEarned: 0 });
   if (gachaStatusValue) {
     gachaStatusValue.textContent = "LEGACY TURN REWARD // " + amount + " SCRAP // FINAL REWARD AT BATTLE COMPLETION";
   }
