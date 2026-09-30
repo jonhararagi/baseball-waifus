@@ -73,7 +73,7 @@ assert.throws(() => applyCombatRewardPipeline({
   combatResult: { ...combatResult, battleId: "battle:atomic-001" },
   authority: failingAuthority,
   persistenceAdapter: failingPersistence
-}), /PERSISTENCE_FAIL/);
+}), /PlayerMetaPersistenceError/);
 assert.equal(failingAuthority.getSnapshot().currencies.SCRAP, 0);
 assert.equal(failingAuthority.hasAppliedReward("battle:atomic-001"), false);
 
