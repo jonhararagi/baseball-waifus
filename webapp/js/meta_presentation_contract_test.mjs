@@ -52,7 +52,9 @@ assert.equal(batch.length, 3);
 assert(batch.every((entry) => entry.eventId === event.eventId));
 
 const before = JSON.stringify(result);
-command.payload.zoom = 99;
+assert.throws(() => {
+  command.payload.zoom = 99;
+}, TypeError);
 assert.equal(JSON.stringify(result), before);
 
 assert.throws(() => createDomainEvent({
