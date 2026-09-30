@@ -220,6 +220,56 @@ export class PlayerMetaAuthority {
     }
   }
 
+  dispatchBatch(actions = []) {
+    if (!Array.isArray(actions) || actions.length === 0) {
+      return deepFreeze({
+        ok: false,
+        actions: [],
+        reason: "INVALID_ACTION_BATCH",
+        snapshot: this._state
+      });
+    }
+
+    let working = this._state;
+    try {
+      for (const action of actions) {
+        if (!isObject(action) || typeof action.type !== "string") {
+          return deepFreeze({
+            ok: false,
+            actions: clone(actions),
+            reason: "INVALID_ACTION",
+            snapshot: this._state
+          });
+        }
+        const result = nextStateForAction(working, action);
+        if (!result.ok) {
+          return deepFreeze({
+            ok: false,
+            actions: clone(actions),
+            reason: result.reason,
+            snapshot: this._state
+          });
+        }
+        working = result.state;
+      }
+
+      this._state = working;
+      return deepFreeze({
+        ok: true,
+        actions: clone(actions),
+        reason: null,
+        snapshot: this._state
+      });
+    } catch (error) {
+      return deepFreeze({
+        ok: false,
+        actions: clone(actions),
+        reason: error.message || "INVALID_ACTION",
+        snapshot: this._state
+      });
+    }
+  }
+
   replaceSnapshot(state) {
     validatePlayerMetaState(state);
     this._state = freezeSnapshot(state);
