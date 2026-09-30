@@ -80,9 +80,12 @@ const queue = {
 };
 const response = (payload) => ({ ok: true, async json() { return payload; } });
 class MemoryStorage {
-  constructor(value) { this.value = value; }
-  getItem() { return this.value; }
-  setItem(_key, value) { this.value = value; }
+  constructor(value) {
+    this.values = new Map([["waifu_dex_state", value]]);
+  }
+  getItem(key) { return this.values.get(key) ?? null; }
+  setItem(key, value) { this.values.set(key, String(value)); }
+  get value() { return this.values.get("waifu_dex_state") ?? null; }
 }
 class MockCloudStorage {
   constructor(value) { this.value = value; this.writes = []; }
