@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { createInitialPlayerMetaState, createPlayerIdentity, PlayerMetaAuthority } from "./player_meta_state.js";
 import { PlayerMetaPersistenceAdapter } from "./player_meta_persistence_adapter.js";
 import { createPlayerMetaRosterIntegration } from "./player_meta_roster_integration.js";
+import { TeamManager } from "./team_manager.js";
 class MemoryStorage { constructor() { this.data = new Map(); } getItem(key) { return this.data.has(key) ? this.data.get(key) : null; } setItem(key, value) { this.data.set(key, String(value)); } removeItem(key) { this.data.delete(key); } }
 function createFixture(playerId = "roster-player") {
   const storage = new MemoryStorage(); const identity = createPlayerIdentity({ playerId });
@@ -49,5 +50,17 @@ const isolatedStorage = new MemoryStorage(); const isolatedAdapter = new PlayerM
 const isolatedIdentity = createPlayerIdentity({ playerId: "other-player" }); const isolatedAuthority = new PlayerMetaAuthority(createInitialPlayerMetaState(isolatedIdentity)); isolatedAdapter.save(isolatedAuthority.getSnapshot());
 const isolatedIntegration = createPlayerMetaRosterIntegration({ playerMetaIntegration: { authority: isolatedAuthority, persistenceAdapter: isolatedAdapter } });
 assert.equal(isolatedIntegration.isOwned("bw001"), false);
+
+const teamManager = new TeamManager({
+  playerMetaRosterIntegration: integration,
+  storage: fixture.storage,
+  getCharacter: (id) => ({ character_id: id, canonical: { display_name: id } }),
+  getInventory: () => integration.getInventory()
+});
+assert.deepEqual(teamManager.getRoster(), integration.getRoster());
+assert.deepEqual(teamManager.getActiveBatterId(), "bw001");
+teamManager.setSupport(0, "bw008");
+assert.deepEqual(teamManager.getRoster(), { active_batter: "bw001", supports: ["bw008", "bw008"] });
+
 const beforeInvalid = integration.getSnapshot(); assert.throws(() => integration.setRoster({ activeBatter: "bw999", supports: ["bw003", null] }), /ACTIVE_BATTER_NOT_UNLOCKED/); assert.deepEqual(integration.getSnapshot(), beforeInvalid);
 console.log("player_meta_roster_integration_test: PASS");
