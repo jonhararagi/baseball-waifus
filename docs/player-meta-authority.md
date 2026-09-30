@@ -207,3 +207,32 @@ Roster mutations validate unlocked ownership, duplicate supports and active/supp
 The Roster view is deterministic for a given Player Meta snapshot. Snapshots remain immutable and Roster views do not expose a mutable ownership authority.
 
 No character IDs, canonical character data, rarity, stats, Gacha rates/pity, economy rules, combat contracts or gameplay systems are changed by T059.
+
+## T060 · Player Meta → Roster rehydration QA
+
+Status: **QA COVERED / WORKING IMPLEMENTATION**
+
+T060 adds an end-to-end executable QA contract for:
+
+```text
+Gacha acquisition
+      ↓
+PlayerMetaAuthority
+      ↓
+PlayerMetaPersistenceAdapter
+      ↓
+reload / rehydration
+      ↓
+PlayerMetaRosterIntegration
+      ↓
+TeamManager
+      ↓
+active batter + supports
+```
+
+The test is `webapp/js/player_meta_roster_rehydration_test.mjs`. It verifies ownership quantity/unlock state after Gacha acquisition, persisted active batter and supports, fresh-authority rehydration, TeamManager consumption, immutable snapshots, deterministic reload and player-key isolation.
+
+The test does not introduce another ownership or roster authority. `PlayerMetaAuthority` remains the source of truth; Gacha and Roster integrations are adapters/read models around that authority.
+
+No changes are made to Gacha rates/pity, Kytos, Combat Core, NarrativeRuntime, SaveSystem or canonical roster data.
+
