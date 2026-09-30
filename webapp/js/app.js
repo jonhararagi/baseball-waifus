@@ -281,6 +281,29 @@ function applyRealCombatReward(turnResult) {
   return pipeline;
 }
 
+function handleTerminalCombatReward(turnResult) {
+  const outcome = String(
+    turnResult?.outcome
+      || turnResult?.state?.outcome
+      || turnResult?.result
+      || ""
+  ).toUpperCase();
+  if (!["VICTORY", "DEFEAT"].includes(outcome)) return null;
+
+  try {
+    return applyRealCombatReward({
+      ...turnResult,
+      outcome
+    });
+  } catch (rewardError) {
+    setConnection("Reward application failed", "error");
+    if (gachaStatusValue) {
+      gachaStatusValue.textContent = "REWARD ERROR // " + String(rewardError.message || rewardError);
+    }
+    return null;
+  }
+}
+
 let qualitySetting = "auto";
 let savedRecords = {};
 
@@ -362,6 +385,9 @@ const renderer = new CombatRenderer(document.querySelector("#combat-canvas, #gam
   audioBridge,
   hapticsBridge,
   onScrapEarned: handleScrapEarned,
+  onLocalCombatResult: api.configured() ? null : (turnResult) => {
+    handleTerminalCombatReward(turnResult);
+  },
   performanceAdapter,
   onTimingResult: (timing) => {
     void sendAction("BAT", timing);
@@ -989,15 +1015,10 @@ async function sendAction(actionType, timing = {}) {
     if (payload.super_swing === true || payload.animation?.super_swing === true || payload.animation?.event === "SUPER_SWING") {
       lockerRoom.handleEvent("ON_SUPER_SWING", getActiveLockerWaifu());
     }
-    if (payload.result === "VICTORY" || payload.match_end === true || payload.state?.match_complete === true) {
+    if (String(payload.result || payload.outcome || payload.state?.outcome || "").toUpperCase() === "VICTORY") {
       lockerRoom.handleEvent("ON_VICTORY", getActiveLockerWaifu());
-      try {
-        applyRealCombatReward(payload);
-      } catch (rewardError) {
-        setConnection("Reward application failed", "error");
-        if (gachaStatusValue) gachaStatusValue.textContent = "REWARD ERROR // " + String(rewardError.message || rewardError);
-      }
     }
+    handleTerminalCombatReward(payload);
     gameModes.registerResult(payload.result);
     updatePlayHud();
     saveSystem.save();
@@ -1353,9 +1374,10 @@ window.addEventListener("message", async (event) => {
     if (payload.super_swing === true || payload.animation?.super_swing === true || payload.animation?.event === "SUPER_SWING") {
       lockerRoom.handleEvent("ON_SUPER_SWING", getActiveLockerWaifu());
     }
-    if (payload.result === "VICTORY" || payload.match_end === true || payload.state?.match_complete === true) {
+    if (String(payload.result || payload.outcome || payload.state?.outcome || "").toUpperCase() === "VICTORY") {
       lockerRoom.handleEvent("ON_VICTORY", getActiveLockerWaifu());
     }
+    handleTerminalCombatReward(payload);
     gameModes.registerResult(payload.result);
     updatePlayHud();
     saveSystem.save();
