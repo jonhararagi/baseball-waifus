@@ -1,4 +1,4 @@
-const REWARD_KINDS = Object.freeze(["CURRENCY", "CHARACTER", "UNLOCK"]);
+const REWARD_KIND_IDS = Object.freeze(["CURRENCY", "CHARACTER", "UNLOCK"]);
 const CURRENCIES = Object.freeze(["SCRAP", "FRAGMENTS"]);
 
 function clone(value) {
@@ -24,7 +24,7 @@ function normalizeReward(reward) {
   }
 
   const kind = String(reward.kind || "").toUpperCase();
-  if (!REWARD_KINDS.includes(kind)) throw new TypeError(`Unsupported reward kind: ${kind}`);
+  if (!REWARD_KIND_IDS.includes(kind)) throw new TypeError(`Unsupported reward kind: ${kind}`);
 
   if (kind === "CURRENCY") {
     if (!CURRENCIES.includes(reward.currency)) throw new TypeError("Invalid reward currency");
@@ -44,7 +44,7 @@ function normalizeReward(reward) {
 }
 
 export const REWARD_RESULT_TYPE = "REWARD_RESULT";
-export const REWARD_KINDS = REWARD_KINDS;
+export const REWARD_KINDS = REWARD_KIND_IDS;
 
 export const T062_REWARD_TABLE = Object.freeze({
   VICTORY: Object.freeze([{ kind: "CURRENCY", currency: "SCRAP", amount: 100 }]),
