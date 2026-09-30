@@ -24,7 +24,11 @@ export function createCombatResultFromTurnResult({
   }
   const normalizedMatchId = assertStableId(matchId, "matchId");
   const explicitResult = String(turnResult.result || "").toUpperCase();
-  const explicitOutcome = String(turnResult.outcome || turnResult.state?.outcome || "").toUpperCase();
+  const candidateOutcomes = [
+    turnResult.outcome,
+    turnResult.state?.outcome
+  ].map((value) => String(value || "").toUpperCase());
+  const explicitOutcome = candidateOutcomes.find((value) => ["VICTORY", "DEFEAT"].includes(value)) || "";
   const outcome = explicitOutcome || (
     explicitResult === "VICTORY"
       ? "VICTORY"
