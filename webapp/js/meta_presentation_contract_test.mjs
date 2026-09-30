@@ -28,6 +28,15 @@ const command = createPresentationCommand({
 });
 
 assert.equal(event.type, "COMBAT_RESULT");
+const repeatedEvent = createDomainEvent({
+  type: "COMBAT_RESULT",
+  eventId: "battle-001-result",
+  source: "student-4v4",
+  sequence: 3,
+  payload: result
+});
+
+assert.deepEqual(repeatedEvent, event);
 assert.equal(command.type, "CAMERA");
 assert.equal(command.payload.zoom, 1.2);
 assert(Object.isFrozen(event));
