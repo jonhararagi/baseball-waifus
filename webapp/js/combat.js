@@ -178,6 +178,7 @@ export class CombatRenderer {
     onTimingResult = null,
     onTacticalTurn = null,
     onClimaxStart = null,
+    onLocalCombatResult = null,
     getEconomyBoosts = null
   } = {}) {
     if (!(canvas instanceof HTMLCanvasElement)) {
@@ -215,6 +216,7 @@ export class CombatRenderer {
     this.onTimingResult = typeof onTimingResult === "function" ? onTimingResult : null;
     this.onTacticalTurn = typeof onTacticalTurn === "function" ? onTacticalTurn : null;
     this.onClimaxStart = typeof onClimaxStart === "function" ? onClimaxStart : null;
+    this.onLocalCombatResult = typeof onLocalCombatResult === "function" ? onLocalCombatResult : null;
     this.getEconomyBoosts = typeof getEconomyBoosts === "function" ? getEconomyBoosts : () => ({ scrapMultiplier: 1, timingGraceMs: 0 });
     this.onEconomyTimingConsumed = null;
     this.onEconomyRewardConsumed = null;
@@ -480,6 +482,18 @@ export class CombatRenderer {
     if (result.victory) {
       this.battlePhase = "VICTORY";
       this.tacticalTurn = result.tactical_turn_after;
+      this.onLocalCombatResult?.({
+        type: "TurnResultDTO",
+        match_id: String(this.state?.match_id || this.state?.matchId || "local-combat"),
+        result: "VICTORY",
+        match_end: true,
+        state: {
+          ...(this.state?.state || {}),
+          match_complete: true
+        },
+        damage: result.damage,
+        source: "combat-local-runtime"
+      });
       this.onState?.(this.state);
       return result;
     }
