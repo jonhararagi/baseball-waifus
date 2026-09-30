@@ -365,7 +365,7 @@ renderer.onEconomyRewardConsumed = () => shopUI.consumeRewardTurn?.();
 const rosterPanel = new RosterPanel({
   root: rosterPanelRoot,
   getCharacters: () => gachaController.getCharacters(),
-  getInventory: () => gachaController.getState().inventory || {},
+  getInventory: () => playerMetaRosterIntegration?.getInventory() || gachaController.getState().inventory || {},
   getActiveId: () => teamManager.getActiveBatterId(),
   onSetActive: async (characterId) => {
     teamManager.setActiveBatter(characterId);
