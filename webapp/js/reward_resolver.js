@@ -46,6 +46,23 @@ function normalizeReward(reward) {
 export const REWARD_RESULT_TYPE = "REWARD_RESULT";
 export const REWARD_KINDS = REWARD_KINDS;
 
+export const T062_REWARD_TABLE = Object.freeze({
+  VICTORY: Object.freeze([{ kind: "CURRENCY", currency: "SCRAP", amount: 100 }]),
+  DEFEAT: Object.freeze([])
+});
+
+export function resolveStandardBattleRewards({ battleResult, sourceEventId } = {}) {
+  const outcome = String(battleResult?.outcome || "").toUpperCase();
+  if (!Object.prototype.hasOwnProperty.call(T062_REWARD_TABLE, outcome)) {
+    throw new TypeError(`Unsupported battle outcome for T062 reward table: ${outcome}`);
+  }
+  return resolveBattleRewards({
+    battleResult,
+    sourceEventId,
+    rewards: T062_REWARD_TABLE[outcome]
+  });
+}
+
 export function resolveBattleRewards({
   battleResult,
   rewards = [],
