@@ -145,40 +145,53 @@ export class GachaController extends LegacyGachaController {
       throw new Error("Not enough Scavenger Scrap for a 10x recruit");
     }
 
-    const results = [];
-    let lastStateBeforePull = null;
-    for (let index = 0; index < 10; index += 1) {
-      lastStateBeforePull = clone(this.state);
-      results.push(await this.rollGacha());
-    }
-
-    const hasSrOrHigher = results.some((result) => ["SR", "SSR", "UR"].includes(result.rarity));
-    if (!hasSrOrHigher) {
-      this.playerMetaIntegration.migrateLegacyState(lastStateBeforePull, (id) => this.queue.find((unit) => unit.character_id === id) || null);
-      this.state = this.playerMetaIntegration.hydrateGachaState(lastStateBeforePull, (id) => this.queue.find((unit) => unit.character_id === id) || null);
-      const originalRng = this.rng;
-      let rollCall = 0;
-      this.rng = () => {
-        rollCall += 1;
-        return rollCall === 1 ? 0.8 : originalRng();
-      };
-      try {
-        results[results.length - 1] = await this.rollGacha();
-      } finally {
-        this.rng = originalRng;
+    const beforeMeta = this.playerMetaIntegration.getSnapshot();
+    const beforeState = clone(this.state);
+    try {
+      const results = [];
+      let lastStateBeforePull = null;
+      for (let index = 0; index < 10; index += 1) {
+        lastStateBeforePull = clone(this.state);
+        results.push(await this.rollGacha());
       }
-      results[results.length - 1].ten_pull_guarantee = "SR";
-    }
 
-    return {
-      count: 10,
-      results,
-      totals: results.reduce((summary, result) => {
-        summary[result.rarity] = (summary[result.rarity] || 0) + 1;
-        return summary;
-      }, {}),
-      state: this.getStatus()
-    };
+      const hasSrOrHigher = results.some((result) => ["SR", "SSR", "UR"].includes(result.rarity));
+      if (!hasSrOrHigher) {
+        this.playerMetaIntegration.migrateLegacyState(lastStateBeforePull, (id) => this.queue.find((unit) => unit.character_id === id) || null);
+        this.state = this.playerMetaIntegration.hydrateGachaState(lastStateBeforePull, (id) => this.queue.find((unit) => unit.character_id === id) || null);
+        const originalRng = this.rng;
+        let rollCall = 0;
+        this.rng = () => {
+          rollCall += 1;
+          return rollCall === 1 ? 0.8 : originalRng();
+        };
+        try {
+          results[results.length - 1] = await this.rollGacha();
+        } finally {
+          this.rng = originalRng;
+        }
+        results[results.length - 1].ten_pull_guarantee = "SR";
+      }
+
+      return {
+        count: 10,
+        results,
+        totals: results.reduce((summary, result) => {
+          summary[result.rarity] = (summary[result.rarity] || 0) + 1;
+          return summary;
+        }, {}),
+        state: this.getStatus()
+      };
+    } catch (error) {
+      this.state = beforeState;
+      this.playerMetaIntegration.authority.replaceSnapshot(beforeMeta);
+      try {
+        this.playerMetaIntegration.persistenceAdapter.save(beforeMeta);
+      } catch {
+        // Preserve the original ten-pull failure.
+      }
+      throw error;
+    }
   }
 
   setActiveBatter(characterId) {
@@ -219,10 +232,14 @@ export class GachaController extends LegacyGachaController {
       scrap: Math.max(0, Math.floor(Number(cost.scrap) || 0)),
       fragments: Math.max(0, Math.floor(Number(cost.fragments) || 0))
     });
-    this.state = this.playerMetaIntegration.hydrateGachaState(this.state, (id) => this.queue.find((unit) => unit.character_id === id) || null);
+    this.state = this.playerMetaIntegration.hydrateGachaState(this.state, (id) => this.queue.find((unit) => this.queue.find((unit) => unit.character_id === id) || null)
+    );
     this._emit();
     return { scrap: this.state.scavenger_scrap, fragments: this.state.fragment_bank };
   }
+
+  // Placeholder to be corrected below
+  
 }
 
 export function exposeGachaToWindow(controller) {
