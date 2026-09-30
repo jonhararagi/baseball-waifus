@@ -1,6 +1,6 @@
 # Meta Game Architecture Foundation
 
-**T061 status:** IMPLEMENTED FOUNDATION / DESIGN PROPOSAL  
+**T062 status:** REWARD PIPELINE IMPLEMENTED / T062 BASELINE PROPOSAL  
 **Scope:** authority boundaries, reward flow, progression boundary, collection/roster ownership, persistence boundary.
 
 ## Architecture boundary
@@ -43,7 +43,7 @@ A gameplay system produces a result. A reward resolver calculates explicit rewar
 - unlock flags;
 - active batter and two support slots.
 
-Mutations occur through `dispatch()`. Callers receive frozen snapshots.
+Mutations occur through `dispatch()`. Reward application may use the atomic `dispatchBatch()` boundary. Callers receive frozen snapshots.
 
 ### Persistence
 
@@ -63,14 +63,16 @@ The active Gacha runtime remains `gacha_controller.js` / `gacha_controller_runti
 
 Gacha may determine an acquisition, but Player Meta is the ownership boundary.
 
-### Reward foundation
+### Reward pipeline
 
-T061 adds:
+T062 turns the reward foundation into a real integrated path:
 
-- `reward_resolver.js`: pure reward normalization from an already validated battle result plus explicit reward data;
-- `player_meta_reward_adapter.js`: translates RewardResult into Player Meta actions and persists through the existing Player Meta adapter when supplied.
+- `reward_resolver.js`: pure deterministic reward resolution and the explicit T062 baseline table;
+- `player_meta_reward_adapter.js`: atomic application through Player Meta plus durable reward identity recording;
+- `reward_pipeline.js`: COMBAT_RESULT → REWARD_RESULT → Player Meta → REWARD_GRANTED presentation boundary;
+- `reward_pipeline_test.mjs`: persistence, duplicate, atomicity and combat-result integration coverage.
 
-The resolver owns no inventory, currencies, roster, pity or persistence. No final balance table or drop table is defined.
+The resolver owns no inventory, currencies, roster, pity or persistence. The T062 baseline is +100 SCRAP on explicit VICTORY and no reward on explicit DEFEAT. The balance is a proposal, not final economy balance.
 
 ### Progression
 
@@ -101,7 +103,7 @@ Collection ownership is derived from `PlayerMetaState.inventory.characters`. Fut
 | Roster selection/ownership view | Player Meta + roster integration | IMPLEMENTED |
 | Legacy persistence | `SaveSystem` | LEGACY / ACTIVE |
 | Player Meta persistence | `PlayerMetaPersistenceAdapter` | IMPLEMENTED |
-| Reward calculation | `RewardResolver` contract | IMPLEMENTED FOUNDATION |
+| Reward calculation | `RewardResolver` + T062 reward table | IMPLEMENTED / PROPOSAL BALANCE |
 | Progression | no dedicated authority | FUTURE / PROPOSAL |
 | Combat result | existing combat systems | IMPLEMENTED |
 | Presentation | existing renderer/HUD/effects + presentation contracts | PARTIAL / MIXED |
@@ -124,7 +126,7 @@ T061 uses immutable domain events as a transport boundary. Events carry already-
 
 - SaveSystem still stores a broad legacy state that overlaps Player Meta. No silent migration is performed.
 - Some existing combat/presentation code remains mixed. T061 establishes the boundary without a mass renderer refactor.
-- Existing combat reward callbacks can still exist in legacy combat presentation paths. A future reward migration task must route battle rewards through the explicit RewardResolver → PlayerMeta path before removing legacy callbacks.
+- The historical per-turn combat reward callback remains as a compatibility surface but no longer credits Player Meta. The integrated terminal battle route uses only the T062 RewardResolver → PlayerMeta path.
 
 ### OPEN / UNKNOWN
 
@@ -134,7 +136,8 @@ T061 uses immutable domain events as a transport boundary. Events carry already-
 - Final collection UI.
 - Final migration plan for historical SaveSystem data.
 - Whether all future meta events require durable event IDs beyond the current explicit contract.
+- Server-side reward authority and reconciliation remain UNKNOWN for production backend deployment.
 
 ## Out of scope
 
-No shop overhaul, economy rebalance, Gacha rebalance, equipment, quests, PvP, Student 4v4 expansion, Kytos changes, narrative changes, or final progression tree are part of T061.
+No shop overhaul, economy rebalance, Gacha rebalance, equipment, quests, PvP, Student 4v4 expansion, Kytos changes, narrative changes, or final progression tree are part of T062.
