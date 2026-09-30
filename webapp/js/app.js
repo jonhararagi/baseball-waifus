@@ -44,6 +44,7 @@ import { Team11ChoicePresentation } from "./narrative_team11_choice_presentation
 import { ARC0_TEAM11_RECRUITMENT } from "./narrative_arc0_team11.js";
 import { KytosCombatDemo } from "./kytos_combat_demo.js";
 import { BATTER_ORDER, SUPPORT_ACTION } from "./kytos_tactical_decision.js";
+import { applyCombatRewardPipeline, createCombatResultFromTurnResult } from "./reward_pipeline.js";
 
 function initializeTelegramNativeShell() {
   const webApp = window.Telegram?.WebApp || null;
@@ -249,10 +250,35 @@ const lockerRoom = new LockerRoom({
 function handleScrapEarned({ amount, result }) {
   if (amount <= 0) return;
   leaderboard.record({ homeRuns: String(result).toUpperCase() === "HOME_RUN" ? 1 : 0, scrapEarned: amount });
-  gachaController.addScrap(amount);
   if (gachaStatusValue) {
-    gachaStatusValue.textContent = "+" + amount + " SCRAP // " + String(result).toUpperCase();
+    gachaStatusValue.textContent = "LEGACY TURN REWARD // " + amount + " SCRAP // FINAL REWARD AT BATTLE COMPLETION";
   }
+}
+
+function applyRealCombatReward(turnResult) {
+  const integration = gachaController.playerMetaIntegration;
+  if (!integration) return null;
+
+  const result = createCombatResultFromTurnResult({
+    turnResult,
+    matchId: matchId || renderer.state?.match_id || turnResult?.match_id,
+    playerId: integration.identity.playerId
+  });
+
+  const pipeline = applyCombatRewardPipeline({
+    combatResult: result,
+    authority: integration.authority,
+    persistenceAdapter: integration.persistenceAdapter
+  });
+
+  const rewardText = pipeline.applied.duplicate
+    ? "REWARD ALREADY CLAIMED"
+    : pipeline.rewardResult.rewards.length
+      ? pipeline.rewardResult.rewards.map((reward) => "+" + reward.amount + " " + reward.currency).join(" • ")
+      : "NO BATTLE REWARD";
+  if (gachaStatusValue) gachaStatusValue.textContent = rewardText + " // " + result.outcome;
+  updateGachaHud(gachaController.getStatus());
+  return pipeline;
 }
 
 let qualitySetting = "auto";
@@ -965,6 +991,12 @@ async function sendAction(actionType, timing = {}) {
     }
     if (payload.result === "VICTORY" || payload.match_end === true || payload.state?.match_complete === true) {
       lockerRoom.handleEvent("ON_VICTORY", getActiveLockerWaifu());
+      try {
+        applyRealCombatReward(payload);
+      } catch (rewardError) {
+        setConnection("Reward application failed", "error");
+        if (gachaStatusValue) gachaStatusValue.textContent = "REWARD ERROR // " + String(rewardError.message || rewardError);
+      }
     }
     gameModes.registerResult(payload.result);
     updatePlayHud();
