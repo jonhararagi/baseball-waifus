@@ -449,3 +449,287 @@ CREATE new systems only as a last resort
 ```
 
 The student framework must remain deterministic, testable, GitHub Pages compatible, and separate from the Kytos boss rules.
+
+---
+
+## T055 · Consolidated 4v4 Combat Design Audit
+
+**Audit date:** 2026-09-30  
+**Repository HEAD audited:** ac2a11d60488b829e084da774522dd608754d1fe
+
+This section consolidates the current repository implementation against the current 4v4 design definition. It is a design/architecture authority for the future Student 4v4 combat system, not narrative canon.
+
+### Classification rules
+
+Only these states are used in this audit:
+
+- CANON CONFIRMED
+- IMPLEMENTED
+- PARTIAL
+- PENDING
+- UNKNOWN
+- CONTRADICTION
+- LEGACY
+- DISCARDED
+
+### Consolidated target architecture
+
+The target 4v4 architecture is:
+
+PLAYER DATA
+      ↓
+PLAYER DECISION
+      ↓
+ROLE ACTION
+      ↓
+ROLE-SPECIFIC EXECUTION
+      ↓
+GAMEPLAY RESULT / ROLE_RESULT
+      ↓
+SHARED COMBAT STATE
+      ↓
+NEXT ACTION / ROLE
+      ↓
+4v4 COMBAT RESULT
+      ↓
+EVENTS
+      ↓
+PRESENTATION / UI / VFX / AUDIO
+
+The shared Combat Core remains the authoritative low-level combat contract. A role implementation may own its execution state, but it must not become a second combat engine.
+
+The presentation boundary remains strict:
+
+GAMEPLAY → RESULT → PRESENTATION
+
+DOM, CSS, renderer, animation, audio and VFX do not decide timing grades, resource deltas, damage, victory or defeat.
+
+### Current 4v4 architecture status
+
+**PARTIAL**
+
+The repository now contains executable slices for all four roles plus a shared sequential battle state and combined-result path:
+
+- BufferEnergyCreator
+- HealerDefensiveSupport
+- DebufferDisruptor
+- BatterLeader
+- Student4v4BattleState
+- Student4v4Orchestrator
+- student4v4ResultToCombatResult()
+- presentation adapters/orchestrator/UI
+- isolated development demos
+- deterministic Node tests
+- dedicated Combat CI coverage
+- dedicated Student 4v4 Browser QA infrastructure
+
+The current battle state resolves the roles in the fixed order:
+
+BUFFER → HEALER → DEBUFFER → BATTER → RESOLUTION
+
+This is a verified sequential foundation, not yet the definitive competitive 4v4 ruleset. In particular, the current implementation aggregates role contributions at resolution; it does not yet model the intended inter-role tactical interaction during the encounter.
+
+### Role matrix
+
+| Role | Consolidated target | Current implementation | Status |
+|---|---|---|---|
+| BUFFER | Falling rhythm orbs/notes, timing execution, LOW/MEDIUM/HIGH energy outcome | Deterministic LIGHT/MEDIUM/HEAVY note sequence, timing grades, energy points and energy tier | PARTIAL |
+| HEALER | Incoming shield damage, visually related crack/vulnerability, repair target, precise intervention | Deterministic threats at TOP/LEFT/RIGHT/BOTTOM with shield presentation and timing-based protection result | PARTIAL |
+| DEBUFFER | Fixed vertical-axis player object moving horizontally to intercept falling aura orbs | Deterministic 2D target positions with x+y selection and timing/distance validation | CONTRADICTION |
+| BATTER / LEADER | Fixed target circle + approaching red circle convergence, baseball clash/swing timing | Deterministic timing opportunities, PERFECT/GREAT/GOOD/MISS, impact points, clash phase and Batter presentation | PARTIAL |
+
+#### BUFFER
+
+**IMPLEMENTED:** deterministic rhythm execution, seeded note generation, three lanes, timing grades, energy result, role-result freezing, combat adapter and isolated presentation.
+
+**PARTIAL against target:** the current lane vocabulary is LIGHT / MEDIUM / HEAVY, while the consolidated visual definition describes the lower result band as LOW / MEDIUM / HIGH. This is currently a terminology/design mismatch, not a reason to rewrite gameplay. The exact production terminology remains an OPEN QUESTION until the final UI contract is approved.
+
+The current implementation correctly preserves the intended principle:
+
+BUILD / CHARACTER DATA + PLAYER EXECUTION → ENERGY RESULT
+
+It does not make successful execution automatic from statistics.
+
+#### HEALER
+
+**IMPLEMENTED:** seeded threats, fixed shield-related zones, timing grades, protected points, healing tier, role result, combat adapter, shield presentation and restartable isolated demo.
+
+**PARTIAL against target:** the gameplay model represents threats and protection points, but does not yet model an authoritative damaged shield with a crack generated from actual combat pressure. The current presentation visually supplies a shield and vulnerable zones. Final repair semantics, shield damage interaction and healing formulas remain open.
+
+The intended future contract is:
+
+COMBAT PRESSURE → SHIELD DAMAGE / CRACK EVENT
+                    ↓
+              REPAIR TARGET
+                    ↓
+              PLAYER EXECUTION
+                    ↓
+              HEALER ROLE_RESULT
+
+#### DEBUFFER
+
+**IMPLEMENTED:** deterministic seeded targets, spatial validation, timing grades, capture/disruption points, frozen role result, combat adapter and isolated presentation.
+
+**CONTRADICTION with the consolidated target:** current targets contain independent normalized x and y coordinates and the player submits a 2D position. The consolidated design explicitly requires the player-controlled object to remain fixed on the vertical axis and move only horizontally.
+
+Therefore the current T036 spatial model is LEGACY relative to the consolidated Debuffer design. Do not silently treat the current 2D implementation as the final competitive mechanic.
+
+No code is changed by this audit.
+
+#### BATTER / LEADER
+
+**IMPLEMENTED:** deterministic seeded timing opportunities, PERFECT/GREAT/GOOD/MISS classification, impact points, score, timing tier, combat adapter, isolated presentation and restart behavior. Existing BatterRenderer remains the shared visual state machine.
+
+**PARTIAL against target:** the current gameplay contract is timing-opportunity based, while the consolidated presentation target specifically describes a fixed black/violet circle and an approaching red circle whose convergence defines the swing. The existing presentation has timing-ring geometry and a clash presentation, but the exact two-circle convergence interaction is not yet the definitive role contract.
+
+The existing BatterRenderer state machine remains:
+
+IDLE → WINDUP → SWING → FOLLOW_THROUGH → IDLE
+
+It must not be replaced by a second batter animation system.
+
+### Shared result architecture
+
+**IMPLEMENTED / VERIFIED FOUNDATION**
+
+Every executable role produces a frozen ROLE_RESULT. The current role-specific fields are:
+
+- Buffer → energy_points
+- Healer → protectedPoints
+- Debuffer → disruptionPoints
+- Batter → impactPoints
+
+The current Student 4v4 orchestrator validates role identity, shared seed, deterministic flag, score, accuracy and role contribution. It then produces a STUDENT_4V4_RESULT, which is translated into the existing COMBAT_RESULT contract by student4v4ResultToCombatResult().
+
+This preserves the shared Combat Core boundary and avoids a role-specific Combat Core.
+
+### What is actually shared
+
+**IMPLEMENTED**
+
+- webapp/js/combat_core.js remains the existing shared COMBAT_RESULT authority.
+- webapp/js/timing_ring.js remains reusable timing infrastructure.
+- webapp/js/batter_renderer.js remains the existing Batter presentation state machine.
+- webapp/js/combat_effects.js remains the combat feedback layer.
+- Student role adapters translate input into battle-state calls rather than writing authoritative state from UI.
+- Student presentation orchestration consumes frozen battle snapshots and emits descriptive presentation events only.
+
+### What is not yet the definitive shared combat state
+
+**PENDING**
+
+The current Student4v4BattleState is a sequential role-state container. It does not yet represent the full competitive encounter model implied by the consolidated design, where one role's gameplay result can become an input/resource/pressure modifier for another role during the same encounter.
+
+The following remain OPEN QUESTIONS:
+
+1. authoritative round/exchange order;
+2. sequential vs parallel vs hybrid role windows;
+3. how Buffer energy changes subsequent role opportunities;
+4. how Debuffer disruption changes opponent pressure;
+5. how Healer protection interacts with actual incoming pressure;
+6. how Batter execution consumes or benefits from team resources;
+7. opponent-side role execution and result resolution;
+8. final victory/defeat conditions;
+9. whether a shared BattleState should expose role resources directly or only through typed combat events.
+
+These are OPEN QUESTIONS, not hidden assumptions.
+
+### Skill-expression rule
+
+**FUTURE / PROPOSAL**
+
+The consolidated design adopts:
+
+BUILD = STRATEGY
+PLAYER SKILL = EXECUTION
+
+Character/build/equipment/progression may affect outcome magnitude, resources, synergies and conditional effects.
+
+They must not buy fundamental execution advantages such as:
+
+- larger timing windows;
+- extra timing tolerance;
+- automatic Perfect results;
+- reduced execution difficulty;
+- paid timing advantages.
+
+The current role slices do not introduce paid timing advantages. Final competitive balance remains PENDING.
+
+### Kytos relationship
+
+**IMPLEMENTED separation / FUTURE shared architecture**
+
+Kytos remains the boss-combat path. Student 4v4 is the competitive role-based path.
+
+They may share low-level infrastructure when contracts genuinely match, including timing geometry, effects, render utilities and deterministic testing conventions.
+
+They must not silently share boss-specific gameplay rules.
+
+STUDENT 4v4 → competitive role-based combat
+KYTOS → boss combat framework
+
+The current Kytos formulas and resolveKytosHit() are not part of the Student 4v4 role resolution contract.
+
+### Future layers
+
+**PROFESSIONAL 4v4 — FUTURE / PROPOSAL**
+
+Reuse Student 4v4 as configuration/modifier/progression data. Do not create a separate ProfessionalCombatSystem without a demonstrated architectural need.
+
+**VALKYRIA BOSS — FUTURE / PROPOSAL**
+
+Reuse the Kytos-style boss framework rather than creating a third standard combat engine.
+
+**HUMANOID KYTOS — FUTURE / PROPOSAL**
+
+Potentially use a 4v4-adjacent format while ordinary Kytos remain on the boss framework. Classification and exact mechanics remain an OPEN QUESTION.
+
+None of these are implemented by this audit.
+
+### Legacy and contradiction register
+
+| Existing item | Classification | Reason |
+|---|---|---|
+| T033 foundation role descriptions | LEGACY where they differ from this consolidated definition | Earlier descriptions intentionally left final execution details open. |
+| T034 LIGHT/MEDIUM/HEAVY terminology | IMPLEMENTED + OPEN TERMINOLOGY | Executable contract exists; consolidated definition uses LOW/MEDIUM/HIGH for the result band. |
+| T036 2D Debuffer positioning | LEGACY / CONTRADICTION | Consolidated target requires horizontal-only movement with fixed vertical axis. |
+| T037 Batter timing opportunities | IMPLEMENTED / PARTIAL | Execution exists, but the final two-circle convergence presentation is not yet the definitive interaction contract. |
+| T054 sequential Student4v4BattleState | IMPLEMENTED FOUNDATION | Validated architecture, but not the final competitive interaction model. |
+| Any Kytos-specific tactical rules reused as student rules | DISCARDED | Kytos-specific decisions must not be silently generalized to Student 4v4. |
+
+### Validation state
+
+**Static repository audit:** PASS_STATIC
+
+The audit confirmed executable role modules, adapters, battle state, orchestrator, presentation boundary, tests and CI coverage.
+
+**Combat CI:** the current workflow includes T028/T029/T030, all four role slices and the Student 4v4 battle/presentation/input/production-gate tests. A documentation-only audit does not justify claiming a new PASS_REAL for the current commit.
+
+**Browser QA infrastructure:** IMPLEMENTED. The repository now contains tools/browser_qa/student_4v4_browser_qa.mjs and .github/workflows/student-4v4-browser-qa.yml, using Playwright/Chromium against an isolated local web server at desktop 1366×768 and mobile 390×844. This is infrastructure evidence, not a claim that this audit itself executed Browser QA.
+
+**Current HEAD CI:** the latest observed main-head Actions runs include unrelated failures in other workflows. Those runs are not evidence of a 4v4 design defect and are not modified by this documentation audit.
+
+### Not part of this consolidation
+
+- definitive competitive balance;
+- concurrent 4v4 orchestration;
+- PvP/matchmaking/ranking;
+- deckbuilding;
+- progression/economy integration;
+- professional implementation;
+- Valkyria implementation;
+- humanoid Kytos implementation;
+- narrative/canon changes;
+- roster/stat changes;
+- Kytos formula changes.
+
+### Consolidated next steps
+
+Only these steps are technically justified by the audit:
+
+1. Resolve the competitive 4v4 interaction contract: define how role outputs feed subsequent shared combat state rather than merely being summed at the end.
+2. Define the final role-execution contracts: especially the Debuffer horizontal-only control and Batter two-circle convergence.
+3. Define the authoritative opponent/round model before adding further combat mechanics.
+4. Then implement the smallest shared 4v4 combat-state slice that demonstrates one real cross-role dependency.
+
+Do not add another isolated role slice. All four role slices already exist.
