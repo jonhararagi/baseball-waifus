@@ -34,7 +34,7 @@ import {
 } from "./waifu_database.js";
 import { LockerRoom } from "./locker_room.js";
 import { ArtPanel } from "./art_panel.js";
-import { getCharacterArtBinding } from "./character_art_registry.js";
+import { getCharacterArtBinding, loadProjectArtManifest } from "./character_art_registry.js";
 import { VoiceSystem } from "./voice_system.js";
 import { AdminPanel, INFINITE_SCRAP_VALUE } from "./admin_panel.js";
 import { resolveTimingGrade } from "./combat_core.js";
@@ -1545,6 +1545,7 @@ async function bootstrap() {
   }
   try {
     await initializeWaifuDatabase();
+    await loadProjectArtManifest();
     await gachaController.initialize();
     upgradeSystem.migrateLegacyProgression();
     teamManager.sync();
