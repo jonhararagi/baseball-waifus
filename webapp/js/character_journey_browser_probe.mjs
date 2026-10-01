@@ -362,6 +362,41 @@ async function run() {
     requireCondition(detail.storyVisible, "Aiko Story button is not available", detail);
     screenshots.detail = await screenshot(cdp, "02-character-detail-aiko");
 
+    const artPanelEvidence = {};
+    if (T073_PRESENTATION) {
+      await cdpClickSelector(cdp, "#btn-admin-trigger");
+      await waitFor(async () => cdpEvaluate(cdp, "Boolean(document.querySelector(\".admin-modal-overlay\") && !document.querySelector(\".admin-modal-overlay\").hidden)"), { label: "internal Admin Panel open" });
+      await cdpClickText(cdp, ".admin-button", "OPEN ART PANEL");
+      await waitFor(async () => cdpEvaluate(cdp, "Boolean(document.querySelector(\".art-panel-overlay\") && !document.querySelector(\".art-panel-overlay\").hidden)"), { label: "Art Panel open" });
+
+      const panelIdentity = await cdpEvaluate(cdp, "(() => { const s=document.querySelector(\"#art-panel-character-select\"); const option=[...(s?.options||[])].find((x)=>x.value===\"bw001\"); return { characterId:s?.value||\"\", containsBw001:Boolean(option), text:document.querySelector(\".art-panel-identity\")?.textContent?.trim()||\"\" }; })()");
+      requireCondition(panelIdentity.containsBw001, "Art Panel does not expose bw001", panelIdentity);
+      await cdpEvaluate(cdp, "(() => { const s=document.querySelector(\"#art-panel-character-select\"); s.value=\"bw001\"; s.dispatchEvent(new Event(\"change\",{bubbles:true})); return s.value; })()");
+
+      const injectFile = async (mime, filename, dataUrl) => cdpEvaluate(cdp, "(async () => { const input=document.querySelector(\"#art-panel-file-input\"); const response=await fetch("+JSON.stringify(dataUrl)+"); const blob=await response.blob(); const file=new File([blob],"+JSON.stringify(filename)+",{type:"+JSON.stringify(mime)+"}); const transfer=new DataTransfer(); transfer.items.add(file); input.files=transfer.files; input.dispatchEvent(new Event(\"change\",{bubbles:true})); await new Promise((resolve)=>setTimeout(resolve,120)); return {name:input.files[0]?.name||\"\",type:input.files[0]?.type||\"\",size:input.files[0]?.size||0}; })()");
+      const transparentPng = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
+      const pngFile = await injectFile("image/png", "bw001-art-test-transparent.png", transparentPng);
+      const pngPreview = await waitFor(async () => cdpEvaluate(cdp, "(() => ({ status:document.querySelector(\".art-panel-status\")?.textContent?.trim()||\"\", lightLoaded:Boolean(document.querySelector(\".art-panel-preview-light img\")?.complete&&document.querySelector(\".art-panel-preview-light img\")?.naturalWidth>0), darkLoaded:Boolean(document.querySelector(\".art-panel-preview-dark img\")?.complete&&document.querySelector(\".art-panel-preview-dark img\")?.naturalWidth>0) }))()"), { timeoutMs: 5000, label: "PNG light/dark Art Panel preview" });
+      requireCondition(pngFile.type==="image/png" && pngFile.size>0, "PNG test file was not selected", pngFile);
+      requireCondition(pngPreview.lightLoaded && pngPreview.darkLoaded, "PNG preview did not render on both backgrounds", pngPreview);
+
+      const jpegData = await cdpEvaluate(cdp, "(() => { const canvas=document.createElement(\"canvas\"); canvas.width=2; canvas.height=2; const ctx=canvas.getContext(\"2d\"); ctx.fillStyle=\"#fff\"; ctx.fillRect(0,0,2,2); return canvas.toDataURL(\"image/jpeg\",0.9); })()");
+      const jpgFile = await injectFile("image/jpeg", "bw001-art-test-white-background.jpg", jpegData);
+      const jpgPreview = await waitFor(async () => cdpEvaluate(cdp, "(() => ({ lightLoaded:Boolean(document.querySelector(\".art-panel-preview-light img\")?.complete&&document.querySelector(\".art-panel-preview-light img\")?.naturalWidth>0), darkLoaded:Boolean(document.querySelector(\".art-panel-preview-dark img\")?.complete&&document.querySelector(\".art-panel-preview-dark img\")?.naturalWidth>0) }))()"), { timeoutMs: 5000, label: "JPG light/dark Art Panel preview" });
+      requireCondition(jpgFile.type==="image/jpeg" && jpgFile.size>0, "JPG test file was not selected", jpgFile);
+      requireCondition(jpgPreview.lightLoaded && jpgPreview.darkLoaded, "JPG preview did not render on both backgrounds", jpgPreview);
+
+      await cdpClickText(cdp, ".art-panel-button", "ASSOCIATE ASSET");
+      const association = await cdpEvaluate(cdp, "(() => { const raw=localStorage.getItem(\"baseball_waifus_art_registry_v1\"); const parsed=raw?JSON.parse(raw):{}; return parsed.bw001||null; })()");
+      requireCondition(association?.status==="DRAFT", "Art Panel association was not stored as DRAFT", association);
+      requireCondition(association?.filename==="bw001-art-test-white-background.jpg", "Art Panel stored unexpected test filename", association);
+      requireCondition(association?.runtime_path?.includes("assets/characters/approved/bw001.png"), "Art Panel project asset route is missing", association);
+      artPanelEvidence.identity=panelIdentity; artPanelEvidence.png={file:pngFile,preview:pngPreview}; artPanelEvidence.jpg={file:jpgFile,preview:jpgPreview}; artPanelEvidence.association=association;
+      screenshots.artPanel=await screenshot(cdp, "03-art-panel-bw001-previews");
+      await cdpClickSelector(cdp, ".art-panel-close");
+      await cdpClickSelector(cdp, ".admin-modal-close");
+    }
+
     const assetPresentation = await cdpEvaluate(cdp, `(() => {
       const art = document.querySelector("#character-detail-art");
       const hero = document.querySelector("#character-detail-hero-presentation");
@@ -552,6 +587,7 @@ async function run() {
         "Aiko STARTER",
         "HOME",
         "CHARACTER DETAIL",
+        ...(T073_PRESENTATION ? ["ART PANEL", "LOCAL PNG PREVIEW", "LOCAL JPG PREVIEW", "DRAFT ASSOCIATION"] : []),
         "STORY",
         "ARC0",
         "COMPLETE",
@@ -578,6 +614,7 @@ async function run() {
       returnDetail,
       finalHome,
       assetPresentation,
+      artPanelEvidence,
       screenshots,
       consoleErrors: consoleErrors.map((entry) => ({
         text: entry.text,
