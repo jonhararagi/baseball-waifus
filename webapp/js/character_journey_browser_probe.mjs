@@ -448,7 +448,7 @@ async function run() {
       { label: "Aiko Locker" }
     );
 
-    const rapportBeforeReaction = await cdpEvaluate(cdp, `() => document.querySelector("#locker-rapport")?.textContent?.trim() || ""`);
+    const rapportBeforeReaction = locker.rapport;
     const locker = await cdpEvaluate(cdp, `(() => ({
       visible: !document.querySelector("#locker-view")?.hidden,
       name: document.querySelector("#locker-waifu-name")?.textContent?.trim(),
@@ -477,7 +477,7 @@ async function run() {
       return { requestCount: voiceRequests.length, responses: voiceResponses, voiceUrl: voiceRequests[0].url };
     })();
 
-    const rapportAfterReaction = await cdpEvaluate(cdp, `() => document.querySelector("#locker-rapport")?.textContent?.trim() || ""`);
+    const rapportAfterReaction = await cdpEvaluate(cdp, `(() => document.querySelector("#locker-rapport")?.textContent?.trim() || "")()`);
     requireCondition(rapportAfterReaction === rapportBeforeReaction, "Locker reaction changed rapport unexpectedly", { before: rapportBeforeReaction, after: rapportAfterReaction });
     screenshots.locker = await screenshot(cdp, "04-locker-aiko");
 
