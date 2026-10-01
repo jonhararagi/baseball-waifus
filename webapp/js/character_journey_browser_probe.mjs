@@ -5,6 +5,7 @@ import { stat, readFile } from "node:fs/promises";
 import { extname, normalize, relative, resolve, join } from "node:path";
 import { tmpdir } from "node:os";
 
+const T073_PRESENTATION = process.env.T073_PRESENTATION === "1";
 const SITE_DIR = resolve(process.env.T072_SITE_DIR || "site");
 const EVIDENCE_DIR = resolve(
   process.env.T072_EVIDENCE_DIR
@@ -535,7 +536,7 @@ async function run() {
       .filter((entry) => entry.includes(baseUrl) || entry.includes("/js/"));
 
     const evidence = {
-      task: "T072",
+      task: T073_PRESENTATION ? "T073" : "T072",
       sha: process.env.GITHUB_SHA || "local",
       runId: process.env.GITHUB_RUN_ID || "local",
       browser: BROWSER_BIN,
@@ -580,7 +581,7 @@ async function run() {
       pageErrors: sameOriginErrors
     };
 
-    writeFileSync(join(EVIDENCE_DIR, "t072-browser-evidence.json"), JSON.stringify(evidence, null, 2) + "\n", "utf8");
+    writeFileSync(join(EVIDENCE_DIR, T073_PRESENTATION ? "t073-browser-evidence.json" : "t072-browser-evidence.json"), JSON.stringify(evidence, null, 2) + "\n", "utf8");
     requireCondition(sameOriginErrors.length === 0, "same-origin page exceptions detected", sameOriginErrors);
 
     console.log("BROWSER AUTOMATION = PASS_REAL");
@@ -599,7 +600,8 @@ async function run() {
     console.log("VOICE PLAYBACK = NOT_RUN");
     console.log("GACHA RATES = PASS_REAL");
     console.log("GACHA PITY = PASS_REAL");
-    console.log("T072 BROWSER JOURNEY = PASS_REAL");
+    if (T073_PRESENTATION) console.log("T073 CHARACTER PRESENTATION = PASS_REAL");
+    else console.log("T072 BROWSER JOURNEY = PASS_REAL");
   } catch (error) {
     writeFileSync(
       join(EVIDENCE_DIR, "t072-browser-failure.json"),
