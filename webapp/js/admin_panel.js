@@ -57,7 +57,8 @@ export class AdminPanel {
     onScrapGrant = null,
     onUnlockAllSkins = null,
     onSuperSwingTest = null,
-    onVoiceTest = null
+    onVoiceTest = null,
+    onOpenArtPanel = null
   } = {}) {
     this.root = root;
     this.saveSystem = saveSystem;
@@ -72,6 +73,7 @@ export class AdminPanel {
       ? onSuperSwingTest
       : null;
     this.onVoiceTest = typeof onVoiceTest === "function" ? onVoiceTest : null;
+    this.onOpenArtPanel = typeof onOpenArtPanel === "function" ? onOpenArtPanel : null;
 
     this.state = {
       infinite_scrap: false,
@@ -219,6 +221,13 @@ export class AdminPanel {
       });
     }
 
+    const artButton = makeElement("button", {
+      className: "admin-button admin-button-accent",
+      type: "button",
+      textContent: "OPEN ART PANEL"
+    });
+    artButton.addEventListener("click", () => this.onOpenArtPanel?.());
+
     const testRow = makeElement("div", { className: "admin-test-row" });
     const infiniteLabel = makeElement("label", { className: "admin-toggle" });
     const infinite = makeElement("input", {
@@ -256,7 +265,7 @@ export class AdminPanel {
     });
     voiceButton.addEventListener("click", () => this.testVoice());
 
-    testRow.append(infiniteLabel, scrapButton, skinsButton, superButton, voiceButton);
+    testRow.append(artButton, infiniteLabel, scrapButton, skinsButton, superButton, voiceButton);
 
     const actionRow = makeElement("div", { className: "admin-action-row" });
     const applyButton = makeElement("button", {
