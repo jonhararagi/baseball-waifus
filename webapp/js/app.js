@@ -43,6 +43,7 @@ import { ShopManager } from "./shopManager.js";
 import { ShopUI } from "./shop_ui.js";
 import { NarrativePresentation } from "./narrative_presentation.js";
 import { Team11ChoicePresentation } from "./narrative_team11_choice_presentation.js";
+import { getCharacterStoryBinding } from "./character_story_bindings.js";
 import { ARC0_TEAM11_RECRUITMENT } from "./narrative_arc0_team11.js";
 import { KytosCombatDemo } from "./kytos_combat_demo.js";
 import { BATTER_ORDER, SUPPORT_ACTION } from "./kytos_tactical_decision.js";
@@ -229,6 +230,18 @@ const team11ChoicePresentation = new Team11ChoicePresentation({
   voiceSystem,
   character: narrativeCharacter
 });
+
+let characterStoryPresentation = null;
+let characterStoryReturnId = null;
+function openCharacterStory(characterId, storyEntry = getCharacterStoryBinding(characterId), characterModel = null) {
+  const id = String(characterId || "");
+  if (!id || !storyEntry || !characterModel || !characterStoryPresentation) return false;
+  characterStoryReturnId = id;
+  characterStoryPresentation.setCharacter(characterModel);
+  characterStoryPresentation.mount();
+  characterStoryPresentation.start(storyEntry.scene);
+  return true;
+}
 
 const upgradeSystem = new UpgradeSystem({
   storage: gachaController.storage,
@@ -659,16 +672,8 @@ const gallery = new GalleryController({
   collectionProvider: () => gachaController.playerMetaIntegration?.getSnapshot() || null,
   progressionProvider: (characterId) => upgradeSystem.getProgression(characterId),
   onInspect: (unit) => {
-    if (dexInspector) dexInspector.hidden = false;
-    if (dexInspectorName) {
-      dexInspectorName.textContent = unit?.canonical?.display_name || unit?.character_id || "UNKNOWN WAIFU";
-    }
-    cardRenderer.mount(unit, {
-      assets: {
-        card_hd_url: "./assets/production/cards/" + String(unit?.character_id || "") + "--normal.jpg"
-      },
-      themeColor: unit?.canonical?.visual?.accent || null
-    });
+    const id = String(unit?.character_id || "");
+    if (id) characterDetailView.open(id);
   },
   onShare: (unit) => {
     const payload = buildSharePayload(unit, null, window.location.href);
@@ -689,7 +694,22 @@ const gallery = new GalleryController({
   }
 });
 const homeView=new HomeView({root:homeViewRoot,getSnapshot:()=>gachaController.playerMetaIntegration?.getSnapshot()||null,getActiveCharacter:()=>{const id=gachaController.getActiveBatter();return id?gachaController.getCharacter(id):null},getRoster:()=>teamManager.getRoster(),getProgression:id=>upgradeSystem.getProgression(id),getCharacter:id=>gachaController.getCharacter(id),onNavigate:view=>{if(view==="roster"){rosterPanel.open();return}if(view==="gacha"){gachaRecruitment.open();return}setView(view)},onInspect:id=>characterDetailView.open(id)});
-const characterDetailView=new CharacterDetailView({root:characterDetailRoot,getCharacter:id=>gachaController.getCharacter(id),getInventoryEntry:id=>gachaController.getState().inventory?.[id]||null,getProgression:id=>upgradeSystem.getProgression(id),getRoster:()=>teamManager.getRoster(),getCurrencies:()=>({scrap:gachaController.getScavengerScrap(),fragments:gachaController.getFragments()}),canUpgrade:id=>upgradeSystem.canUpgrade(id),getUpgradeCost:id=>upgradeSystem.getUpgradeCost(id),onUpgrade:id=>upgradeSystem.upgradeWaifu(id),onUse:id=>{try{teamManager.setActiveBatter(id);lockerRoom.setActiveWaifu(id);homeView.refresh();characterDetailView.close();setView("combat");}catch(error){setConnection("Unable to use character","error");}},onClose:()=>homeView.refresh()});
+const characterDetailView=new CharacterDetailView({root:characterDetailRoot,getCharacter:id=>gachaController.getCharacter(id),getInventoryEntry:id=>gachaController.getState().inventory?.[id]||null,getProgression:id=>upgradeSystem.getProgression(id),getRoster:()=>teamManager.getRoster(),getCurrencies:()=>({scrap:gachaController.getScavengerScrap(),fragments:gachaController.getFragments()}),canUpgrade:id=>upgradeSystem.canUpgrade(id),getUpgradeCost:id=>upgradeSystem.getUpgradeCost(id),getStoryEntry:getCharacterStoryBinding,onStory:(id,story,model)=>openCharacterStory(id,story,{character_id:model.id,canonical:{display_name:model.name}}),onUpgrade:id=>upgradeSystem.upgradeWaifu(id),onUse:id=>{try{teamManager.setActiveBatter(id);lockerRoom.setActiveWaifu(id);homeView.refresh();characterDetailView.close();setView("combat");}catch(error){setConnection("Unable to use character","error");}},onClose:()=>homeView.refresh()});
+characterStoryPresentation = new NarrativePresentation({
+  root: narrativeTestView,
+  voiceSystem,
+  onComplete: () => {
+    const id = characterStoryReturnId;
+    characterStoryPresentation?.close();
+    characterStoryReturnId = null;
+    if (id) characterDetailView.open(id);
+  },
+  onExit: () => {
+    const id = characterStoryReturnId;
+    characterStoryReturnId = null;
+    if (id) characterDetailView.open(id);
+  }
+});
 characterDetailView.mount();
 homeView.mount();
 exposeGachaToWindow(gachaController);
