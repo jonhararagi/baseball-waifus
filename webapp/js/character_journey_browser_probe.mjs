@@ -6,6 +6,7 @@ import { extname, normalize, relative, resolve, join } from "node:path";
 import { tmpdir } from "node:os";
 
 const T073_PRESENTATION = process.env.T073_PRESENTATION === "1";
+const T073_PRESENTATION = process.env.T073_PRESENTATION === "1";
 const SITE_DIR = resolve(process.env.T072_SITE_DIR || "site");
 const EVIDENCE_DIR = resolve(
   process.env.T072_EVIDENCE_DIR
@@ -380,8 +381,10 @@ async function run() {
     requireCondition(assetPresentation.heroLoaded && assetPresentation.victoryLoaded, "Aiko Character Detail presentation assets did not load", assetPresentation);
 
     const expressionAssets = await cdpEvaluate(cdp, `(() => [...document.querySelectorAll("#character-detail-expression-set img")].map((image) => ({ src: image.getAttribute("src") || "", loaded: Boolean(image.complete && image.naturalWidth > 0) })) )()`);
-    requireCondition(expressionAssets.length === 5, "Aiko expression presentation set is incomplete", expressionAssets);
-    requireCondition(expressionAssets.every((item) => item.loaded), "Aiko expression asset failed to load", expressionAssets);
+    if (T073_PRESENTATION) {
+      requireCondition(expressionAssets.length === 5, "Aiko expression presentation set is incomplete", expressionAssets);
+      requireCondition(expressionAssets.every((item) => item.loaded), "Aiko expression asset failed to load", expressionAssets);
+    }
 
     const binding = await cdpEvaluate(cdp, `import("./js/character_story_bindings.js").then((m) => m.getCharacterStoryBinding("bw001"))`);
     requireCondition(binding?.id === "bw001-story-arc0", "Aiko story binding ID mismatch", binding);
@@ -469,8 +472,10 @@ async function run() {
     requireCondition(locker.rapport === "RAPPORT // 1/10", "fresh rapport changed unexpectedly", locker);
     requireCondition(locker.activeId === "bw001", "Locker active character is not bw001", locker);
     requireCondition(locker.canvas, "Locker interaction canvas is missing", locker);
-    requireCondition(locker.presentationSrc.includes("/assets/production/presentation/bw001--profile.svg"), "Locker Aiko production presentation path mismatch", locker);
-    requireCondition(locker.presentationLoaded && !locker.presentationHidden, "Locker Aiko production presentation asset did not load visibly", locker);
+    if (T073_PRESENTATION) {
+      requireCondition(locker.presentationSrc.includes("/assets/production/presentation/bw001--profile.svg"), "Locker Aiko production presentation path mismatch", locker);
+      requireCondition(locker.presentationLoaded && !locker.presentationHidden, "Locker Aiko production presentation asset did not load visibly", locker);
+    }
     const rapportBeforeReaction = locker.rapport;
 
     await waitFor(
@@ -606,7 +611,7 @@ async function run() {
     writeFileSync(
       join(EVIDENCE_DIR, "t072-browser-failure.json"),
       JSON.stringify({
-        task: "T072",
+        task: T073_PRESENTATION ? "T073" : "T072",
         sha: process.env.GITHUB_SHA || "local",
         runId: process.env.GITHUB_RUN_ID || "local",
         browser: BROWSER_BIN,
