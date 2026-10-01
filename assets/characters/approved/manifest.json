@@ -1,0 +1,6 @@
+{
+  "schema_version": 1,
+  "status_contract": ["MISSING", "DRAFT", "PROCESSED", "APPROVED"],
+  "approved_root": "./assets/characters/approved/",
+  "assets": {}
+}
