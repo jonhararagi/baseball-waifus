@@ -48,6 +48,7 @@ jobs:
           set -euo pipefail
           node --experimental-default-type=module webapp/js/gacha_player_meta_integration_test.mjs
           node --experimental-default-type=module webapp/js/player_meta_roster_rehydration_test.mjs
+          node --experimental-default-type=module webapp/js/player_meta_roster_integration_test.mjs
 
       - name: Validate integration syntax
         shell: bash
