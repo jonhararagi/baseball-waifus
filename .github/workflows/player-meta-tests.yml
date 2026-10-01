@@ -25,6 +25,11 @@ on:
       - "webapp/js/player_meta_state.js"
       - "webapp/js/player_meta_reward_adapter.js"
       - "webapp/js/app.js"
+      - "webapp/js/upgrade_system.js"
+      - "webapp/js/upgrade_system_test.mjs"
+      - "webapp/js/waifu_dex.js"
+      - "webapp/js/waifu_dex_test.mjs"
+      - "webapp/js/player_meta_progression_test.mjs"
       - ".github/workflows/player-meta-tests.yml"
   workflow_dispatch:
 
@@ -54,6 +59,9 @@ jobs:
           node --experimental-default-type=module webapp/js/player_meta_roster_integration_test.mjs
           node --experimental-default-type=module webapp/js/reward_meta_foundation_test.mjs
           node --experimental-default-type=module webapp/js/meta_presentation_contract_test.mjs
+          node --experimental-default-type=module webapp/js/player_meta_progression_test.mjs
+          node --experimental-default-type=module webapp/js/upgrade_system_test.mjs
+          node --experimental-default-type=module webapp/js/waifu_dex_test.mjs
 
       - name: Validate player meta syntax
         shell: bash
@@ -73,4 +81,9 @@ jobs:
           node --experimental-default-type=module --check webapp/js/meta_presentation_contract_test.mjs
           node --experimental-default-type=module --check webapp/js/reward_pipeline.js
           node --experimental-default-type=module --check webapp/js/reward_pipeline_test.mjs
+          node --experimental-default-type=module --check webapp/js/player_meta_progression_test.mjs
+          node --experimental-default-type=module --check webapp/js/upgrade_system.js
+          node --experimental-default-type=module --check webapp/js/upgrade_system_test.mjs
+          node --experimental-default-type=module --check webapp/js/waifu_dex.js
+          node --experimental-default-type=module --check webapp/js/waifu_dex_test.mjs
           node --experimental-default-type=module --check webapp/js/app.js

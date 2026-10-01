@@ -67,7 +67,8 @@ export class WaifuDex {
     onSelect = null,
     onShare = null,
     onInspect = null,
-    progressionProvider = null
+    progressionProvider = null,
+    collectionProvider = null
   } = {}) {
     this.root = root;
     this.grid = grid;
@@ -80,6 +81,7 @@ export class WaifuDex {
     this.onShare = onShare;
     this.onInspect = onInspect;
     this.progressionProvider = progressionProvider;
+    this.collectionProvider = collectionProvider;
     this.units = [];
     this.state = { inventory: {}, active_batter: null };
     this.filters = { rarity: "ALL", role: "ALL", area: "ALL" };
@@ -96,6 +98,16 @@ export class WaifuDex {
   }
 
   loadState() {
+    const provided = this.collectionProvider?.();
+    if (provided?.inventory?.characters && provided?.roster) {
+      this.state = {
+        inventory: Object.fromEntries(
+          Object.entries(provided.inventory.characters).filter(([, entry]) => entry?.unlocked && Number(entry?.quantity) > 0)
+        ),
+        active_batter: provided.roster.activeBatter || null
+      };
+      return this.state;
+    }
     try {
       const parsed = JSON.parse(this.storage?.getItem(this.storageKey) || "{}");
       this.state = {

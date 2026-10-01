@@ -42,7 +42,8 @@ export class UpgradeSystem {
     getCurrencies = () => ({ scrap: 0, fragments: 0 }),
     consumeCurrencies = () => false,
     storage = typeof globalThis !== "undefined" ? globalThis.localStorage : null,
-    storageKey = "baseball_waifus_upgrade_v1"
+    storageKey = "baseball_waifus_upgrade_v1",
+    playerMetaIntegration = null
   } = {}) {
     this.getWaifu = getWaifu;
     this.getInventoryEntry = getInventoryEntry;
@@ -50,6 +51,7 @@ export class UpgradeSystem {
     this.consumeCurrencies = consumeCurrencies;
     this.storage = storage;
     this.storageKey = storageKey;
+    this.playerMetaIntegration = playerMetaIntegration;
     this.progression = this._load();
   }
   canUpgrade(waifuId) {
@@ -76,6 +78,15 @@ export class UpgradeSystem {
     if (currencies.scrap < cost.scrap || currencies.fragments < cost.fragments) {
       throw new Error("Not enough Scrap or Fragments");
     }
+    if (this.playerMetaIntegration) {
+      this.playerMetaIntegration.upgradeCharacter(id, {
+        nextLevel: cost.next_level,
+        scrapCost: cost.scrap,
+        fragmentsCost: cost.fragments
+      });
+      return this.getProgression(id);
+    }
+
     const spent = this.consumeCurrencies({ ...cost });
     if (spent === false) throw new Error("Unable to consume upgrade currencies");
     this.progression[id] = { level: progression.level + 1 };
@@ -87,8 +98,14 @@ export class UpgradeSystem {
     const waifu = this.getWaifu(id);
     const inventory = normalizeInventoryEntry(this.getInventoryEntry(id));
     if (!waifu || !inventory) return null;
-    const level = Math.max(1, Math.min(MAX_WAIFU_LEVEL, Math.floor(Number(this.progression[id]?.level) || 1)));
-    const duplicates = Math.max(0, Math.floor(Number(inventory.duplicate_count) || 0));
+    const metaInventoryEntry = this.playerMetaIntegration?.getSnapshot?.().inventory?.characters?.[id] || null;
+    const storedLevel = this.playerMetaIntegration
+      ? this.playerMetaIntegration.getProgression(id)?.level
+      : this.progression[id]?.level;
+    const level = Math.max(1, Math.min(MAX_WAIFU_LEVEL, Math.floor(Number(storedLevel) || 1)));
+    const duplicates = this.playerMetaIntegration
+      ? Math.max(0, Math.floor(Number(metaInventoryEntry?.quantity) || 0))
+      : Math.max(0, Math.floor(Number(inventory.duplicate_count) || 0));
     const starRank = getStarRank(duplicates);
     const base = deriveStats(waifu);
     const timingBonus = getTimingBonusMultiplier(starRank);
@@ -107,11 +124,19 @@ export class UpgradeSystem {
     };
   }
   getAllProgression() {
-    return Object.keys(this.progression).reduce((result, id) => {
+    const ids = this.playerMetaIntegration
+      ? Object.keys(this.playerMetaIntegration.getSnapshot().inventory.characters)
+      : Object.keys(this.progression);
+    return ids.reduce((result, id) => {
       const value = this.getProgression(id);
       if (value) result[id] = value;
       return result;
     }, {});
+  }
+
+  migrateLegacyProgression(legacyProgression = null) {
+    if (!this.playerMetaIntegration || typeof this.playerMetaIntegration.migrateLegacyProgression !== "function") return null;
+    return this.playerMetaIntegration.migrateLegacyProgression(legacyProgression || this.progression);
   }
   _readCurrencies() {
     const currency = this.getCurrencies?.() || {};
@@ -130,8 +155,12 @@ export class UpgradeSystem {
     }
   }
   _save() {
+    if (this.playerMetaIntegration) return false;
     try {
       this.storage?.setItem?.(this.storageKey, JSON.stringify({ schema: 1, waifus: clone(this.progression) }));
-    } catch {}
+      return true;
+    } catch {
+      return false;
+    }
   }
 }

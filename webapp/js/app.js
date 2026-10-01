@@ -234,7 +234,8 @@ const upgradeSystem = new UpgradeSystem({
     scrap: gachaController.getScavengerScrap(),
     fragments: gachaController.getFragments()
   }),
-  consumeCurrencies: (cost) => gachaController.spendScrapAndFragments(cost)
+  consumeCurrencies: (cost) => gachaController.spendScrapAndFragments(cost),
+  playerMetaIntegration: gachaController.playerMetaIntegration
 });
 
 const lockerRoom = new LockerRoom({
@@ -341,6 +342,7 @@ const saveSystem = new SaveSystem({
       teamManager.sync();
     },
     progression: (state) => {
+      if (upgradeSystem.playerMetaIntegration) return;
       upgradeSystem.progression = state.progression || {};
       upgradeSystem._save?.();
     },
@@ -649,6 +651,7 @@ const gallery = new GalleryController({
   root: galleryView,
   storage: gachaController.storage,
   storageKey: gachaController.storageKey,
+  collectionProvider: () => gachaController.playerMetaIntegration?.getSnapshot() || null,
   progressionProvider: (characterId) => upgradeSystem.getProgression(characterId),
   onInspect: (unit) => {
     if (dexInspector) dexInspector.hidden = false;
@@ -1427,9 +1430,11 @@ async function bootstrap() {
   try {
     await initializeWaifuDatabase();
     await gachaController.initialize();
+    upgradeSystem.migrateLegacyProgression();
     teamManager.sync();
     if (saveSystem.storage?.getItem?.(saveSystem.storageKey)) {
       saveSystem.load();
+      upgradeSystem.migrateLegacyProgression(saveSystem.state?.progression || {});
     } else {
       saveSystem.save();
     }

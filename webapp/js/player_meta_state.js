@@ -7,6 +7,7 @@ const ACTION_TYPES = Object.freeze([
   "ADD_CURRENCY",
   "SPEND_CURRENCY",
   "SET_UNLOCK",
+  "SET_CHARACTER_PROGRESSION",
   "UPDATE_GACHA_STATE",
   "SET_ROSTER",
   "RECORD_REWARD"
@@ -46,6 +47,14 @@ function normalizeCharacterEntry(entry) {
   return { quantity: entry.quantity, unlocked: entry.unlocked };
 }
 
+function normalizeProgressionEntry(entry) {
+  if (!isObject(entry)) throw new TypeError("Invalid character progression entry");
+  if (!Number.isInteger(entry.level) || entry.level < 1 || entry.level > 50) {
+    throw new TypeError("character progression level must be an integer between 1 and 50");
+  }
+  return { level: entry.level };
+}
+
 export function createPlayerIdentity({ playerId = "local-player", provider = "local", telegramUserId = null } = {}) {
   assertId(String(playerId), "playerId");
   if (!["local", "telegram"].includes(provider)) throw new TypeError("Unsupported identity provider");
@@ -77,6 +86,7 @@ export function createInitialPlayerMetaState(identity = createPlayerIdentity()) 
     currencies: { SCRAP: 0, FRAGMENTS: 0 },
     gacha: { pullsSinceUR: 0 },
     unlocks: {},
+    progression: { characters: {} },
     roster: { activeBatter: null, supports: [null, null] },
     rewardLedger: {}
   });
@@ -91,6 +101,15 @@ export function validatePlayerMetaState(state) {
   for (const [id, entry] of Object.entries(state.inventory.characters)) {
     assertId(id, "character id");
     normalizeCharacterEntry(entry);
+  }
+  if (state.progression !== undefined) {
+    if (!isObject(state.progression) || !isObject(state.progression.characters)) throw new TypeError("Invalid character progression");
+    for (const [id, entry] of Object.entries(state.progression.characters)) {
+      assertId(id, "progression character id");
+      const inventoryEntry = state.inventory.characters[id];
+      if (!inventoryEntry?.unlocked || inventoryEntry.quantity <= 0) throw new TypeError("Progression requires owned character");
+      normalizeProgressionEntry(entry);
+    }
   }
   if (!isObject(state.currencies)) throw new TypeError("Invalid currencies");
   for (const currency of CURRENCY_IDS) {
@@ -121,6 +140,7 @@ export function validatePlayerMetaState(state) {
 
 export function freezeSnapshot(state) {
   const snapshot = clone(state);
+  if (snapshot.progression === undefined) snapshot.progression = { characters: {} };
   if (!isObject(snapshot.rewardLedger)) snapshot.rewardLedger = {};
   validatePlayerMetaState(snapshot);
   return deepFreeze(snapshot);
@@ -168,6 +188,14 @@ function nextStateForAction(state, action) {
     assertId(action.id, "unlock id");
     if (typeof action.unlocked !== "boolean") return { ok: false, reason: "INVALID_UNLOCK_VALUE" };
     next.unlocks[action.id] = action.unlocked;
+  }
+
+  if (type === "SET_CHARACTER_PROGRESSION") {
+    assertId(action.characterId, "characterId");
+    const inventoryEntry = next.inventory.characters[action.characterId];
+    if (!inventoryEntry?.unlocked || inventoryEntry.quantity <= 0) return { ok: false, reason: "CHARACTER_NOT_OWNED" };
+    if (!Number.isInteger(action.level) || action.level < 1 || action.level > 50) return { ok: false, reason: "INVALID_CHARACTER_LEVEL" };
+    next.progression.characters[action.characterId] = { level: action.level };
   }
 
   if (type === "UPDATE_GACHA_STATE") {

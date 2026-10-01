@@ -62,7 +62,8 @@ export class GalleryController {
     onActiveBatterChange = null,
     onShare = null,
     onInspect = null,
-    progressionProvider = null
+    progressionProvider = null,
+    collectionProvider = null
   } = {}) {
     this.root = root;
     this.grid = grid;
@@ -76,6 +77,7 @@ export class GalleryController {
     this.onShare = onShare;
     this.onInspect = onInspect;
     this.progressionProvider = progressionProvider;
+    this.collectionProvider = collectionProvider;
     this.dex = new WaifuDex({
       root,
       grid,
@@ -87,7 +89,8 @@ export class GalleryController {
       onSelect: (id) => this.selectActiveBatter(id),
       onShare: (unit) => this.onShare?.(unit),
       onInspect: (unit) => this.onInspect?.(unit),
-      progressionProvider: (characterId) => this.progressionProvider?.(characterId) || null
+      progressionProvider: (characterId) => this.progressionProvider?.(characterId) || null,
+      collectionProvider: () => this.collectionProvider?.() || null
     });
     this.queue = [];
     this.manifest = null;
@@ -112,7 +115,15 @@ export class GalleryController {
     return this;
   }
   refresh() {
-    this.state = readState(this.storage, this.storageKey);
+    const provided = this.collectionProvider?.();
+    this.state = provided?.inventory?.characters
+      ? {
+        inventory: Object.fromEntries(Object.entries(provided.inventory.characters).filter(([, entry]) => entry?.unlocked && Number(entry?.quantity) > 0)),
+        active_batter: provided.roster?.activeBatter || null,
+        scavenger_scrap: provided.currencies?.SCRAP || 0,
+        pulls_since_UR: provided.gacha?.pullsSinceUR || 0
+      }
+      : readState(this.storage, this.storageKey);
     this.dex.setUnits(this.queue);
     this.dex.refresh();
     this._renderActiveLabel();
@@ -125,6 +136,11 @@ export class GalleryController {
   selectActiveBatter(characterId) {
     const id = String(characterId || "");
     if (!this.state.inventory[id]) throw new Error("Only unlocked waifus can join the active roster");
+    if (this.collectionProvider) {
+      this.onActiveBatterChange?.(id);
+      this.refresh();
+      return id;
+    }
     this.state.active_batter = id;
     writeState(this.storage, this.storageKey, { active_batter: id });
     this.refresh();

@@ -48,6 +48,16 @@ export class GachaPlayerMetaIntegration {
     return this.authority.getSnapshot();
   }
 
+  getProgression(characterId) {
+    const id = String(characterId || "");
+    if (!id) return null;
+    const snapshot = this.authority.getSnapshot();
+    const ownership = snapshot.inventory.characters[id];
+    if (!ownership?.unlocked || ownership.quantity <= 0) return null;
+    const progression = snapshot.progression.characters[id];
+    return progression ? { level: progression.level } : null;
+  }
+
   hasPersistedState() {
     const key = this.persistenceAdapter.keyFor(this.identity);
     return this.persistenceAdapter.storage.getItem(key) !== null;
@@ -161,6 +171,41 @@ export class GachaPlayerMetaIntegration {
     if (scrap > 0) actions.push({ type: "SPEND_CURRENCY", currency: "SCRAP", amount: scrap });
     if (fragments > 0) actions.push({ type: "SPEND_CURRENCY", currency: "FRAGMENTS", amount: fragments });
     if (!actions.length) return this.authority.getSnapshot();
+    return transaction(this.authority, this.persistenceAdapter, actions);
+  }
+
+  migrateLegacyProgression(legacyProgression = {}) {
+    if (!isObject(legacyProgression)) return this.authority.getSnapshot();
+    const current = this.authority.getSnapshot();
+    const actions = [];
+    for (const [characterId, entry] of Object.entries(legacyProgression)) {
+      const ownership = current.inventory.characters[characterId];
+      if (!ownership?.unlocked || ownership.quantity <= 0) continue;
+      const legacyLevel = Number(entry?.level ?? entry);
+      if (!Number.isInteger(legacyLevel) || legacyLevel < 1) continue;
+      const level = Math.min(50, legacyLevel);
+      const currentLevel = current.progression.characters[characterId]?.level || 1;
+      if (level > currentLevel) actions.push({ type: "SET_CHARACTER_PROGRESSION", characterId, level });
+    }
+    return actions.length ? transaction(this.authority, this.persistenceAdapter, actions) : current;
+  }
+
+  upgradeCharacter(characterId, { nextLevel, scrapCost = 0, fragmentsCost = 0 } = {}) {
+    const id = String(characterId || "");
+    if (!id) throw new TypeError("characterId is required");
+    if (!Number.isInteger(nextLevel) || nextLevel < 1 || nextLevel > 50) throw new RangeError("nextLevel must be between 1 and 50");
+    assertNonNegativeInteger(scrapCost, "scrapCost");
+    assertNonNegativeInteger(fragmentsCost, "fragmentsCost");
+    const current = this.authority.getSnapshot();
+    const ownership = current.inventory.characters[id];
+    if (!ownership?.unlocked || ownership.quantity <= 0) throw new Error("CHARACTER_NOT_OWNED");
+    const currentLevel = current.progression.characters[id]?.level || 1;
+    if (nextLevel !== currentLevel + 1) throw new Error("INVALID_CHARACTER_LEVEL_STEP");
+    if (currentLevel >= 50) throw new Error("CHARACTER_LEVEL_MAX");
+    const actions = [];
+    if (scrapCost > 0) actions.push({ type: "SPEND_CURRENCY", currency: "SCRAP", amount: scrapCost });
+    if (fragmentsCost > 0) actions.push({ type: "SPEND_CURRENCY", currency: "FRAGMENTS", amount: fragmentsCost });
+    actions.push({ type: "SET_CHARACTER_PROGRESSION", characterId: id, level: nextLevel });
     return transaction(this.authority, this.persistenceAdapter, actions);
   }
 
