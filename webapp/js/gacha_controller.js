@@ -62,8 +62,9 @@ export class GachaController extends LegacyGachaController {
     const legacyCloudStorage = this.cloudStorage;
 
     // Player Meta is the modern authority. Legacy CloudStorage is read once
-    // as a migration source, before the legacy runtime can mirror it into
+    // as the migration source, before the legacy runtime can mirror it into
     // another persistence surface. A persisted Player Meta snapshot always wins.
+    // The captured snapshot is the only legacy CloudStorage input to migration.
     const legacyCloudState = hasModernState
       ? null
       : await readLegacyGachaCloudState(legacyCloudStorage);
