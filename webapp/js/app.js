@@ -22,6 +22,7 @@ import { createPlayerMetaRosterIntegration } from "./player_meta_roster_integrat
 import { SaveSystem } from "./save_system.js";
 import { GameModeManager } from "./game_modes.js";
 import { MainMenu, VIEWS } from "./main_menu.js";
+import { HomeView } from "./home_view.js";
 import { MobileHaptics } from "./mobile_haptics.js";
 import { PerformanceAdapter } from "./performance_adapter.js";
 import {
@@ -93,6 +94,7 @@ const audioMuteButton = document.querySelector("#audio-mute");
 const audioVolumeSlider = document.querySelector("#audio-volume");
 const gachaTenButton = document.querySelector("#action-gacha-ten");
 const mainMenuRoot = document.querySelector("#main-menu");
+const homeViewRoot = document.querySelector("#home-view");
 const rosterView = document.querySelector("#roster-view");
 const settingsView = document.querySelector("#settings-view");
 const lockerView = document.querySelector("#locker-view");
@@ -421,6 +423,7 @@ const rosterPanel = new RosterPanel({
   getCharacters: () => gachaController.getCharacters(),
   getInventory: () => playerMetaRosterIntegration?.getInventory() || gachaController.getState().inventory || {},
   getActiveId: () => teamManager.getActiveBatterId(),
+  getProgression: (characterId) => upgradeSystem.getProgression(characterId),
   onSetActive: async (characterId) => {
     teamManager.setActiveBatter(characterId);
     const active = teamManager.getActiveWaifu();
@@ -683,6 +686,8 @@ const gallery = new GalleryController({
     }
   }
 });
+const homeView=new HomeView({root:homeViewRoot,getSnapshot:()=>gachaController.playerMetaIntegration?.getSnapshot()||null,getActiveCharacter:()=>{const id=gachaController.getActiveBatter();return id?gachaController.getCharacter(id):null},getRoster:()=>teamManager.getRoster(),getProgression:id=>upgradeSystem.getProgression(id),getCharacter:id=>gachaController.getCharacter(id),onNavigate:view=>{if(view==="roster"){rosterPanel.open();return}if(view==="gacha"){gachaRecruitment.open();return}setView(view)}});
+homeView.mount();
 exposeGachaToWindow(gachaController);
 window.BaseballWaifusTeam = {
   getRoster: () => teamManager.getRoster(),
@@ -1142,6 +1147,7 @@ gachaController.subscribe((status, result) => {
   updateGachaHud(status, result);
   gallery.refresh();
   syncRosterControls();
+  homeView.refresh();
   saveSystem.save();
 });
 
@@ -1157,13 +1163,15 @@ function setTelegramBackButton(visible) {
 }
 
 function setMainMenuView(view) {
-  const active = String(view || "combat");
+  const active = String(view || "home");
+  const showHome = active === "home";
   const showGallery = active === "dex";
   const showRoster = active === "roster";
   const showSettings = active === "settings";
   const showLocker = active === "locker";
-  const showCombat = !showGallery && !showRoster && !showSettings && !showLocker;
+  const showCombat = !showHome && !showGallery && !showRoster && !showSettings && !showLocker;
   if (combatShell) combatShell.hidden = !showCombat;
+  if (homeViewRoot) homeViewRoot.hidden = !showHome;
   if (galleryView) galleryView.hidden = !showGallery;
   if (rosterView) rosterView.hidden = !showRoster;
   if (settingsView) settingsView.hidden = !showSettings;
@@ -1176,6 +1184,7 @@ function setMainMenuView(view) {
     target?.scrollIntoView?.({ behavior: "smooth", block: "center" });
   }
   if (active === "leaderboard") { leaderboard.render(leaderboardRoot?.querySelector("#leaderboard-list")); leaderboardRoot?.removeAttribute("hidden"); requestAnimationFrame(() => leaderboardRoot?.classList.add("is-open")); }
+  if (active === "home") homeView.refresh();
   if (active === "roster") syncRosterControls();
   if (active === "dex") gallery.refresh();
   if (active === "locker") refreshLockerRoom();
@@ -1187,7 +1196,7 @@ function setView(view) {
 }
 
 function handleTelegramBackButton() {
-  setView("combat");
+  setView("home");
 }
 
 navDexButton?.addEventListener("click", () => {
@@ -1221,6 +1230,7 @@ rosterApplyButton?.addEventListener("click", () => {
     teamManager.setSupport(0, support0);
     teamManager.setSupport(1, support1);
     syncRosterControls();
+    homeView.refresh();
     lockerRoom.setActiveWaifu(active);
     if (renderer.state) void renderer.setCombatInit(applyActiveRoster(renderer.state));
     saveSystem.save();
@@ -1249,6 +1259,7 @@ saveImportInput?.addEventListener("change", async () => {
     await saveSystem.importFile(file);
     gallery.refresh();
     syncRosterControls();
+    homeView.refresh();
     updateGachaHud(gachaController.getStatus());
     syncAudioControls();
     updatePlayHud();
@@ -1444,10 +1455,12 @@ async function bootstrap() {
     syncRosterControls();
     rosterPanel.refresh();
     await initializeGallery();
+    homeView.refresh();
   } catch {
     gachaButton.disabled = true;
     if (gachaStatusValue) gachaStatusValue.textContent = "OFFLINE";
     await initializeGallery();
+    homeView.refresh();
   }
   if (!api.configured()) {
     try {
@@ -1463,6 +1476,9 @@ async function bootstrap() {
 
 renderer.initialize();
 mainMenu.mount();
+const query = new URLSearchParams(window.location.search);
+const initialView = query.get("kytos_demo") === "1" || query.get("narrative_test") === "1" ? "combat" : "home";
+mainMenu.navigate(initialView);
 installMobileGestures();
 registerServiceWorker();
 startGameMode("PRACTICE", "cyberpunk");

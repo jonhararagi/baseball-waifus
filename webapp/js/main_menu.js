@@ -1,4 +1,4 @@
-const VIEWS = Object.freeze(["combat", "roster", "gacha", "dex", "locker", "leaderboard", "settings"]);
+const VIEWS = Object.freeze(["home", "combat", "roster", "gacha", "dex", "locker", "leaderboard", "settings"]);
 
 export class MainMenu {
   constructor({
@@ -11,7 +11,7 @@ export class MainMenu {
     this.onNavigate = onNavigate;
     this.onModeChange = onModeChange;
     this.onBiomeChange = onBiomeChange;
-    this.activeView = "combat";
+    this.activeView = "home";
     this.mode = "PRACTICE";
     this.biome = "cyberpunk";
   }
@@ -33,7 +33,7 @@ export class MainMenu {
   }
 
   navigate(view) {
-    const normalized = VIEWS.includes(String(view)) ? String(view) : "combat";
+    const normalized = VIEWS.includes(String(view)) ? String(view) : "home";
     this.activeView = normalized;
     this._renderActive();
     this.onNavigate?.(normalized);

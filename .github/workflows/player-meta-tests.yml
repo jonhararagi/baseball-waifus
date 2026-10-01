@@ -29,6 +29,10 @@ on:
       - "webapp/js/upgrade_system_test.mjs"
       - "webapp/js/waifu_dex.js"
       - "webapp/js/waifu_dex_test.mjs"
+      - "webapp/js/home_view.js"
+      - "webapp/js/home_view_test.mjs"
+      - "webapp/js/roster_panel.js"
+      - "webapp/js/roster_panel_test.mjs"
       - "webapp/js/player_meta_progression_test.mjs"
       - ".github/workflows/player-meta-tests.yml"
   workflow_dispatch:
@@ -62,6 +66,8 @@ jobs:
           node --experimental-default-type=module webapp/js/player_meta_progression_test.mjs
           node --experimental-default-type=module webapp/js/upgrade_system_test.mjs
           node --experimental-default-type=module webapp/js/waifu_dex_test.mjs
+          node --experimental-default-type=module webapp/js/home_view_test.mjs
+          node --experimental-default-type=module webapp/js/roster_panel_test.mjs
 
       - name: Validate player meta syntax
         shell: bash
@@ -86,4 +92,8 @@ jobs:
           node --experimental-default-type=module --check webapp/js/upgrade_system_test.mjs
           node --experimental-default-type=module --check webapp/js/waifu_dex.js
           node --experimental-default-type=module --check webapp/js/waifu_dex_test.mjs
+          node --experimental-default-type=module --check webapp/js/home_view.js
+          node --experimental-default-type=module --check webapp/js/home_view_test.mjs
+          node --experimental-default-type=module --check webapp/js/roster_panel.js
+          node --experimental-default-type=module --check webapp/js/roster_panel_test.mjs
           node --experimental-default-type=module --check webapp/js/app.js
