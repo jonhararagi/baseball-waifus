@@ -1171,7 +1171,7 @@ superSwingButton?.addEventListener("click", async () => {
 });
 
 adminTriggerButton?.addEventListener("click", () => {
-  adminPanel?.toggle();
+  adminPanel?.open();
 });
 
 navRosterButton?.addEventListener("click", () => {
