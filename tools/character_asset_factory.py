@@ -74,7 +74,7 @@ def validate_asset(cid, typ, spec, seen):
         if source.suffix.lower()==".svg": ElementTree.parse(source)
         w,h=dimensions(source)
     except Exception as exc: errors.append(f"{cid}/{typ}: invalid image: {exc}"); return errors
-    rule=manifest()["asset_types"][typ]
+    rule=manifest()["asset_types"][typ.split(":",1)[0]]
     if path.suffix.lower().lstrip(".") not in rule["format"]: errors.append(f"{cid}/{typ}: format not allowed")
     if w<rule["dimensions"]["min_width"] or h<rule["dimensions"]["min_height"]:
         errors.append(f"{cid}/{typ}: dimensions {w}x{h} below minimum")
