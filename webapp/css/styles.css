@@ -1507,3 +1507,30 @@ button {
 .locker-canvas-stage{position:relative;overflow:hidden}
 .locker-character-art{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;pointer-events:none;z-index:2}
 #locker-canvas{position:relative;z-index:1}
+
+
+/* T073 Art Panel */
+.art-panel-overlay{position:fixed;inset:0;z-index:420;display:grid;place-items:center;padding:12px;background:rgba(2,3,10,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);overflow:auto}
+.art-panel-overlay[hidden]{display:none}
+.art-panel-modal{width:min(900px,100%);max-height:calc(100dvh - 24px);overflow:auto;border:1px solid rgba(0,243,255,.42);background:linear-gradient(145deg,rgba(0,243,255,.08),transparent 44%),linear-gradient(315deg,rgba(255,0,127,.08),transparent 55%),rgba(10,12,26,.98);box-shadow:0 24px 80px rgba(0,0,0,.62),var(--glow-cyan)}
+.art-panel-header{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(8,9,20,.94);backdrop-filter:blur(10px)}
+.art-panel-header h2{margin:3px 0 0;font:900 1rem var(--font-header);letter-spacing:.08em}.art-panel-kicker{color:var(--border-neon-cyan);font:800 .48rem var(--font-header);letter-spacing:.15em}
+.art-panel-close,.art-panel-button{border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);color:#fff;padding:8px 10px;font:800 .54rem var(--font-header);letter-spacing:.07em;cursor:pointer}
+.art-panel-button-primary{border-color:rgba(0,243,255,.62);background:linear-gradient(135deg,rgba(0,243,255,.16),rgba(0,136,255,.08));box-shadow:var(--glow-cyan)}
+.art-panel-notice{margin:10px 12px;padding:9px;border-left:2px solid var(--accent-yellow);background:rgba(255,223,0,.06);color:#eaf2f7;font-size:.62rem;line-height:1.4}
+.art-panel-controls{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 12px 10px}
+.art-panel-field{display:grid;gap:5px;color:var(--text-muted);font:800 .48rem var(--font-header);letter-spacing:.1em}
+.art-panel-field select,.art-panel-field input[type=file]{width:100%;min-height:38px;border:1px solid rgba(0,243,255,.2);background:rgba(0,0,0,.28);color:#fff;padding:8px}
+.art-panel-identity{display:grid;gap:4px;margin:0 12px 10px;padding:9px;border:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.2)}
+.art-panel-meta-row{display:flex;justify-content:space-between;gap:12px;font-size:.56rem}.art-panel-meta-row span{color:var(--text-muted)}.art-panel-meta-row strong{color:#fff;text-align:right;overflow-wrap:anywhere}
+.art-panel-previews{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 12px}
+.art-panel-preview{min-width:0;border:1px solid rgba(0,243,255,.18);padding:6px;background:#f5f7fa;color:#111}
+.art-panel-preview>span{display:block;margin-bottom:5px;font:800 .45rem var(--font-header);letter-spacing:.07em}
+.art-panel-preview-dark{background:#080a12;color:#dffcff;border-color:rgba(255,0,127,.2)}
+.art-panel-preview-stage{display:grid;place-items:center;min-height:280px;overflow:hidden;background:repeating-conic-gradient(#e9edf2 0 25%,#fff 0 50%) 50% / 18px 18px}
+.art-panel-preview-dark .art-panel-preview-stage{background:radial-gradient(circle at 50% 35%,rgba(0,243,255,.12),transparent 45%),#050711}
+.art-panel-preview-stage img{display:block;max-width:100%;max-height:340px;width:auto;height:auto;object-fit:contain}
+.art-panel-pipeline{display:flex;justify-content:space-between;gap:10px;margin:10px 12px;padding:9px;border:1px dashed rgba(0,243,255,.24);font:800 .5rem var(--font-header);letter-spacing:.06em}.art-panel-pipeline span{color:var(--border-neon-cyan)}.art-panel-pipeline strong{color:#fff;text-align:right}
+.art-panel-status{margin:0 12px 8px;min-height:18px;color:var(--accent-yellow);font:800 .52rem var(--font-header);letter-spacing:.06em}
+.art-panel-actions{display:flex;justify-content:flex-end;gap:7px;padding:0 12px 12px}
+@media(max-width:600px){.art-panel-controls,.art-panel-previews{grid-template-columns:1fr}.art-panel-preview-stage{min-height:210px}.art-panel-pipeline{flex-direction:column}.art-panel-pipeline strong{text-align:left}.art-panel-actions{flex-wrap:wrap}.art-panel-actions .art-panel-button{flex:1 1 180px}}
