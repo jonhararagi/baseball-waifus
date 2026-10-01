@@ -51,6 +51,8 @@ Mutations occur through `dispatch()`. Reward application may use the atomic `dis
 
 The historical `SaveSystem` remains active and is NOT replaced by T061. Its existing migration/versioning surface still contains economy, inventory, progression, Gacha and roster data.
 
+Modern Gacha/E2E fixtures must seed authoritative SCRAP, ownership and roster state through `PlayerMetaAuthority`/`GachaPlayerMetaIntegration`. `SaveSystem` remains a legacy application-save view and compatibility boundary; `SaveSystem.load()` must not be treated as a silent migration into the modern Player Meta authority.
+
 A future migration from SaveSystem to Player Meta persistence requires an explicit authority/migration task. T061 does not perform that migration.
 
 ### Roster
