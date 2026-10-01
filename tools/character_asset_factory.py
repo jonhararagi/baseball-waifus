@@ -70,7 +70,9 @@ def validate_asset(cid, typ, spec, seen):
     if path.suffix.lower() not in IMAGE_EXTS: errors.append(f"{cid}/{typ}: unsupported output format")
     source=ROOT/path
     if not source.is_file(): errors.append(f"{cid}/{typ}: missing runtime file {path}"); return errors
-    try: w,h=dimensions(source)
+    try:
+        if source.suffix.lower()==".svg": ElementTree.parse(source)
+        w,h=dimensions(source)
     except Exception as exc: errors.append(f"{cid}/{typ}: invalid image: {exc}"); return errors
     rule=manifest()["asset_types"][typ]
     if path.suffix.lower().lstrip(".") not in rule["format"]: errors.append(f"{cid}/{typ}: format not allowed")
@@ -108,9 +110,18 @@ def _svg_wrapper(source, output, width, height, title):
     output.write_text(text,encoding="utf-8")
 
 def _svg_inner(source):
-    raw=source.read_text(encoding='utf-8'); a=raw.find('>'); b=raw.rfind('</svg>')
-    if a<0 or b<=a: raise AssetFactoryError(f'invalid SVG source: {source}')
-    return raw[a+1:b]
+    try:
+        root = ElementTree.parse(source).getroot()
+    except ElementTree.ParseError as exc:
+        raise AssetFactoryError(f"invalid SVG source: {source}: {exc}") from exc
+    if root.tag.rsplit("}", 1)[-1] != "svg":
+        raise AssetFactoryError(f"SVG source root is not <svg>: {source}")
+    ElementTree.register_namespace("", "http://www.w3.org/2000/svg")
+    return "".join(ElementTree.tostring(child, encoding="unicode") for child in root)
+
+def _nested_svg(inner, x, y, width, height, transform=None):
+    transform_attr = f' transform="{transform}"' if transform else ""
+    return f'<svg x="{x}" y="{y}" width="{width}" height="{height}" viewBox="0 0 512 768" preserveAspectRatio="xMidYMid meet"{transform_attr}>{inner}</svg>'
 
 def _visual_svg(source,output,w,h,title,typ,mood=None):
     inner=_svg_inner(source)
@@ -152,6 +163,12 @@ def report():
                 try: dims="x".join(map(str,dimensions(ROOT/p)))
                 except Exception: dims="INVALID"
             print(" | ".join([char["character_id"],typ,spec.get("status",""),spec.get("quality_class",""),spec.get("source") or "-",p or "-",dims]))
+        for mood,spec in (char.get("expression_variants") or {}).items():
+            p=spec.get("path"); dims="-"
+            if p and (ROOT/p).is_file():
+                try: dims="x".join(map(str,dimensions(ROOT/p)))
+                except Exception: dims="INVALID"
+            print(" | ".join([char["character_id"],f"expression:{mood}",spec.get("status",""),spec.get("quality_class",""),spec.get("source") or "-",p or "-",dims]))
     return 0
 
 def main(argv=None):

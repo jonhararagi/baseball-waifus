@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import tempfile, unittest
 from pathlib import Path
+from xml.etree import ElementTree
 from character_asset_factory import dimensions, manifest, validate, AssetFactoryError, PNG_SIGNATURE
 
 class CharacterAssetFactoryTests(unittest.TestCase):
@@ -25,6 +26,15 @@ class CharacterAssetFactoryTests(unittest.TestCase):
         self.assertEqual(dimensions(root/"assets/production/cutins/bw001--power.svg"),(1280,540))
         self.assertEqual(dimensions(root/"assets/production/presentation/bw001--profile.svg"),(1280,720))
         self.assertEqual(dimensions(root/"assets/production/presentation/bw001--victory.svg"),(1024,768))
+
+    def test_bw001_svg_outputs_are_well_formed(self):
+        root=Path(__file__).resolve().parents[1]
+        entry=next(x for x in manifest()["characters"] if x["character_id"]=="bw001")
+        paths=[spec["path"] for spec in entry["asset_set"].values() if spec.get("path") and spec.get("path").endswith(".svg")]
+        paths.extend(spec["path"] for spec in entry["expression_variants"].values() if spec.get("path") and spec.get("path").endswith(".svg"))
+        for relative in paths:
+            parsed=ElementTree.parse(root/relative).getroot()
+            self.assertEqual(parsed.tag.rsplit("}",1)[-1],"svg",relative)
 
     def test_visual_files_are_differentiated(self):
         root=Path(__file__).resolve().parents[1]
