@@ -1,7 +1,8 @@
 import {
   CHARACTER_ART_STATUSES,
   getCharacterArtBinding,
-  saveLocalArtDraft
+  saveLocalArtDraft,
+  clearLocalArtDraft
 } from "./character_art_registry.js";
 
 function el(tag, props = {}) {
@@ -186,9 +187,7 @@ export class ArtPanel {
 
   clearDraft() {
     if (!this.selectedId) return;
-    try {
-      localStorage.removeItem("baseball_waifus_art_registry_v1");
-    } catch {}
+    clearLocalArtDraft(this.selectedId, { storage: this.storage });
     this._setStatus("LOCAL ART DRAFT CLEARED");
     this._refreshCharacter();
     this._clearPreview();
