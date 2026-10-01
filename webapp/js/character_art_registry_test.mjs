@@ -21,7 +21,7 @@ const missing = getCharacterArtBinding("bw001", { storage });
 assert.equal(missing.character_id, "bw001");
 assert.equal(missing.status, "MISSING");
 assert.equal(missing.project_asset, false);
-assert.match(missing.runtime_path, /assets\\/characters\\/approved\\/bw001\\.png$/);
+assert.match(missing.runtime_path, /assets\/characters\/approved\/bw001\.png$/);
 assert.equal(isApprovedArtBinding(missing), false);
 
 const draft = saveLocalArtDraft("bw001", {

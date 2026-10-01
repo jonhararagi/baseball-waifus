@@ -265,8 +265,6 @@ export class ArtPanel {
     this.selectedFile = file;
     this.previewUrl = URL.createObjectURL(file);
     this.previewState = "LOADING";
-    this.lightImage.src = this.previewUrl;
-    this.darkImage.src = this.previewUrl;
     const onLoad = () => {
       if (!this.previewUrl) return;
       this.previewDimensions = {
@@ -281,10 +279,17 @@ export class ArtPanel {
       );
     };
     this.lightImage.onload = onLoad;
+    this.darkImage.onload = onLoad;
     this.lightImage.onerror = () => {
       this.previewState = "ERROR";
       this._setStatus("PREVIEW FAILED // SOURCE FILE NOT READ");
     };
+    this.darkImage.onerror = () => {
+      this.previewState = "ERROR";
+      this._setStatus("DARK PREVIEW FAILED // SOURCE FILE NOT READ");
+    };
+    this.lightImage.src = this.previewUrl;
+    this.darkImage.src = this.previewUrl;
   }
 
   _resetLocalSelection() {
