@@ -228,6 +228,8 @@ jobs:
           rm -rf site
           mkdir -p site
           cp -R webapp/. site/
+          mkdir -p site/assets/characters/expressions
+          cp -R assets/characters/expressions/. site/assets/characters/expressions/
           mkdir -p site/data
           cp data/game_schemas_recycled.json site/data/game_schemas_recycled.json
           cp data/characters_queue.json site/data/characters_queue.json
@@ -303,12 +305,61 @@ jobs:
           echo "BROWSER_BIN = $BROWSER_BIN"
           BROWSER_BIN="$BROWSER_BIN" node webapp/js/character_journey_browser_probe.mjs
 
+      - name: T073 Character Presentation Browser QA
+        shell: bash
+        env:
+          T072_SITE_DIR: site
+          T073_EVIDENCE_DIR: browser-evidence/T073/${{ github.sha }}/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$T073_EVIDENCE_DIR"
+
+          BROWSER_BIN=""
+          for candidate in google-chrome chromium chromium-browser; do
+            if command -v "$candidate" >/dev/null 2>&1; then
+              BROWSER_BIN="$(command -v "$candidate")"
+              break
+            fi
+          done
+
+          if [ -z "$BROWSER_BIN" ]; then
+            echo "BROWSER AUTOMATION = NOT_RUN // no supported Chrome/Chromium binary on runner"
+            printf '%s\n' '{"task":"T073","browser_automation":"NOT_RUN","reason":"No supported Chrome/Chromium binary on runner"}' > "$T073_EVIDENCE_DIR/t073-browser-not-run.json"
+            exit 0
+          fi
+
+          echo "BROWSER_BIN = $BROWSER_BIN"
+          BROWSER_BIN="$BROWSER_BIN" node webapp/js/character_journey_browser_probe.mjs
+
       - name: Upload T072 browser evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: t072-browser-evidence-${{ github.sha }}-${{ github.run_id }}
           path: browser-evidence/T072/${{ github.sha }}/${{ github.run_id }}/
+          if-no-files-found: warn
+
+      - name: T072 Character Journey Regression Suites
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --experimental-default-type=module webapp/js/locker_room_test.mjs
+          node --experimental-default-type=module webapp/js/reaction_rules_test.mjs
+          node --experimental-default-type=module webapp/js/voice_system_test.mjs
+          node --experimental-default-type=module webapp/js/home_view_test.mjs
+          node --experimental-default-type=module webapp/js/waifu_dex_test.mjs
+          node --experimental-default-type=module webapp/js/roster_panel_test.mjs
+          node --experimental-default-type=module webapp/js/player_meta_authority_test.mjs
+          node --experimental-default-type=module webapp/js/player_meta_progression_test.mjs
+          node --experimental-default-type=module webapp/js/player_meta_roster_integration_test.mjs
+          node --experimental-default-type=module webapp/js/player_meta_roster_rehydration_test.mjs
+
+      - name: Upload T073 browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: t073-browser-evidence-${{ github.sha }}-${{ github.run_id }}
+          path: browser-evidence/T073/${{ github.sha }}/${{ github.run_id }}/
           if-no-files-found: warn
 
       - name: T072 Character Journey Regression Suites

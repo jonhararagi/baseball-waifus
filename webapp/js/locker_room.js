@@ -156,6 +156,7 @@ export class LockerRoom {
     this.controls = null;
     this.pointerHandler = null;
     this.currentWaifu = null;
+    this.presentationAssetUrl = "";
     this.tapFlash = 0;
     this.tapPulse = 0;
     this.message = "";
@@ -210,6 +211,7 @@ export class LockerRoom {
     if (previousId !== id) {
       this.inactivityDetector.reset();
       this.reactionRules.reset({ characterId: id, context: "locker" });
+      this.presentationAssetUrl = "";
     }
     this._ensureWaifu(id);
     this._render();
@@ -218,6 +220,16 @@ export class LockerRoom {
 
   getActiveWaifuId() {
     return this.state.activeWaifuId;
+  }
+
+  setPresentationAsset(url = "") {
+    this.presentationAssetUrl = String(url || "");
+    this._render();
+    return this.presentationAssetUrl;
+  }
+
+  getPresentationAsset() {
+    return this.presentationAssetUrl;
   }
 
   getRapport(id = this.state.activeWaifuId) {
@@ -523,14 +535,16 @@ export class LockerRoom {
     const bodyWidth = 82 * scale;
     const bodyHeight = 148 * scale;
 
-    ctx.save();
-    ctx.translate(centerX, centerY);
-    ctx.scale(1 + this.tapPulse * 0.025, 1 + this.tapPulse * 0.025);
-    ctx.shadowColor = skin.colors.primary;
-    ctx.shadowBlur = glow;
-    ctx.fillStyle = skin.colors.primary;
-    this._drawCharacterBody(ctx, bodyWidth, bodyHeight, skin, waifu);
-    ctx.restore();
+    if (!this.presentationAssetUrl) {
+      ctx.save();
+      ctx.translate(centerX, centerY);
+      ctx.scale(1 + this.tapPulse * 0.025, 1 + this.tapPulse * 0.025);
+      ctx.shadowColor = skin.colors.primary;
+      ctx.shadowBlur = glow;
+      ctx.fillStyle = skin.colors.primary;
+      this._drawCharacterBody(ctx, bodyWidth, bodyHeight, skin, waifu);
+      ctx.restore();
+    }
 
     if (this.tapFlash > 0) {
       ctx.fillStyle = "rgba(255,255,255," + (this.tapFlash * 0.18) + ")";

@@ -10,8 +10,8 @@ The probe:
 - performs real mouse events against the rendered DOM through CDP;
 - never injects `ADD_CHARACTER`, starter fixtures, or direct ownership mutations;
 - verifies the T071 STARTER state through product runtime state and rendered DOM;
-- follows Home → Character Detail → Story → ARC0 → full Advance completion → Locker → inactivity reaction / voice hook → Character Detail → Home;
-- observes the Aiko Locker `REACTION_INACTIVITY.mp3` request separately from actual audio playback;
+- follows Home → Character Detail → Story → ARC0 → Skip/Complete → Locker → Character Detail → Home;
+- observes the Aiko `REACTION_SKIP.mp3` request separately from actual audio playback;
 - captures Home, Character Detail, Story, and Locker screenshots;
 - writes JSON evidence under `browser-evidence/T072/<sha>/<run-id>/`;
 - treats same-origin page exceptions as blocking failures.
@@ -21,5 +21,3 @@ No gameplay, PlayerMeta schema, Gacha rates/pity, economy, shop, Telegram Stars,
 The Locker presentation is intentionally observed rather than redesigned. Its current UI is a procedural canvas, so the existing production character asset gap is recorded as a presentation follow-up when the browser confirms it.
 
 Human clickthrough is a separate evidence class and is not represented by this automation.
-
-The Locker refresh loop is part of normal presentation execution. `LockerRoom.setActiveWaifu()` now preserves the inactivity timer when the same active character is refreshed each frame, preventing the browser journey from resetting the reaction before its threshold.

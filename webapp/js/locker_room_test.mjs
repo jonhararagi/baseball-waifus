@@ -136,6 +136,10 @@ saveSystem.load();
 
 assert.equal(locker.getRapport("bw001"), 10);
 assert.equal(locker.getActiveSkin("bw001"), "damage_skin");
+locker.setPresentationAsset("./assets/production/presentation/bw001--profile.svg");
+assert.equal(locker.getPresentationAsset(), "./assets/production/presentation/bw001--profile.svg");
+locker.setActiveWaifu(waifu);
+assert.equal(locker.getPresentationAsset(), "./assets/production/presentation/bw001--profile.svg");
 
 let attempts = 0;
 while (attempts < DAILY_TAP_LIMIT + 5) {

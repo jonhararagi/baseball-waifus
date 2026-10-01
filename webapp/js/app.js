@@ -102,6 +102,7 @@ const rosterView = document.querySelector("#roster-view");
 const settingsView = document.querySelector("#settings-view");
 const lockerView = document.querySelector("#locker-view");
 const lockerCanvas = document.querySelector("#locker-canvas");
+const lockerCharacterArt = document.querySelector("#locker-character-art");
 const lockerSkinSelect = document.querySelector("#locker-skin-select");
 const lockerWaifuName = document.querySelector("#locker-waifu-name");
 const lockerRapport = document.querySelector("#locker-rapport");
@@ -660,6 +661,32 @@ function refreshLockerRoom() {
   const active = getActiveLockerWaifu();
   if (active) lockerRoom.setActiveWaifu(active);
 
+  if (lockerCharacterArt) {
+    const presentationPath = lockerRoom.getPresentationAsset();
+    const hasRequestedSource = lockerCharacterArt.dataset.source === presentationPath;
+    if (presentationPath && !hasRequestedSource) {
+      lockerCharacterArt.dataset.source = presentationPath;
+      lockerCharacterArt.hidden = true;
+      lockerCharacterArt.alt = active?.canonical?.display_name || active?.display_name || active?.name || active?.character_id || "";
+      lockerCharacterArt.onload = () => {
+        if (lockerCharacterArt.dataset.source !== presentationPath) return;
+        lockerCharacterArt.hidden = false;
+        lockerRoom.setPresentationAsset(presentationPath);
+      };
+      lockerCharacterArt.onerror = () => {
+        if (lockerCharacterArt.dataset.source !== presentationPath) return;
+        lockerCharacterArt.hidden = true;
+        lockerRoom.setPresentationAsset("");
+        delete lockerCharacterArt.dataset.source;
+      };
+      lockerCharacterArt.src = presentationPath;
+    } else if (!presentationPath) {
+      lockerCharacterArt.hidden = true;
+      lockerCharacterArt.removeAttribute("src");
+      delete lockerCharacterArt.dataset.source;
+    }
+  }
+
   const state = lockerRoom.getState();
   if (lockerWaifuName) {
     lockerWaifuName.textContent = "WAIFU // " + (
@@ -724,7 +751,7 @@ const gallery = new GalleryController({
   }
 });
 const homeView=new HomeView({root:homeViewRoot,getSnapshot:()=>gachaController.playerMetaIntegration?.getSnapshot()||null,getActiveCharacter:()=>{const id=gachaController.getActiveBatter();return id?gachaController.getCharacter(id):null},getRoster:()=>teamManager.getRoster(),getProgression:id=>upgradeSystem.getProgression(id),getCharacter:id=>gachaController.getCharacter(id),onNavigate:view=>{if(view==="roster"){rosterPanel.open();return}if(view==="gacha"){gachaRecruitment.open();return}setView(view)},onInspect:id=>characterDetailView.open(id)});
-const characterDetailView=new CharacterDetailView({root:characterDetailRoot,getCharacter:id=>gachaController.getCharacter(id),getInventoryEntry:id=>gachaController.getState().inventory?.[id]||null,getProgression:id=>upgradeSystem.getProgression(id),getRoster:()=>teamManager.getRoster(),getCurrencies:()=>({scrap:gachaController.getScavengerScrap(),fragments:gachaController.getFragments()}),canUpgrade:id=>upgradeSystem.canUpgrade(id),getUpgradeCost:id=>upgradeSystem.getUpgradeCost(id),getStoryEntry:getCharacterStoryBinding,getRelationshipContext:getCharacterRelationshipContext,onStory:(id)=>{const model=characterDetailView.model;return openCharacterStory(id,getCharacterStoryBinding(id),{character_id:model?.id,canonical:{display_name:model?.name}})},onLocker:(id)=>{const character=gachaController.getCharacter(id);if(!character)return false;characterDetailView.close();lockerRoom.setActiveWaifu(character);setView("locker");return true;},onUpgrade:id=>upgradeSystem.upgradeWaifu(id),onUse:id=>{try{teamManager.setActiveBatter(id);lockerRoom.setActiveWaifu(id);homeView.refresh();characterDetailView.close();setView("combat");}catch(error){setConnection("Unable to use character","error");}},onClose:()=>homeView.refresh()});
+const characterDetailView=new CharacterDetailView({root:characterDetailRoot,getCharacter:id=>gachaController.getCharacter(id),getInventoryEntry:id=>gachaController.getState().inventory?.[id]||null,getProgression:id=>upgradeSystem.getProgression(id),getRoster:()=>teamManager.getRoster(),getCurrencies:()=>({scrap:gachaController.getScavengerScrap(),fragments:gachaController.getFragments()}),canUpgrade:id=>upgradeSystem.canUpgrade(id),getUpgradeCost:id=>upgradeSystem.getUpgradeCost(id),getStoryEntry:getCharacterStoryBinding,getRelationshipContext:getCharacterRelationshipContext,onStory:(id)=>{const model=characterDetailView.model;return openCharacterStory(id,getCharacterStoryBinding(id),{character_id:model?.id,canonical:{display_name:model?.name}})},onLocker:(id)=>{const character=gachaController.getCharacter(id);if(!character)return false;const presentationPath=characterDetailView.model?.heroPath||"";characterDetailView.close();lockerRoom.setActiveWaifu(character);lockerRoom.setPresentationAsset(presentationPath);setView("locker");return true;},onUpgrade:id=>upgradeSystem.upgradeWaifu(id),onUse:id=>{try{teamManager.setActiveBatter(id);lockerRoom.setActiveWaifu(id);homeView.refresh();characterDetailView.close();setView("combat");}catch(error){setConnection("Unable to use character","error");}},onClose:()=>homeView.refresh()});
 characterStoryPresentation = new NarrativePresentation({
   root: narrativeTestView,
   voiceSystem,

@@ -378,6 +378,10 @@ async function run() {
     requireCondition(assetPresentation.cardLoaded, "Aiko Character Detail card asset did not load", assetPresentation);
     requireCondition(assetPresentation.heroLoaded && assetPresentation.victoryLoaded, "Aiko Character Detail presentation assets did not load", assetPresentation);
 
+    const expressionAssets = await cdpEvaluate(cdp, `(() => [...document.querySelectorAll("#character-detail-expression-set img")].map((image) => ({ src: image.getAttribute("src") || "", loaded: Boolean(image.complete && image.naturalWidth > 0) })) )()`);
+    requireCondition(expressionAssets.length === 5, "Aiko expression presentation set is incomplete", expressionAssets);
+    requireCondition(expressionAssets.every((item) => item.loaded), "Aiko expression asset failed to load", expressionAssets);
+
     const binding = await cdpEvaluate(cdp, `import("./js/character_story_bindings.js").then((m) => m.getCharacterStoryBinding("bw001"))`);
     requireCondition(binding?.id === "bw001-story-arc0", "Aiko story binding ID mismatch", binding);
     requireCondition(binding?.sceneId === "arc0-team11-recruitment", "Aiko story scene mismatch", binding);
@@ -454,15 +458,18 @@ async function run() {
       rapport: document.querySelector("#locker-rapport")?.textContent?.trim(),
       activeId: window.BaseballWaifusGacha?.getActiveBatter?.() || null,
       canvas: Boolean(document.querySelector("#locker-canvas")),
-      imageCount: document.querySelectorAll("#locker-view img").length,
+      presentationSrc: document.querySelector("#locker-character-art")?.getAttribute("src") || "",
+      presentationLoaded: Boolean(document.querySelector("#locker-character-art")?.complete && document.querySelector("#locker-character-art")?.naturalWidth > 0),
+      presentationHidden: Boolean(document.querySelector("#locker-character-art")?.hidden),
       returnVisible: Boolean(document.querySelector("#locker-character-detail"))
     }))()`);
     requireCondition(locker.visible, "Locker is not visible", locker);
     requireCondition(locker.name === "WAIFU // Aiko Hanamori", "Locker character identity mismatch", locker);
     requireCondition(locker.rapport === "RAPPORT // 1/10", "fresh rapport changed unexpectedly", locker);
     requireCondition(locker.activeId === "bw001", "Locker active character is not bw001", locker);
-    requireCondition(locker.canvas, "Locker procedural canvas is missing", locker);
-    requireCondition(locker.imageCount === 0, "Locker unexpectedly contains a character image asset", locker);
+    requireCondition(locker.canvas, "Locker interaction canvas is missing", locker);
+    requireCondition(locker.presentationSrc.includes("/assets/production/presentation/bw001--profile.svg"), "Locker Aiko production presentation path mismatch", locker);
+    requireCondition(locker.presentationLoaded && !locker.presentationHidden, "Locker Aiko production presentation asset did not load visibly", locker);
     const rapportBeforeReaction = locker.rapport;
 
     await waitFor(
@@ -557,6 +564,7 @@ async function run() {
       detail,
       binding: { id: binding.id, sceneId: binding.sceneId },
       story,
+      expressionAssets,
       postCompletion,
       reactionEvidence,
       locker,
