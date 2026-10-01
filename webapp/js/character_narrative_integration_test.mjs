@@ -85,7 +85,15 @@ assert.equal(storyButton.hidden, false);
 assert.equal(storyButton.disabled, false);
 assert.match(storyButton.textContent, /TEAM 11/);
 storyButton.click();
-assert.deepEqual(storyEntry, { characterId: "bw001", entry: story });
+assert.equal(storyEntry?.characterId, "bw001");
+assert.deepEqual(storyEntry?.entry, {
+  id: story.id,
+  label: story.label,
+  title: story.title,
+  status: story.status,
+  hook: story.hook,
+  sceneId: story.sceneId
+});
 
 const voiceEvents = [];
 const completionEvents = [];
