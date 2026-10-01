@@ -34,6 +34,18 @@ function callCloudMethod(cloudStorage, methodName, args = []) {
   });
 }
 
+export async function readLegacyGachaCloudState(cloudStorage) {
+  if (!cloudStorage) return null;
+  try {
+    const raw = await callCloudMethod(cloudStorage, "getItem", [TELEGRAM_CLOUD_KEY]);
+    if (typeof raw !== "string" || raw.trim() === "") return null;
+    const parsed = JSON.parse(raw);
+    return isObject(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
 function isObject(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
