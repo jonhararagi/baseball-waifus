@@ -1,3 +1,4 @@
+// CI evidence marker: keep Player Meta workflows explicitly runnable against the exact final SHA.
 const SCHEMA_VERSION = 1;
 const CURRENCY_IDS = Object.freeze(["SCRAP", "FRAGMENTS"]);
 const ACTION_TYPES = Object.freeze([
