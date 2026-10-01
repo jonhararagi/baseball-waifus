@@ -94,14 +94,17 @@ await gacha.initialize();
 const firstUnit = gacha.getCharacters()[0];
 assert.ok(firstUnit?.character_id, "catalog must contain an unlockable unit");
 
-gacha.state.scavenger_scrap = 12000;
-gacha.state.inventory[firstUnit.character_id] = {
-  character_id: firstUnit.character_id,
-  display_name: firstUnit.canonical?.display_name || firstUnit.character_id,
-  rarity: firstUnit.canonical?.rarity || "R",
-  obtained_at: Date.now(),
-  duplicate_count: 1
-};
+// Modern Gacha state must be seeded through PlayerMetaAuthority.
+// Direct writes to gacha.state are legacy read-model mutations and are not authoritative.
+const seedCharacter = gacha.playerMetaIntegration.authority.dispatch({
+  type: "ADD_CHARACTER",
+  characterId: firstUnit.character_id,
+  quantity: 1
+});
+assert.equal(seedCharacter.ok, true);
+gacha.playerMetaIntegration.persistenceAdapter.save(seedCharacter.snapshot);
+gacha.playerMetaIntegration.addCurrency("SCRAP", 12000);
+gacha.playerMetaIntegration.setActiveBatter(firstUnit.character_id);
 
 const saveSystem = new SaveSystem({
   storage,
@@ -144,16 +147,49 @@ const team = new TeamManager({
 });
 
 gacha._saveState();
-saveSystem.save();
+const savedState = saveSystem.save();
+assert.equal(savedState.economy.scrap, 12000, "SaveState must collect modern Player Meta Scrap");
 
 gacha.state.inventory = {};
 gacha.state.scavenger_scrap = 0;
 gacha.state.active_batter = null;
 team.state = { active_batter: null, supports: [null, null] };
 
-saveSystem.load();
-assert.equal(gacha.getScavengerScrap(), 12000, "SaveState must restore Scrap");
+const loadedState = saveSystem.load();
+assert.equal(loadedState.economy.scrap, 12000, "SaveState must restore Scrap");
+assert.equal(gacha.state.scavenger_scrap, 12000, "SaveSystem must restore its legacy Gacha read model");
+assert.equal(gacha.getScavengerScrap(), 12000, "Modern Gacha must continue reading authoritative Player Meta");
 assert.ok(gacha.getState().inventory[firstUnit.character_id], "SaveState must restore roster inventory");
+
+const gachaReloaded = new GachaController({
+  storage,
+  fetchImpl: async (url) => {
+    if (String(url).includes("game_schemas_recycled.json")) return new JsonResponse(schema);
+    if (String(url).includes("characters_queue.json")) return new JsonResponse(queue);
+    throw new Error("Unexpected fetch: " + url);
+  },
+  audioBridge: { play: () => false },
+  hapticsBridge: { handleGameEvent: () => false },
+  rng: () => 0.01,
+  localPlayerId: "local-player"
+});
+await gachaReloaded.initialize();
+assert.equal(gachaReloaded.getScavengerScrap(), 12000, "Fresh Gacha runtime must rehydrate Player Meta Scrap");
+
+const playerB = new GachaController({
+  storage,
+  fetchImpl: async (url) => {
+    if (String(url).includes("game_schemas_recycled.json")) return new JsonResponse(schema);
+    if (String(url).includes("characters_queue.json")) return new JsonResponse(queue);
+    throw new Error("Unexpected fetch: " + url);
+  },
+  audioBridge: { play: () => false },
+  hapticsBridge: { handleGameEvent: () => false },
+  rng: () => 0.01,
+  localPlayerId: "save-test-player-b"
+});
+await playerB.initialize();
+assert.equal(playerB.getScavengerScrap(), 0, "Player Meta persistence must isolate players");
 
 const menu = new MainMenu();
 assert.equal(menu.navigate("roster"), "roster");
