@@ -6,7 +6,6 @@ import { extname, normalize, relative, resolve, join } from "node:path";
 import { tmpdir } from "node:os";
 
 const T073_PRESENTATION = process.env.T073_PRESENTATION === "1";
-const T073_PRESENTATION = process.env.T073_PRESENTATION === "1";
 const SITE_DIR = resolve(process.env.T072_SITE_DIR || "site");
 const EVIDENCE_DIR = resolve(
   process.env.T072_EVIDENCE_DIR
