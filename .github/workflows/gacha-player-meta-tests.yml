@@ -7,6 +7,8 @@ on:
     paths:
       - "webapp/js/gacha_controller.js"
       - "webapp/js/gacha_controller_runtime.js"
+      - "data/characters_queue.json"
+      - "webapp/js/canonical_character_availability_test.mjs"
       - "webapp/js/gacha_player_meta_integration.js"
       - "webapp/js/gacha_player_meta_integration_test.mjs"
       - "webapp/js/player_meta_state.js"
@@ -47,6 +49,7 @@ jobs:
         run: |
           set -euo pipefail
           node --experimental-default-type=module webapp/js/gacha_player_meta_integration_test.mjs
+          node --experimental-default-type=module webapp/js/canonical_character_availability_test.mjs
           node --experimental-default-type=module webapp/js/player_meta_roster_rehydration_test.mjs
           node --experimental-default-type=module webapp/js/player_meta_roster_integration_test.mjs
 

@@ -99,6 +99,68 @@
   "batch_units": [
     {
       "schema_version": 1,
+      "character_id": "bw001",
+      "canonical": {
+        "display_name": "Aiko Hanamori",
+        "adult": true,
+        "rarity": "R",
+        "position": "3B",
+        "element": "fire",
+        "specialization": "power",
+        "potential": 4,
+        "stats": {
+          "power": 72,
+          "contact": 64,
+          "speed": 51,
+          "pitch": 51,
+          "control": 60,
+          "defense": 66,
+          "critical": 9,
+          "stamina": 76
+        },
+        "identity": {
+          "archetype": "powerful_firebrand",
+          "style_tags": [
+            "power",
+            "sporty",
+            "warm",
+            "competitive"
+          ],
+          "play_identity": "big_swing_threat",
+          "story_status": "none",
+          "signature_action_ids": [],
+          "contrast": "Su imagen de bateadora de fuerza no obliga a convertirla en una jugadora lenta o torpe.",
+          "skill_roles": [
+            "attack"
+          ],
+          "faction": "bosozoku_wild"
+        },
+        "visual": {
+          "body_preset": "power",
+          "height": 1,
+          "shoulder_width": 1.18,
+          "waist_width": 1.02,
+          "hip_width": 1.1,
+          "bust": 1.08,
+          "head_scale": 1,
+          "face_style": "round",
+          "skin": "#d99a78",
+          "hair_color": "#5a3327",
+          "uniform_color": "#fff3dc",
+          "accent": "#e4572e",
+          "eye": "#4a2b24",
+          "hair_style": "long",
+          "uniform_style": "jacket"
+        },
+        "faction": "bosozoku_wild"
+      },
+      "acquisition": {
+        "mode": "STARTER",
+        "pool_eligible": false
+      }
+    },
+    {
+      "schema_version": 1,
       "character_id": "bw016",
       "canonical": {
         "display_name": "Fuyuki Aono",

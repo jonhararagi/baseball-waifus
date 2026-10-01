@@ -6,6 +6,7 @@ import {
 } from "./player_meta_state.js";
 import { PlayerMetaPersistenceAdapter } from "./player_meta_persistence_adapter.js";
 import { GachaController, SCAVENGER_SCRAP_COST } from "./gacha_controller.js";
+import { GachaPlayerMetaIntegration } from "./gacha_player_meta_integration.js";
 
 class MemoryStorage {
   constructor() { this.data = new Map(); }
@@ -184,5 +185,19 @@ assert.equal(controllerA.playerMetaIntegration.getSnapshot().currencies.SCRAP, 0
 // GACHA STATE remains a derived read model, not the persistence authority.
 controllerA.state.currencies = { SCRAP: 999999 };
 assert.equal(controllerA.getScavengerScrap(), 0);
+
+// T071: starter seeding uses the existing Player Meta authority and persistence boundary.
+{
+  const starterStorage = new MemoryStorage();
+  const starterIdentity = createPlayerIdentity({ playerId: "starter-player" });
+  const starterAdapter = new PlayerMetaPersistenceAdapter({ storage: starterStorage });
+  const starterAuthority = new PlayerMetaAuthority(createInitialPlayerMetaState(starterIdentity));
+  const starterIntegration = new GachaPlayerMetaIntegration({ identity: starterIdentity, authority: starterAuthority, persistenceAdapter: starterAdapter });
+  const seeded = starterIntegration.ensureInitialCharacters(["bw001"]);
+  assert.equal(seeded.inventory.characters.bw001.quantity, 1);
+  assert.equal(seeded.inventory.characters.bw001.unlocked, true);
+  assert.equal(seeded.roster.activeBatter, "bw001");
+  assert.deepEqual(starterAdapter.load(starterIdentity), seeded);
+}
 
 console.log("T058 gacha/player-meta integration tests: PASS");

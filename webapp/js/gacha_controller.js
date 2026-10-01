@@ -57,7 +57,7 @@ export class GachaController extends LegacyGachaController {
     }
 
     const integration = this.playerMetaIntegration;
-    const hasModernState = integration.hasPersistedState();
+    const hadModernState = integration.hasPersistedState();
     const legacyStorage = this.storage;
     const legacyCloudStorage = this.cloudStorage;
 
@@ -87,10 +87,18 @@ export class GachaController extends LegacyGachaController {
     }
 
     const legacyState = legacyCloudState || this.state;
-    const snapshot = integration.loadOrMigrate(
+    let snapshot = integration.loadOrMigrate(
       legacyState,
       (id) => this.queue.find((unit) => unit.character_id === id) || null
     );
+
+    const starterIds = this.queue
+      .filter((unit) => unit.acquisition?.mode === "STARTER")
+      .map((unit) => unit.character_id);
+    if (!hadModernState && Object.keys(snapshot.inventory.characters).length === 0 && starterIds.length > 0) {
+      snapshot = integration.ensureInitialCharacters(starterIds);
+    }
+
     integration.authority.replaceSnapshot(snapshot);
     this.state = integration.hydrateGachaState(
       this.state,

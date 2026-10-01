@@ -73,6 +73,24 @@ export class GachaPlayerMetaIntegration {
     return state;
   }
 
+  ensureInitialCharacters(characterIds = [], activeBatter = null) {
+    const ids = [...new Set((Array.isArray(characterIds) ? characterIds : [])
+      .map((id) => String(id || ""))
+      .filter(Boolean))];
+    const current = this.authority.getSnapshot();
+    const actions = ids
+      .filter((id) => !current.inventory.characters[id]?.unlocked)
+      .map((characterId) => ({ type: "ADD_CHARACTER", characterId, quantity: 1 }));
+    const nextActiveBatter = current.roster.activeBatter
+      || (activeBatter && current.inventory.characters[String(activeBatter)]?.unlocked
+        ? String(activeBatter)
+        : ids[0] || null);
+    if (nextActiveBatter !== current.roster.activeBatter) {
+      actions.push({ type: "SET_ROSTER", activeBatter: nextActiveBatter, supports: [...current.roster.supports] });
+    }
+    return actions.length ? transaction(this.authority, this.persistenceAdapter, actions) : current;
+  }
+
   migrateLegacyState(legacyState, characterLookup = () => null) {
     if (!isObject(legacyState)) throw new TypeError("Invalid legacy Gacha state");
     const initial = createInitialPlayerMetaState(this.identity);

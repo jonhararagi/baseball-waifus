@@ -89,7 +89,8 @@ function normalizeQueue(queue) {
       pollinations: unit.pollinations || null,
       pixel_art_generator: unit.pixel_art_generator || null,
       animation_layers: unit.animation_layers || null,
-      production_targets: unit.production_targets || null
+      production_targets: unit.production_targets || null,
+      acquisition: unit.acquisition || null
     }));
 }
 
@@ -271,7 +272,8 @@ export class GachaController {
 
     for (const rarity of Object.keys(this.pools)) {
       this.pools[rarity] = this.queue.filter(
-        (unit) => String(unit.canonical?.rarity || "").toUpperCase() === rarity
+        (unit) => unit.acquisition?.pool_eligible !== false
+          && String(unit.canonical?.rarity || "").toUpperCase() === rarity
       );
     }
 
