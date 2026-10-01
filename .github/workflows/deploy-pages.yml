@@ -183,6 +183,7 @@ jobs:
           node --experimental-default-type=module --check webapp/js/character_story_bindings.js
           node --experimental-default-type=module webapp/js/character_narrative_integration_test.mjs
           node --experimental-default-type=module webapp/js/character_relationship_integration_test.mjs
+          node --experimental-default-type=module webapp/js/canonical_character_availability_test.mjs
           node --experimental-default-type=module --check webapp/js/combat.js
           node --experimental-default-type=module --check webapp/js/app.js
           node --experimental-default-type=module --check webapp/js/audio_bridge.js
