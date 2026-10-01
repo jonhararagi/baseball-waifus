@@ -712,7 +712,7 @@ function refreshLockerRoom() {
       || "NONE"
     );
   }
-  if (lockerRapport) lockerRapport.textContent = "RAPPORT // " + (state.rapport?.level || 1) + "/10";
+  if (lockerRapport) lockerRapport.textContent = "RAPPORT " + (state.rapport?.level || 1) + "/10";
   if (lockerSkinLabel) lockerSkinLabel.textContent = "SKIN // " + state.activeSkin.toUpperCase();
   if (lockerPassives) {
     lockerPassives.textContent =
