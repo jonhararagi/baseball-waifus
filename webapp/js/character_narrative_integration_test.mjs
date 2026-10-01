@@ -72,7 +72,7 @@ let storyEntry = null;
 const detail = new CharacterDetailView({
   root: detailRoot,
   getCharacter: () => aiko,
-  getInventoryEntry: () => ({ unlocked: true, quantity: 1 }),
+  getInventoryEntry: () => ({ character_id: "bw001", duplicate_count: 1 }),
   getProgression: () => ({ level: 1, star_rank: 0, duplicate_count: 1 }),
   getStoryEntry: getCharacterStoryBinding,
   onStory: (characterId, entry) => { storyEntry = { characterId, entry }; }
@@ -83,6 +83,8 @@ detail.open("bw001");
 const storyButton = detailRoot.querySelector("#character-detail-story-open");
 assert.equal(storyButton.hidden, false);
 assert.equal(storyButton.disabled, false);
+assert.equal(detail.model.unlocked, true);
+assert.equal(detail.model.relationship.status, "RECRUITED");
 assert.match(storyButton.textContent, /TEAM 11/);
 storyButton.click();
 assert.equal(storyEntry?.characterId, "bw001");

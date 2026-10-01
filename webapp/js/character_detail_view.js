@@ -52,8 +52,14 @@ export function buildCharacterDetailViewModel({
 
   const canonical = character.canonical || {};
   const identity = canonical.identity || EMPTY_IDENTITY;
-  const quantity = safeInteger(inventoryEntry?.quantity, 0);
-  const unlocked = Boolean(inventoryEntry?.unlocked && quantity > 0);
+  const quantity = safeInteger(
+    inventoryEntry?.quantity ?? inventoryEntry?.duplicate_count,
+    0
+  );
+  const hasExplicitUnlock = typeof inventoryEntry?.unlocked === "boolean";
+  const unlocked = hasExplicitUnlock
+    ? Boolean(inventoryEntry.unlocked && quantity > 0)
+    : quantity > 0;
   const active = String(roster?.activeBatter || "") === String(character.character_id);
 
   const styleTags = uniqueStrings(identity.style_tags);
