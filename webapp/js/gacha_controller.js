@@ -1,6 +1,7 @@
 import {
   GachaController as LegacyGachaController,
   calculateGachaProbabilities,
+  readLegacyGachaCloudState,
   SCAVENGER_SCRAP_COST
 } from "./gacha_controller_runtime.js";
 import {
@@ -60,10 +61,20 @@ export class GachaController extends LegacyGachaController {
     const legacyStorage = this.storage;
     const legacyCloudStorage = this.cloudStorage;
 
-    // Player Meta is the modern authority. Once it exists, do not rehydrate
-    // legacy local/CloudStorage state before loading the authoritative snapshot.
+    // Player Meta is the modern authority. Legacy CloudStorage is read once
+    // as a migration source, before the legacy runtime can mirror it into
+    // another persistence surface. A persisted Player Meta snapshot always wins.
+    const legacyCloudState = hasModernState
+      ? null
+      : await readLegacyGachaCloudState(legacyCloudStorage);
+
     if (hasModernState) {
       this.storage = null;
+      this.cloudStorage = null;
+    } else {
+      // Keep legacy local storage available as a fallback, but prevent the
+      // legacy runtime from writing CloudStorage or letting it overwrite the
+      // captured CloudStorage migration source.
       this.cloudStorage = null;
     }
 
@@ -74,8 +85,9 @@ export class GachaController extends LegacyGachaController {
       this.cloudStorage = legacyCloudStorage;
     }
 
+    const legacyState = legacyCloudState || this.state;
     const snapshot = integration.loadOrMigrate(
-      this.state,
+      legacyState,
       (id) => this.queue.find((unit) => unit.character_id === id) || null
     );
     integration.authority.replaceSnapshot(snapshot);
