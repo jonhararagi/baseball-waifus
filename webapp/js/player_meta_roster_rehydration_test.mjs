@@ -13,7 +13,7 @@ class MemoryStorage {
 }
 
 // Keep the rehydration fixture aligned with the production Gacha contract.
-// The first three seeded rolls remain R so the deterministic roster assertions below stay unchanged.
+// The first three seeded rolls remain R so the deterministic roster assertions below stay unchanged.\n// The queue also includes one member of each rarity so initialize() validates every live pool before acquisition.
 const schema = {
   gacha: {
     rates: {
