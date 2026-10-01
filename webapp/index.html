@@ -37,10 +37,58 @@
     <nav id="main-menu" class="main-menu-nav" aria-label="Main navigation"></nav>
     <section id="home-view" class="home-view menu-view" aria-label="Player Home" hidden>
       <div class="home-header"><div><span class="home-kicker">BASEWARRIORS // PLAYER HOME</span><h1>MI MUNDO DE BATALLA</h1></div><div class="home-collection-summary"><span>CHARACTERS</span><strong id="home-owned-count">0</strong></div></div>
-      <article class="home-character-card"><div class="home-character-stage"><div class="home-character-glow" aria-hidden="true"></div><img id="home-character-art" class="home-character-art" alt="" decoding="async"><div id="home-character-empty" class="home-character-empty" hidden><span class="home-empty-icon">⚾</span><strong>NO ACTIVE CHARACTER</strong><small>RECRUIT YOUR FIRST WARRIOR</small></div></div><div class="home-character-copy"><span class="home-kicker">ACTIVE CHARACTER</span><div class="home-character-name-row"><h2 id="home-character-name">SIN PERSONAJE ACTIVO</h2><span id="home-character-rarity" class="home-rarity">RECLUTA</span></div><div id="home-character-role" class="home-character-role">ROSTER // VACÍO</div><div id="home-character-play-identity" class="home-character-play">PLAYSTYLE // DESCONOCIDO</div><div class="home-progression"><span id="home-character-level">LV --</span><span id="home-character-stars">RANK --</span><span id="home-character-duplicates">DUPLICATES ×0</span></div><div class="home-stat-strip"><div><span>PWR</span><strong id="home-stat-power">--</strong></div><div><span>CONTACT</span><strong id="home-stat-contact">--</strong></div><div><span>SPEED</span><strong id="home-stat-speed">--</strong></div></div></div></article>
+      <article class="home-character-card"><div class="home-character-stage"><div class="home-character-glow" aria-hidden="true"></div><img id="home-character-art" class="home-character-art" alt="" decoding="async"><div id="home-character-empty" class="home-character-empty" hidden><span class="home-empty-icon">⚾</span><strong>NO ACTIVE CHARACTER</strong><small>RECRUIT YOUR FIRST WARRIOR</small></div></div><div class="home-character-copy"><span class="home-kicker">ACTIVE CHARACTER</span><div class="home-character-name-row"><h2 id="home-character-name">SIN PERSONAJE ACTIVO</h2><span id="home-character-rarity" class="home-rarity">RECLUTA</span></div><div id="home-character-role" class="home-character-role">ROSTER // VACÍO</div><div id="home-character-play-identity" class="home-character-play">PLAYSTYLE // DESCONOCIDO</div><button id="home-character-detail-open" class="home-character-detail-cta" type="button">CONOCER // CHARACTER PROFILE</button><div class="home-progression"><span id="home-character-level">LV --</span><span id="home-character-stars">RANK --</span><span id="home-character-duplicates">DUPLICATES ×0</span></div><div class="home-stat-strip"><div><span>PWR</span><strong id="home-stat-power">--</strong></div><div><span>CONTACT</span><strong id="home-stat-contact">--</strong></div><div><span>SPEED</span><strong id="home-stat-speed">--</strong></div></div></div></article>
       <section class="home-section home-squad-section" aria-label="Current squad"><div class="home-section-head"><div><span class="home-kicker">CURRENT SQUAD</span><h2>MI EQUIPO</h2></div><span class="home-squad-count">BATTER + 2 SUPPORTS</span></div><div class="home-squad-grid"><div class="home-squad-slot is-batter"><span>BATTER</span><strong id="home-squad-batter">NO BATTER</strong></div><div class="home-squad-slot"><span>SUPPORT 01</span><strong id="home-squad-support-0">EMPTY SLOT</strong></div><div class="home-squad-slot"><span>SUPPORT 02</span><strong id="home-squad-support-1">EMPTY SLOT</strong></div></div></section>
       <section class="home-resource-row" aria-label="Resources"><div><span class="home-kicker">RESOURCES</span><strong>SCRAP</strong></div><strong id="home-scrap">0</strong></section>
       <section class="home-actions" aria-label="Quick actions"><button class="home-action home-action-play" type="button" data-home-action="combat"><span>⚾</span><strong>PLAY</strong><small>ENTER THE MATCH</small></button><button class="home-action home-action-collection" type="button" data-home-action="dex"><span>▦</span><strong>COLLECTION</strong><small>MEET YOUR ROSTER</small></button><button class="home-action" type="button" data-home-action="roster"><span>👥</span><strong>SQUAD</strong><small>BUILD YOUR LINEUP</small></button><button class="home-action" type="button" data-home-action="locker"><span>♡</span><strong>LOCKER</strong><small>KNOW YOUR WARRIOR</small></button><button class="home-action" type="button" data-home-action="gacha"><span>✦</span><strong>RECRUIT</strong><small>FIND THE NEXT ONE</small></button></section>
+    </section>
+
+    <section id="character-detail-view" class="character-detail-view" aria-label="Character Detail" hidden>
+      <div class="character-detail-shell">
+        <header class="character-detail-header">
+          <div><span class="home-kicker">CHARACTER EXPERIENCE // PROFILE</span><h2>CONOCE A TU WARRIOR</h2></div>
+          <button id="character-detail-close" class="character-detail-close" type="button" aria-label="Cerrar perfil">×</button>
+        </header>
+        <div class="character-detail-hero">
+          <div class="character-detail-art-stage"><div class="character-detail-glow" aria-hidden="true"></div><img id="character-detail-art" class="character-detail-art" alt="" decoding="async"></div>
+          <div class="character-detail-identity">
+            <div class="character-detail-title-row"><div><span id="character-detail-rarity" class="home-rarity">R</span><h3 id="character-detail-name">CHARACTER</h3></div><span id="character-detail-relationship-status" class="character-detail-status">NOT RECRUITED</span></div>
+            <div id="character-detail-position" class="character-detail-position">POSITION • ROLE</div>
+            <div id="character-detail-play-identity" class="character-detail-play">PLAYSTYLE</div>
+            <div class="character-detail-identity-card"><span>IDENTITY</span><strong id="character-detail-archetype">IDENTITY</strong><div id="character-detail-style-tags" class="character-detail-tags"></div></div>
+            <div class="character-detail-signal-row"><span>ELEMENT <strong id="character-detail-element">UNKNOWN</strong></span><span>FACTION <strong id="character-detail-faction">UNKNOWN</strong></span></div>
+          </div>
+        </div>
+        <section class="character-detail-section character-detail-relationship">
+          <div class="character-detail-section-head"><span class="home-kicker">MY CONNECTION</span><h3>ESTADO CONMIGO</h3></div>
+          <div class="character-detail-progression"><span id="character-detail-level">LV 1</span><span id="character-detail-stars">RANK 0</span><span id="character-detail-duplicates">DUPLICATES ×0</span></div>
+          <div class="character-detail-resource-line"><span>SCRAP <strong id="character-detail-scrap">0</strong></span><span>FRAGMENTS <strong id="character-detail-fragments">0</strong></span></div>
+        </section>
+        <section class="character-detail-section">
+          <div class="character-detail-section-head"><span class="home-kicker">WHAT MAKES HER HERS</span><h3>ESTILO &amp; MOVES</h3></div>
+          <div id="character-detail-signature-actions" class="character-detail-action-list"></div>
+          <div class="character-detail-skill-line">SKILL ROLES <strong id="character-detail-skill-roles">NO SKILL ROLE REGISTERED</strong></div>
+        </section>
+        <section id="character-detail-story" class="character-detail-section character-detail-story">
+          <div class="character-detail-section-head"><span class="home-kicker">STORY SIGNAL</span><h3>HISTORIA</h3></div>
+          <div class="character-detail-story-status"><span>STATUS</span><strong id="character-detail-story-status">NONE</strong></div>
+          <p id="character-detail-story-hook"></p>
+        </section>
+        <section class="character-detail-section character-detail-progression-section">
+          <div class="character-detail-section-head"><span class="home-kicker">PROGRESSION</span><h3>DESARROLLARLA</h3></div>
+          <div class="character-detail-upgrade-row"><div><div class="character-detail-progression"><span id="character-detail-level-copy">LV</span></div><strong id="character-detail-upgrade-cost">MAX LEVEL</strong></div><button id="character-detail-upgrade" class="character-detail-primary" type="button">MEJORAR</button></div>
+        </section>
+        <section class="character-detail-section character-detail-stats">
+          <div class="character-detail-section-head"><span class="home-kicker">SECONDARY DATA</span><h3>STATS</h3></div>
+          <div class="character-detail-stat-grid">
+            <div><span>POWER</span><strong id="character-detail-stat-power">0</strong></div><div><span>CONTACT</span><strong id="character-detail-stat-contact">0</strong></div><div><span>SPEED</span><strong id="character-detail-stat-speed">0</strong></div><div><span>PITCH</span><strong id="character-detail-stat-pitch">0</strong></div>
+            <div><span>CONTROL</span><strong id="character-detail-stat-control">0</strong></div><div><span>DEFENSE</span><strong id="character-detail-stat-defense">0</strong></div><div><span>CRITICAL</span><strong id="character-detail-stat-critical">0</strong></div><div><span>STAMINA</span><strong id="character-detail-stat-stamina">0</strong></div>
+          </div>
+        </section>
+        <footer class="character-detail-actions">
+          <button id="character-detail-use" class="character-detail-primary" type="button">USAR EN COMBATE</button>
+        </footer>
+      </div>
     </section>
 
     <section class="game-viewport combat-view-piece" aria-label="Área de juego">
