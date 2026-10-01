@@ -448,7 +448,6 @@ async function run() {
       { label: "Aiko Locker" }
     );
 
-    const rapportBeforeReaction = locker.rapport;
     const locker = await cdpEvaluate(cdp, `(() => ({
       visible: !document.querySelector("#locker-view")?.hidden,
       name: document.querySelector("#locker-waifu-name")?.textContent?.trim(),
@@ -464,6 +463,7 @@ async function run() {
     requireCondition(locker.activeId === "bw001", "Locker active character is not bw001", locker);
     requireCondition(locker.canvas, "Locker procedural canvas is missing", locker);
     requireCondition(locker.imageCount === 0, "Locker unexpectedly contains a character image asset", locker);
+    const rapportBeforeReaction = locker.rapport;
 
     await waitFor(
       async () => network.requests.some((item) => item.url.includes("/assets/audio/voices/bw001/REACTION_INACTIVITY.mp3")),
