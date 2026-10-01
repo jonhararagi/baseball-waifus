@@ -45,7 +45,8 @@ export function buildCharacterDetailViewModel({
   currencies = null,
   canUpgrade = false,
   upgradeCost = null,
-  storyEntry = null
+  storyEntry = null,
+  relationshipContext = null
 } = {}) {
   if (!character?.character_id) return null;
 
@@ -103,13 +104,16 @@ export function buildCharacterDetailViewModel({
     relationship: {
       status: active ? "ACTIVE IN YOUR SQUAD" : unlocked ? "RECRUITED" : "NOT RECRUITED",
       quantity,
-      isActive: active
+      isActive: active,
+      storyStatus: cleanText(relationshipContext?.storyStatus, "NOT SEEN"),
+      storyCompleted: Boolean(relationshipContext?.storyCompleted),
+      storySeen: relationshipContext?.storyStatus === "SEEN" || relationshipContext?.storyStatus === "COMPLETED"
     },
     story: storyEntry ? {
       id: cleanText(storyEntry.id, "character-story"),
       label: cleanText(storyEntry.label, "STORY"),
       title: cleanText(storyEntry.title, "CHARACTER STORY"),
-      status: cleanText(storyEntry.status, "AVAILABLE"),
+      status: cleanText(relationshipContext?.storyStatus, cleanText(storyEntry.status, "AVAILABLE")),
       hook: cleanText(storyEntry.hook),
       sceneId: cleanText(storyEntry.sceneId)
     } : null,
@@ -141,7 +145,9 @@ export class CharacterDetailView {
     canUpgrade = () => false,
     getUpgradeCost = () => null,
     getStoryEntry = () => null,
+    getRelationshipContext = () => null,
     onStory = null,
+    onLocker = null,
     onUpgrade = null,
     onUse = null,
     onClose = null
@@ -156,7 +162,9 @@ export class CharacterDetailView {
       canUpgrade,
       getUpgradeCost,
       getStoryEntry,
+      getRelationshipContext,
       onStory,
+      onLocker,
       onUpgrade,
       onUse,
       onClose
@@ -179,6 +187,9 @@ export class CharacterDetailView {
       });
       this.root.querySelector?.("#character-detail-story-open")?.addEventListener("click", () => {
         if (this.model?.story && this.model.unlocked) this.onStory?.(this.characterId, this.model.story);
+      });
+      this.root.querySelector?.("#character-detail-locker-open")?.addEventListener("click", () => {
+        if (this.model?.unlocked) this.onLocker?.(this.characterId, this.model.relationship);
       });
       this.root.addEventListener?.("click", (event) => {
         if (event.target === this.root) this.close();
@@ -213,6 +224,7 @@ export class CharacterDetailView {
     const progression = this.getProgression?.(id);
     const upgradeCost = progression ? this.getUpgradeCost?.(id) : null;
     const storyEntry = this.getStoryEntry?.(id) || null;
+    const relationshipContext = this.getRelationshipContext?.(id) || null;
 
     return buildCharacterDetailViewModel({
       character,
@@ -222,7 +234,8 @@ export class CharacterDetailView {
       currencies: this.getCurrencies?.(),
       canUpgrade: this.canUpgrade?.(id),
       upgradeCost,
-      storyEntry
+      storyEntry,
+      relationshipContext
     });
   }
 
@@ -307,6 +320,25 @@ export class CharacterDetailView {
     this.text("#character-detail-stars", "RANK " + model.progression.starRank);
     this.text("#character-detail-duplicates", "DUPLICATES ×" + model.progression.duplicateCount);
     this.text("#character-detail-relationship-status", model.relationship.status);
+
+    const relationshipContext = this.root.querySelector?.("#character-detail-relationship-context");
+    if (relationshipContext) {
+      relationshipContext.textContent = model.relationship.storyCompleted
+        ? "STORY COMPLETE // RELATIONSHIP CONTEXT READY"
+        : model.relationship.storySeen
+          ? "STORY SEEN // RELATIONSHIP CONTEXT ACTIVE"
+          : "RELATIONSHIP // LOCKER AVAILABLE";
+    }
+
+    const lockerButton = this.root.querySelector?.("#character-detail-locker-open");
+    if (lockerButton) {
+      lockerButton.disabled = !model.unlocked;
+      lockerButton.hidden = !model.unlocked;
+      lockerButton.textContent = model.relationship.storyCompleted
+        ? "LOCKER // CONTINUE CONNECTION"
+        : "OPEN LOCKER";
+    }
+
     this.text("#character-detail-scrap", model.resources.scrap.toLocaleString("en-US"));
     this.text("#character-detail-fragments", model.resources.fragments.toLocaleString("en-US"));
 

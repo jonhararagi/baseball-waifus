@@ -233,6 +233,36 @@ const team11ChoicePresentation = new Team11ChoicePresentation({
 
 let characterStoryPresentation = null;
 let characterStoryReturnId = null;
+
+// Session-only bridge from Narrative completion into the existing Relationship/Locker journey.
+// SaveSystem remains the authority for persistent relationship state.
+const characterRelationshipContext = new Map();
+
+function getCharacterRelationshipContext(characterId) {
+  const context = characterRelationshipContext.get(String(characterId || ""));
+  return context ? { ...context } : null;
+}
+
+function recordCharacterStoryCompletion({ character, scene, state } = {}) {
+  const characterId = String(character?.character_id || character?.id || "");
+  if (!characterId) return null;
+
+  const narrativeState = String(state?.state || "").toUpperCase();
+  const context = {
+    characterId,
+    displayName: String(
+      character?.canonical?.display_name
+      || character?.display_name
+      || characterId
+    ),
+    storyStatus: narrativeState === "COMPLETED" ? "COMPLETED" : "SEEN",
+    storyCompleted: narrativeState === "COMPLETED",
+    sceneId: String(scene?.scene_id || state?.sceneId || "")
+  };
+  characterRelationshipContext.set(characterId, context);
+  return { ...context };
+}
+
 function openCharacterStory(characterId, storyEntry = getCharacterStoryBinding(characterId), characterModel = null) {
   const id = String(characterId || "");
   if (!id || !storyEntry || !characterModel || !characterStoryPresentation) return false;
@@ -694,14 +724,15 @@ const gallery = new GalleryController({
   }
 });
 const homeView=new HomeView({root:homeViewRoot,getSnapshot:()=>gachaController.playerMetaIntegration?.getSnapshot()||null,getActiveCharacter:()=>{const id=gachaController.getActiveBatter();return id?gachaController.getCharacter(id):null},getRoster:()=>teamManager.getRoster(),getProgression:id=>upgradeSystem.getProgression(id),getCharacter:id=>gachaController.getCharacter(id),onNavigate:view=>{if(view==="roster"){rosterPanel.open();return}if(view==="gacha"){gachaRecruitment.open();return}setView(view)},onInspect:id=>characterDetailView.open(id)});
-const characterDetailView=new CharacterDetailView({root:characterDetailRoot,getCharacter:id=>gachaController.getCharacter(id),getInventoryEntry:id=>gachaController.getState().inventory?.[id]||null,getProgression:id=>upgradeSystem.getProgression(id),getRoster:()=>teamManager.getRoster(),getCurrencies:()=>({scrap:gachaController.getScavengerScrap(),fragments:gachaController.getFragments()}),canUpgrade:id=>upgradeSystem.canUpgrade(id),getUpgradeCost:id=>upgradeSystem.getUpgradeCost(id),getStoryEntry:getCharacterStoryBinding,onStory:(id)=>{const model=characterDetailView.model;return openCharacterStory(id,getCharacterStoryBinding(id),{character_id:model?.id,canonical:{display_name:model?.name}})},onUpgrade:id=>upgradeSystem.upgradeWaifu(id),onUse:id=>{try{teamManager.setActiveBatter(id);lockerRoom.setActiveWaifu(id);homeView.refresh();characterDetailView.close();setView("combat");}catch(error){setConnection("Unable to use character","error");}},onClose:()=>homeView.refresh()});
+const characterDetailView=new CharacterDetailView({root:characterDetailRoot,getCharacter:id=>gachaController.getCharacter(id),getInventoryEntry:id=>gachaController.getState().inventory?.[id]||null,getProgression:id=>upgradeSystem.getProgression(id),getRoster:()=>teamManager.getRoster(),getCurrencies:()=>({scrap:gachaController.getScavengerScrap(),fragments:gachaController.getFragments()}),canUpgrade:id=>upgradeSystem.canUpgrade(id),getUpgradeCost:id=>upgradeSystem.getUpgradeCost(id),getStoryEntry:getCharacterStoryBinding,getRelationshipContext:getCharacterRelationshipContext,onStory:(id)=>{const model=characterDetailView.model;return openCharacterStory(id,getCharacterStoryBinding(id),{character_id:model?.id,canonical:{display_name:model?.name}})},onLocker:(id)=>{const character=gachaController.getCharacter(id);if(!character)return false;characterDetailView.close();lockerRoom.setActiveWaifu(character);setView("locker");return true;},onUpgrade:id=>upgradeSystem.upgradeWaifu(id),onUse:id=>{try{teamManager.setActiveBatter(id);lockerRoom.setActiveWaifu(id);homeView.refresh();characterDetailView.close();setView("combat");}catch(error){setConnection("Unable to use character","error");}},onClose:()=>homeView.refresh()});
 characterStoryPresentation = new NarrativePresentation({
   root: narrativeTestView,
   voiceSystem,
-  onComplete: () => {
+  onComplete: (payload) => {
     const id = characterStoryReturnId;
     characterStoryPresentation?.close();
     characterStoryReturnId = null;
+    recordCharacterStoryCompletion(payload);
     if (id) characterDetailView.open(id);
   },
   onExit: () => {
@@ -1298,6 +1329,13 @@ saveImportInput?.addEventListener("change", async () => {
 lockerSkinSelect?.addEventListener("change", () => {
   const result = lockerRoom.equipSkin(lockerSkinSelect.value);
   if (result.changed) refreshLockerRoom();
+});
+
+document.querySelector("#locker-character-detail")?.addEventListener("click", () => {
+  const id = lockerRoom.getActiveWaifuId();
+  if (!id) return;
+  setView("home");
+  characterDetailView.open(id);
 });
 
 if (lockerCanvas) {

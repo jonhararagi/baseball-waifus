@@ -64,6 +64,8 @@
           <div class="character-detail-section-head"><span class="home-kicker">MY CONNECTION</span><h3>ESTADO CONMIGO</h3></div>
           <div class="character-detail-progression"><span id="character-detail-level">LV 1</span><span id="character-detail-stars">RANK 0</span><span id="character-detail-duplicates">DUPLICATES ×0</span></div>
           <div class="character-detail-resource-line"><span>SCRAP <strong id="character-detail-scrap">0</strong></span><span>FRAGMENTS <strong id="character-detail-fragments">0</strong></span></div>
+          <div id="character-detail-relationship-context" class="character-detail-skill-line">RELATIONSHIP // LOCKER AVAILABLE</div>
+          <button id="character-detail-locker-open" class="character-detail-primary" type="button" hidden>OPEN LOCKER</button>
         </section>
         <section class="character-detail-section">
           <div class="character-detail-section-head"><span class="home-kicker">WHAT MAKES HER HERS</span><h3>ESTILO &amp; MOVES</h3></div>
@@ -300,7 +302,7 @@
 
     <section id="locker-view" class="menu-view" aria-label="Locker Room" hidden>
       <div class="gallery-headline"><div><span class="gallery-kicker">LOCKER ROOM</span><h2>INTERACCIÓN</h2></div><div class="gallery-active-stack"><span id="locker-waifu-name">WAIFU // NONE</span><span id="locker-rapport">RAPPORT // 1/10</span></div></div>
-      <div class="locker-layout"><div class="locker-canvas-stage"><canvas id="locker-canvas" width="720" height="480" aria-label="Interacción Locker Room"></canvas><div id="locker-message" class="locker-message">TAP THE WAIFU</div></div><div class="locker-controls"><label>SKIN<select id="locker-skin-select"></select></label><div id="locker-skin-label" class="locker-stat">SKIN // UNIFORM_DEFAULT</div><div id="locker-passives" class="locker-stat">PASSIVE // CONTACT +0% • POWER +0%</div><div id="locker-daily" class="locker-stat">DAILY TAPS // 0/50</div><div id="locker-skin-catalog" class="locker-skin-catalog"></div></div></div>
+      <div class="locker-layout"><div class="locker-canvas-stage"><canvas id="locker-canvas" width="720" height="480" aria-label="Interacción Locker Room"></canvas><div id="locker-message" class="locker-message">TAP THE WAIFU</div></div><div class="locker-controls"><label>SKIN<select id="locker-skin-select"></select></label><div id="locker-skin-label" class="locker-stat">SKIN // UNIFORM_DEFAULT</div><div id="locker-passives" class="locker-stat">PASSIVE // CONTACT +0% • POWER +0%</div><div id="locker-daily" class="locker-stat">DAILY TAPS // 0/50</div><div id="locker-skin-catalog" class="locker-skin-catalog"></div></div></div><div class="locker-return"><button id="locker-character-detail" class="action-button action-secondary" type="button">CHARACTER DETAIL</button></div>
     </section>
 
     <section id="narrative-test-view" class="narrative-test-view" hidden aria-label="Narrative runtime test"></section>
