@@ -311,6 +311,21 @@ jobs:
           path: browser-evidence/T072/${{ github.sha }}/${{ github.run_id }}/
           if-no-files-found: warn
 
+      - name: T072 Character Journey Regression Suites
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --experimental-default-type=module webapp/js/locker_room_test.mjs
+          node --experimental-default-type=module webapp/js/reaction_rules_test.mjs
+          node --experimental-default-type=module webapp/js/voice_system_test.mjs
+          node --experimental-default-type=module webapp/js/home_view_test.mjs
+          node --experimental-default-type=module webapp/js/waifu_dex_test.mjs
+          node --experimental-default-type=module webapp/js/roster_panel_test.mjs
+          node --experimental-default-type=module webapp/js/player_meta_authority_test.mjs
+          node --experimental-default-type=module webapp/js/player_meta_progression_test.mjs
+          node --experimental-default-type=module webapp/js/player_meta_roster_integration_test.mjs
+          node --experimental-default-type=module webapp/js/player_meta_roster_rehydration_test.mjs
+
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 

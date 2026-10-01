@@ -200,14 +200,17 @@ export class LockerRoom {
       return null;
     }
 
+    const previousId = this.state.activeWaifuId;
     this.currentWaifu = waifu || this.getWaifu?.(id) || {
       character_id: id,
       canonical: { display_name: id }
     };
 
     this.state.activeWaifuId = id;
-    this.inactivityDetector.reset();
-    this.reactionRules.reset({ characterId: id, context: "locker" });
+    if (previousId !== id) {
+      this.inactivityDetector.reset();
+      this.reactionRules.reset({ characterId: id, context: "locker" });
+    }
     this._ensureWaifu(id);
     this._render();
     return this.getState();

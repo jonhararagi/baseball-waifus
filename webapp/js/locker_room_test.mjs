@@ -80,6 +80,23 @@ locker.setActiveWaifu(waifu);
 assert.equal(locker.getRapport("bw001"), 1);
 assert.deepEqual(locker.getUnlockedSkins("bw001"), ["uniform_default"]);
 
+const activityProbeEvents = [];
+const activityProbe = new LockerRoom({
+  getWaifu: () => waifu,
+  voiceSystem: {
+    emit: (event) => {
+      activityProbeEvents.push(event);
+      return Promise.resolve({ ok: true });
+    }
+  }
+});
+activityProbe.setActiveWaifu(waifu);
+activityProbe.update(4);
+activityProbe.setActiveWaifu(waifu);
+assert.equal(activityProbe.inactivityDetector.getElapsedSeconds(), 4);
+activityProbe.update(4.1);
+assert.ok(activityProbeEvents.includes("REACTION_INACTIVITY"));
+
 for (let i = 0; i < 4; i += 1) {
   locker.tapActiveWaifu();
 }
