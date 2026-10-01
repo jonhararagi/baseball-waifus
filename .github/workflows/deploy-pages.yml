@@ -345,6 +345,41 @@ jobs:
           path: browser-evidence/T073/${{ github.sha }}/${{ github.run_id }}/
           if-no-files-found: warn
 
+      - name: T074 Character Art Production Browser QA
+        shell: bash
+        env:
+          T072_SITE_DIR: site
+          T072_EVIDENCE_DIR: browser-evidence/T074/${{ github.sha }}/${{ github.run_id }}
+          T074_ART: "1"
+        run: |
+          set -euo pipefail
+          mkdir -p "$T072_EVIDENCE_DIR"
+
+          BROWSER_BIN=""
+          for candidate in google-chrome chromium chromium-browser; do
+            if command -v "$candidate" >/dev/null 2>&1; then
+              BROWSER_BIN="$(command -v "$candidate")"
+              break
+            fi
+          done
+
+          if [ -z "$BROWSER_BIN" ]; then
+            echo "BROWSER AUTOMATION = NOT_RUN // no supported Chrome/Chromium binary on runner"
+            printf '%s\n' '{"task":"T074","browser_automation":"NOT_RUN","reason":"No supported Chrome/Chromium binary on runner"}' > "$T072_EVIDENCE_DIR/t074-browser-not-run.json"
+            exit 0
+          fi
+
+          echo "BROWSER_BIN = $BROWSER_BIN"
+          BROWSER_BIN="$BROWSER_BIN" node webapp/js/character_journey_browser_probe.mjs
+
+      - name: Upload T074 browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: t074-browser-evidence-${{ github.sha }}-${{ github.run_id }}
+          path: browser-evidence/T074/${{ github.sha }}/${{ github.run_id }}/
+          if-no-files-found: warn
+
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
