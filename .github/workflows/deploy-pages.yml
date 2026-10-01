@@ -319,6 +319,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          node --experimental-default-type=module webapp/js/character_art_registry_test.mjs
           node --experimental-default-type=module webapp/js/locker_room_test.mjs
           node --experimental-default-type=module webapp/js/reaction_rules_test.mjs
           node --experimental-default-type=module webapp/js/voice_system_test.mjs
