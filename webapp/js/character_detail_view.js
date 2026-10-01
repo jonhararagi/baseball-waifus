@@ -74,7 +74,7 @@ export function buildCharacterDetailViewModel({
       canonical.visual?.card_hd_url
         || canonical.visual?.card_url
         || canonical.visual?.avatar_url
-        || "./assets/production/cards/" + String(character.character_id) + "--normal.jpg"
+        || "./assets/production/cards/" + String(character.character_id) + "--normal.svg"
     ),
     identity: {
       archetype: humanize(identity.archetype, EMPTY_IDENTITY.archetype),

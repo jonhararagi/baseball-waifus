@@ -1,0 +1,34 @@
+name: Character Asset Validation
+
+on:
+  push:
+    paths:
+      - "data/character_asset_manifest.json"
+      - "assets/characters/**"
+      - "assets/production/**"
+      - "tools/character_asset_factory.py"
+      - "tools/character_asset_factory_test.py"
+      - "docs/character-asset-factory.md"
+  pull_request:
+    paths:
+      - "data/character_asset_manifest.json"
+      - "assets/characters/**"
+      - "assets/production/**"
+      - "tools/character_asset_factory.py"
+      - "tools/character_asset_factory_test.py"
+      - "docs/character-asset-factory.md"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Validate manifest
+        run: python tools/character_asset_factory.py validate
+      - name: Run factory tests
+        run: python tools/character_asset_factory_test.py
+      - name: Produce compact report
+        run: python tools/character_asset_factory.py report

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="768" height="1024" viewBox="0 0 768 1024">
+  <defs>
+    <linearGradient id="frame" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#00f5ff"/><stop offset="1" stop-color="#ff2bd6"/></linearGradient>
+  </defs>
+  <rect width="768" height="1024" rx="40" fill="#090d18"/>
+  <rect x="18" y="18" width="732" height="988" rx="34" fill="none" stroke="url(#frame)" stroke-width="10"/>
+  <image x="128" y="84" width="512" height="768" preserveAspectRatio="xMidYMid meet" href="../../characters/generated/bw001.svg"/>
+  <rect x="56" y="876" width="656" height="92" rx="20" fill="#111a2b" stroke="#00f5ff" stroke-opacity=".55"/>
+  <text x="384" y="918" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="30" font-weight="700">AIKO HANAMORI</text>
+  <text x="384" y="952" text-anchor="middle" fill="#00f5ff" font-family="Arial, sans-serif" font-size="20">R • 3B • BIG SWING THREAT</text>
+</svg>
