@@ -33,6 +33,8 @@ import {
   initializeWaifuDatabase
 } from "./waifu_database.js";
 import { LockerRoom } from "./locker_room.js";
+import { ArtPanel } from "./art_panel.js";
+import { getCharacterArtBinding } from "./character_art_registry.js";
 import { VoiceSystem } from "./voice_system.js";
 import { AdminPanel, INFINITE_SCRAP_VALUE } from "./admin_panel.js";
 import { resolveTimingGrade } from "./combat_core.js";
@@ -288,6 +290,7 @@ const upgradeSystem = new UpgradeSystem({
 
 const lockerRoom = new LockerRoom({
   voiceSystem,
+  getArtBinding: (id) => getCharacterArtBinding(id),
   getWaifu: (id = null) => {
     if (id) return gachaController.getCharacter(id);
     return teamManager.getActiveWaifu()
@@ -606,6 +609,13 @@ function getAdminCharacter(id) {
   return gachaController.getCharacter(id) || null;
 }
 
+const artPanel = new ArtPanel({
+  root: document.body,
+  getCharacters: () => gachaController.getCharacters(),
+  getCharacter: (id) => gachaController.getCharacter(id)
+});
+artPanel.mount();
+
 adminPanel = new AdminPanel({
   root: document.body,
   saveSystem,
@@ -630,7 +640,8 @@ adminPanel = new AdminPanel({
     return result;
   },
   onSuperSwingTest: (character) => renderer.triggerSuperSwingDemo(character),
-  onVoiceTest: (character) => voiceSystem.emit("ON_TAP", character)
+  onVoiceTest: (character) => voiceSystem.emit("ON_TAP", character),
+  onOpenArtPanel: () => artPanel.open()
 });
 
 function getActiveLockerWaifu() {
@@ -775,6 +786,7 @@ characterStoryPresentation = new NarrativePresentation({
 characterDetailView.mount();
 homeView.mount();
 exposeGachaToWindow(gachaController);
+window.BaseballWaifusArtPanel = artPanel;
 window.BaseballWaifusTeam = {
   getRoster: () => teamManager.getRoster(),
   getActiveBatter: () => teamManager.getActiveWaifu(),
