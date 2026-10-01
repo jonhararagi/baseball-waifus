@@ -357,7 +357,7 @@ async function run() {
     requireCondition(detail.name === "Aiko Hanamori", "Character Detail name mismatch", detail);
     requireCondition(detail.rarity === "R", "Character Detail rarity mismatch", detail);
     requireCondition(detail.positionRole.includes("3B"), "Character Detail position missing 3B", detail);
-    requireCondition(detail.playIdentity.includes("POWER"), "Character Detail play identity missing POWER", detail);
+    requireCondition(detail.playIdentity === "BIG SWING THREAT", "Character Detail play identity mismatch", detail);
     requireCondition(detail.storyVisible, "Aiko Story button is not available", detail);
     screenshots.detail = await screenshot(cdp, "02-character-detail-aiko");
 
