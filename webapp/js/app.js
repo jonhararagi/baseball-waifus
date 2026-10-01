@@ -680,6 +680,10 @@ function refreshLockerRoom() {
         delete lockerCharacterArt.dataset.source;
       };
       lockerCharacterArt.src = presentationPath;
+      if (lockerCharacterArt.complete && lockerCharacterArt.naturalWidth > 0) {
+        lockerCharacterArt.hidden = false;
+        lockerRoom.setPresentationAsset(presentationPath);
+      }
     } else if (!presentationPath) {
       lockerCharacterArt.hidden = true;
       lockerCharacterArt.removeAttribute("src");
