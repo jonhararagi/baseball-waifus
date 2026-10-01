@@ -127,7 +127,7 @@ const queue = JSON.parse(
   await fs.readFile(new URL("../../data/characters_queue.json", import.meta.url), "utf8")
 );
 const queueEntries = [queue, ...(queue.batch_units || [])];
-assert.equal(queueEntries.length, 16);
+assert.equal(queueEntries.length, 17);
 assert.equal(queueEntries.every(
   (entry) => CHARACTER_FACTIONS.includes(entry?.canonical?.faction)
 ), true);

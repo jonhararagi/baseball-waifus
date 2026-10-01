@@ -157,6 +157,18 @@
       "acquisition": {
         "mode": "STARTER",
         "pool_eligible": false
+      },
+      "pollinations": {
+        "base_prompt": "adult anime female baseball player, Aiko Hanamori, R rarity, third baseman, fire-element power specialist, warm sporty competitive adult woman, long brown hair, round face, dark brown eyes, cream baseball jacket with orange-red accents, polished anime mobile game character art, clean silhouette, no text, no logo, no watermark",
+        "negative_prompt": "child, teenager, loli, underage, young-looking, male, chibi, mascot proportions, extra limbs, extra fingers, malformed hands, deformed face, blurry face, text, logo, watermark",
+        "faction": "bosozoku_wild",
+        "faction_palette": {
+          "primary": "#E53935",
+          "secondary": "#111111",
+          "accent": "#FF6D3A",
+          "glow": "#FFB300"
+        },
+        "faction_style": "mature high-fanservice biker-gang sports anime aesthetic, rebellious street-racing attitude, red and black athletic trim, bold mechanical details, confident body language"
       }
     },
     {
