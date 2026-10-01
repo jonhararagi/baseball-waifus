@@ -6,6 +6,7 @@ import { extname, normalize, relative, resolve, join } from "node:path";
 import { tmpdir } from "node:os";
 
 const T073_PRESENTATION = process.env.T073_PRESENTATION === "1";
+const T074_ART = process.env.T074_ART === "1";
 const SITE_DIR = resolve(process.env.T072_SITE_DIR || "site");
 const EVIDENCE_DIR = resolve(
   process.env.T072_EVIDENCE_DIR
@@ -377,7 +378,7 @@ async function run() {
     screenshots.detail = await screenshot(cdp, "02-character-detail-aiko");
 
     const artPanelEvidence = {};
-    if (T073_PRESENTATION) {
+    if (T073_PRESENTATION || T074_ART) {
       await cdpClickSelector(cdp, "#btn-admin-trigger");
       await waitFor(async () => cdpEvaluate(cdp, "Boolean(document.querySelector(\".admin-modal-overlay\") && !document.querySelector(\".admin-modal-overlay\").hidden)"), { label: "internal Admin Panel open" });
       await cdpClickText(cdp, ".admin-button", "OPEN ART PANEL");
@@ -400,13 +401,20 @@ async function run() {
       requireCondition(jpgFile.type==="image/jpeg" && jpgFile.size>0, "JPG test file was not selected", jpgFile);
       requireCondition(jpgPreview.lightLoaded && jpgPreview.darkLoaded, "JPG preview did not render on both backgrounds", jpgPreview);
 
-      await cdpClickText(cdp, ".art-panel-button", "ASSOCIATE ASSET");
-      const association = await cdpEvaluate(cdp, "(() => { const raw=localStorage.getItem(\"baseball_waifus_art_registry_v1\"); const parsed=raw?JSON.parse(raw):{}; return parsed.bw001||null; })()");
-      requireCondition(association?.status==="DRAFT", "Art Panel association was not stored as DRAFT", association);
+      await cdpClickText(cdp, ".art-panel-button", "SAVE LOCAL DRAFT");
+      const association = await cdpEvaluate(cdp, "(() => { const raw=localStorage.getItem(\"baseball_waifus_art_registry_v2\"); const parsed=raw?JSON.parse(raw):{}; return parsed.bw001||null; })()");
+      requireCondition(association?.source==="LOCAL ART INPUT", "Art Panel draft source mismatch", association);
       requireCondition(association?.filename==="bw001-art-test-white-background.jpg", "Art Panel stored unexpected test filename", association);
-      requireCondition(association?.runtime_path?.includes("assets/characters/approved/bw001.png"), "Art Panel project asset route is missing", association);
-      artPanelEvidence.identity=panelIdentity; artPanelEvidence.png={file:pngFile,preview:pngPreview}; artPanelEvidence.jpg={file:jpgFile,preview:jpgPreview}; artPanelEvidence.association=association;
-      screenshots.artPanel=await screenshot(cdp, "03-art-panel-bw001-previews");
+      const bindingAfterDraft = await cdpEvaluate(cdp, "import(\"./js/character_art_registry.js\").then((m)=>m.getCharacterArtBinding(\"bw001\"))");
+      requireCondition(bindingAfterDraft?.status==="DRAFT", "Art Panel local selection was not represented as DRAFT", bindingAfterDraft);
+      requireCondition(bindingAfterDraft?.project_asset===false, "Local draft was incorrectly promoted to project asset", bindingAfterDraft);
+      requireCondition(bindingAfterDraft?.status!=="APPROVED", "Local draft was incorrectly promoted to APPROVED", bindingAfterDraft);
+      const manifest = await cdpEvaluate(cdp, "fetch(\"./assets/characters/approved/manifest.json\",{cache:\"no-store\"}).then((r)=>r.json())");
+      requireCondition(!manifest?.assets?.bw001, "bw001 is unexpectedly approved in the project manifest", manifest);
+      const projectAssetResponse = await cdpEvaluate(cdp, "fetch(\"./assets/characters/approved/bw001.png\",{cache:\"no-store\"}).then((r)=>({ok:r.ok,status:r.status}))");
+      requireCondition(projectAssetResponse.ok===false && projectAssetResponse.status===404, "bw001 production PNG unexpectedly exists on T074 base", projectAssetResponse);
+      artPanelEvidence.identity=panelIdentity; artPanelEvidence.png={file:pngFile,preview:pngPreview}; artPanelEvidence.jpg={file:jpgFile,preview:jpgPreview}; artPanelEvidence.association=association; artPanelEvidence.bindingAfterDraft=bindingAfterDraft; artPanelEvidence.manifest=manifest; artPanelEvidence.projectAssetResponse=projectAssetResponse;
+      screenshots.artPanel=await screenshot(cdp, T074_ART ? "03-art-panel-t074-bw001-previews" : "03-art-panel-bw001-previews");
       await cdpClickSelector(cdp, ".art-panel-close");
       await cdpClickSelector(cdp, ".admin-modal-close");
     }
@@ -591,7 +599,7 @@ async function run() {
       .filter((entry) => entry.includes(baseUrl) || entry.includes("/js/"));
 
     const evidence = {
-      task: T073_PRESENTATION ? "T073" : "T072",
+      task: T074_ART ? "T074" : (T073_PRESENTATION ? "T073" : "T072"),
       sha: process.env.GITHUB_SHA || "local",
       runId: process.env.GITHUB_RUN_ID || "local",
       browser: BROWSER_BIN,
@@ -601,7 +609,7 @@ async function run() {
         "Aiko STARTER",
         "HOME",
         "CHARACTER DETAIL",
-        ...(T073_PRESENTATION ? ["ART PANEL", "LOCAL PNG PREVIEW", "LOCAL JPG PREVIEW", "DRAFT ASSOCIATION"] : []),
+        ...(T073_PRESENTATION || T074_ART ? ["ART PANEL", "LOCAL PNG PREVIEW", "LOCAL JPG PREVIEW", "DRAFT ASSOCIATION"] : []),
         "STORY",
         "ARC0",
         "COMPLETE",
@@ -638,7 +646,7 @@ async function run() {
       pageErrors: sameOriginErrors
     };
 
-    writeFileSync(join(EVIDENCE_DIR, T073_PRESENTATION ? "t073-browser-evidence.json" : "t072-browser-evidence.json"), JSON.stringify(evidence, null, 2) + "\n", "utf8");
+    writeFileSync(join(EVIDENCE_DIR, T074_ART ? "t074-browser-evidence.json" : (T073_PRESENTATION ? "t073-browser-evidence.json" : "t072-browser-evidence.json")), JSON.stringify(evidence, null, 2) + "\n", "utf8");
     requireCondition(sameOriginErrors.length === 0, "same-origin page exceptions detected", sameOriginErrors);
 
     console.log("BROWSER AUTOMATION = PASS_REAL");
@@ -657,7 +665,8 @@ async function run() {
     console.log("VOICE PLAYBACK = NOT_RUN");
     console.log("GACHA RATES = PASS_REAL");
     console.log("GACHA PITY = PASS_REAL");
-    if (T073_PRESENTATION) console.log("T073 CHARACTER PRESENTATION = PASS_REAL");
+    if (T074_ART) console.log("T074 ART PIPELINE = PASS_REAL");
+    else if (T073_PRESENTATION) console.log("T073 CHARACTER PRESENTATION = PASS_REAL");
     else console.log("T072 BROWSER JOURNEY = PASS_REAL");
   } catch (error) {
     writeFileSync(
