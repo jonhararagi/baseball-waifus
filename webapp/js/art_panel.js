@@ -38,7 +38,8 @@ export class ArtPanel {
     this.metaNode = null;
     this.lightImage = null;
     this.darkImage = null;
-    this.fileInput = null;
+    this.previewState = "NOT_LOADED";
+    this.previewDimensions = null;
   }
 
   mount() {
@@ -60,7 +61,7 @@ export class ArtPanel {
 
     const notice = el("div", {
       className: "art-panel-notice",
-      textContent: "LOCAL ART INPUT only. Selecting a file never uploads it to GitHub and never marks art APPROVED."
+      textContent: "LOCAL ART INPUT is browser-only. Selection never uploads to GitHub and never marks APPROVED."
     });
 
     const controls = el("div", { className: "art-panel-controls" });
@@ -69,15 +70,13 @@ export class ArtPanel {
     const select = el("select", { id: "art-panel-character-select", name: "character" });
     select.addEventListener("change", () => {
       this.selectedId = select.value;
-      this.selectedFile = null;
-      if (this.fileInput) this.fileInput.value = "";
+      this._resetLocalSelection();
       this._refreshCharacter();
-      this._clearPreview();
     });
     characterLabel.append(select);
 
     const fileLabel = el("label", { className: "art-panel-field" });
-    fileLabel.append(el("span", { textContent: "ART FILE // PNG / JPG" }));
+    fileLabel.append(el("span", { textContent: "LOCAL ART // PNG / JPG / JPEG / SVG" }));
     const input = el("input", {
       id: "art-panel-file-input",
       type: "file",
@@ -92,14 +91,14 @@ export class ArtPanel {
 
     const previews = el("div", { className: "art-panel-previews" });
     const light = el("article", { className: "art-panel-preview art-panel-preview-light" });
-    light.append(el("span", { textContent: "PREVIEW SOBRE FONDO CLARO" }));
+    light.append(el("span", { textContent: "LIGHT PREVIEW" }));
     const lightStage = el("div", { className: "art-panel-preview-stage" });
     const lightImg = el("img", { alt: "Light background character art preview", decoding: "async" });
     lightStage.append(lightImg);
     light.append(lightStage);
 
     const dark = el("article", { className: "art-panel-preview art-panel-preview-dark" });
-    dark.append(el("span", { textContent: "PREVIEW SOBRE FONDO OSCURO" }));
+    dark.append(el("span", { textContent: "DARK PREVIEW" }));
     const darkStage = el("div", { className: "art-panel-preview-stage" });
     const darkImg = el("img", { alt: "Dark background character art preview", decoding: "async" });
     darkStage.append(darkImg);
@@ -110,8 +109,10 @@ export class ArtPanel {
 
     const pipeline = el("div", { className: "art-panel-pipeline" });
     pipeline.append(
-      el("span", { textContent: "LOCAL ART INPUT" }),
-      el("strong", { textContent: "→ PROJECT ASSET → CHARACTER PRESENTATION" })
+      el("div", { textContent: "LOCAL ART" }),
+      el("div", { textContent: "PROJECT ASSET" }),
+      el("div", { textContent: "APPROVAL" }),
+      el("strong", { textContent: "LOCAL INPUT → PROJECT FILE → EXPLICIT APPROVED MANIFEST" })
     );
 
     const status = el("div", { className: "art-panel-status", role: "status", "aria-live": "polite" });
@@ -120,7 +121,7 @@ export class ArtPanel {
     const associate = el("button", {
       className: "art-panel-button art-panel-button-primary",
       type: "button",
-      textContent: "ASSOCIATE ASSET"
+      textContent: "SAVE LOCAL DRAFT"
     });
     associate.addEventListener("click", () => this.associateAsset());
     const clear = el("button", {
@@ -147,8 +148,8 @@ export class ArtPanel {
     this.selectedId = ids.includes(String(characterId || "")) ? String(characterId) : (ids[0] || null);
     const select = this.modal.querySelector("#art-panel-character-select");
     if (select) select.value = this.selectedId || "";
+    this._resetLocalSelection();
     this._refreshCharacter();
-    this._clearPreview();
     this.modal.hidden = false;
     this.modal.setAttribute("aria-hidden", "false");
     return true;
@@ -170,17 +171,19 @@ export class ArtPanel {
   }
 
   associateAsset() {
-    if (!this.selectedId || !this.selectedFile || !this.previewUrl) {
-      this._setStatus("SELECT A VALID ART FILE FIRST");
+    if (!this.selectedId || !this.selectedFile || !this.previewUrl || this.previewState !== "LOADED") {
+      this._setStatus("SELECT AN IMAGE AND WAIT FOR PREVIEW LOADED");
       return null;
     }
     const binding = saveLocalArtDraft(this.selectedId, {
       filename: this.selectedFile.name,
-      mime: this.selectedFile.type,
+      mime: this.selectedFile.type || "image/*",
+      width: this.previewDimensions?.width || null,
+      height: this.previewDimensions?.height || null,
       source: "LOCAL ART INPUT",
       local_preview: this.previewUrl
     }, { storage: this.storage });
-    this._setStatus("DRAFT ASSOCIATION SAVED LOCALLY // NOT APPROVED");
+    this._setStatus("DRAFT SAVED LOCALLY // PROJECT ASSET UNCHANGED // NOT APPROVED");
     this._refreshCharacter();
     return binding;
   }
@@ -190,7 +193,7 @@ export class ArtPanel {
     clearLocalArtDraft(this.selectedId, { storage: this.storage });
     this._setStatus("LOCAL ART DRAFT CLEARED");
     this._refreshCharacter();
-    this._clearPreview();
+    this._resetLocalSelection();
   }
 
   _refreshCharacters() {
@@ -199,11 +202,10 @@ export class ArtPanel {
     const characters = this.getCharacters().filter((item) => item?.character_id);
     select.replaceChildren();
     for (const character of characters) {
-      const option = el("option", {
+      select.append(el("option", {
         value: String(character.character_id),
         textContent: String(character.canonical?.display_name || character.character_id)
-      });
-      select.append(option);
+      }));
     }
     if (!this.selectedId && characters[0]) this.selectedId = String(characters[0].character_id);
     if (this.selectedId) select.value = this.selectedId;
@@ -214,59 +216,83 @@ export class ArtPanel {
     const character = this.getCharacter(this.selectedId);
     const canonical = character?.canonical || {};
     const binding = this.getBinding(this.selectedId);
+    const localDraft = binding.local_draft || (!binding.project_asset && binding.status === "DRAFT" ? binding : null);
+
     if (this.metaNode) {
       this.metaNode.innerHTML = "";
       const rows = [
         ["character_id", this.selectedId],
         ["display_name", canonical.display_name || this.selectedId],
-        ["rarity", canonical.rarity || "UNKNOWN"],
-        ["asset status", binding.status],
-        ["current project asset", binding.runtime_path || "MISSING"]
+        ["LOCAL ART", localDraft?.filename || "NONE"],
+        ["PROJECT ASSET", binding.project_asset ? binding.runtime_path : "MISSING"],
+        ["APPROVAL", binding.status]
       ];
+      if (binding.width && binding.height) rows.push(["dimensions", binding.width + " × " + binding.height]);
       for (const [label, value] of rows) {
         const row = el("div", { className: "art-panel-meta-row" });
         row.append(el("span", { textContent: label }), el("strong", { textContent: value }));
         this.metaNode.append(row);
       }
-      if (binding.filename) {
-        const row = el("div", { className: "art-panel-meta-row" });
-        row.append(el("span", { textContent: "local draft" }), el("strong", { textContent: binding.filename }));
-        this.metaNode.append(row);
-      }
     }
-    this._setStatus(binding.status === "MISSING"
-      ? "NO APPROVED PROJECT ART // READY FOR LOCAL INPUT"
-      : binding.status + " // ART PIPELINE STATE");
+
+    if (binding.status === "APPROVED") {
+      this._setStatus("APPROVED // PROJECT ASSET IS THE RUNTIME AUTHORITY");
+    } else if (binding.status === "PROCESSED") {
+      this._setStatus("PROCESSED // PROJECT ASSET EXISTS // APPROVAL REQUIRED");
+    } else if (binding.status === "DRAFT") {
+      this._setStatus("DRAFT // LOCAL FILE ONLY // NOT A PROJECT ASSET");
+    } else {
+      this._setStatus("MISSING // NO APPROVED PROJECT ASSET");
+    }
   }
 
   _handleFile(file) {
-    this.selectedFile = null;
-    this._clearPreview();
+    this._resetLocalSelection();
     if (!file) return;
     const type = String(file.type || "").toLowerCase();
     const name = String(file.name || "").toLowerCase();
-    const allowed = type === "image/png" || type === "image/jpeg" || type === "image/jpg"
-      || type === "image/svg+xml";
+    const allowed = ["image/png", "image/jpeg", "image/jpg", "image/svg+xml"].includes(type);
     const extensionAllowed = /\.(png|jpe?g|svg)$/i.test(name);
     if (!allowed && !extensionAllowed) {
-      this._setStatus("INVALID FORMAT // PNG OR JPG REQUIRED");
+      this._setStatus("INVALID FORMAT // PNG OR JPG/JPEG REQUIRED");
       return;
     }
     if (file.size > 15 * 1024 * 1024) {
       this._setStatus("FILE TOO LARGE // MAX 15 MB");
       return;
     }
+
     this.selectedFile = file;
     this.previewUrl = URL.createObjectURL(file);
+    this.previewState = "LOADING";
     this.lightImage.src = this.previewUrl;
     this.darkImage.src = this.previewUrl;
-    this._setStatus("PREVIEW READY // VALID FORMAT");
+    const onLoad = () => {
+      if (!this.previewUrl) return;
+      this.previewDimensions = {
+        width: this.lightImage.naturalWidth || 0,
+        height: this.lightImage.naturalHeight || 0
+      };
+      this.previewState = "LOADED";
+      this._setStatus(
+        "PREVIEW LOADED // " +
+        this.previewDimensions.width + " × " + this.previewDimensions.height +
+        " // LOCAL ART // DRAFT ONLY"
+      );
+    };
+    this.lightImage.onload = onLoad;
+    this.lightImage.onerror = () => {
+      this.previewState = "ERROR";
+      this._setStatus("PREVIEW FAILED // SOURCE FILE NOT READ");
+    };
   }
 
-  _clearPreview() {
+  _resetLocalSelection() {
     revoke(this.previewUrl);
     this.previewUrl = "";
     this.selectedFile = null;
+    this.previewState = "NOT_LOADED";
+    this.previewDimensions = null;
     if (this.lightImage) this.lightImage.removeAttribute("src");
     if (this.darkImage) this.darkImage.removeAttribute("src");
   }
