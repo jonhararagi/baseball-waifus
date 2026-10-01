@@ -13,13 +13,18 @@ export class NarrativePresentation {
     root = null,
     voiceSystem = null,
     reactionRules = new ReactionRuleSystem(),
-    character = { character_id: "azusa", canonical: { display_name: "Azusa" } }
+    character = { character_id: "azusa", canonical: { display_name: "Azusa" } },
+    onComplete = null,
+    onExit = null
   } = {}) {
     this.root = root;
     this.voiceSystem = voiceSystem;
     this.reactionRules = reactionRules;
     this.character = character;
+    this.onComplete = typeof onComplete === "function" ? onComplete : null;
+    this.onExit = typeof onExit === "function" ? onExit : null;
     this.reactionMessage = "";
+    this._completionNotified = false;
     this.runtime = new NarrativeRuntime({
       onEvent: (event) => this._handleEvent(event)
     });
@@ -36,7 +41,7 @@ export class NarrativePresentation {
 
     const eyebrow = document.createElement("div");
     eyebrow.className = "narrative-test-eyebrow";
-    eyebrow.textContent = "NARRATIVE RUNTIME // VERTICAL SLICE";
+    eyebrow.textContent = "CHARACTER STORY // ARC 0";
 
     const speaker = document.createElement("div");
     speaker.className = "narrative-test-speaker";
@@ -67,17 +72,29 @@ export class NarrativePresentation {
     skipButton.textContent = "SKIP";
     skipButton.addEventListener("click", () => this.skip());
 
-    controls.append(advanceButton, skipButton);
+    const returnButton = document.createElement("button");
+    returnButton.type = "button";
+    returnButton.className = "action-button action-secondary";
+    returnButton.textContent = "RETURN TO CHARACTER";
+    returnButton.addEventListener("click", () => this.exit());
+
+    controls.append(advanceButton, skipButton, returnButton);
     panel.append(eyebrow, speaker, text, reaction, status, controls);
     this.root.appendChild(panel);
 
-    this.elements = { speaker, text, status, reaction, advanceButton, skipButton };
+    this.elements = { speaker, text, status, reaction, advanceButton, skipButton, returnButton };
     this._render();
     return this;
   }
 
+  setCharacter(character = null) {
+    if (character && typeof character === "object") this.character = character;
+    return this.character;
+  }
+
   start(scene) {
     this.reactionMessage = "";
+    this._completionNotified = false;
     const activeScene = scene?.scene_id === "narrative-runtime-vertical-slice"
       ? ARC0_PROLOGUE_TEAM11
       : scene;
@@ -92,7 +109,22 @@ export class NarrativePresentation {
     return this.runtime.skip();
   }
 
+  close() {
+    if (this.root) this.root.hidden = true;
+    return this;
+  }
+
+  exit() {
+    this.close();
+    this.onExit?.({ character: this.character, state: this.runtime.getState() });
+    return this.runtime.getState();
+  }
+
   _handleEvent(event) {
+    if (event.type === NARRATIVE_EVENT.SCENE_COMPLETED && !this._completionNotified) {
+      this._completionNotified = true;
+      this.onComplete?.({ character: this.character, scene: this.runtime.scene, state: this.runtime.getState() });
+    }
     if (event.type === NARRATIVE_EVENT.SKIP) {
       const characterId = String(
         event.line?.character_id
@@ -141,6 +173,9 @@ export class NarrativePresentation {
     }
     if (this.elements.skipButton) {
       this.elements.skipButton.disabled = state.finished;
+    }
+    if (this.elements.returnButton) {
+      this.elements.returnButton.disabled = false;
     }
   }
 }
