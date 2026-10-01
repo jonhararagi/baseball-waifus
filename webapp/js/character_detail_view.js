@@ -104,6 +104,14 @@ export function buildCharacterDetailViewModel({
       quantity,
       isActive: active
     },
+    story: storyEntry ? {
+      id: cleanText(storyEntry.id, "character-story"),
+      label: cleanText(storyEntry.label, "STORY"),
+      title: cleanText(storyEntry.title, "CHARACTER STORY"),
+      status: cleanText(storyEntry.status, "AVAILABLE"),
+      hook: cleanText(storyEntry.hook),
+      sceneId: cleanText(storyEntry.sceneId)
+    } : null,
     resources: {
       scrap: Math.max(0, safeInteger(currencies?.scrap, 0)),
       fragments: Math.max(0, safeInteger(currencies?.fragments, 0))
@@ -131,6 +139,8 @@ export class CharacterDetailView {
     getCurrencies = () => ({ scrap: 0, fragments: 0 }),
     canUpgrade = () => false,
     getUpgradeCost = () => null,
+    getStoryEntry = () => null,
+    onStory = null,
     onUpgrade = null,
     onUse = null,
     onClose = null
@@ -144,6 +154,8 @@ export class CharacterDetailView {
       getCurrencies,
       canUpgrade,
       getUpgradeCost,
+      getStoryEntry,
+      onStory,
       onUpgrade,
       onUse,
       onClose
@@ -163,6 +175,9 @@ export class CharacterDetailView {
       });
       this.root.querySelector?.("#character-detail-use")?.addEventListener("click", () => {
         this.onUse?.(this.characterId);
+      });
+      this.root.querySelector?.("#character-detail-story-open")?.addEventListener("click", () => {
+        if (this.model?.story && this.model.unlocked) this.onStory?.(this.characterId, this.model.story);
       });
       this.root.addEventListener?.("click", (event) => {
         if (event.target === this.root) this.close();
@@ -196,6 +211,7 @@ export class CharacterDetailView {
     const character = this.getCharacter?.(id);
     const progression = this.getProgression?.(id);
     const upgradeCost = progression ? this.getUpgradeCost?.(id) : null;
+    const storyEntry = this.getStoryEntry?.(id) || null;
 
     return buildCharacterDetailViewModel({
       character,
@@ -204,7 +220,8 @@ export class CharacterDetailView {
       roster: this.getRoster?.(),
       currencies: this.getCurrencies?.(),
       canUpgrade: this.canUpgrade?.(id),
-      upgradeCost
+      upgradeCost,
+      storyEntry
     });
   }
 
@@ -241,12 +258,20 @@ export class CharacterDetailView {
     const storyBlock = this.root.querySelector?.("#character-detail-story");
     const storyStatus = this.root.querySelector?.("#character-detail-story-status");
     const storyHook = this.root.querySelector?.("#character-detail-story-hook");
-    if (storyStatus) storyStatus.textContent = model.identity.storyStatus;
+    const storyButton = this.root.querySelector?.("#character-detail-story-open");
+    const story = model.story;
+    if (storyStatus) storyStatus.textContent = story?.status || model.identity.storyStatus;
     if (storyHook) {
-      storyHook.textContent = model.identity.storyHook || "NO STORY HOOK REGISTERED";
-      storyHook.hidden = !model.identity.storyHook;
+      storyHook.textContent = story?.hook || model.identity.storyHook || "NO STORY CONTENT REGISTERED";
+      storyHook.hidden = !story?.hook && !model.identity.storyHook;
     }
-    if (storyBlock) storyBlock.hidden = false;
+    if (storyBlock) storyBlock.hidden = !story;
+    if (storyButton) {
+      storyButton.hidden = !story;
+      storyButton.disabled = Boolean(story && !model.unlocked);
+      storyButton.textContent = model.unlocked ? (story ? "OPEN STORY // " + story.title : "STORY") : "RECRUIT TO UNLOCK STORY";
+      storyButton.title = story?.label || "";
+    }
 
     const tags = this.root.querySelector?.("#character-detail-style-tags");
     if (tags) {
