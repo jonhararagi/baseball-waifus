@@ -284,6 +284,7 @@ jobs:
         env:
           T072_SITE_DIR: site
           T072_EVIDENCE_DIR: browser-evidence/T073/${{ github.sha }}/${{ github.run_id }}
+          T073_EVIDENCE_DIR: browser-evidence/T073/${{ github.sha }}/${{ github.run_id }}
           T073_PRESENTATION: "1"
         run: |
           set -euo pipefail
