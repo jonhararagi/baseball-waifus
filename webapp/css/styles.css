@@ -79,6 +79,12 @@ button {
   z-index: 10;
 }
 
+/* Keep the internal admin trigger clickable above the Character Detail modal. */
+.character-detail-view.is-open ~ .cyber-header,
+.cyber-container:has(.character-detail-view.is-open) .cyber-header {
+  z-index: 280;
+}
+
 .brand-badge {
   display: flex;
   align-items: center;
@@ -832,7 +838,7 @@ button {
 .admin-modal-overlay:not([hidden]) {
   position: fixed;
   inset: 0;
-  z-index: 120;
+  z-index: 500;
   display: grid;
   place-items: center;
   padding: 16px;
