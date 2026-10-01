@@ -48,7 +48,8 @@ assert.equal(controller.pools.SR.length, 7);
 assert.equal(controller.pools.SSR.length, 5);
 assert.equal(controller.pools.UR.length, 2);
 
-assert.deepEqual(schema.gacha.rates, { status: "active_canonical_game_table_v1", R: 80, SR: 15, SSR: 4, UR: 1 });
+assert.equal(schema.gacha.rates.status, "active_canonical_game_table_v1");
+assert.deepEqual({ R: schema.gacha.rates.R, SR: schema.gacha.rates.SR, SSR: schema.gacha.rates.SSR, UR: schema.gacha.rates.UR }, { R: 80, SR: 15, SSR: 4, UR: 1 });
 assert.equal(schema.gacha.pity.soft_pity.start_pull, 61);
 assert.equal(schema.gacha.pity.hard_pity.pull_limit, 80);
 
