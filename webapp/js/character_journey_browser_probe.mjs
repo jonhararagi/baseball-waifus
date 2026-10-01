@@ -312,7 +312,7 @@ async function run() {
     })()`);
 
     requireCondition(initialRuntime?.state?.active_batter === "bw001", "active batter is not bw001", initialRuntime);
-    requireCondition(Number(initialRuntime?.state?.inventory?.bw001?.quantity) === 1, "Aiko starter quantity is not 1", initialRuntime);
+    requireCondition(Boolean(initialRuntime?.state?.inventory?.bw001) && Number(initialRuntime?.state?.inventory?.bw001?.duplicate_count) === 1, "Aiko starter ownership entry is invalid", initialRuntime);
     requireCondition(initialRuntime?.aiko?.canonical?.display_name === "Aiko Hanamori", "canonical Aiko name mismatch", initialRuntime?.aiko);
     requireCondition(initialRuntime?.aiko?.acquisition?.mode === "STARTER", "Aiko acquisition mode is not STARTER", initialRuntime?.aiko);
     requireCondition(initialRuntime?.aiko?.acquisition?.pool_eligible === false, "Aiko is still Gacha eligible", initialRuntime?.aiko);
@@ -413,13 +413,13 @@ async function run() {
         storyStatus,
         meta: {
           active: state?.active_batter || null,
-          quantity: Number(state?.inventory?.bw001?.quantity || 0)
+          owned: Boolean(state?.inventory?.bw001), duplicateCount: Number(state?.inventory?.bw001?.duplicate_count || 0)
         },
         storageKeys: Object.keys(localStorage).filter((key) => key.startsWith("baseball_waifus_player_meta_v1:"))
       };
     })()`);
     requireCondition(postCompletion.meta.active === "bw001", "active batter changed after story completion", postCompletion);
-    requireCondition(postCompletion.meta.quantity === 1, "Aiko ownership changed after story completion", postCompletion);
+    requireCondition(postCompletion.meta.owned && postCompletion.meta.duplicateCount === 1, "Aiko ownership changed after story completion", postCompletion);
     requireCondition(postCompletion.context.includes("STORY COMPLETE"), "relationship context did not mark Story Complete", postCompletion);
 
     const voiceRequests = network.requests.filter((item) =>
