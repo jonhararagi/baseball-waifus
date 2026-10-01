@@ -181,7 +181,7 @@ export class CharacterDetailView {
     this.characterId = id;
     this.root?.removeAttribute("hidden");
     this.refresh();
-    requestAnimationFrame?.(() => this.root?.classList.add("is-open"));
+    globalThis.requestAnimationFrame?.(() => this.root?.classList.add("is-open"));
     return this.model;
   }
 
