@@ -65,11 +65,11 @@ export class GachaController extends LegacyGachaController {
     // as the migration source, before the legacy runtime can mirror it into
     // another persistence surface. A persisted Player Meta snapshot always wins.
     // The captured snapshot is the only legacy CloudStorage input to migration.
-    const legacyCloudState = hasModernState
+    const legacyCloudState = hadModernState
       ? null
       : await readLegacyGachaCloudState(legacyCloudStorage);
 
-    if (hasModernState) {
+    if (hadModernState) {
       this.storage = null;
       this.cloudStorage = null;
     } else {
