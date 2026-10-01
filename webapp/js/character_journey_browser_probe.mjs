@@ -361,6 +361,23 @@ async function run() {
     requireCondition(detail.storyVisible, "Aiko Story button is not available", detail);
     screenshots.detail = await screenshot(cdp, "02-character-detail-aiko");
 
+    const assetPresentation = await cdpEvaluate(cdp, `(() => {
+      const art = document.querySelector("#character-detail-art");
+      const hero = document.querySelector("#character-detail-hero-presentation");
+      const victory = document.querySelector("#character-detail-victory-art");
+      return {
+        cardPath: art?.getAttribute("src") || "",
+        cardLoaded: Boolean(art?.complete && art?.naturalWidth > 0),
+        heroPath: hero?.getAttribute("src") || "",
+        heroLoaded: Boolean(hero?.complete && hero?.naturalWidth > 0),
+        victoryPath: victory?.getAttribute("src") || "",
+        victoryLoaded: Boolean(victory?.complete && victory?.naturalWidth > 0)
+      };
+    })()`);
+    requireCondition(assetPresentation.cardPath.includes("/assets/production/cards/bw001--normal.svg"), "Aiko Character Detail card asset path mismatch", assetPresentation);
+    requireCondition(assetPresentation.cardLoaded, "Aiko Character Detail card asset did not load", assetPresentation);
+    requireCondition(assetPresentation.heroLoaded && assetPresentation.victoryLoaded, "Aiko Character Detail presentation assets did not load", assetPresentation);
+
     const binding = await cdpEvaluate(cdp, `import("./js/character_story_bindings.js").then((m) => m.getCharacterStoryBinding("bw001"))`);
     requireCondition(binding?.id === "bw001-story-arc0", "Aiko story binding ID mismatch", binding);
     requireCondition(binding?.sceneId === "arc0-team11-recruitment", "Aiko story scene mismatch", binding);
@@ -390,30 +407,6 @@ async function run() {
     requireCondition(story.text.startsWith("Si este es el punto de reunión del Equipo 11"), "ARC0 first line mismatch", story);
     requireCondition(story.controls.includes("ADVANCE") && story.controls.includes("SKIP"), "Narrative controls missing", story);
     screenshots.story = await screenshot(cdp, "03-story-arc0-aiko");
-
-    await cdpClickText(cdp, ".narrative-test-controls button", "SKIP");
-
-    await waitFor(
-      async () => cdpEvaluate(cdp, `(() => {
-        const root = document.querySelector("#character-detail-view");
-        const context = document.querySelector("#character-detail-relationship-context")?.textContent?.trim() || "";
-        return Boolean(root && !root.hidden && context.includes("STORY SEEN"));
-      })()`),
-      { label: "SKIP reaction return to Character Detail" }
-    );
-
-    const reactionEvidence = (() => {
-      const voiceRequests = network.requests.filter((item) => item.url.includes("/assets/audio/voices/bw001/REACTION_SKIP.mp3"));
-      const voiceResponses = network.responses.filter((item) => item.url.includes("/assets/audio/voices/bw001/REACTION_SKIP.mp3"));
-      requireCondition(voiceRequests.length > 0, "browser did not request Aiko REACTION_SKIP voice URL");
-      return { requestCount: voiceRequests.length, responses: voiceResponses, voiceUrl: voiceRequests[0].url };
-    })();
-
-    await cdpClickSelector(cdp, "#character-detail-story-open");
-    await waitFor(
-      async () => cdpEvaluate(cdp, `(() => Boolean(document.querySelector("#narrative-test-view") && !document.querySelector("#narrative-test-view").hidden))()`),
-      { label: "ARC0 replay after reaction proof" }
-    );
 
     let completed = false;
     for (let attempt = 0; attempt < 40; attempt += 1) {
@@ -455,18 +448,37 @@ async function run() {
       { label: "Aiko Locker" }
     );
 
+    const rapportBeforeReaction = await cdpEvaluate(cdp, `() => document.querySelector("#locker-rapport")?.textContent?.trim() || ""`);
     const locker = await cdpEvaluate(cdp, `(() => ({
       visible: !document.querySelector("#locker-view")?.hidden,
       name: document.querySelector("#locker-waifu-name")?.textContent?.trim(),
       rapport: document.querySelector("#locker-rapport")?.textContent?.trim(),
       activeId: window.BaseballWaifusGacha?.getActiveBatter?.() || null,
       canvas: Boolean(document.querySelector("#locker-canvas")),
+      imageCount: document.querySelectorAll("#locker-view img").length,
       returnVisible: Boolean(document.querySelector("#locker-character-detail"))
     }))()`);
     requireCondition(locker.visible, "Locker is not visible", locker);
     requireCondition(locker.name === "WAIFU // Aiko Hanamori", "Locker character identity mismatch", locker);
     requireCondition(locker.rapport === "RAPPORT // 1/10", "fresh rapport changed unexpectedly", locker);
     requireCondition(locker.activeId === "bw001", "Locker active character is not bw001", locker);
+    requireCondition(locker.canvas, "Locker procedural canvas is missing", locker);
+    requireCondition(locker.imageCount === 0, "Locker unexpectedly contains a character image asset", locker);
+
+    await waitFor(
+      async () => network.requests.some((item) => item.url.includes("/assets/audio/voices/bw001/REACTION_INACTIVITY.mp3")),
+      { timeoutMs: 12000, label: "Aiko Locker inactivity reaction voice hook" }
+    );
+
+    const reactionEvidence = (() => {
+      const voiceRequests = network.requests.filter((item) => item.url.includes("/assets/audio/voices/bw001/REACTION_INACTIVITY.mp3"));
+      const voiceResponses = network.responses.filter((item) => item.url.includes("/assets/audio/voices/bw001/REACTION_INACTIVITY.mp3"));
+      requireCondition(voiceRequests.length > 0, "browser did not request Aiko Locker REACTION_INACTIVITY voice URL");
+      return { requestCount: voiceRequests.length, responses: voiceResponses, voiceUrl: voiceRequests[0].url };
+    })();
+
+    const rapportAfterReaction = await cdpEvaluate(cdp, `() => document.querySelector("#locker-rapport")?.textContent?.trim() || ""`);
+    requireCondition(rapportAfterReaction === rapportBeforeReaction, "Locker reaction changed rapport unexpectedly", { before: rapportBeforeReaction, after: rapportAfterReaction });
     screenshots.locker = await screenshot(cdp, "04-locker-aiko");
 
     await cdpClickSelector(cdp, "#locker-character-detail");
@@ -550,6 +562,7 @@ async function run() {
       locker,
       returnDetail,
       finalHome,
+      assetPresentation,
       screenshots,
       consoleErrors: consoleErrors.map((entry) => ({
         text: entry.text,

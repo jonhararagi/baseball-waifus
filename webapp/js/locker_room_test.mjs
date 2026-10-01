@@ -91,6 +91,7 @@ const activityProbe = new LockerRoom({
   }
 });
 activityProbe.setActiveWaifu(waifu);
+activityProbe.root = { hidden: false };
 activityProbe.update(4);
 activityProbe.setActiveWaifu(waifu);
 assert.equal(activityProbe.inactivityDetector.getElapsedSeconds(), 4);
