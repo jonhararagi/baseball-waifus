@@ -209,8 +209,22 @@ async function screenshot(cdp, name) {
   return output;
 }
 
+async function findFreePort() {
+  const probe = createServer();
+  await new Promise((resolvePromise, reject) => {
+    probe.once("error", reject);
+    probe.listen(0, "127.0.0.1", resolvePromise);
+  });
+  const address = probe.address();
+  const port = address && typeof address === "object" ? address.port : null;
+  await new Promise((resolvePromise) => probe.close(resolvePromise));
+  requireCondition(port, "unable to allocate a browser debugging port");
+  return port;
+}
+
 async function run() {
   requireCondition(BROWSER_BIN, "BROWSER_BIN not set");
+  const debugPort = await findFreePort();
   const { server, baseUrl } = await startStaticServer(SITE_DIR);
   let browser = null;
   let cdp = null;
@@ -231,13 +245,13 @@ async function run() {
       "--disable-sync",
       "--remote-allow-origins=*",
       "--remote-debugging-address=127.0.0.1",
-      "--remote-debugging-port=9222",
+      "--remote-debugging-port=" + String(debugPort),
       "--user-data-dir=" + mkdtempSync(join(tmpdir(), "t072-chrome-")),
       "about:blank"
     ], { stdio: "ignore" });
 
-    const version = await waitForJson("http://127.0.0.1:9222/json/version");
-    const targets = await waitForJson("http://127.0.0.1:9222/json/list");
+    const version = await waitForJson("http://127.0.0.1:" + debugPort + "/json/version");
+    const targets = await waitForJson("http://127.0.0.1:" + debugPort + "/json/list");
     const page = targets.find((item) => item.type === "page") || targets[0];
     requireCondition(version?.webSocketDebuggerUrl, "Chrome version endpoint missing");
     requireCondition(page?.webSocketDebuggerUrl, "Chrome page target missing websocket URL");
