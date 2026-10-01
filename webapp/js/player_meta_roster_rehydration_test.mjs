@@ -12,10 +12,31 @@ class MemoryStorage {
   removeItem(key) { this.data.delete(key); }
 }
 
+// Keep the rehydration fixture aligned with the production Gacha contract.
+// The first three seeded rolls remain R so the deterministic roster assertions below stay unchanged.
 const schema = {
   gacha: {
-    rates: { status: "active_canonical_game_table_v1", R: 100 },
-    pity: { model: "per_banner_counter", soft_pity: { enabled: false }, hard_pity: { enabled: true, pull_limit: 80 } }
+    rates: {
+      status: "active_canonical_game_table_v1",
+      unit: "percent",
+      R: 80,
+      SR: 15,
+      SSR: 4,
+      UR: 1
+    },
+    pity: {
+      model: "per_banner_counter",
+      soft_pity: {
+        enabled: true,
+        start_pull: 61,
+        increment_per_pull_percent: 0.5
+      },
+      hard_pity: {
+        enabled: true,
+        pull_limit: 80,
+        guaranteed_rarity: "UR"
+      }
+    }
   }
 };
 
@@ -23,7 +44,10 @@ const queue = {
   batch_units: [
     { character_id: "bw001", canonical: { display_name: "Aiko", rarity: "R" } },
     { character_id: "bw003", canonical: { display_name: "Miu", rarity: "R" } },
-    { character_id: "bw008", canonical: { display_name: "Nao", rarity: "R" } }
+    { character_id: "bw008", canonical: { display_name: "Nao", rarity: "R" } },
+    { character_id: "bw-rehydration-sr", canonical: { display_name: "Test SR", rarity: "SR" } },
+    { character_id: "bw-rehydration-ssr", canonical: { display_name: "Test SSR", rarity: "SSR" } },
+    { character_id: "bw-rehydration-ur", canonical: { display_name: "Test UR", rarity: "UR" } }
   ]
 };
 
