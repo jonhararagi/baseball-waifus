@@ -78,6 +78,8 @@ The modern startup rule is:
 ```text
 LEGACY CLOUD STORAGE
         ↓
+read legacy snapshot once
+        ↓
 validate / normalize
         ↓
 PlayerMetaAuthority
@@ -87,7 +89,11 @@ PlayerMetaPersistenceAdapter
 modern Gacha reads Player Meta
 ```
 
-If Player Meta already has persisted state for the player, that state has precedence and legacy CloudStorage is not rehydrated into the modern runtime. If Player Meta is absent, the legacy Gacha snapshot may be migrated once. Legacy pity is normalized into the valid Player Meta range `0..79`; invalid or non-numeric values resolve to the canonical default `0` rather than creating a new authority.
+If Player Meta already has persisted state for the player, that state has precedence and legacy CloudStorage is not rehydrated into the modern runtime. If Player Meta is absent, GachaController reads the legacy CloudStorage snapshot explicitly before initializing the legacy runtime, then passes that snapshot directly to the Player Meta migration boundary. This prevents migration correctness from depending on the legacy runtime's mutable read-model state. Legacy local Gacha storage remains only as a fallback source when CloudStorage is unavailable.
+
+The T063A.3 regression fixed the real CI failure where legacy pulls_since_UR = 7 reached the modern state as 0. The root cause was the previous initialization path coupling legacy CloudStorage restoration to the runtime before migration. The corrected path captures the legacy CloudStorage source first and migrates that exact snapshot through PlayerMetaAuthority.
+
+Legacy pity is normalized into the valid Player Meta range `0..79`; invalid or non-numeric values resolve to the canonical default `0` rather than creating a new authority.
 
 Player Meta persistence is keyed by the stable player identity:
 
@@ -154,8 +160,10 @@ T061 uses immutable domain events as a transport boundary. Events carry already-
 
 - **RESOLVED:** the historical Gacha test was seeding pity by mutating the legacy runtime state object after Player Meta became authoritative. The test now seeds pity through `PlayerMetaAuthority`, preserving the canonical pull-61/pull-80 contract.
 - **RESOLVED:** legacy Telegram CloudStorage state is migrated only when Player Meta has no persisted state for that player.
+- **RESOLVED:** T063A.3 captures the legacy CloudStorage snapshot before legacy runtime initialization and passes that snapshot directly into the Player Meta migration boundary.
 - **RESOLVED:** when modern Player Meta exists, Gacha initialization does not rehydrate legacy local/CloudStorage state first.
 - **RESOLVED:** duplicate migration calls are idempotent, invalid legacy pity is normalized, and persistence remains player-isolated.
+- **IMPLEMENTED / DEFERRED:** the separate canonical-rate activation failure in gacha_controller_runtime.js remains outside T063A.3 and is reserved for T063A.4.
 
 ## Contradictions / deferred work
 
