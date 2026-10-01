@@ -213,6 +213,7 @@ jobs:
           set -euo pipefail
           node --experimental-default-type=module webapp/js/contract_test.mjs
           node --experimental-default-type=module webapp/js/pwa_sw_test.mjs
+          node --experimental-default-type=module webapp/js/save_system_test.mjs
           node --experimental-default-type=module webapp/js/e2e_smoke_test.mjs
 
       - name: Prepare static site
