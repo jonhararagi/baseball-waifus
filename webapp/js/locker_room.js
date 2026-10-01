@@ -1,3 +1,4 @@
+import { getCharacterArtBinding, isApprovedArtBinding } from "./character_art_registry.js";
 import { InactivitySignalDetector, REACTION_SIGNAL, ReactionRuleSystem } from "./reaction_rules.js";
 const RAPPORT_MIN = 1;
 const RAPPORT_MAX = 10;
@@ -144,12 +145,16 @@ export class LockerRoom {
     saveSystem = null,
     voiceSystem = null,
     getWaifu = null,
-    onChange = null
+    onChange = null,
+    getArtBinding = null
   } = {}) {
     this.saveSystem = saveSystem;
     this.voiceSystem = voiceSystem;
     this.getWaifu = getWaifu;
     this.onChange = onChange;
+    this.getArtBinding = typeof getArtBinding === "function" ? getArtBinding : (id) => getCharacterArtBinding(id);
+    this.characterArtImage = null;
+    this.characterArtPath = "";
     this.state = normalizePersistence({});
     this.canvas = null;
     this.root = null;
@@ -214,8 +219,39 @@ export class LockerRoom {
       this.presentationAssetUrl = "";
     }
     this._ensureWaifu(id);
+    this._refreshCharacterArt(id);
     this._render();
     return this.getState();
+  }
+
+  setArtBindingResolver(getArtBinding = null) {
+    this.getArtBinding = typeof getArtBinding === "function" ? getArtBinding : (id) => getCharacterArtBinding(id);
+    this._refreshCharacterArt(this.state.activeWaifuId);
+    return this;
+  }
+
+  _refreshCharacterArt(id = this.state.activeWaifuId) {
+    this.characterArtImage = null;
+    this.characterArtPath = "";
+    const binding = this.getArtBinding?.(id);
+    if (!isApprovedArtBinding(binding) || typeof Image === "undefined") return;
+    const image = new Image();
+    image.decoding = "async";
+    image.onload = () => {
+      if (this.state.activeWaifuId === id) {
+        this.characterArtImage = image;
+        this.characterArtPath = String(binding.runtime_path);
+        this._render();
+      }
+    };
+    image.onerror = () => {
+      if (this.state.activeWaifuId === id) {
+        this.characterArtImage = null;
+        this.characterArtPath = "";
+        this._render();
+      }
+    };
+    image.src = String(binding.runtime_path);
   }
 
   getActiveWaifuId() {
@@ -529,6 +565,19 @@ export class LockerRoom {
     ctx.globalAlpha = 1;
 
     const glow = 18 + this.tapPulse * 20;
+    if (this.characterArtImage?.complete && this.characterArtImage.naturalWidth > 0) {
+      const maxWidth = w * 0.86;
+      const maxHeight = h * 0.78;
+      const ratio = Math.min(maxWidth / this.characterArtImage.naturalWidth, maxHeight / this.characterArtImage.naturalHeight);
+      const drawWidth = this.characterArtImage.naturalWidth * ratio;
+      const drawHeight = this.characterArtImage.naturalHeight * ratio;
+      ctx.save();
+      ctx.globalAlpha = 1;
+      ctx.shadowColor = "rgba(0,243,255,.42)";
+      ctx.shadowBlur = 24 + this.tapPulse * 14;
+      ctx.drawImage(this.characterArtImage, (w - drawWidth) * 0.5, h * 0.12, drawWidth, drawHeight);
+      ctx.restore();
+    }
     const centerX = w * 0.5;
     const centerY = h * 0.52;
     const scale = Math.min(w, h) / 360;
