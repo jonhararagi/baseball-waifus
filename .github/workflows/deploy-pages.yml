@@ -10,6 +10,7 @@ on:
       - "webapp/**"
       - "data/game_schemas_recycled.json"
       - "assets/production/**"
+      - "assets/characters/approved/**"
       - ".github/workflows/deploy-pages.yml"
   workflow_dispatch:
 
@@ -136,6 +137,8 @@ jobs:
           test -s data/game_schemas_recycled.json
           test -d assets/production/sprites
           test -d assets/production/cards
+          test -s assets/characters/approved/manifest.json
+          python3 -c 'import json; from pathlib import Path; from PIL import Image; m=json.loads(Path("assets/characters/approved/manifest.json").read_text()); assert m.get("status_contract")==["MISSING","DRAFT","PROCESSED","APPROVED"]; [(lambda cid,e,p: (_ for _ in ()).throw(AssertionError("Missing project art: "+cid+" -> "+str(p))) if not p.is_file() or p.stat().st_size == 0 else None)(cid,e,Path(e["runtime_path"].removeprefix("./"))) for cid,e in m.get("assets",{}).items() if e.get("status") in {"PROCESSED","APPROVED"}]; [(lambda cid,e,p: (_ for _ in ()).throw(AssertionError("Dimension mismatch: "+cid)) if (e.get("width") and e.get("height") and (Image.open(p).size[0] != int(e["width"]) or Image.open(p).size[1] != int(e["height"]))) else None)(cid,e,Path(e["runtime_path"].removeprefix("./"))) for cid,e in m.get("assets",{}).items() if e.get("status") in {"PROCESSED","APPROVED"}]'
           test -s assets/production/cards/bw001--normal.jpg
           test -s assets/production/cards/bw002--normal.jpg
           test -s assets/production/sprites/bw001_idle.png
@@ -230,6 +233,8 @@ jobs:
           cp -R webapp/. site/
           mkdir -p site/assets/characters/expressions
           cp -R assets/characters/expressions/. site/assets/characters/expressions/
+          mkdir -p site/assets/characters/approved
+          cp -R assets/characters/approved/. site/assets/characters/approved/
           mkdir -p site/data
           cp data/game_schemas_recycled.json site/data/game_schemas_recycled.json
           cp data/characters_queue.json site/data/characters_queue.json
@@ -320,6 +325,7 @@ jobs:
         run: |
           set -euo pipefail
           node --experimental-default-type=module webapp/js/character_art_registry_test.mjs
+          node --experimental-default-type=module --check webapp/js/art_panel.js
           node --experimental-default-type=module webapp/js/locker_room_test.mjs
           node --experimental-default-type=module webapp/js/reaction_rules_test.mjs
           node --experimental-default-type=module webapp/js/voice_system_test.mjs
@@ -337,6 +343,41 @@ jobs:
         with:
           name: t073-browser-evidence-${{ github.sha }}-${{ github.run_id }}
           path: browser-evidence/T073/${{ github.sha }}/${{ github.run_id }}/
+          if-no-files-found: warn
+
+      - name: T074 Character Art Production Browser QA
+        shell: bash
+        env:
+          T072_SITE_DIR: site
+          T072_EVIDENCE_DIR: browser-evidence/T074/${{ github.sha }}/${{ github.run_id }}
+          T074_ART: "1"
+        run: |
+          set -euo pipefail
+          mkdir -p "$T072_EVIDENCE_DIR"
+
+          BROWSER_BIN=""
+          for candidate in google-chrome chromium chromium-browser; do
+            if command -v "$candidate" >/dev/null 2>&1; then
+              BROWSER_BIN="$(command -v "$candidate")"
+              break
+            fi
+          done
+
+          if [ -z "$BROWSER_BIN" ]; then
+            echo "BROWSER AUTOMATION = NOT_RUN // no supported Chrome/Chromium binary on runner"
+            printf '%s\n' '{"task":"T074","browser_automation":"NOT_RUN","reason":"No supported Chrome/Chromium binary on runner"}' > "$T072_EVIDENCE_DIR/t074-browser-not-run.json"
+            exit 0
+          fi
+
+          echo "BROWSER_BIN = $BROWSER_BIN"
+          BROWSER_BIN="$BROWSER_BIN" node webapp/js/character_journey_browser_probe.mjs
+
+      - name: Upload T074 browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: t074-browser-evidence-${{ github.sha }}-${{ github.run_id }}
+          path: browser-evidence/T074/${{ github.sha }}/${{ github.run_id }}/
           if-no-files-found: warn
 
       - name: Configure GitHub Pages
