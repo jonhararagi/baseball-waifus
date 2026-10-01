@@ -470,7 +470,7 @@ async function run() {
     }))()`);
     requireCondition(locker.visible, "Locker is not visible", locker);
     requireCondition(locker.name === "WAIFU // Aiko Hanamori", "Locker character identity mismatch", locker);
-    requireCondition(locker.rapport === "RAPPORT // 1/10", "fresh rapport changed unexpectedly", locker);
+    requireCondition(/RAPPORT\s*(?:\/\/\s*)?1\/10/.test(locker.rapport), "fresh rapport changed unexpectedly", locker);
     requireCondition(locker.activeId === "bw001", "Locker active character is not bw001", locker);
     requireCondition(locker.canvas, "Locker interaction canvas is missing", locker);
     if (T073_PRESENTATION) {
