@@ -44,7 +44,8 @@ export function buildCharacterDetailViewModel({
   roster = null,
   currencies = null,
   canUpgrade = false,
-  upgradeCost = null
+  upgradeCost = null,
+  storyEntry = null
 } = {}) {
   if (!character?.character_id) return null;
 
