@@ -21,6 +21,7 @@ class FakeElement {
   setAttribute(name) { if (name === "hidden") this.hidden = true; }
   replaceChildren(...children) { this.childNodes = [...children]; }
   appendChild(child) { this.childNodes.push(child); return child; }
+  append(...children) { this.childNodes.push(...children); }
 }
 class FakeRoot extends FakeElement {
   constructor() {
@@ -33,6 +34,8 @@ class FakeRoot extends FakeElement {
     return this.elements.get(selector);
   }
 }
+
+globalThis.document = { createElement: () => new FakeElement() };
 
 const aiko = {
   character_id: "bw001",
