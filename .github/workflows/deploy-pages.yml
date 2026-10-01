@@ -272,6 +272,45 @@ jobs:
           print(json.dumps(manifest, ensure_ascii=False, indent=2))
           PY
 
+      - name: Setup Node.js 22 for Browser QA
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: T072 Character Journey Browser QA
+        shell: bash
+        env:
+          T072_SITE_DIR: site
+          T072_EVIDENCE_DIR: browser-evidence/T072/${{ github.sha }}/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$T072_EVIDENCE_DIR"
+
+          BROWSER_BIN=""
+          for candidate in google-chrome chromium chromium-browser; do
+            if command -v "$candidate" >/dev/null 2>&1; then
+              BROWSER_BIN="$(command -v "$candidate")"
+              break
+            fi
+          done
+
+          if [ -z "$BROWSER_BIN" ]; then
+            echo "BROWSER AUTOMATION = NOT_RUN // no supported Chrome/Chromium binary on runner"
+            printf '%s\n' '{"task":"T072","browser_automation":"NOT_RUN","reason":"No supported Chrome/Chromium binary on runner"}' > "$T072_EVIDENCE_DIR/t072-browser-not-run.json"
+            exit 0
+          fi
+
+          echo "BROWSER_BIN = $BROWSER_BIN"
+          BROWSER_BIN="$BROWSER_BIN" node webapp/js/character_journey_browser_probe.mjs
+
+      - name: Upload T072 browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: t072-browser-evidence-${{ github.sha }}-${{ github.run_id }}
+          path: browser-evidence/T072/${{ github.sha }}/${{ github.run_id }}/
+          if-no-files-found: warn
+
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
