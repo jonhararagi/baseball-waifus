@@ -184,7 +184,7 @@ export class WaifuDex {
     image.alt = unlocked ? String(canonical.display_name || id) + " portrait" : "";
     image.loading = "lazy";
     image.decoding = "async";
-    image.src = "./assets/production/cards/" + id + "--normal.jpg";
+    image.src=id==="bw001"?"./assets/production/cards/bw001--normal.svg":String(canonical.visual?.card_hd_url||canonical.visual?.card_url||canonical.visual?.avatar_url||"");
     if (!unlocked) image.classList.add("dex-locked-art");
     artWrap.appendChild(image);
     artWrap.addEventListener("click", () => this.onInspect?.(unit));

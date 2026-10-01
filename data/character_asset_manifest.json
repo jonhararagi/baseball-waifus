@@ -2,18 +2,127 @@
   "schema_version": 1,
   "manifest_id": "basewarriors-character-assets",
   "source_of_truth": "game/characters/character_archetypes.json",
-  "asset_statuses": ["MISSING", "DRAFT", "READY", "VALIDATED"],
+  "asset_statuses": [
+    "MISSING",
+    "DRAFT",
+    "READY",
+    "VALIDATED"
+  ],
   "asset_types": {
-    "portrait": {"format": ["svg", "png"], "runtime": true, "dimensions": {"min_width": 256, "min_height": 256}},
-    "card": {"format": ["svg", "png", "jpg"], "runtime": true, "dimensions": {"min_width": 512, "min_height": 512}},
-    "battle_idle": {"format": ["svg", "png"], "runtime": true, "dimensions": {"min_width": 128, "min_height": 128}},
-    "battle_action": {"format": ["svg", "png"], "runtime": true, "dimensions": {"min_width": 128, "min_height": 128}},
-    "expression": {"format": ["svg", "png"], "runtime": true, "dimensions": {"min_width": 256, "min_height": 256}},
-    "cutin": {"format": ["svg", "png", "jpg"], "runtime": true, "dimensions": {"min_width": 512, "min_height": 256}},
-    "victory": {"format": ["svg", "png"], "runtime": true, "dimensions": {"min_width": 256, "min_height": 256}},
-    "defeat": {"format": ["svg", "png"], "runtime": true, "dimensions": {"min_width": 256, "min_height": 256}},
-    "story": {"format": ["svg", "png", "jpg"], "runtime": true, "dimensions": {"min_width": 512, "min_height": 256}},
-    "event": {"format": ["svg", "png", "jpg"], "runtime": true, "dimensions": {"min_width": 512, "min_height": 256}}
+    "portrait": {
+      "format": [
+        "svg",
+        "png"
+      ],
+      "runtime": true,
+      "dimensions": {
+        "min_width": 256,
+        "min_height": 256
+      }
+    },
+    "card": {
+      "format": [
+        "svg",
+        "png",
+        "jpg"
+      ],
+      "runtime": true,
+      "dimensions": {
+        "min_width": 512,
+        "min_height": 512
+      }
+    },
+    "battle_idle": {
+      "format": [
+        "svg",
+        "png"
+      ],
+      "runtime": true,
+      "dimensions": {
+        "min_width": 128,
+        "min_height": 128
+      }
+    },
+    "battle_action": {
+      "format": [
+        "svg",
+        "png"
+      ],
+      "runtime": true,
+      "dimensions": {
+        "min_width": 128,
+        "min_height": 128
+      }
+    },
+    "expression": {
+      "format": [
+        "svg",
+        "png"
+      ],
+      "runtime": true,
+      "dimensions": {
+        "min_width": 256,
+        "min_height": 256
+      }
+    },
+    "cutin": {
+      "format": [
+        "svg",
+        "png",
+        "jpg"
+      ],
+      "runtime": true,
+      "dimensions": {
+        "min_width": 512,
+        "min_height": 256
+      }
+    },
+    "victory": {
+      "format": [
+        "svg",
+        "png"
+      ],
+      "runtime": true,
+      "dimensions": {
+        "min_width": 256,
+        "min_height": 256
+      }
+    },
+    "defeat": {
+      "format": [
+        "svg",
+        "png"
+      ],
+      "runtime": true,
+      "dimensions": {
+        "min_width": 256,
+        "min_height": 256
+      }
+    },
+    "story": {
+      "format": [
+        "svg",
+        "png",
+        "jpg"
+      ],
+      "runtime": true,
+      "dimensions": {
+        "min_width": 512,
+        "min_height": 256
+      }
+    },
+    "event": {
+      "format": [
+        "svg",
+        "png",
+        "jpg"
+      ],
+      "runtime": true,
+      "dimensions": {
+        "min_width": 512,
+        "min_height": 256
+      }
+    }
   },
   "characters": [
     {
@@ -24,24 +133,112 @@
       "position": "3B",
       "play_identity": "big_swing_threat",
       "visual_identity": {
-        "palette": ["#5a3327", "#fff3dc", "#e4572e", "#d99a78"],
+        "palette": [
+          "#5a3327",
+          "#fff3dc",
+          "#e4572e",
+          "#d99a78"
+        ],
         "hair": "long",
         "eyes": "#4a2b24",
         "uniform": "jacket",
         "silhouette": "power"
       },
       "asset_set": {
-        "portrait": {"source": "assets/characters/generated/bw001.svg", "path": "assets/characters/generated/bw001.svg", "status": "VALIDATED"},
-        "card": {"source": "assets/characters/generated/bw001.svg", "path": "assets/production/cards/bw001--normal.svg", "status": "READY"},
-        "battle_idle": {"source": "assets/characters/generated/bw001.svg", "path": "assets/production/sprites/bw001_idle.svg", "status": "READY"},
-        "battle_action": {"source": null, "path": null, "status": "MISSING"},
-        "expression": {"source": "assets/characters/expressions/bw001_neutral.svg", "path": "assets/characters/expressions/bw001_neutral.svg", "status": "VALIDATED"},
-        "cutin": {"source": null, "path": null, "status": "MISSING"},
-        "victory": {"source": null, "path": null, "status": "MISSING"},
-        "defeat": {"source": null, "path": null, "status": "MISSING"},
-        "story": {"source": null, "path": null, "status": "MISSING"},
-        "event": {"source": "assets/characters/generated/bw001.svg", "path": "assets/production/presentation/bw001--profile.svg", "status": "READY"}
+        "portrait": {
+          "source": "assets/characters/generated/bw001.svg",
+          "path": "assets/characters/generated/bw001.svg",
+          "status": "VALIDATED",
+          "quality_class": "REAL_PRODUCTION_ART"
+        },
+        "card": {
+          "source": "assets/characters/generated/bw001.svg",
+          "path": "assets/production/cards/bw001--normal.svg",
+          "status": "DRAFT",
+          "quality_class": "PROCESSED_ART"
+        },
+        "battle_idle": {
+          "source": "assets/characters/generated/bw001.svg",
+          "path": "assets/production/sprites/bw001_idle.svg",
+          "status": "DRAFT",
+          "quality_class": "PROCESSED_ART"
+        },
+        "battle_action": {
+          "source": "assets/characters/generated/bw001.svg",
+          "path": "assets/production/sprites/bw001_action.svg",
+          "status": "DRAFT",
+          "quality_class": "PROCESSED_ART"
+        },
+        "expression": {
+          "source": "assets/characters/generated/bw001.svg",
+          "path": "assets/characters/expressions/bw001_neutral.svg",
+          "status": "DRAFT",
+          "quality_class": "PROCESSED_ART"
+        },
+        "cutin": {
+          "source": "assets/characters/generated/bw001.svg",
+          "path": "assets/production/cutins/bw001--power.svg",
+          "status": "DRAFT",
+          "quality_class": "PROCESSED_ART"
+        },
+        "victory": {
+          "source": "assets/characters/generated/bw001.svg",
+          "path": "assets/production/presentation/bw001--victory.svg",
+          "status": "DRAFT",
+          "quality_class": "PROCESSED_ART"
+        },
+        "defeat": {
+          "source": null,
+          "path": null,
+          "status": "MISSING",
+          "quality_class": "MISSING"
+        },
+        "story": {
+          "source": null,
+          "path": null,
+          "status": "MISSING",
+          "quality_class": "MISSING"
+        },
+        "event": {
+          "source": "assets/characters/generated/bw001.svg",
+          "path": "assets/production/presentation/bw001--profile.svg",
+          "status": "DRAFT",
+          "quality_class": "PROCESSED_ART"
+        }
+      },
+      "expression_variants": {
+        "focus": {
+          "source": "assets/characters/generated/bw001.svg",
+          "path": "assets/characters/expressions/bw001_focus.svg",
+          "status": "DRAFT",
+          "quality_class": "PROCESSED_ART"
+        },
+        "happy": {
+          "source": "assets/characters/generated/bw001.svg",
+          "path": "assets/characters/expressions/bw001_happy.svg",
+          "status": "DRAFT",
+          "quality_class": "PROCESSED_ART"
+        },
+        "surprised": {
+          "source": "assets/characters/generated/bw001.svg",
+          "path": "assets/characters/expressions/bw001_surprised.svg",
+          "status": "DRAFT",
+          "quality_class": "PROCESSED_ART"
+        },
+        "determined": {
+          "source": "assets/characters/generated/bw001.svg",
+          "path": "assets/characters/expressions/bw001_determined.svg",
+          "status": "DRAFT",
+          "quality_class": "PROCESSED_ART"
+        }
       }
     }
+  ],
+  "quality_classes": [
+    "REAL_PRODUCTION_ART",
+    "PROCESSED_ART",
+    "PLACEHOLDER",
+    "WRAPPER",
+    "MISSING"
   ]
 }

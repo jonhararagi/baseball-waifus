@@ -229,15 +229,14 @@ jobs:
           test -s site/data/characters_queue.json
           test -s site/data/game_schemas_recycled.json
           mkdir -p site/assets/production/sprites site/assets/production/cards
-          cp -R assets/production/sprites/. site/assets/production/sprites/ || true
-          cp -R assets/production/cards/. site/assets/production/cards/ || true
+          cp -R assets/production/. site/assets/production/ || true
 
           python3 - <<'PY'
           import json
           from pathlib import Path
 
           root = Path("site/assets/production")
-          allowed = {".png", ".jpg", ".jpeg", ".webp", ".avif"}
+          allowed = {".png", ".jpg", ".jpeg", ".webp", ".avif", ".svg"}
 
           def collect(folder):
               items = []

@@ -1,8 +1,8 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="512" height="768" viewBox="0 0 512 768"><title>Aiko Hanamori happy</title><svg x="0" y="0" width="512" height="768" viewBox="0 0 512 768" preserveAspectRatio="xMidYMid meet">
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="768" viewBox="0 0 512 768">
 <defs>
   <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#16233d"/><stop offset="1" stop-color="#0b1120"/></linearGradient>
-  <radialGradient id="halo" cx="50%" cy="36%" r="58%"><stop offset="0" stop-color="#ffd76a" stop-opacity=".28"/><stop offset="1" stop-color="#ffd76a" stop-opacity="0"/></radialGradient>
+  <radialGradient id="halo" cx="50%" cy="36%" r="58%"><stop offset="0" stop-color="#6b7ea3" stop-opacity=".28"/><stop offset="1" stop-color="#6b7ea3" stop-opacity="0"/></radialGradient>
   <linearGradient id="hair" x1="0" y1="0" x2=".8" y2="1"><stop offset="0" stop-color="#7a4a39"/><stop offset=".55" stop-color="#5a3327"/><stop offset="1" stop-color="#321d1a"/></linearGradient>
   <linearGradient id="skin" x1="0" y1="0" x2=".9" y2="1"><stop offset="0" stop-color="#efbd9d"/><stop offset="1" stop-color="#c98262"/></linearGradient>
   <linearGradient id="uniform" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff8e9"/><stop offset="1" stop-color="#eadfc8"/></linearGradient>
@@ -23,10 +23,10 @@
 <path d="M330 180 Q320 116 296 101" fill="none" stroke="#b37a60" stroke-width="7" stroke-linecap="round" opacity=".45"/>
 <path d="M175 205 Q178 155 256 137 Q334 155 337 205 L326 310 Q312 369 256 392 Q200 369 186 310 Z" fill="url(#skin)" stroke="#a75f4b" stroke-width="5"/>
 <path d="M190 171 Q219 145 256 139 Q293 145 322 171 L308 198 Q293 182 256 179 Q219 182 204 198 Z" fill="#5a3327"/>
-<path d="M205 200 Q225 186 245 197 M267 197 Q287 186 307 200" fill="none" stroke="#5a3327" stroke-width="7" stroke-linecap="round"/>
-<path d="M205 226 Q224 208 244 226" fill="none" stroke="#4a2b24" stroke-width="9" stroke-linecap="round"/><path d="M268 226 Q288 208 307 226" fill="none" stroke="#4a2b24" stroke-width="9" stroke-linecap="round"/>
+<path d="M205 198 Q225 186 246 196 M266 196 Q287 186 307 198" fill="none" stroke="#5a3327" stroke-width="7" stroke-linecap="round"/>
+<path d="M205 224 Q225 211 245 224 Q225 240 205 224 Z" fill="#fff"/><ellipse cx="225" cy="225" rx="7" ry="10" fill="#4a2b24"/><circle cx="228" cy="221" r="2.8" fill="#fff"/><path d="M267 224 Q287 211 307 224 Q287 240 267 224 Z" fill="#fff"/><ellipse cx="287" cy="225" rx="7" ry="10" fill="#4a2b24"/><circle cx="290" cy="221" r="2.8" fill="#fff"/>
 <path d="M256 236 Q248 249 256 256 Q264 249 256 236" fill="none" stroke="#a5614f" stroke-width="4" stroke-linecap="round"/>
-<path d="M239 261 Q256 281 273 261 Q256 269 239 261 Z" fill="#9d4b4b" stroke="#7a4b43" stroke-width="4"/>
+<path d="M244 262 Q256 268 268 262" fill="none" stroke="#7a4b43" stroke-width="5" stroke-linecap="round"/>
 <path d="M176 238 Q143 242 151 276 Q157 293 180 286" fill="url(#skin)" stroke="#a75f4b" stroke-width="5"/>
 <path d="M336 238 Q369 242 361 276 Q355 293 332 286" fill="url(#skin)" stroke="#a75f4b" stroke-width="5"/>
 <path d="M173 304 Q146 362 171 450" fill="none" stroke="#5a3327" stroke-width="34" stroke-linecap="round"/>
@@ -41,4 +41,4 @@
 <path d="M420 111 l12 7 M432 124 l12 7 M440 140 l10 8" stroke="#ef6a4f" stroke-width="4" stroke-linecap="round"/>
 <circle cx="62" cy="706" r="7" fill="#ffd76a" opacity=".8"/>
 <circle cx="450" cy="700" r="5" fill="#ffd76a" opacity=".6"/>
-</svg>
+</svg><path d="M203 220Q224 208 245 220M267 220Q288 208 309 220" fill="none" stroke="#4a2b24" stroke-width="7"/><path d="M230 258Q256 282 282 258" fill="none" stroke="#7a332d" stroke-width="6"/><circle cx="190" cy="254" r="8" fill="#e47a73"/><circle cx="322" cy="254" r="8" fill="#e47a73"/></svg>

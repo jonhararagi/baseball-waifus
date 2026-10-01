@@ -28,7 +28,7 @@ export class RosterPanel {
   renderCard(unit,unlocked,isActive){
     const canonical=unit.canonical||{}, stats=canonical.stats||{}, id=unit.character_id;
     const card=document.createElement("button"); card.type="button"; card.className="roster-unit-card"+(unlocked?"":" is-locked")+(isActive?" is-active":"");
-    const art=canonical.visual?.avatar_url||canonical.visual?.card_url||canonical.visual?.card_hd_url||"";
+    const art=id==="bw001"?"./assets/production/cards/bw001--normal.svg":(canonical.visual?.avatar_url||canonical.visual?.card_url||canonical.visual?.card_hd_url||"");
     card.innerHTML='<div class="roster-unit-art">'+(unlocked&&art?'<img src="'+escapeText(art)+'" alt="">':'<span class="roster-lock-silhouette">?</span>')+'</div><div class="roster-unit-name">'+escapeText(canonical.display_name||id)+'</div><div class="roster-unit-meta">'+(unlocked?escapeText(rarityLabel[canonical.rarity]||canonical.rarity||"R"):"BLOQUEADA")+'</div><div class="roster-unit-mini">PWR '+Number(stats.power||0)+' · SPD '+Number(stats.speed||0)+'</div>';
     card.addEventListener("click",()=>{this.selectedId=id;this.refresh();});
     this.grid?.appendChild(card);
@@ -36,7 +36,7 @@ export class RosterPanel {
   renderDetail(){
     const unit=(this.getCharacters?.()||[]).find(c=>c.character_id===this.selectedId); if(!unit||!this.detail)return;
     const inventory=this.getInventory?.()||{}, unlocked=Boolean(inventory[unit.character_id]?.unlocked), canonical=unit.canonical||{}, stats=canonical.stats||{}, active=unit.character_id===this.getActiveId?.();
-    const art=canonical.visual?.card_hd_url||canonical.visual?.card_url||canonical.visual?.avatar_url||"";
+    const art=unit.character_id==="bw001"?"./assets/production/cards/bw001--normal.svg":(canonical.visual?.card_hd_url||canonical.visual?.card_url||canonical.visual?.avatar_url||"")
     const progression=this.getProgression?.(unit.character_id)||{}, level=Number(progression.level||1), rarity=rarityLabel[canonical.rarity]||canonical.rarity||"R";
     this.detail.innerHTML='<div class="roster-detail-art">'+(unlocked&&art?'<img src="'+escapeText(art)+'" alt="">':'<span class="roster-lock-silhouette large">?</span>')+'</div><div class="roster-detail-copy"><span class="gallery-kicker">'+(unlocked?"UNLOCKED WAIFU":"LOCKED WAIFU")+'</span><h3>'+escapeText(canonical.display_name||unit.character_id)+'</h3><div class="roster-detail-tags"><span>'+escapeText(rarity)+'</span><span>LV '+level+'</span><span>'+escapeText(canonical.archetype||canonical.specialization||"WAIFU")+'</span></div><div class="roster-stat-grid"><div><b>PWR</b><strong>'+Number(stats.power||0)+'</strong></div><div><b>SPD</b><strong>'+Number(stats.speed||0)+'</strong></div><div><b>CONTACT</b><strong>'+Number(stats.contact||0)+'</strong></div><div><b>EYE</b><strong>'+Number(stats.eye||0)+'</strong></div></div></div>';
     if(this.setActiveButton){this.setActiveButton.disabled=!unlocked||active;this.setActiveButton.textContent=active?"✓ ACTIVA":"ESTABLECER COMO ACTIVA";}

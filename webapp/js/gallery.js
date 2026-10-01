@@ -40,11 +40,7 @@ function manifestAssetPath(manifest, collection, characterId, token) {
   const descriptor = items.find((item) => String(item?.path || "").includes("/" + characterId + token));
   return descriptor?.path ? String(descriptor.path) : "";
 }
-function fallbackAssetPath(characterId, kind) {
-  return kind === "card"
-    ? "./assets/production/cards/" + characterId + "--normal.jpg"
-    : "./assets/production/sprites/" + characterId + "_idle.png";
-}
+function fallbackAssetPath(characterId, kind){if(characterId==="bw001")return kind==="card"?"./assets/production/cards/bw001--normal.svg":"./assets/production/sprites/bw001_idle.svg";return kind==="card"?"./assets/production/cards/"+characterId+"--normal.jpg":"./assets/production/sprites/"+characterId+"_idle.png";}
 function labelFaction(faction) {
   return String(faction || "UNKNOWN").replace(/_/g, " ").toUpperCase();
 }

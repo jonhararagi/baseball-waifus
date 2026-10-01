@@ -70,12 +70,10 @@ export function buildCharacterDetailViewModel({
     duplicates: Math.max(quantity, safeInteger(progression?.duplicate_count, quantity)),
     unlocked,
     active,
-    artPath: cleanText(
-      canonical.visual?.card_hd_url
-        || canonical.visual?.card_url
-        || canonical.visual?.avatar_url
-        || "./assets/production/cards/" + String(character.character_id) + "--normal.svg"
-    ),
+    artPath: character.character_id==="bw001"?"./assets/production/cards/bw001--normal.svg":cleanText(canonical.visual?.card_hd_url||canonical.visual?.card_url||canonical.visual?.avatar_url||""),
+    heroPath: character.character_id==="bw001"?"./assets/production/presentation/bw001--profile.svg":"",
+    victoryPath: character.character_id==="bw001"?"./assets/production/presentation/bw001--victory.svg":"",
+    expressionPaths: character.character_id==="bw001"?Object.fromEntries(["neutral","focus","happy","surprised","determined"].map((m)=>[m,"./assets/characters/expressions/bw001_"+m+".svg"])):{} ,
     identity: {
       archetype: humanize(identity.archetype, EMPTY_IDENTITY.archetype),
       playIdentity: humanize(identity.play_identity, EMPTY_IDENTITY.playIdentity),
@@ -318,7 +316,7 @@ export class CharacterDetailView {
       };
     }
 
-    const statSelectors = ["power", "contact", "speed", "pitch", "control", "defense", "critical", "stamina"];
+    const hero=this.root?.querySelector?.("#character-detail-hero-presentation");if(hero){hero.hidden=!model.heroPath;if(model.heroPath)hero.src=model.heroPath;hero.alt=model.name+" profile presentation";}const victory=this.root?.querySelector?.("#character-detail-victory-art");if(victory){victory.hidden=!model.victoryPath;if(model.victoryPath)victory.src=model.victoryPath;victory.alt=model.name+" victory hero moment";}const set=this.root?.querySelector?.("#character-detail-expression-set");if(set){set.replaceChildren();const labels={neutral:"NEUTRAL",focus:"FOCUS",happy:"HAPPY",surprised:"SURPRISED",determined:"DETERMINED"};for(const [mood,path] of Object.entries(model.expressionPaths||{})){const item=document.createElement("div");item.className="character-detail-expression";const image=document.createElement("img");image.src=path;image.alt=model.name+" "+(labels[mood]||mood);const label=document.createElement("span");label.textContent=labels[mood]||mood.toUpperCase();item.append(image,label);set.appendChild(item);}set.hidden=set.childElementCount===0;}const statSelectors = ["power", "contact", "speed", "pitch", "control", "defense", "critical", "stamina"];
     for (const stat of statSelectors) {
       this.text("#character-detail-stat-" + stat, model.stats[stat]);
     }

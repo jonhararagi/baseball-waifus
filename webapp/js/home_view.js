@@ -1,7 +1,7 @@
 const ACTION_TARGETS=Object.freeze({combat:"combat",dex:"dex",roster:"roster",locker:"locker",gacha:"gacha"});
 function int(value,fallback=0){const n=Number(value);return Number.isInteger(n)&&n>=0?n:fallback}
 function nameOf(c,fallback="NO ACTIVE CHARACTER"){return String(c?.canonical?.display_name||c?.canonical?.name||c?.display_name||c?.name||fallback)}
-function assetOf(c){const id=String(c?.character_id||"").trim();if(!id)return"";const v=c?.canonical?.visual||{};return String(v.card_hd_url||v.card_url||v.avatar_url||"./assets/production/cards/"+id+"--normal.jpg")}
+function assetOf(c){const id=String(c?.character_id||"").trim();if(!id)return"";const v=c?.canonical?.visual||{};return id==="bw001"?"./assets/production/cards/bw001--normal.svg":String(v.card_hd_url||v.card_url||v.avatar_url||"")}
 function supportOf(id,getCharacter){return id?nameOf(getCharacter?.(id),String(id)):"EMPTY SLOT"}
 export function buildHomeViewModel({snapshot=null,activeCharacter=null,roster=null,progression=null,getCharacter=null}={}){
  const s=snapshot&&typeof snapshot==="object"?snapshot:{},r=roster||s.roster||{activeBatter:null,supports:[null,null]},id=String(activeCharacter?.character_id||r.activeBatter||"").trim()||null,e=id?s.inventory?.characters?.[id]||null:null,p=progression&&typeof progression==="object"?progression:{},c=activeCharacter?.canonical||{},i=c.identity||{},stats=c.stats||{},supports=Array.isArray(r.supports)?[r.supports[0]||null,r.supports[1]||null]:[null,null];

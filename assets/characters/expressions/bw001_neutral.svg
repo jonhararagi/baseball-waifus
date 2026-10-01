@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="512" height="768" viewBox="0 0 512 768"><title>Aiko Hanamori neutral</title><svg x="0" y="0" width="512" height="768" viewBox="0 0 512 768" preserveAspectRatio="xMidYMid meet">
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="768" viewBox="0 0 512 768">
 <defs>
   <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#16233d"/><stop offset="1" stop-color="#0b1120"/></linearGradient>
@@ -41,4 +41,4 @@
 <path d="M420 111 l12 7 M432 124 l12 7 M440 140 l10 8" stroke="#ef6a4f" stroke-width="4" stroke-linecap="round"/>
 <circle cx="62" cy="706" r="7" fill="#ffd76a" opacity=".8"/>
 <circle cx="450" cy="700" r="5" fill="#ffd76a" opacity=".6"/>
-</svg>
+</svg><path d="M239 276Q256 282 273 276" fill="none" stroke="#ffbf76" stroke-width="3"/></svg>
