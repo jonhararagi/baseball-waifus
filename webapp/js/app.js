@@ -23,6 +23,7 @@ import { SaveSystem } from "./save_system.js";
 import { GameModeManager } from "./game_modes.js";
 import { MainMenu, VIEWS } from "./main_menu.js";
 import { HomeView } from "./home_view.js";
+import { CharacterDetailView } from "./character_detail_view.js";
 import { MobileHaptics } from "./mobile_haptics.js";
 import { PerformanceAdapter } from "./performance_adapter.js";
 import {
@@ -95,6 +96,7 @@ const audioVolumeSlider = document.querySelector("#audio-volume");
 const gachaTenButton = document.querySelector("#action-gacha-ten");
 const mainMenuRoot = document.querySelector("#main-menu");
 const homeViewRoot = document.querySelector("#home-view");
+const characterDetailRoot = document.querySelector("#character-detail-view");
 const rosterView = document.querySelector("#roster-view");
 const settingsView = document.querySelector("#settings-view");
 const lockerView = document.querySelector("#locker-view");
@@ -686,7 +688,9 @@ const gallery = new GalleryController({
     }
   }
 });
-const homeView=new HomeView({root:homeViewRoot,getSnapshot:()=>gachaController.playerMetaIntegration?.getSnapshot()||null,getActiveCharacter:()=>{const id=gachaController.getActiveBatter();return id?gachaController.getCharacter(id):null},getRoster:()=>teamManager.getRoster(),getProgression:id=>upgradeSystem.getProgression(id),getCharacter:id=>gachaController.getCharacter(id),onNavigate:view=>{if(view==="roster"){rosterPanel.open();return}if(view==="gacha"){gachaRecruitment.open();return}setView(view)}});
+const homeView=new HomeView({root:homeViewRoot,getSnapshot:()=>gachaController.playerMetaIntegration?.getSnapshot()||null,getActiveCharacter:()=>{const id=gachaController.getActiveBatter();return id?gachaController.getCharacter(id):null},getRoster:()=>teamManager.getRoster(),getProgression:id=>upgradeSystem.getProgression(id),getCharacter:id=>gachaController.getCharacter(id),onNavigate:view=>{if(view==="roster"){rosterPanel.open();return}if(view==="gacha"){gachaRecruitment.open();return}setView(view)},onInspect:id=>characterDetailView.open(id)});
+const characterDetailView=new CharacterDetailView({root:characterDetailRoot,getCharacter:id=>gachaController.getCharacter(id),getInventoryEntry:id=>gachaController.getState().inventory?.[id]||null,getProgression:id=>upgradeSystem.getProgression(id),getRoster:()=>teamManager.getRoster(),getCurrencies:()=>({scrap:gachaController.getScavengerScrap(),fragments:gachaController.getFragments()}),canUpgrade:id=>upgradeSystem.canUpgrade(id),getUpgradeCost:id=>upgradeSystem.getUpgradeCost(id),onUpgrade:id=>upgradeSystem.upgradeWaifu(id),onUse:id=>{try{teamManager.setActiveBatter(id);lockerRoom.setActiveWaifu(id);homeView.refresh();characterDetailView.close();setView("combat");}catch(error){setConnection("Unable to use character","error");}},onClose:()=>homeView.refresh()});
+characterDetailView.mount();
 homeView.mount();
 exposeGachaToWindow(gachaController);
 window.BaseballWaifusTeam = {
