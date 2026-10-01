@@ -591,7 +591,9 @@ export class LockerRoom {
       ctx.shadowColor = skin.colors.primary;
       ctx.shadowBlur = glow;
       ctx.fillStyle = skin.colors.primary;
+      if (!this.characterArtImage?.complete || this.characterArtImage.naturalWidth <= 0) {
       this._drawCharacterBody(ctx, bodyWidth, bodyHeight, skin, waifu);
+    }
       ctx.restore();
     }
 
