@@ -111,6 +111,7 @@ assert.equal(director.getCurrentStep().animationState, "IDLE");
 director.update(0.3);
 assert.equal(director.getState().phase, "COMPLETE");
 assert.equal(director.getState().active, false);
+assert.equal(director.stepDefinitions.find((step) => step.phase === "COMBAT_RETURN")?.durationMs, 300);
 assert.deepEqual(director.getState().result, {
   attackerId: actor.actorId,
   targetId: enemy.actorId,
