@@ -75,6 +75,7 @@ jobs:
           T072_SITE_DIR: webapp
           T072_EVIDENCE_DIR: browser-evidence/T101/$GITHUB_SHA/$GITHUB_RUN_ID
           T101_DEFEAT_PROOF: "1"
+          T104_PERSISTENCE_PROOF: "1"
           BROWSER_BIN: ${{ steps.chrome.outputs.browser_bin }}
         run: |
           set -euo pipefail
