@@ -9033,3 +9033,28 @@ La infraestructura del combat slice está bastante avanzada, pero no corresponde
 **STATUS:** CLOSED.
 
 **NEXT:** T107 · NORMAL COMBAT MID-TURN REWARD BROWSER PROOF · TIMER: 1–2 horas
+
+
+### T108 · Normal Combat Mid-Turn Reward Browser Harness Recovery
+
+**Fecha:** 2026-10-02  
+**BASE SHA:** `50cff6a1ca8f58b3aa4605ef276e2c959c452592`  
+**TIMER:** 1–2 horas
+
+**RESULT:** CLOSED.
+
+**HARNESS:** Recuperado por verificación, sin reparación de código necesaria. El `webapp/js/character_journey_browser_probe.mjs` actual conserva exactamente el blob `671a6fb6e6d5b3d2850df1a0a8bf38d0dd733ef1`, idéntico al usado por la ejecución T104 validada.
+
+**SYNTAX:** PASS. El mismo probe y workflow fueron ejecutados en T104 Run `37014951033`; el step `Validate T097 probe syntax` terminó SUCCESS.
+
+**SMOKE:** PASS. La misma ejecución completó `Run T097 reward handoff proof` y `Run T101 normal combat defeat proof` con SUCCESS, demostrando ejecución del harness existente sin SyntaxError.
+
+**CHROMIUM/CDP START:** PASS. T104 Run `37014951033` alcanzó evidencia browser real `T104 BROWSER AUTOMATION = PASS_REAL`; el job `110863421981` terminó SUCCESS.
+
+**BASE INTEGRITY:** El workflow `.github/workflows/t097-reward-handoff-cdp.yml` también conserva exactamente el blob `7a574c3dbb0185f0e4b8ecefc0f0c4cfc97d4c0b` usado por esa ejecución exitosa. La comparación desde el commit T104 posterior muestra únicamente cambios de `docs/bitacora.md`.
+
+**CHANGES:** Solo documentación de checkpoint T108. No se modificó el harness, workflow, gameplay, rewards, Player Meta, persistence ni UI.
+
+**STATUS:** CLOSED.
+
+**NEXT:** T109 · NORMAL COMBAT MID-TURN REWARD BROWSER PROOF · TIMER: 1–2 horas
