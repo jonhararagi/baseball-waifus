@@ -43,7 +43,9 @@ const cameraB = director.getCameraTransform({ width: 1000, height: 600 });
 assert.notDeepEqual(cameraA, cameraB);
 assert.equal(cameraB.phase, COMBAT_PRESENTATION_PHASE.ATTACKER_FOCUS);
 
-director.update(0.7);
+director.update(0.5);
+assert.equal(director.getState().phase, COMBAT_PRESENTATION_PHASE.IMPACT);
+director.update(0.08);
 assert.equal(director.getState().phase, COMBAT_PRESENTATION_PHASE.TARGET_REACTION);
 assert.equal(director.getState().active, true);
 
