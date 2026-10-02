@@ -328,7 +328,7 @@ export class CombatPresentationDirector {
     this.commands = buildCommands(this.sequenceId, normalized, this.activeStepDefinitions, this.stage);
     this.stepIndex = 0;
     this.stepElapsedMs = 0;
-    this.phase = this.stepDefinitions[0].phase;
+    this.phase = this.activeStepDefinitions[0].phase;
     this.active = true;
     this._emitStep("START");
     return this.getState();
@@ -356,7 +356,7 @@ export class CombatPresentationDirector {
         this.phase = this.sequenceKind === "ULTIMATE_STAGING"
           ? COMBAT_ULTIMATE_PHASE.COMPLETE
           : COMBAT_PRESENTATION_PHASE.COMPLETE;
-        this.stepIndex = this.stepDefinitions.length;
+        this.stepIndex = this.activeStepDefinitions.length;
         this.stepElapsedMs = 0;
         this._emitStep("COMPLETE");
         break;
@@ -379,7 +379,7 @@ export class CombatPresentationDirector {
     ));
     this.stepIndex = returnIndex;
     this.stepElapsedMs = 0;
-    this.phase = this.stepDefinitions[returnIndex].phase;
+    this.phase = this.activeStepDefinitions[returnIndex].phase;
     this.active = true;
     this._emitStep("CANCEL_FALLBACK");
     return this.getState();
