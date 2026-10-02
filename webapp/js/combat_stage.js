@@ -19,9 +19,12 @@ export const COMBAT_STAGE_ULTIMATE_CONTRACT = Object.freeze({
     "ULTIMATE_STAGING",
     "ULTIMATE_CHARACTER_FOCUS",
     "ULTIMATE_ACTION_PREP",
+    "ULTIMATE_ACTION",
+    "ULTIMATE_IMPACT",
+    "ULTIMATE_REACTION",
     "ULTIMATE_RETURN"
   ]),
-  cameraAnchors: Object.freeze(["FORMATION", "PLAYER_FOCUS", "ACTION", "RETURN"]),
+  cameraAnchors: Object.freeze(["FORMATION", "PLAYER_FOCUS", "ACTION", "IMPACT", "REACTION", "RETURN"]),
   staging: "TEMPORARY_PRESENTATION_ONLY",
   gameplayAuthority: "EXTERNAL_RESULT"
 });
