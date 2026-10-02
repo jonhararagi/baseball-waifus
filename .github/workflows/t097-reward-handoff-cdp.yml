@@ -108,7 +108,7 @@ jobs:
           mkdir -p "$T072_EVIDENCE_DIR"
           node webapp/js/character_journey_browser_probe.mjs
 
-      - name: Run T114-R historical T096 terminal timing recovery
+      - name: Run T114-R2 historical T096 terminal timing recovery
         if: always()
         shell: bash
         env:
