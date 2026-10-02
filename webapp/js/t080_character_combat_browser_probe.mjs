@@ -206,6 +206,16 @@ function readRuntime(cdp) {
       timingFeedbackVisible: Boolean(document.querySelector('#timing-feedback')?.classList.contains('is-visible')),
       timingFeedbackText: document.querySelector('#timing-feedback')?.textContent || '',
       characterCardClassList: [...(document.querySelector('#active-waifu-card')?.classList || [])],
+      characterCardComputed: (() => {
+        const el = document.querySelector('#active-waifu-card');
+        if (!el) return { opacity: '', visibility: '', display: '' };
+        const style = getComputedStyle(el);
+        return {
+          opacity: style.opacity,
+          visibility: style.visibility,
+          display: style.display
+        };
+      })(),
       characterCardVisible: (() => {
         const el = document.querySelector('#active-waifu-card');
         if (!el) return false;
@@ -342,6 +352,12 @@ async function run() {
     requireCondition(focus?.timingFeedbackVisible === false, "timing feedback obscured character focus", focus);
     requireCondition(focus?.characterCardVisible === false, "active character card obscured cinematic focus", focus);
     requireCondition(focus?.characterCardClassList.includes("is-cinematic-action"), "cinematic character class was not applied", focus);
+    requireCondition(
+      focus?.characterCardComputed?.visibility === "hidden"
+      && Number(focus?.characterCardComputed?.opacity || 1) === 0,
+      "cinematic character card was not visually hidden in computed styles",
+      focus
+    );
     requireCondition(action?.characterCardVisible === false && actionLater?.characterCardVisible === false, "active character card obscured cinematic action", { action, actionLater });
     requireCondition(action?.timingFeedbackVisible === false && actionLater?.timingFeedbackVisible === false, "timing feedback obscured cinematic action", { action, actionLater });
     requireCondition(impact?.timingFeedbackVisible === false && reaction?.timingFeedbackVisible === false, "timing feedback remained visible during impact/reaction", { impact, reaction });
