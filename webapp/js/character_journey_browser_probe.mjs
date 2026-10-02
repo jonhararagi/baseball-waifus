@@ -614,32 +614,7 @@ async function run() {
       const playerMetaKey = "baseball_waifus_player_meta_v1:local-player";
       const expectedBattleId = "battle:demo-bw001-vs-bw002";
 
-      const readRuntime = async () => cdpEvaluate(cdp, "(() => {
-        const canvas = document.querySelector('#gameCanvas');
-        const d = canvas?.dataset || {};
-        const gacha = window.BaseballWaifusGacha?.getStatus?.() || null;
-        const raw = localStorage.getItem('baseball_waifus_player_meta_v1:local-player');
-        let persisted = null;
-        try { persisted = raw ? JSON.parse(raw) : null; } catch { persisted = null; }
-        return {
-          battlePhase: d.combatBattlePhase || '',
-          tacticalTurn: d.combatTacticalTurn === '' ? null : Number(d.combatTacticalTurn),
-          timingActive: d.combatTimingActive === 'true',
-          timingGrade: d.combatTimingGrade || '',
-          combatResult: d.combatResult || '',
-          presentationPhase: d.combatStagePresentationPhase || '',
-          presentationActive: d.combatPresentationActive === 'true',
-          rewardStatus: document.querySelector('#gacha-status')?.textContent?.trim() || '',
-          scrap: Number(gacha?.scavenger_scrap ?? NaN),
-          fragments: Number(gacha?.fragments ?? NaN),
-          inventorySize: Number(gacha?.inventory_size ?? NaN),
-          playerMetaRawPresent: Boolean(raw),
-          persistedScrap: Number(persisted?.currencies?.SCRAP ?? NaN),
-          rewardLedger: persisted?.rewardLedger || null,
-          rewardLedgerKeys: persisted?.rewardLedger ? Object.keys(persisted.rewardLedger) : [],
-          playerMeta: persisted
-        };
-      })()");
+      const readRuntime = async () => cdpEvaluate(cdp, "(() => { const canvas = document.querySelector('#gameCanvas'); const d = canvas?.dataset || {}; const gacha = window.BaseballWaifusGacha?.getStatus?.() || null; const raw = localStorage.getItem('baseball_waifus_player_meta_v1:local-player'); let persisted = null; try { persisted = raw ? JSON.parse(raw) : null; } catch { persisted = null; } return { battlePhase: d.combatBattlePhase || '', tacticalTurn: d.combatTacticalTurn === '' ? null : Number(d.combatTacticalTurn), timingActive: d.combatTimingActive === 'true', timingGrade: d.combatTimingGrade || '', combatResult: d.combatResult || '', presentationPhase: d.combatStagePresentationPhase || '', presentationActive: d.combatPresentationActive === 'true', rewardStatus: document.querySelector('#gacha-status')?.textContent?.trim() || '', scrap: Number(gacha?.scavenger_scrap ?? NaN), fragments: Number(gacha?.fragments ?? NaN), inventorySize: Number(gacha?.inventory_size ?? NaN), playerMetaRawPresent: Boolean(raw), persistedScrap: Number(persisted?.currencies?.SCRAP ?? NaN), rewardLedger: persisted?.rewardLedger || null, rewardLedgerKeys: persisted?.rewardLedger ? Object.keys(persisted.rewardLedger) : [], playerMeta: persisted }; })()");
 
       const mark = async (name, condition, timeoutMs = 6000) => {
         const deadline = Date.now() + timeoutMs;
