@@ -9058,3 +9058,36 @@ La infraestructura del combat slice está bastante avanzada, pero no corresponde
 **STATUS:** CLOSED.
 
 **NEXT:** T109 · NORMAL COMBAT MID-TURN REWARD BROWSER PROOF · TIMER: 1–2 horas
+
+
+### T109 · Normal Combat Mid-Turn Reward Browser Proof
+**Fecha:** 2026-10-02
+**BASE SHA:** 7e82e476a2e0fa840a4677492e4b1c7c7f2432ea
+**HARNESS PROBE BASE BLOB:** 671a6fb6e6d5b3d2850df1a0a8bf38d0dd733ef1
+**WORKFLOW BASE BLOB:** 7a574c3dbb0185f0e4b8ecefc0f0c4cfc97d4c0b
+**FINAL QA HEAD:** 6acda99089f7bca66db137884920dae314798e0a
+**TIMER:** 1–2 horas
+
+**RESULT:** PARTIAL.
+
+**BROWSER:** Chromium + CDP ejecutó sobre el harness recuperado. node --check = PASS. El workflow alcanzó Chromium y ejecutó el branch T109.
+
+**TACTICAL:** PASS en el checkpoint observado. El estado no terminal mantuvo SCRAP=0, persistedScrap=0 y rewardLedger={}.
+
+**CLIMAX NON-TERMINAL:** NOT VERIFIED. Primer intento falló porque el branch esperaba CLIMAX inmediatamente después de TACTICAL 1. Segundo intento corrigió ese recorrido, pero el probe esperaba observar la finalización de TACTICAL 1 mientras el runtime ya había avanzado a TACTICAL 2, produciendo una condición de carrera del harness.
+
+**TIMING NON-TERMINAL:** NOT VERIFIED.
+
+**MID-TURN REWARD:** NOT VERIFIED para los checkpoints de Climax/Timing. No se observó ninguna mutación autoritativa de Scrap antes del fallo del harness; el último estado observado siguió en SCRAP=0.
+
+**REWARD LEDGER:** NOT VERIFIED de extremo a extremo. El estado observado en TACTICAL permaneció vacío.
+
+**PLAYER META:** PARTIAL. En el checkpoint TACTICAL, SCRAP=0 y persistedScrap=0 permanecieron sin cambios.
+
+**TERMINAL BOUNDARY:** NOT REACHED. El proof se detuvo antes de la resolución no terminal del Timing.
+
+**ATTEMPTS:** Se consumieron los dos intentos controlados de T109. No se realizará un tercer intento dentro de esta task.
+
+**CHANGES:** QA-only. Se añadió el branch T109_REWARD_BOUNDARY al probe existente y su ejecución al workflow CDP existente. El segundo commit corrigió el avance TACTICAL → CLIMAX. No hubo cambios en gameplay, rewards, Player Meta authority, persistence ni balance.
+
+**NEXT:** T110 · NORMAL COMBAT MID-TURN REWARD BROWSER PROOF AFTER TRAVERSAL RACE FIX · TIMER: 1–2 horas
