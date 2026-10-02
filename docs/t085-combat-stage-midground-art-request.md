@@ -10,7 +10,7 @@ T085 creates the second production request for the existing CombatStage 2.5D art
 - Asset kind: `STAGE_BACKGROUND_MID`
 - Runtime semantic slot: `stage.background.mid`
 - Camera intent: `WIDE`
-- Composition: `BACKGROUND` with explicit MIDGROUND environmental intent
+- Composition: `MIDGROUND`
 - Production format: PNG
 - Minimum resolution: `2048 × 1152`
 - Deterministic filename: `combat-stage--background--mid--wide.png`
@@ -44,9 +44,9 @@ The image supports the full stage and must remain coherent as the CombatPresenta
 
 ### COMPOSITION
 
-`BACKGROUND`
+`MIDGROUND`
 
-Use large readable structures, deep overlapping forms, controlled visual density and negative space around the actors. The asset is semantically MIDGROUND even though the request schema uses the existing `BACKGROUND` composition vocabulary.
+Use large readable structures, deep overlapping forms, controlled visual density and negative space around the actors. The request uses the schema's dedicated MIDGROUND vocabulary so the request field matches the CombatStage visual role directly.
 
 ### DEPTH ROLE
 

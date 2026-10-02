@@ -867,6 +867,103 @@ class ArtRequestTests(unittest.TestCase):
         self.assertFalse((ROOT / foreground["target_path"]).exists())
 
 
+
+    def test_t088_combat_stage_request_set_is_coherent(self):
+        registry = load_registry(ROOT / "tools/art_studio/art_requests.json")
+        request_ids = [
+            "AR-T084-STAGE-BG-FAR-01",
+            "AR-T085-STAGE-BG-MID-01",
+            "AR-T086-STAGE-GROUND-01",
+            "AR-T087-STAGE-FOREGROUND-01",
+        ]
+        requests = [
+            next(item for item in registry["requests"] if item["request_id"] == request_id)
+            for request_id in request_ids
+        ]
+
+        self.assertEqual(
+            [request["asset_kind"] for request in requests],
+            [
+                "STAGE_BACKGROUND_FAR",
+                "STAGE_BACKGROUND_MID",
+                "STAGE_GROUND",
+                "STAGE_FOREGROUND",
+            ],
+        )
+        self.assertEqual(
+            [request["runtime_slot"] for request in requests],
+            [
+                "stage.background.far",
+                "stage.background.mid",
+                "stage.ground",
+                "stage.foreground",
+            ],
+        )
+        self.assertEqual(
+            [request["composition"] for request in requests],
+            ["BACKGROUND", "MIDGROUND", "GROUND", "FOREGROUND"],
+        )
+        self.assertTrue(all(request["status"] == "REQUESTED" for request in requests))
+        self.assertTrue(all(request["camera"] == "WIDE" for request in requests))
+        self.assertTrue(all(request["format"] == "png" for request in requests))
+        self.assertTrue(all(request["minimum_width"] == 2048 for request in requests))
+        self.assertTrue(all(request["minimum_height"] == 1152 for request in requests))
+        self.assertEqual(
+            [request["target_name"] for request in requests],
+            [
+                "combat-stage--background--far--wide.png",
+                "combat-stage--background--mid--wide.png",
+                "combat-stage--ground--wide.png",
+                "combat-stage--foreground--wide.png",
+            ],
+        )
+        self.assertEqual(len({request["target_name"] for request in requests}), 4)
+        self.assertEqual(len({request["target_path"] for request in requests}), 4)
+        self.assertEqual(len({request["runtime_slot"] for request in requests}), 4)
+        self.assertTrue(
+            all(request["target_path"].startswith("assets/stages/") for request in requests)
+        )
+
+        family_terms = ("anime", "cyberpunk", "sports-tech", "2.5d")
+        self.assertTrue(
+            all(
+                all(term in request["generation_prompt"].lower() for term in family_terms)
+                for request in requests
+            )
+        )
+
+        for request in requests:
+            prompt = request["generation_prompt"].lower()
+            negative = request["negative_prompt"].lower()
+            self.assertIn("basewarriors", prompt)
+            self.assertIn("no characters", negative)
+            self.assertTrue(
+                any(term in negative for term in ("baseball diamond", "pitcher mound", "batter box"))
+            )
+            self.assertEqual(validate_request(request), [])
+            self.assertFalse((ROOT / request["target_path"]).exists())
+
+        far, mid, ground, foreground = requests
+        self.assertIn("distant stadium-scale", far["generation_prompt"])
+        self.assertIn("secondary environmental structures", mid["generation_prompt"])
+        self.assertIn("shared physical combat surface", ground["generation_prompt"])
+        self.assertIn("near-camera cinematic framing device", foreground["generation_prompt"])
+        self.assertIn("PLAYER_RAMP", ground["visual_notes"])
+        self.assertIn("CENTER_PLATFORM", ground["visual_notes"])
+        self.assertIn("ENEMY_PLATFORM", ground["visual_notes"])
+        self.assertIn("FRONT_STEP", ground["visual_notes"])
+        self.assertIn("protected clear space", foreground["generation_prompt"])
+        self.assertIn("projectile path", foreground["visual_notes"])
+        self.assertIn("impact area", foreground["visual_notes"])
+
+        aiko = next(
+            item for item in registry["requests"]
+            if item["request_id"] == "AR-T083-AIKO-BW001-01"
+        )
+        self.assertEqual(aiko["status"], "REQUESTED")
+        self.assertEqual(aiko["character_id"], "bw001")
+        self.assertFalse(aiko["source_files"])
+
     def test_t084_production_request_is_requested_and_deterministic(self):
         registry = load_registry(ROOT / "tools/art_studio/art_requests.json")
         request = next(item for item in registry["requests"] if item["request_id"] == "AR-T084-STAGE-BG-FAR-01")

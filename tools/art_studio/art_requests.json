@@ -87,7 +87,7 @@
       "character_id": null,
       "what_is_expected": "Original production midground environment art for the BaseWarriors: Meta-Strike CombatStage 2.5D. The asset provides readable secondary arena structures behind the combat actors, distinct from the distant FAR backplate.",
       "camera": "WIDE",
-      "composition": "BACKGROUND",
+      "composition": "MIDGROUND",
       "subject": "combat-stage",
       "environment": "Cyberpunk sports-tech combat arena at midground depth, designed as a secondary environmental structure layer rather than a playable baseball field.",
       "visual_notes": "MIDGROUND layer only. Use large readable architecture, tiered arena forms, elevated walkways, structural beams, digital advertising panels without readable copy, energy rails and stadium-scale silhouettes. Preserve clear character and enemy silhouettes. Avoid a dominant central object and small-object clutter. Must tolerate camera movement across Formation, Player Focus, Action, Impact, Reaction and Return and remain visually distinct from the FAR atmosphere/backplate.",
