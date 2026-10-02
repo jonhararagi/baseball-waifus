@@ -95,6 +95,26 @@ jobs:
           mkdir -p "$T072_EVIDENCE_DIR"
           node webapp/js/character_journey_browser_probe.mjs
 
+      - name: Run T111 terminal reward boundary proof
+        if: always()
+        shell: bash
+        env:
+          T072_SITE_DIR: webapp
+          T072_EVIDENCE_DIR: browser-evidence/T111/$GITHUB_SHA/$GITHUB_RUN_ID
+          T111_TERMINAL_BOUNDARY: "1"
+          BROWSER_BIN: ${{ steps.chrome.outputs.browser_bin }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$T072_EVIDENCE_DIR"
+          node webapp/js/character_journey_browser_probe.mjs
+
+      - name: Upload T111 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: t111-terminal-reward-boundary-browser-evidence
+          path: browser-evidence/T111/
+          if-no-files-found: warn
       - name: Upload T109 evidence
         if: always()
         uses: actions/upload-artifact@v4
