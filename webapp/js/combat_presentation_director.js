@@ -10,6 +10,15 @@ export const COMBAT_PRESENTATION_PHASE = Object.freeze({
   COMPLETE: "COMPLETE"
 });
 
+export const COMBAT_ULTIMATE_PHASE = Object.freeze({
+  TRIGGER: "ULTIMATE_TRIGGER",
+  STAGING: "ULTIMATE_STAGING",
+  FOCUS: "ULTIMATE_CHARACTER_FOCUS",
+  PREP: "ULTIMATE_ACTION_PREP",
+  RETURN: "ULTIMATE_RETURN",
+  COMPLETE: "ULTIMATE_COMPLETE"
+});
+
 const STEP_DEFINITIONS = Object.freeze([
   Object.freeze({
     phase: COMBAT_PRESENTATION_PHASE.ATTACKER_FOCUS,
@@ -72,6 +81,74 @@ const STEP_DEFINITIONS = Object.freeze([
     focusActor: null,
     cameraAnchor: "RETURN",
     zoom: 1,
+    panX: 0,
+    panY: 0,
+    easing: "ease_in",
+    actionIntent: "RESET",
+    animationState: "IDLE"
+  })
+]);
+
+const ULTIMATE_STEP_DEFINITIONS = Object.freeze([
+  Object.freeze({
+    phase: COMBAT_ULTIMATE_PHASE.TRIGGER,
+    durationMs: 120,
+    focusTarget: "COMBAT",
+    focusActor: null,
+    cameraAnchor: "FORMATION",
+    zoom: 0.92,
+    panX: 0,
+    panY: 0,
+    easing: "ease_out",
+    actionIntent: "TRIGGER",
+    animationState: "IDLE"
+  }),
+  Object.freeze({
+    phase: COMBAT_ULTIMATE_PHASE.STAGING,
+    durationMs: 220,
+    focusTarget: "COMBAT",
+    focusActor: null,
+    cameraAnchor: "FORMATION",
+    zoom: 0.98,
+    panX: 0,
+    panY: 0,
+    easing: "ease_in_out",
+    actionIntent: "TEAM_STAGING",
+    animationState: "IDLE"
+  }),
+  Object.freeze({
+    phase: COMBAT_ULTIMATE_PHASE.FOCUS,
+    durationMs: 320,
+    focusTarget: "ATTACKER",
+    focusActor: "ATTACKER",
+    cameraAnchor: "PLAYER_FOCUS",
+    zoom: 1.16,
+    panX: 0.055,
+    panY: 0.01,
+    easing: "ease_out",
+    actionIntent: "FOCUS",
+    animationState: "WINDUP"
+  }),
+  Object.freeze({
+    phase: COMBAT_ULTIMATE_PHASE.PREP,
+    durationMs: 360,
+    focusTarget: "ATTACKER",
+    focusActor: "ATTACKER",
+    cameraAnchor: "ACTION",
+    zoom: 1.24,
+    panX: 0.025,
+    panY: -0.005,
+    easing: "ease_in_out",
+    actionIntent: "PREPARE",
+    animationState: "WINDUP"
+  }),
+  Object.freeze({
+    phase: COMBAT_ULTIMATE_PHASE.RETURN,
+    durationMs: 320,
+    focusTarget: "COMBAT",
+    focusActor: null,
+    cameraAnchor: "RETURN",
+    zoom: 0.96,
     panX: 0,
     panY: 0,
     easing: "ease_in",
@@ -209,6 +286,7 @@ export class CombatPresentationDirector {
 
   reset() {
     this.sequenceId = "";
+    this.sequenceKind = "NORMAL_ACTION";
     this.result = null;
     this.commands = Object.freeze([]);
     this.stepIndex = -1;
@@ -218,9 +296,30 @@ export class CombatPresentationDirector {
     return this.getState();
   }
 
+  startUltimateStaging({ attackerId, targetId, result = "ULTIMATE_STAGING", actionType = "ULTIMATE_STAGING" } = {}) {
+    const normalized = normalizePresentationInput({
+      attackerId,
+      targetId,
+      result,
+      damage: 0,
+      actionType
+    });
+    this.sequenceId = "ultimate-staging:" + normalized.attackerId + ":" + normalized.targetId;
+    this.sequenceKind = "ULTIMATE_STAGING";
+    this.result = normalized;
+    this.commands = buildCommands(this.sequenceId, normalized, ULTIMATE_STEP_DEFINITIONS, this.stage);
+    this.stepIndex = 0;
+    this.stepElapsedMs = 0;
+    this.phase = ULTIMATE_STEP_DEFINITIONS[0].phase;
+    this.active = true;
+    this._emitStep("START");
+    return this.getState();
+  }
+
   startFromCombatResult(result, fallback = {}) {
     const normalized = normalizePresentationInput(result, fallback);
     this.sequenceId = "combat-presentation:" + normalized.attackerId + ":" + normalized.targetId + ":" + normalized.result;
+    this.sequenceKind = "NORMAL_ACTION";
     this.result = normalized;
     this.commands = buildCommands(this.sequenceId, normalized, this.stepDefinitions, this.stage);
     this.stepIndex = 0;
@@ -389,6 +488,7 @@ export class CombatPresentationDirector {
       : 1;
     return Object.freeze({
       sequenceId: this.sequenceId,
+      sequenceKind: this.sequenceKind,
       phase: this.phase,
       stepIndex: this.stepIndex,
       stepElapsedMs: this.stepElapsedMs,
@@ -403,6 +503,7 @@ export class CombatPresentationDirector {
   _emitStep(reason) {
     this.onStep?.(Object.freeze({
       sequenceId: this.sequenceId,
+      sequenceKind: this.sequenceKind,
       phase: this.phase,
       stepIndex: this.stepIndex,
       reason,
@@ -418,4 +519,5 @@ export class CombatPresentationDirector {
 }
 
 export const COMBAT_PRESENTATION_PHASES = PHASES;
+export const COMBAT_ULTIMATE_STEP_DEFINITIONS = ULTIMATE_STEP_DEFINITIONS;
 export const COMBAT_PRESENTATION_STEP_DEFINITIONS = STEP_DEFINITIONS;
