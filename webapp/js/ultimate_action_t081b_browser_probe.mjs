@@ -196,7 +196,13 @@ async function runtime(cdp) {
         if (!el) return false;
         const style = getComputedStyle(el);
         return style.visibility !== 'hidden' && Number(style.opacity) > 0;
-      })()
+      })(),
+      cinematicHud: {
+        rootActive: document.querySelector('#app-container')?.classList.contains('is-cinematic-ultimate') || false,
+        scoreboardDisplay: getComputedStyle(document.querySelector('.scoreboard-overlay'))?.display || '',
+        matchStripDisplay: getComputedStyle(document.querySelector('.match-strip'))?.display || '',
+        footerDisplay: getComputedStyle(document.querySelector('footer.cyber-footer'))?.display || ''
+      }
     };
   })()`);
 }
@@ -313,10 +319,26 @@ async function main() {
     requireCondition(reaction?.cameraAnchor === "REACTION" && reaction?.cameraSource === "ACTOR", "reaction camera anchor missing", reaction);
     requireCondition(returned?.cameraAnchor === "RETURN", "return camera anchor missing", returned);
     requireCondition(complete.actionComplete === true && complete.active === false, "ultimate did not cleanly complete", complete);
+    requireCondition(
+      complete?.cinematicHud?.rootActive === false
+      && complete?.cinematicHud?.scoreboardDisplay !== "none"
+      && complete?.cinematicHud?.matchStripDisplay !== "none"
+      && complete?.cinematicHud?.footerDisplay !== "none",
+      "HUD did not recover after Ultimate completion",
+      complete
+    );
 
     requireCondition(
       action?.timingFeedbackVisible === false && action?.characterCardVisible === false,
       "cinematic HUD obscured ultimate action",
+      action
+    );
+    requireCondition(
+      action?.cinematicHud?.rootActive === true
+      && action?.cinematicHud?.scoreboardDisplay === "none"
+      && action?.cinematicHud?.matchStripDisplay === "none"
+      && action?.cinematicHud?.footerDisplay === "none",
+      "cinematic viewport HUD was not suppressed during action",
       action
     );
     requireCondition(
@@ -325,8 +347,24 @@ async function main() {
       impact
     );
     requireCondition(
+      impact?.cinematicHud?.rootActive === true
+      && impact?.cinematicHud?.scoreboardDisplay === "none"
+      && impact?.cinematicHud?.matchStripDisplay === "none"
+      && impact?.cinematicHud?.footerDisplay === "none",
+      "cinematic viewport HUD was not suppressed during impact",
+      impact
+    );
+    requireCondition(
       reaction?.timingFeedbackVisible === false && reaction?.characterCardVisible === false,
       "cinematic HUD obscured ultimate reaction",
+      reaction
+    );
+    requireCondition(
+      reaction?.cinematicHud?.rootActive === true
+      && reaction?.cinematicHud?.scoreboardDisplay === "none"
+      && reaction?.cinematicHud?.matchStripDisplay === "none"
+      && reaction?.cinematicHud?.footerDisplay === "none",
+      "cinematic viewport HUD was not suppressed during reaction",
       reaction
     );
     requireCondition(
