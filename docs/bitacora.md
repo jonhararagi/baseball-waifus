@@ -8931,3 +8931,33 @@ La infraestructura del combat slice está bastante avanzada, pero no corresponde
 **BLOCKER:** falta únicamente una ejecución browser posterior para completar `RELOAD` y verificar persistencia final de la derrota. El límite de dos intentos de T103 está agotado; no se realizará otro dentro de esta task.
 
 **NEXT:** T104 · NORMAL COMBAT DEFEAT RELOAD PERSISTENCE PROOF · TIMER: 1–2 horas
+
+
+### T104 · Normal Combat Defeat Reload Persistence Proof
+
+**Fecha:** 2026-10-02  
+**BASE SHA:** `f4ed1ff6bf2d8bff55f3c22cb271a1f9f0c5df67`  
+**FINAL SHA:** pendiente al momento de esta entrada  
+**TIMER:** 1–2 horas
+
+**RESULT:** CLOSED.
+
+**DEFEAT STATE:** La ejecución browser/CDP regeneró un estado de derrota real con el personaje activo: `76 → 51 → 26 → 1 → 0`, `battlePhase=DEFEAT`, `combatResult=DEFEAT`, `match_end=true`.
+
+**RETURN:** PASS. El flujo alcanzó `COMBAT_RETURN → COMPLETE`.
+
+**PERSISTENCE:** PASS. Antes del reload, `SCRAP=0`, `persistedScrap=0` y ledger único `battle:demo-bw001-vs-bw002`. Tras reload, `SCRAP=0`, `persistedScrap=0` y el mismo ledger único.
+
+**NO VICTORY REWARD:** PASS. Reward terminal observado como `[]`; no apareció el reward de victoria `+100 SCRAP`.
+
+**DUPLICATION:** PASS. El ledger permaneció único y el reload no produjo una segunda aplicación de recompensa.
+
+**POST-TERMINAL GUARDS:** PASS. El estado terminal permaneció terminado y no reanudó el combate ni generó una segunda recompensa.
+
+**CHANGES:** QA-only. Se añadió un alias explícito `T104_PERSISTENCE_PROOF` al harness existente para ejecutar el proof sobre el HEAD actual. No se modificaron gameplay, balance, rewards, persistence authority ni UI.
+
+**TEST:** GitHub Actions Run `37014951033`, Job `110863421981`, commit runner `86223b4d47ac69c5a449f5ad438d68787fc68620`. `Validate T097 probe syntax` = SUCCESS. `Run T097 reward handoff proof` = SUCCESS. `T104 BROWSER AUTOMATION` = PASS_REAL. La evidencia reportó `REWARD=[]`, `SCRAP 0 -> 0 -> RELOAD 0`, `DUPLICATION=PASS_REAL`, `RETURN=PASS_REAL`, `PERSISTENCE=PASS_REAL` y `POST-TERMINAL GUARDS=PASS_REAL`.
+
+**STATUS:** CLOSED.
+
+**NEXT:** T105 · NORMAL COMBAT TERMINAL RESULT INTEGRITY AUDIT · TIMER: 1–2 horas
