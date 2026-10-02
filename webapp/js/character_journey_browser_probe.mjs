@@ -985,15 +985,24 @@ async function run() {
       };
 
       const advanceToClimax = async (round) => {
-        await clickBat("round " + round + " T1");
-        for (const turn of [1,2,3,4,5]) {
-          const phase = turn === 5 ? "CLIMAX" : "TACTICAL";
-          await mark("ROUND " + round + " TACTICAL " + turn, s => s.tacticalTurn === turn && s.battlePhase === phase);
-          if (turn < 5) {
-            await mark("ROUND " + round + " TACTICAL " + turn + " COMPLETE", s => s.tacticalTurn === turn && s.presentationPhase === "COMPLETE" && s.presentationActive === false);
-            await clickBat("round " + round + " T" + (turn + 1));
+        let observed = await mark(
+          "ROUND " + round + " TACTICAL PROGRESS",
+          s => s.battlePhase === "TACTICAL" && s.tacticalTurn >= 1
+        );
+        for (const turn of [1,2,3,4]) {
+          if (turn > observed.tacticalTurn) {
+            await clickBat("round " + round + " T" + turn);
           }
+          observed = await mark(
+            "ROUND " + round + " TACTICAL " + turn + " REACHED",
+            s => s.battlePhase === "TACTICAL" && s.tacticalTurn >= turn
+          );
         }
+        await clickBat("round " + round + " T5");
+        await mark(
+          "ROUND " + round + " CLIMAX REACHED",
+          s => s.battlePhase === "CLIMAX" && s.tacticalTurn >= 5
+        );
       };
 
       const resolveNonTerminalMiss = async (round) => {
