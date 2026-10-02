@@ -1187,6 +1187,7 @@ export class CombatRenderer {
       if (transform) this._drawCombatStageActor(ctx, actor, transform, w, h);
     }
 
+    this._drawCombatStageProjectile(ctx, w, h);
     renderCombatStageForeground(ctx, this.combatStage, w, h, camera);
 
     const stageState = this.combatStage.getState();
@@ -1220,7 +1221,7 @@ export class CombatRenderer {
     }
 
     if (actor.team === "ENEMY") {
-      this._drawCombatEnemyActor(ctx, actor, transform);
+      this._drawCombatEnemyActor(ctx, actor, transform, w, h);
       return;
     }
 
@@ -1258,31 +1259,70 @@ export class CombatRenderer {
     ctx.restore();
   }
 
-  _drawCombatEnemyActor(ctx, actor, transform) {
+  _drawCombatEnemyActor(ctx, actor, transform, w, h) {
     const radius = 42 * transform.scale;
+    const presentation = this.combatPresentation.getCameraTransform({ width: w, height: h });
+    let x = transform.x;
+    let y = transform.y;
+    let rotation = (transform.rotation * Math.PI) / 180;
+
+    if (presentation.phase === "IMPACT") {
+      const t = presentation.progress || 0;
+      x += Math.sin(t * Math.PI) * 7;
+      rotation += Math.sin(t * Math.PI) * 0.025;
+    } else if (presentation.phase === "TARGET_REACTION") {
+      const t = presentation.progress || 0;
+      x += (1 - t) * 20;
+      rotation += Math.sin(t * Math.PI) * -0.09;
+    }
+
+    const sprite = this._combatSpriteForActor(actor.actorId);
     ctx.save();
-    ctx.translate(transform.x, transform.y);
-    ctx.fillStyle = "rgba(34, 3, 24, 0.9)";
+    ctx.translate(x, y);
+    ctx.rotate(rotation);
+
+    ctx.fillStyle = "rgba(0,0,0,0.24)";
     ctx.beginPath();
-    ctx.ellipse(0, 2, radius * 0.8, radius * 1.15, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, transform.elevation * h * 0.07 + radius * 1.03, radius * 0.7, radius * 0.16, 0, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = "#ff007f";
-    ctx.lineWidth = 3;
-    ctx.shadowColor = "#ff007f";
-    ctx.shadowBlur = 16;
-    ctx.stroke();
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = "#ff8ab8";
-    ctx.beginPath();
-    ctx.arc(0, -radius * 0.64, radius * 0.42, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#ffdf00";
-    ctx.beginPath();
-    ctx.moveTo(-radius * 0.42, -radius * 0.58);
-    ctx.lineTo(0, -radius * 0.78);
-    ctx.lineTo(radius * 0.42, -radius * 0.58);
-    ctx.closePath();
-    ctx.fill();
+
+    if (sprite) {
+      const targetHeight = clamp(h * 0.34 * transform.scale, 170, 340);
+      const ratio = sprite.naturalWidth > 0 ? sprite.naturalHeight / sprite.naturalWidth : 1.45;
+      const targetWidth = targetHeight / ratio;
+      ctx.save();
+      ctx.scale(actor.facing < 0 ? -1 : 1, 1);
+      ctx.globalAlpha = 0.98;
+      ctx.shadowColor = "rgba(0,0,0,0.5)";
+      ctx.shadowBlur = 14;
+      ctx.drawImage(sprite, -targetWidth * 0.5, -targetHeight * 0.86, targetWidth, targetHeight);
+      ctx.restore();
+    } else {
+      ctx.fillStyle = "rgba(34, 3, 24, 0.9)";
+      ctx.beginPath();
+      ctx.ellipse(0, 2, radius * 0.8, radius * 1.15, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "#ff007f";
+      ctx.lineWidth = 3;
+      ctx.shadowColor = "#ff007f";
+      ctx.shadowBlur = 16;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = "#ff8ab8";
+      ctx.beginPath();
+      ctx.arc(0, -radius * 0.64, radius * 0.42, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    if (presentation.phase === "IMPACT" || presentation.phase === "TARGET_REACTION") {
+      const pulse = presentation.phase === "IMPACT" ? 1 - (presentation.progress || 0) : 0.4;
+      ctx.strokeStyle = "rgba(255,223,126," + clamp(pulse, 0, 1) + ")";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(0, -radius * 0.2, radius * (1.08 + pulse * 0.3), 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
     ctx.textAlign = "center";
     ctx.font = "900 9px Orbitron, system-ui, sans-serif";
     ctx.fillStyle = "#ffd6e8";
@@ -1290,6 +1330,46 @@ export class CombatRenderer {
     ctx.font = "700 7px Rajdhani, system-ui, sans-serif";
     ctx.fillStyle = "#ff8ab8";
     ctx.fillText("ENEMY ACTOR", 0, radius * 1.58);
+    ctx.restore();
+  }
+
+  _combatSpriteForActor(actorId) {
+    const id = String(actorId || "");
+    const descriptor = (this.state?.assets?.sprites || []).find((asset) => String(asset?.id || "") === id);
+    const path = descriptorPath(descriptor, "sprite");
+    return path ? this.assetBank.get(path) : null;
+  }
+
+  _drawCombatStageProjectile(ctx, w, h) {
+    const state = this.combatPresentation.getState();
+    if (!["ACTION", "IMPACT"].includes(state.phase)) return;
+    const attacker = this.combatStage.getActor(state.result?.attackerId || this.combatStage.selectedActorId);
+    const target = this.combatStage.getActor(state.result?.targetId);
+    if (!attacker || !target) return;
+    const start = this.combatStage.getActorAnchor(attacker.actorId, "PROJECTILE");
+    const end = this.combatStage.getActorAnchor(target.actorId, "IMPACT");
+    if (!start || !end) return;
+
+    const camera = this.combatPresentation.getCameraTransform({ width: w, height: h });
+    const rawProgress = state.phase === "IMPACT" ? 1 : clamp(camera.progress + 0.08, 0, 1);
+    const eased = rawProgress * rawProgress * (3 - 2 * rawProgress);
+    const x = (start.x + (end.x - start.x) * eased) * w;
+    const y = (start.y + (end.y - start.y) * eased - Math.sin(eased * Math.PI) * 0.05) * h;
+    const trail = 24 + 38 * (1 - eased);
+
+    ctx.save();
+    ctx.strokeStyle = "rgba(255,223,126,0.52)";
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(x - trail * (attacker.facing || 1), y + trail * 0.16);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    ctx.fillStyle = "#fff5c7";
+    ctx.shadowColor = "#ffdf7e";
+    ctx.shadowBlur = 18;
+    ctx.beginPath();
+    ctx.arc(x, y, 8 + (1 - eased) * 2, 0, Math.PI * 2);
+    ctx.fill();
     ctx.restore();
   }
 
@@ -1333,6 +1413,15 @@ export class CombatRenderer {
     this.canvas.dataset.combatStageLayers = stageState.layers.map((layer) => layer.id).join(",");
     this.canvas.dataset.combatStageZones = Object.keys(stageState.zones).join(",");
     this.canvas.dataset.combatStageSelectedActor = stageState.selectedActorId;
+    this.canvas.dataset.combatStageFilmable = String(stageState.filmable);
+    this.canvas.dataset.combatStageProjectileVisible = String(
+      ["ACTION", "IMPACT"].includes(this.combatPresentation.getState().phase)
+      && Boolean(this.combatPresentation.getState().result?.attackerId)
+      && Boolean(this.combatPresentation.getState().result?.targetId)
+    );
+    this.canvas.dataset.combatStageReactionActive = String(
+      ["IMPACT", "TARGET_REACTION"].includes(this.combatPresentation.getState().phase)
+    );
     this.canvas.dataset.combatPresentationCameraAnchor = camera.cameraAnchor || "";
     this.canvas.dataset.combatPresentationCameraSource = camera.cameraSource || "";
   }
