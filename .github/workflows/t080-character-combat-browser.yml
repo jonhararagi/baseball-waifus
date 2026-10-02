@@ -9,6 +9,7 @@ on:
       - "webapp/js/combat_presentation_director.js"
       - "webapp/js/batter_renderer.js"
       - "webapp/js/t080_character_combat_browser_probe.mjs"
+      - "webapp/js/combat_action_t080_test.mjs"
       - "webapp/css/styles.css"
   workflow_dispatch:
 jobs:
