@@ -8742,7 +8742,7 @@ La infraestructura del combat slice está bastante avanzada, pero no corresponde
 
 **CHANGES:** documentación únicamente.
 
-**FINAL SHA:** `f2a8937b12908a9ff194693406644b4810a24333`
+**FINAL SHA:** `cbb8eca09ec3111d48f4da46d02d4c5af73858a6`
 
 **STATUS:** BLOCKED.
 
@@ -8750,3 +8750,39 @@ La infraestructura del combat slice está bastante avanzada, pero no corresponde
 
 **NEXT:** T099 · NORMAL COMBAT DEFEAT TERMINAL PATH DEFINITION / RUNTIME HOOK · TIMER: 2–4 horas
 
+
+
+### T099 · Normal Combat Defeat Terminal Path Definition / Runtime Hook
+
+**Fecha:** 2026-10-02  
+**BASE SHA:** `cbb8eca09ec3111d48f4da46d02d4c5af73858a6`  
+**TIMER:** 2–4 horas
+
+**RESULT:** BLOCKED.
+
+**DEFEAT CONTRACT:** La terminal prevista debe ser un resultado explícito de gameplay: `COMBAT_RESULT` / `TurnResultDTO` con `outcome/result = DEFEAT`, `match_end = true` y estado de combate completado. El resultado debe originarse en la autoridad de gameplay; el reward pipeline ya sabe resolver `DEFEAT` sin recompensa. En el runtime local actual, esta terminal no existe todavía y por tanto este contrato es el objetivo de implementación posterior, no una capacidad ya presente.
+
+**AUDIT CLASSIFICATION:**
+- enum/phase/constant `DEFEAT`: **MISSING** en `combat_core.js` y `combat.js`.
+- result type `DEFEAT`: **PARTIAL**. `reward_pipeline.js` y `app.js` aceptan un outcome terminal `DEFEAT`; `isTurnResultDTO()` admite el string sin enumerarlo.
+- terminal transition local: **MISSING**.
+- reward mapping: **REAL**. `T062_REWARD_TABLE.DEFEAT = []` y razón `NO_REWARD_ON_DEFEAT`.
+- return presentation: **PARTIAL / NOT VERIFIED**. `CombatPresentationDirector` posee el retorno genérico `COMBAT_RETURN → COMPLETE`, pero ningún `DEFEAT` local lo dispara y el HUD de battle loop solo tiene estado explícito de victoria.
+- persistence behavior: **REAL en el reward pipeline**. Una derrota explícita sin rewards produciría cero cambio de SCRAP/inventario, pero registraría el `sourceEventId` en `rewardLedger` para idempotencia. No se verificó en browser porque no existe un DEFEAT runtime legítimo.
+- gameplay failure condition: **MISSING**. No existe `playerHp`, `teamHp`, stamina-loss terminal, defeat counter ni otra condición de fracaso en el combat core local. El modelo actual solo reduce `bossHp`; al no alcanzar cero vuelve a `TACTICAL` y continúa otra ronda.
+
+**CURRENT GAMEPLAY PATH:** `TACTICAL 1–5 → CLIMAX → VICTORY` cuando `bossHp <= 0`; en cualquier otro resultado de climax el runtime vuelve a `TACTICAL`. No existe una rama local reproducible a `DEFEAT`.
+
+**REQUIRED PATH:** Una futura condición de gameplay legítima debe producir `DEFEAT` y atravesar `COMBAT_RESULT → reward pipeline → [] → return`. No se define ni añade esa condición en T099 porque sería una decisión nueva de gameplay.
+
+**QA HOOK:** **NOT IMPLEMENTED**. Un hook QA correcto tendría que preparar una condición de derrota real antes de la resolución terminal. Con el modelo actual no existe tal condición que pueda activarse sin falsificar el resultado.
+
+**CHANGES:** documentación únicamente. No se tocaron fórmulas, balance, Timing Ring, gacha, economía, persistence architecture, arte ni presentación.
+
+**TEST:** auditoría estática de `combat_core.js`, `combat.js`, `reward_pipeline.js`, `reward_resolver.js`, `player_meta_reward_adapter.js`, `app.js`, `api.js`, `CombatPresentationDirector` y contratos/test existentes. No se ejecutó browser QA de derrota porque hacerlo requeriría fabricar un estado terminal inexistente.
+
+**STATUS:** BLOCKED.
+
+**BLOCKER:** no puede definirse una condición legítima de derrota del combate local actual sin una decisión de diseño de gameplay o una modificación del modelo de combate. Crear un hook que fuerce `battlePhase = DEFEAT` sería precisamente la falsificación que T099 prohíbe.
+
+**NEXT:** T100 · NORMAL COMBAT DEFEAT CONDITION DECISION / MINIMAL IMPLEMENTATION · TIMER: 2–4 horas
