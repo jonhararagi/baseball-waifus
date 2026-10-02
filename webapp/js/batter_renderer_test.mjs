@@ -26,6 +26,9 @@ renderer.update(0.08);
 renderer.update(0.08);
 assert.equal(renderer.getState(), BATTER_STATES.FOLLOW_THROUGH);
 
+renderer.beginWindup();
+assert.equal(renderer.getState(), BATTER_STATES.WINDUP);
+
 renderer.update(0.08);
 renderer.update(0.08);
 renderer.update(0.08);
