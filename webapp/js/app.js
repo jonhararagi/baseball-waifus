@@ -1161,7 +1161,7 @@ batButton.addEventListener("click", () => {
   if (actionPending || renderer.isTimingWindowActive?.()) return;
   const started = renderer.beginTimingWindow?.();
   if (started) {
-    batButton.disabled = true;
+    batButton.disabled = Boolean(renderer.isTimingWindowActive?.());
   }
 });
 
