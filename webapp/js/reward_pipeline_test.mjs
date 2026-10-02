@@ -128,6 +128,40 @@ const realCombatResult = createCombatResultFromTurnResult({
 });
 assert.equal(realCombatResult.outcome, "VICTORY");
 
+const realCombatDefeat = resolveClimaxTurn({
+  grade: "MISS",
+  bossHp: 50,
+  bossMaxHp: 100,
+  internalEnergy: 0,
+  tacticalEffectiveness: 0,
+  round: 3,
+  playerStamina: 25,
+  playerStaminaMax: 100
+});
+assert.equal(realCombatDefeat.outcome, "DEFEAT");
+assert.equal(realCombatDefeat.match_end, true);
+const realDefeatResult = createCombatResultFromTurnResult({
+  turnResult: {
+    ...realCombatDefeat,
+    match_id: "real-combat-core-defeat-001",
+    result: "DEFEAT",
+    match_end: true,
+    state: { match_complete: true, outcome: "DEFEAT" }
+  },
+  matchId: "real-combat-core-defeat-001",
+  playerId: identity.playerId
+});
+const realDefeatApplied = applyCombatRewardPipeline({
+  combatResult: realDefeatResult,
+  authority: rehydrated,
+  persistenceAdapter: persistence
+});
+assert.equal(realDefeatApplied.rewardResult.reason, "NO_REWARD_ON_DEFEAT");
+assert.deepEqual(realDefeatApplied.rewardResult.rewards, []);
+assert.equal(realDefeatApplied.applied.ok, true);
+assert.equal(realDefeatApplied.applied.duplicate, false);
+assert.equal(rehydrated.getSnapshot().currencies.SCRAP, 100);
+
 const atomicAuthority = new PlayerMetaAuthority(
   createInitialPlayerMetaState(createPlayerIdentity({ playerId: "atomic-reward-player" }))
 );

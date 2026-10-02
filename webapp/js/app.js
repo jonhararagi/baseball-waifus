@@ -898,6 +898,7 @@ function applyActiveRoster(dto) {
       faction: canonical.faction,
       position: canonical.position,
       specialization: canonical.specialization,
+      stamina: Number(canonical.stats?.stamina ?? 70),
       stats: effectiveStats,
       progression: progression || null,
       sprite_url: assets.sprite.sprite_url,
@@ -935,7 +936,8 @@ function createDemoCombatInit() {
     away_team: { id: "demo-away", name: "Hanamori Stars", score: 0 },
     batter: {
       id: "bw001", name: "Aiko Hanamori", card_id: "bw001",
-      element: "fire", rarity: "R", faction: "bosozoku_wild"
+      element: "fire", rarity: "R", faction: "bosozoku_wild",
+      stamina: 70
     },
     pitcher: {
       id: "bw002", name: "Reina Kurose", card_id: "bw002",

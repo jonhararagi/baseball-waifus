@@ -1,6 +1,7 @@
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
 export const COMBAT_RESULT_TYPE = "COMBAT_RESULT";
+export const COMBAT_STAMINA_ROUND_COST = 25;
 
 export function calculateTacticalTurn({ turn = 1, power = 70, contact = 70, speed = 70, eye = 70 } = {}) {
   const t = clamp(Number(turn) || 1, 1, 5);
@@ -75,7 +76,10 @@ export function resolveClimaxTurn({
   bossMaxHp = 100,
   internalEnergy = 0,
   tacticalEffectiveness = 0,
-  round = 1
+  round = 1,
+  playerStamina = 70,
+  playerStaminaMax = 100,
+  staminaRoundCost = COMBAT_STAMINA_ROUND_COST
 } = {}) {
   const normalizedGrade = String(grade || "MISS").toUpperCase();
   const damage = calculateClimaxDamage({
@@ -84,21 +88,37 @@ export function resolveClimaxTurn({
     internalEnergy
   });
   const maxHp = Number(bossMaxHp) || 100;
+  const staminaMax = clamp(Number(playerStaminaMax) || 100, 1, 100);
+  const staminaBefore = clamp(Number(playerStamina) || staminaMax, 0, staminaMax);
+  const staminaCost = clamp(Number(staminaRoundCost) || COMBAT_STAMINA_ROUND_COST, 1, staminaMax);
   const nextBossHp = Math.max(0, Number(bossHp) - damage);
   const victory = nextBossHp <= 0;
+  const nextPlayerStamina = victory
+    ? staminaBefore
+    : Math.max(0, staminaBefore - staminaCost);
+  const defeat = !victory && nextPlayerStamina <= 0;
+  const phase = defeat ? "DEFEAT" : victory ? "VICTORY" : "TACTICAL";
+  const outcome = defeat ? "DEFEAT" : resolveTimingGrade(normalizedGrade);
   return Object.freeze({
     type: COMBAT_RESULT_TYPE,
-    phase: victory ? "VICTORY" : "TACTICAL",
-    outcome: resolveTimingGrade(normalizedGrade),
+    phase,
+    outcome,
+    result: outcome,
     grade: normalizedGrade,
     damage,
     boss_hp_before: Number(bossHp),
     boss_hp_after: nextBossHp,
     boss_concentration_after: Math.round(clamp((nextBossHp / maxHp) * 100, 0, 100)),
+    player_stamina_before: staminaBefore,
+    player_stamina_after: nextPlayerStamina,
+    player_stamina_max: staminaMax,
+    stamina_round_cost: staminaCost,
     energy_after: victory ? 100 : 0,
     effectiveness_after: victory ? 100 : 0,
-    round_after: victory ? Number(round) : Number(round) + 1,
+    round_after: victory || defeat ? Number(round) : Number(round) + 1,
     tactical_turn_after: 0,
-    victory
+    victory,
+    defeat,
+    match_end: victory || defeat
   });
 }

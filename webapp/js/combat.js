@@ -1,5 +1,9 @@
 import { isCombatInitDTO, isTurnResultDTO } from "./api.js";
-import { resolveClimaxTurn, resolveTacticalTurn } from "./combat_core.js";
+import {
+  COMBAT_STAMINA_ROUND_COST,
+  resolveClimaxTurn,
+  resolveTacticalTurn
+} from "./combat_core.js";
 import { AreaThemeManager } from "./area_theme_manager.js";
 import { CombatStage, createCombatStageActors, renderCombatStageForeground, renderCombatStageWorld } from "./combat_stage.js";
 import { BatterRenderer } from "./batter_renderer.js";
@@ -268,6 +272,9 @@ export class CombatRenderer {
     this.bossMaxHp = 100;
     this.bossHp = 100;
     this.bossConcentration = 100;
+    this.playerStaminaMax = 70;
+    this.playerStamina = 70;
+    this.playerStaminaRoundCost = COMBAT_STAMINA_ROUND_COST;
     this.internalEnergy = 0;
     this.tacticalEffectiveness = 0;
     this.round = 1;
@@ -336,7 +343,7 @@ export class CombatRenderer {
   }
 
   beginTimingWindow() {
-    if (!this.matchReady || this.timingState?.active || this.battlePhase === "VICTORY") return false;
+    if (!this.matchReady || this.timingState?.active || ["VICTORY", "DEFEAT"].includes(this.battlePhase)) return false;
 
     if (this.battlePhase === "TACTICAL") {
       this._playTacticalTurn();
@@ -414,7 +421,7 @@ export class CombatRenderer {
   }
 
   _playTacticalTurn() {
-    if (!this.matchReady || this.timingState?.active || this.battlePhase === "VICTORY") return null;
+    if (!this.matchReady || this.timingState?.active || ["VICTORY", "DEFEAT"].includes(this.battlePhase)) return null;
     if (this.tacticalTurn >= this.tacticalMaxTurns) {
       this.battlePhase = "CLIMAX";
       return this.beginTimingWindow();
@@ -478,7 +485,10 @@ export class CombatRenderer {
       bossMaxHp: this.bossMaxHp,
       internalEnergy: this.internalEnergy,
       tacticalEffectiveness: this.tacticalEffectiveness,
-      round: this.round
+      round: this.round,
+      playerStamina: this.playerStamina,
+      playerStaminaMax: this.playerStaminaMax,
+      staminaRoundCost: this.playerStaminaRoundCost
     });
 
     this.combatPresentation.startFromCombatResult(result, {
@@ -500,21 +510,25 @@ export class CombatRenderer {
       this._playAudio("result.miss");
     }
 
+    this.playerStamina = result.player_stamina_after;
     this.internalEnergy = result.energy_after;
     this.tacticalEffectiveness = result.effectiveness_after;
-    if (result.victory) {
-      this.battlePhase = "VICTORY";
+    if (result.victory || result.defeat) {
+      this.battlePhase = result.victory ? "VICTORY" : "DEFEAT";
       this.tacticalTurn = result.tactical_turn_after;
       this.onLocalCombatResult?.({
         type: "TurnResultDTO",
         match_id: String(this.state?.match_id || this.state?.matchId || "local-combat"),
-        result: "VICTORY",
+        result: result.victory ? "VICTORY" : "DEFEAT",
+        outcome: result.victory ? "VICTORY" : "DEFEAT",
         match_end: true,
         state: {
           ...(this.state?.state || {}),
-          match_complete: true
+          match_complete: true,
+          outcome: result.victory ? "VICTORY" : "DEFEAT"
         },
         damage: result.damage,
+        player_stamina_after: result.player_stamina_after,
         source: "combat-local-runtime"
       });
       this.onState?.(this.state);
@@ -591,6 +605,9 @@ export class CombatRenderer {
       boss_hp: this.bossHp,
       boss_max_hp: this.bossMaxHp,
       boss_concentration: this.bossConcentration,
+      player_stamina: this.playerStamina,
+      player_stamina_max: this.playerStaminaMax,
+      player_stamina_round_cost: this.playerStaminaRoundCost,
       internal_energy: this.internalEnergy,
       tactical_effectiveness: this.tacticalEffectiveness,
       last_tactical_event: this.lastTacticalEvent,
@@ -907,6 +924,13 @@ export class CombatRenderer {
     this.bossMaxHp = 100;
     this.bossHp = 100;
     this.bossConcentration = 100;
+    const configuredStamina = safeNumber(
+      this.state?.batter?.stamina ?? this.state?.batter?.stats?.stamina,
+      70
+    );
+    this.playerStaminaMax = clamp(Math.round(configuredStamina), 1, 100);
+    this.playerStamina = this.playerStaminaMax;
+    this.playerStaminaRoundCost = COMBAT_STAMINA_ROUND_COST;
     this.internalEnergy = 0;
     this.tacticalEffectiveness = 0;
     this.round = 1;
@@ -1614,6 +1638,8 @@ export class CombatRenderer {
     this.canvas.dataset.combatBattlePhase = String(loopState.phase || "");
     this.canvas.dataset.combatTacticalTurn = String(loopState.tactical_turn ?? "");
     this.canvas.dataset.combatTacticalMaxTurns = String(loopState.tactical_max_turns ?? "");
+    this.canvas.dataset.combatPlayerStamina = String(loopState.player_stamina ?? "");
+    this.canvas.dataset.combatPlayerStaminaMax = String(loopState.player_stamina_max ?? "");
     this.canvas.dataset.combatTimingActive = String(Boolean(this.timingState?.active));
     this.canvas.dataset.combatTimingGrade = String(loopState.last_timing?.grade || "");
     this.canvas.dataset.combatResult = String(combatPresentationState.result?.result || "");
@@ -1854,7 +1880,9 @@ export class CombatRenderer {
       ? `TACTICAL // CARTA ${loop.tactical_turn}/${loop.tactical_max_turns}`
       : loop.phase === "CLIMAX"
         ? "CLIMAX // META CELL RAY"
-        : "VICTORY // RAY REFLECTED";
+        : loop.phase === "DEFEAT"
+          ? "DEFEAT // STAMINA EXHAUSTED"
+          : "VICTORY // RAY REFLECTED";
 
     const barX = w * 0.08;
     const barW = w * 0.84;
