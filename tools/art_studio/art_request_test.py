@@ -54,12 +54,28 @@ class ArtRequestTests(unittest.TestCase):
 
     def write_png_header(self, path, width, height):
         import struct
+        import zlib
         path.parent.mkdir(parents=True, exist_ok=True)
+
+        def chunk(kind, payload):
+            crc = zlib.crc32(kind + payload) & 0xFFFFFFFF
+            return (
+                struct.pack(">I", len(payload))
+                + kind
+                + payload
+                + struct.pack(">I", crc)
+            )
+
+        raw_row = b"\\x00" + (b"\\x00\\x00\\x00\\x00" * width)
+        raw = raw_row * height
         png = (
-            b"\\x89PNG\\r\\n\\x1a\\n"
-            + b"\\x00\\x00\\x00\\x0dIHDR"
-            + struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0)
-            + b"\\x00\\x00\\x00\\x00IEND\\xaeB\\x60\\x82"
+            bytes.fromhex("89504e470d0a1a0a")
+            + chunk(
+                b"IHDR",
+                struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0),
+            )
+            + chunk(b"IDAT", zlib.compress(raw, 9))
+            + chunk(b"IEND", b"")
         )
         path.write_bytes(png)
 
