@@ -9091,3 +9091,28 @@ La infraestructura del combat slice está bastante avanzada, pero no corresponde
 **CHANGES:** QA-only. Se añadió el branch T109_REWARD_BOUNDARY al probe existente y su ejecución al workflow CDP existente. El segundo commit corrigió el avance TACTICAL → CLIMAX. No hubo cambios en gameplay, rewards, Player Meta authority, persistence ni balance.
 
 **NEXT:** T110 · NORMAL COMBAT MID-TURN REWARD BROWSER PROOF AFTER TRAVERSAL RACE FIX · TIMER: 1–2 horas
+
+
+### T110 · Normal Combat Mid-Turn Reward Browser Proof After Traversal Race Fix
+
+**Fecha:** 2026-10-02  
+**BASE SHA:** `4368b4e72fc522b11e63293f15d3b7865c1608a8`  
+**HARNESS FIX 1:** `a02117d73bb73114ce0894747a347c9e5fdda740`  
+**HARNESS FIX 2:** `fea77ab0d2c6853fd8092199825181403ccf0352`  
+**TIMER:** 1–2 horas
+
+**RESULT:** CLOSED.
+
+**RACE CAUSE:** El probe T109 exigía que cada `tacticalTurn` permaneciera exactamente en el valor esperado y, además, dependía de una fase de presentación transitoria. Eso permitía que el runtime avanzara legítimamente antes de la siguiente lectura y provocara un timeout.
+
+**HARNESS FIX:** `advanceToClimax()` pasó a sincronizarse monotónicamente con `tacticalTurn >= esperado`, sin exigir que T1 siguiera visible. Para rondas que comienzan en `TACTICAL 0`, el probe realiza el `BATEAR` inicial; para una ronda ya iniciada reutiliza el estado observado.
+
+**RUNTIME EVIDENCE:** Run `37063430051`, T109 step = SUCCESS. `node --check webapp/js/character_journey_browser_probe.mjs` = PASS. Chromium/CDP = PASS. T109 reportó `SCRAP BEFORE=0`, `TACTICAL SCRAP=0`, dos resoluciones `NON-TERMINAL CLIMAX/TIMING SCRAP=0`, `MID-TURN REWARD=NONE`, `REWARD LEDGER=UNCHANGED`, `PLAYER META=UNCHANGED` y `TERMINAL BOUNDARY=NOT REACHED`.
+
+**ATTEMPTS:** Primer intento de T110 confirmó la corrección de la race original pero encontró un caso separado de arranque de ronda en `TACTICAL 0`. Segundo intento incorporó únicamente ese ajuste y completó el proof.
+
+**GAMEPLAY CHANGES:** 0. No se modificaron combat, reward pipeline, Player Meta, persistence, balance ni Timing.
+
+**STATUS:** CLOSED.
+
+**NEXT:** T111 · NORMAL COMBAT MID-TURN REWARD TERMINAL BOUNDARY CROSS-CHECK · TIMER: 1–2 horas
