@@ -13,7 +13,7 @@ export const COMBAT_PRESENTATION_PHASE = Object.freeze({
 const STEP_DEFINITIONS = Object.freeze([
   Object.freeze({
     phase: COMBAT_PRESENTATION_PHASE.ATTACKER_FOCUS,
-    durationMs: 240,
+    durationMs: 220,
     focusTarget: "ATTACKER",
     focusActor: "ATTACKER",
     cameraAnchor: "PLAYER_FOCUS",
@@ -26,7 +26,7 @@ const STEP_DEFINITIONS = Object.freeze([
   }),
   Object.freeze({
     phase: COMBAT_PRESENTATION_PHASE.ACTION,
-    durationMs: 260,
+    durationMs: 300,
     focusTarget: "ATTACKER",
     focusActor: "ATTACKER",
     cameraAnchor: "ACTION",
@@ -40,7 +40,7 @@ const STEP_DEFINITIONS = Object.freeze([
   }),
   Object.freeze({
     phase: COMBAT_PRESENTATION_PHASE.IMPACT,
-    durationMs: 150,
+    durationMs: 180,
     focusTarget: "TARGET",
     focusActor: "TARGET",
     cameraAnchor: "IMPACT",
