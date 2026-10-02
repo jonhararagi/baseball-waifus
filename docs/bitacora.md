@@ -9116,3 +9116,30 @@ La infraestructura del combat slice está bastante avanzada, pero no corresponde
 **STATUS:** CLOSED.
 
 **NEXT:** T111 · NORMAL COMBAT MID-TURN REWARD TERMINAL BOUNDARY CROSS-CHECK · TIMER: 1–2 horas
+
+
+### T112 · Continuity Checkpoint / Next Single Production Task
+
+**Fecha:** 2026-10-02  \
+**BASE SHA:** `586d055a099d568a43e2d4e5428cf25849ea7375`  \
+**TIMER:** 1–2 horas
+
+**RESULT:** PARTIAL.
+
+**CURRENT HEAD:** `586d055a099d568a43e2d4e5428cf25849ea7375` (`qa: add T111 terminal reward boundary proof`). La búsqueda de commits más reciente de `main` confirma que no hay un commit posterior conocido en el repositorio al momento de este checkpoint.
+
+**T110:** CLOSED. La bitácora registra Run `37063430051` con el paso de T109 = SUCCESS y evidencia runtime de `SCRAP BEFORE=0`, Tactical Scrap `0`, dos resoluciones Climax/Timing no terminales con Scrap `0`, ledger sin cambios y Player Meta sin mutación. El fallo global del workflow fue del paso histórico T097, no del proof de T110.
+
+**T111:** PARTIAL. El run real `37064420648` ejecutó el paso `Run T111 terminal reward boundary proof`, pero terminó en FAILURE. El runtime quedó en `TACTICAL`, `tacticalTurn=0`, `combatResult=STRIKE`, `SCRAP=0`, `persistedScrap=0` y ledger vacío; no alcanzó el terminal `VICTORY` requerido para demostrar el cruce de boundary. Por tanto, no corresponde declarar T111 CLOSED.
+
+**COMBAT CORE:** Estable y con ambos terminales ya demostrados anteriormente. No se justifica reabrir combat, defeat ni reward implementation.
+
+**REWARD INTEGRITY:** La auditoría estática T106 y el proof T110 sostienen la ausencia de recompensa mid-combat. El cierre del terminal reward boundary de victoria sigue pendiente por el fallo de traversía de T111.
+
+**PRODUCTION READY:** NO. La fase de reward-integrity todavía tiene un checkpoint terminal de victoria sin cerrar.
+
+**NEXT:** `T113 · NORMAL COMBAT TERMINAL REWARD BOUNDARY BROWSER PROOF RECOVERY` · única task de desbloqueo necesaria. No iniciar aún `CHARACTER 2.5D ACTOR FOUNDATION`.
+
+**CHANGES:** documentación de continuidad únicamente. Sin cambios de gameplay, rewards, persistence, balance, arte ni arquitectura.
+
+**STATUS:** PARTIAL.
