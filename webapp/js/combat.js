@@ -1089,6 +1089,7 @@ export class CombatRenderer {
     }
 
     if (this.matchReady && this.state) {
+      this._syncCinematicOverlayState();
       target.save();
       this.combatPresentation.applyCamera(target, w, h);
       this._drawMatchState(target, w, h);
@@ -1153,12 +1154,25 @@ export class CombatRenderer {
     ctx.restore();
   }
 
+  _syncCinematicOverlayState() {
+    const active = Boolean(this.combatPresentation?.getState?.().active);
+    const card = this.activeWaifuCard || document.querySelector("#active-waifu-card");
+    const feedback = this.timingFeedback || document.querySelector("#timing-feedback");
+
+    if (card) {
+      card.classList.toggle("is-cinematic-action", active);
+      if (!active) card.removeAttribute("aria-hidden");
+      else card.setAttribute("aria-hidden", "true");
+    }
+    feedback?.classList.toggle("is-cinematic-action", active);
+  }
+
   _handleCombatPresentationStep(event) {
     const phase = String(event?.phase || "").toUpperCase();
     const result = event?.result || {};
     if (phase === "ATTACKER_FOCUS") {
       this.canvas.dataset.combatStageActionComplete = "false";
-      this.activeWaifuCard?.classList.add("is-cinematic-action");
+      this._syncCinematicOverlayState();
       this.timingFeedback?.classList.remove("is-visible");
       this.batterRenderer.beginWindup();
       return;
@@ -1173,7 +1187,7 @@ export class CombatRenderer {
       return;
     }
     if (phase === "COMBAT_RETURN") {
-      this.activeWaifuCard?.classList.remove("is-cinematic-action");
+      this._syncCinematicOverlayState();
       this.timingFeedback?.classList.remove("is-visible");
       this.canvas.dataset.combatStageActionComplete = "true";
     }
