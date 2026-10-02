@@ -129,6 +129,32 @@
       "source_files": [],
       "output": null,
       "failure": null
+    },
+    {
+      "request_id": "AR-T087-STAGE-FOREGROUND-01",
+      "status": "REQUESTED",
+      "asset_kind": "STAGE_FOREGROUND",
+      "target_name": "combat-stage--foreground--wide.png",
+      "target_path": "assets/stages/combat-stage--foreground--wide.png",
+      "runtime_slot": "stage.foreground",
+      "character_id": null,
+      "what_is_expected": "Original production near-camera cinematic foreground framing layer for the BaseWarriors: Meta-Strike CombatStage 2.5D. The asset must read as physical space between the camera and combatants, adding depth, framing, scale and parallax without becoming a second background or the main subject.",
+      "camera": "WIDE",
+      "composition": "FOREGROUND",
+      "subject": "combat-stage",
+      "environment": "Cyberpunk sports-tech combat arena with large near-camera architectural and lighting elements placed around the outer frame, designed as a foreground depth layer in front of the actors while remaining visually subordinate to the combat.",
+      "visual_notes": "FOREGROUND layer only. Use large partially cropped structural beams, arena edges, lighting rigs, translucent energy panels, rails or industrial-sport framing silhouettes near the outer frame and corners. Preserve protected zones for hero characters, enemy, bat, projectile path, impact and reaction areas. Partial edge, corner and upper/lower framing is allowed; central actor silhouettes must remain clear. The asset must support near/mid/far separation, parallax, scale relationships and occlusion while tolerating FORMATION, PLAYER_FOCUS, ACTION, IMPACT, REACTION and RETURN camera routes with push-in, pull-back, lateral movement and small framing adjustments. Do not bake PLAYER_RAMP, CENTER_PLATFORM, ENEMY_PLATFORM or FRONT_STEP into the artwork. Baseball identity should remain abstract sports-tech arena language rather than a traditional field layout. Keep visual density controlled and avoid face-like or character-like forms.",
+      "generation_prompt": "Wide anime 2.5D cyberpunk sports-tech combat arena FOREGROUND layer for BaseWarriors: Meta-Strike, designed as a near-camera cinematic framing device physically positioned between the camera and the combat actors, large partially cropped arena architecture along outer edges and corners, structural beams, sports-tech rails, stadium lighting structures, translucent energy panels and abstract industrial-sport silhouettes, strong near-space depth cues, readable occlusion at the scene edges, protected clear space for four playable characters, one enemy, bat, projectile path, impact area and reaction area, compatible with FAR, MID, GROUND and runtime presentation geometry without baking gameplay geometry into the art, camera-safe composition for formation, player focus, action, impact, reaction and return, tolerant of push-in, pull-back, lateral movement and slight framing changes, restrained baseball-inspired sports-tech architecture, stylized anime shonen presentation, cinematic 2.5D parallax and scale relationships, cool cyan and magenta energy accents, visually subordinate framing with no central focal obstruction and no characters.",
+      "negative_prompt": "No characters, no UI, no text, no readable signage, no logos, no watermark, no screenshot, no third-party likeness, no photorealism, no semirealistic 3D, no traditional baseball field, no baseball diamond, no bases, no pitcher mound, no batter box, no runner lanes, no crowd, no human silhouettes, no mascot silhouettes, no central obstruction, no face-like shapes, no obstruction over playable characters, no obstruction over enemy, no obstruction over bat, no obstruction over projectile path, no obstruction over impact area, no excessive micro-detail, no noisy texture, no fixed camera crop, no baked-in PLAYER_RAMP, no baked-in CENTER_PLATFORM, no baked-in ENEMY_PLATFORM, no baked-in FRONT_STEP, no giant central object, no dominant focal point, no character-shaped architectural forms.",
+      "format": "png",
+      "minimum_width": 2048,
+      "minimum_height": 1152,
+      "drop_zone": "tools/art_studio/inbox/AR-T087-STAGE-FOREGROUND-01",
+      "created_at": "2026-10-02T00:00:00Z",
+      "updated_at": "2026-10-02T00:00:00Z",
+      "source_files": [],
+      "output": null,
+      "failure": null
     }
   ]
 }

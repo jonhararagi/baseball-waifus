@@ -658,6 +658,214 @@ class ArtRequestTests(unittest.TestCase):
         self.assertEqual(len(final["source_files"][0]["sha256"]), 64)
         self.assertFalse((ROOT / ground["target_path"]).exists())
 
+
+    def test_t087_foreground_production_request_and_fixture_intake(self):
+        registry = load_registry(ROOT / "tools/art_studio/art_requests.json")
+        foreground = next(
+            item for item in registry["requests"]
+            if item["request_id"] == "AR-T087-STAGE-FOREGROUND-01"
+        )
+
+        self.assertEqual(foreground["status"], "REQUESTED")
+        self.assertEqual(foreground["asset_kind"], "STAGE_FOREGROUND")
+        self.assertEqual(foreground["runtime_slot"], "stage.foreground")
+        self.assertEqual(deterministic_runtime_slot("STAGE_FOREGROUND"), "stage.foreground")
+        self.assertEqual(foreground["camera"], "WIDE")
+        self.assertEqual(foreground["composition"], "FOREGROUND")
+        self.assertEqual(foreground["format"], "png")
+        self.assertEqual(foreground["minimum_width"], 2048)
+        self.assertEqual(foreground["minimum_height"], 1152)
+        self.assertEqual(
+            foreground["target_name"],
+            "combat-stage--foreground--wide.png",
+        )
+        self.assertEqual(
+            foreground["target_path"],
+            "assets/stages/combat-stage--foreground--wide.png",
+        )
+        self.assertEqual(
+            foreground["drop_zone"],
+            "tools/art_studio/inbox/AR-T087-STAGE-FOREGROUND-01",
+        )
+        self.assertEqual(validate_request(foreground), [])
+        self.assertIn("near-camera", foreground["what_is_expected"])
+        self.assertIn("protected zones", foreground["visual_notes"])
+        self.assertIn("projectile path", foreground["visual_notes"])
+        self.assertIn("IMPACT", foreground["visual_notes"])
+        self.assertIn("no characters", foreground["generation_prompt"].lower())
+        for phrase in (
+            "No characters",
+            "No UI",
+            "No text",
+            "No logos",
+            "No watermark",
+            "No screenshot",
+            "No photorealism",
+            "No semirealistic 3D",
+            "No human silhouettes",
+            "No mascot silhouettes",
+            "No central obstruction",
+            "No face-like shapes",
+            "No obstruction over playable characters",
+            "No obstruction over enemy",
+            "No obstruction over bat",
+            "No obstruction over projectile path",
+            "No obstruction over impact area",
+            "No fixed camera crop",
+        ):
+            self.assertIn(phrase, foreground["negative_prompt"])
+        self.assertFalse(foreground["source_files"])
+        self.assertIsNone(foreground["output"])
+        self.assertFalse((ROOT / foreground["target_path"]).exists())
+
+        far = next(item for item in registry["requests"] if item["request_id"] == "AR-T084-STAGE-BG-FAR-01")
+        mid = next(item for item in registry["requests"] if item["request_id"] == "AR-T085-STAGE-BG-MID-01")
+        ground = next(item for item in registry["requests"] if item["request_id"] == "AR-T086-STAGE-GROUND-01")
+        self.assertEqual(far["runtime_slot"], "stage.background.far")
+        self.assertEqual(mid["runtime_slot"], "stage.background.mid")
+        self.assertEqual(ground["runtime_slot"], "stage.ground")
+        self.assertNotEqual(foreground["runtime_slot"], far["runtime_slot"])
+        self.assertNotEqual(foreground["runtime_slot"], mid["runtime_slot"])
+        self.assertNotEqual(foreground["runtime_slot"], ground["runtime_slot"])
+        self.assertNotEqual(foreground["target_name"], far["target_name"])
+        self.assertNotEqual(foreground["target_name"], mid["target_name"])
+        self.assertNotEqual(foreground["target_name"], ground["target_name"])
+
+        wrong_slot = dict(foreground)
+        wrong_slot["runtime_slot"] = "stage.background.mid"
+        self.assertTrue(
+            any("runtime_slot mismatch" in error for error in validate_request(wrong_slot))
+        )
+
+        wrong_target = dict(foreground)
+        wrong_target["target_path"] = "assets/stages/combat-stage--background--mid--wide.png"
+        self.assertTrue(
+            any("target_path mismatch" in error for error in validate_request(wrong_target))
+        )
+
+        wrong_filename = dict(foreground)
+        wrong_filename["target_name"] = "combat-stage--ground--wide.png"
+        self.assertTrue(
+            any("target_name mismatch" in error for error in validate_request(wrong_filename))
+        )
+
+        unsafe_target = dict(foreground)
+        unsafe_target["target_path"] = "../escape.png"
+        self.assertTrue(
+            any("target_path" in error for error in validate_request(unsafe_target))
+        )
+
+        wrong_format_metadata = dict(foreground)
+        wrong_format_metadata["format"] = "svg"
+        self.assertTrue(
+            any("target_name mismatch" in error for error in validate_request(wrong_format_metadata))
+        )
+
+        root = self.make_root()
+        wrong_format_source = root / foreground["drop_zone"] / "wrong-format.svg"
+        wrong_format_source.parent.mkdir(parents=True, exist_ok=True)
+        wrong_format_source.write_text(
+            '<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="1152"></svg>',
+            encoding="utf-8",
+        )
+        with self.assertRaises(ArtRequestError):
+            validate_image_file(foreground, wrong_format_source)
+
+        undersized_source = root / foreground["drop_zone"] / "undersized.svg"
+        undersized_source.write_text(
+            '<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="576"></svg>',
+            encoding="utf-8",
+        )
+        with self.assertRaises(ArtRequestError):
+            validate_image_file(
+                {**foreground, "format": "svg"},
+                undersized_source,
+            )
+
+        ambiguous_drop = root / "tools/art_studio/inbox/AR-T087-AMBIQUOUS-001"
+        ambiguous_drop.mkdir(parents=True, exist_ok=True)
+        for filename in ("one.svg", "two.svg"):
+            (ambiguous_drop / filename).write_text(
+                '<svg xmlns="http://www.w3.org/2000/svg" width="512" height="256"></svg>',
+                encoding="utf-8",
+            )
+        ambiguous_request = {
+            **foreground,
+            "request_id": "AR-T087-AMBIQUOUS-001",
+            "drop_zone": "tools/art_studio/inbox/AR-T087-AMBIQUOUS-001",
+        }
+        with self.assertRaises(ArtRequestError):
+            discover_source(ambiguous_request, root)
+
+        registry_path = root / "tools/art_studio/art_requests.json"
+        fixture_request = build_request(
+            request_id="AR-TEST-STAGE-FOREGROUND-INTAKE-001",
+            asset_kind="STAGE_FOREGROUND",
+            character_id=None,
+            subject="combat-stage",
+            what_is_expected="Controlled foreground fixture using production stage semantics.",
+            camera="WIDE",
+            composition="FOREGROUND",
+            environment="Synthetic CombatStage near-camera foreground.",
+            visual_notes="Test-only source; outer-frame framing only; actors and projectile path protected.",
+            generation_prompt="Controlled local foreground fixture.",
+            negative_prompt="No external dependencies.",
+            fmt="svg",
+            minimum_width=512,
+            minimum_height=256,
+        )
+        self.assertEqual(fixture_request["runtime_slot"], "stage.foreground")
+        self.assertEqual(
+            fixture_request["target_name"],
+            "combat-stage--foreground--wide.svg",
+        )
+        self.assertEqual(
+            fixture_request["target_path"],
+            "assets/stages/combat-stage--foreground--wide.svg",
+        )
+        save_registry(
+            registry_path,
+            {"schema_version": 1, "registry_id": "test", "requests": [fixture_request]},
+        )
+
+        drop = root / fixture_request["drop_zone"]
+        drop.mkdir(parents=True, exist_ok=True)
+        source = ROOT / "tools/art_studio/inbox/AR-T083-FIXTURE-001/fixture-stage.svg"
+        (drop / "artist-original.svg").write_text(
+            source.read_text(encoding="utf-8"),
+            encoding="utf-8",
+        )
+
+        script = ROOT / "tools/art_studio/art_request.py"
+        for args in (
+            ["generate", fixture_request["request_id"]],
+            ["ingest", fixture_request["request_id"]],
+            ["validate", fixture_request["request_id"]],
+        ):
+            completed = subprocess.run(
+                [sys.executable, str(script), "--root", str(root), "--registry", str(registry_path), *args],
+                text=True,
+                capture_output=True,
+                cwd=ROOT,
+            )
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+
+        final = load_registry(registry_path)["requests"][0]
+        self.assertEqual(final["status"], "VALIDATED")
+        self.assertEqual(final["runtime_slot"], "stage.foreground")
+        self.assertEqual(
+            final["output"]["path"],
+            "assets/stages/combat-stage--foreground--wide.svg",
+        )
+        self.assertTrue(
+            (root / "assets/stages/combat-stage--foreground--wide.svg").is_file()
+        )
+        self.assertEqual(final["source_files"][0]["filename"], "artist-original.svg")
+        self.assertEqual(final["source_files"][0]["format"], "svg")
+        self.assertEqual(len(final["source_files"][0]["sha256"]), 64)
+        self.assertFalse((ROOT / foreground["target_path"]).exists())
+
+
     def test_t084_production_request_is_requested_and_deterministic(self):
         registry = load_registry(ROOT / "tools/art_studio/art_requests.json")
         request = next(item for item in registry["requests"] if item["request_id"] == "AR-T084-STAGE-BG-FAR-01")
