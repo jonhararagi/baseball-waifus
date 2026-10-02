@@ -618,15 +618,19 @@ async function run() {
         6000
       );
 
-      await sleep(680);
+      await sleep(620);
       const timingClickState = await readCombatState();
       requireCondition(timingClickState.timingActive === true, "T094 timing window closed before physical input", timingClickState);
       const timingRect = timingClickState.canvasRect;
       requireCondition(timingRect && timingRect.width > 0 && timingRect.height > 0, "T094 timing canvas geometry unavailable", timingRect);
       const clickX = timingRect.left + timingRect.width / 2;
       const clickY = timingRect.top + timingRect.height / 2;
-      await cdp.send("Input.dispatchMouseEvent", { type: "mousePressed", x: clickX, y: clickY, button: "left", clickCount: 1 });
-      await cdp.send("Input.dispatchMouseEvent", { type: "mouseReleased", x: clickX, y: clickY, button: "left", clickCount: 1 });
+      const hitTarget = await cdpEvaluate(cdp, "(() => { const el = document.elementFromPoint(" + clickX + ", " + clickY + "); return { tag: el?.tagName || '', id: el?.id || '', isCanvas: el === document.querySelector('#gameCanvas') }; })()");
+      requireCondition(hitTarget?.isCanvas === true, "T094 physical timing target is not the game canvas", hitTarget);
+      await cdp.send("Input.setIgnoreInputEvents", { ignore: false });
+      await cdp.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: clickX, y: clickY, button: "none", buttons: 0 });
+      await cdp.send("Input.dispatchMouseEvent", { type: "mousePressed", x: clickX, y: clickY, button: "left", buttons: 1, clickCount: 1 });
+      await cdp.send("Input.dispatchMouseEvent", { type: "mouseReleased", x: clickX, y: clickY, button: "left", buttons: 0, clickCount: 1 });
 
       const timingResolved = await markCheckpoint(
         "TIMING RESOLUTION",
