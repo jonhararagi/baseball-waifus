@@ -15,6 +15,9 @@ export const COMBAT_ULTIMATE_PHASE = Object.freeze({
   STAGING: "ULTIMATE_STAGING",
   FOCUS: "ULTIMATE_CHARACTER_FOCUS",
   PREP: "ULTIMATE_ACTION_PREP",
+  ACTION: "ULTIMATE_ACTION",
+  IMPACT: "ULTIMATE_IMPACT",
+  REACTION: "ULTIMATE_REACTION",
   RETURN: "ULTIMATE_RETURN",
   COMPLETE: "ULTIMATE_COMPLETE"
 });
@@ -145,6 +148,63 @@ const ULTIMATE_STEP_DEFINITIONS = Object.freeze([
   Object.freeze({
     phase: COMBAT_ULTIMATE_PHASE.RETURN,
     durationMs: 320,
+    focusTarget: "COMBAT",
+    focusActor: null,
+    cameraAnchor: "RETURN",
+    zoom: 0.96,
+    panX: 0,
+    panY: 0,
+    easing: "ease_in",
+    actionIntent: "RESET",
+    animationState: "IDLE"
+  })
+]);
+
+const ULTIMATE_ACTION_STEP_DEFINITIONS = Object.freeze([
+  Object.freeze({
+    phase: COMBAT_ULTIMATE_PHASE.ACTION,
+    durationMs: 300,
+    focusTarget: "ATTACKER",
+    focusActor: "ATTACKER",
+    cameraAnchor: "ACTION",
+    zoom: 1.28,
+    panX: 0.02,
+    panY: -0.01,
+    easing: "ease_in_out",
+    actionIntent: "ULTIMATE_SWING",
+    animationState: "SWING",
+    projectileBeat: "RELEASE_TO_IMPACT"
+  }),
+  Object.freeze({
+    phase: COMBAT_ULTIMATE_PHASE.IMPACT,
+    durationMs: 150,
+    focusTarget: "TARGET",
+    focusActor: "TARGET",
+    cameraAnchor: "IMPACT",
+    zoom: 1.30,
+    panX: -0.06,
+    panY: -0.015,
+    easing: "ease_out",
+    actionIntent: "ULTIMATE_CONTACT",
+    animationState: "FOLLOW_THROUGH",
+    projectileBeat: "CONTACT"
+  }),
+  Object.freeze({
+    phase: COMBAT_ULTIMATE_PHASE.REACTION,
+    durationMs: 260,
+    focusTarget: "TARGET",
+    focusActor: "TARGET",
+    cameraAnchor: "REACTION",
+    zoom: 1.12,
+    panX: -0.10,
+    panY: -0.02,
+    easing: "ease_in_out",
+    actionIntent: "ULTIMATE_REACTION",
+    animationState: "REACTION"
+  }),
+  Object.freeze({
+    phase: COMBAT_ULTIMATE_PHASE.RETURN,
+    durationMs: 300,
     focusTarget: "COMBAT",
     focusActor: null,
     cameraAnchor: "RETURN",
@@ -319,6 +379,31 @@ export class CombatPresentationDirector {
     return this.getState();
   }
 
+  continueUltimateAction(result, fallback = {}) {
+    if (!this.active || !this.sequenceKind.startsWith("ULTIMATE") || this.phase !== COMBAT_ULTIMATE_PHASE.PREP) {
+      return null;
+    }
+
+    const normalized = normalizePresentationInput(result, {
+      ...fallback,
+      attackerId: fallback.attackerId || this.result?.attackerId,
+      targetId: fallback.targetId || this.result?.targetId,
+      actionType: fallback.actionType || "ULTIMATE_ACTION"
+    });
+
+    this.sequenceId = "ultimate-action:" + normalized.attackerId + ":" + normalized.targetId + ":" + normalized.result;
+    this.sequenceKind = "ULTIMATE_ACTION";
+    this.activeStepDefinitions = ULTIMATE_ACTION_STEP_DEFINITIONS;
+    this.result = normalized;
+    this.commands = buildCommands(this.sequenceId, normalized, this.activeStepDefinitions, this.stage);
+    this.stepIndex = 0;
+    this.stepElapsedMs = 0;
+    this.phase = ULTIMATE_ACTION_STEP_DEFINITIONS[0].phase;
+    this.active = true;
+    this._emitStep("CONTINUE");
+    return this.getState();
+  }
+
   startFromCombatResult(result, fallback = {}) {
     const normalized = normalizePresentationInput(result, fallback);
     this.sequenceId = "combat-presentation:" + normalized.attackerId + ":" + normalized.targetId + ":" + normalized.result;
@@ -374,7 +459,7 @@ export class CombatPresentationDirector {
   cancel() {
     if (!this.active) return this.getState();
 
-    const returnPhase = this.sequenceKind === "ULTIMATE_STAGING"
+    const returnPhase = this.sequenceKind.startsWith("ULTIMATE")
       ? COMBAT_ULTIMATE_PHASE.RETURN
       : COMBAT_PRESENTATION_PHASE.RETURN;
     const returnIndex = Math.max(0, this.activeStepDefinitions.findIndex(
@@ -528,5 +613,6 @@ export class CombatPresentationDirector {
 }
 
 export const COMBAT_PRESENTATION_PHASES = PHASES;
+export const COMBAT_ULTIMATE_ACTION_STEP_DEFINITIONS = ULTIMATE_ACTION_STEP_DEFINITIONS;
 export const COMBAT_ULTIMATE_STEP_DEFINITIONS = ULTIMATE_STEP_DEFINITIONS;
 export const COMBAT_PRESENTATION_STEP_DEFINITIONS = STEP_DEFINITIONS;
