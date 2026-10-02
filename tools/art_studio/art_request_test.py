@@ -693,6 +693,7 @@ class ArtRequestTests(unittest.TestCase):
         self.assertIn("projectile path", foreground["visual_notes"])
         self.assertIn("IMPACT", foreground["visual_notes"])
         self.assertIn("no characters", foreground["generation_prompt"].lower())
+        negative_prompt = foreground["negative_prompt"].lower()
         for phrase in (
             "No characters",
             "No UI",
@@ -713,7 +714,7 @@ class ArtRequestTests(unittest.TestCase):
             "No obstruction over impact area",
             "No fixed camera crop",
         ):
-            self.assertIn(phrase, foreground["negative_prompt"])
+            self.assertIn(phrase.lower(), negative_prompt)
         self.assertFalse(foreground["source_files"])
         self.assertIsNone(foreground["output"])
         self.assertFalse((ROOT / foreground["target_path"]).exists())
