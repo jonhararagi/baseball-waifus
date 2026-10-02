@@ -343,6 +343,16 @@ def request_semantic_errors(request: dict) -> list[str]:
     fmt = canonical_format(request["format"])
     char_id = str(request.get("character_id") or "")
 
+    expected_runtime_slot = deterministic_runtime_slot(kind)
+    actual_runtime_slot = request.get("runtime_slot")
+    if expected_runtime_slot:
+        if actual_runtime_slot != expected_runtime_slot:
+            errors.append(
+                f"{kind}: runtime_slot mismatch: expected {expected_runtime_slot}"
+            )
+    elif actual_runtime_slot:
+        errors.append(f"{kind}: runtime_slot is only valid for stage asset requests")
+
     if kind.startswith("CHARACTER_"):
         character = factory_canonical().get(char_id)
         if not character:
