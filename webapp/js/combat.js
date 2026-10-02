@@ -1208,7 +1208,27 @@ export class CombatRenderer {
       return;
     }
     if (phase === "ULTIMATE_ACTION_PREP") {
-      this.batterRenderer.beginWindup();
+      this.batterRenderer.setState?.("WINDUP");
+      this.canvas.dataset.combatStageUltimateActive = "true";
+      return;
+    }
+    if (phase === "ULTIMATE_ACTION") {
+      this.batterRenderer.beginSwing();
+      this.canvas.dataset.combatStageUltimateActive = "true";
+      return;
+    }
+    if (phase === "ULTIMATE_IMPACT") {
+      const combatResult = String(result.result || "HIT").toUpperCase();
+      this.combatEffects.trigger(combatResult, { result: combatResult });
+      this._spawnImpactParticles(combatResult === "HOME_RUN" ? 28 : 16);
+      this.impactTimer = Math.max(this.impactTimer, combatResult === "HOME_RUN" ? 0.42 : 0.2);
+      this.cameraShakeTimer = Math.max(this.cameraShakeTimer, combatResult === "HOME_RUN" ? 0.28 : 0.14);
+      this.impactKind = combatResult;
+      this.canvas.dataset.combatStageUltimateImpact = "true";
+      return;
+    }
+    if (phase === "ULTIMATE_REACTION") {
+      this.canvas.dataset.combatStageUltimateImpact = "false";
       this.canvas.dataset.combatStageUltimateActive = "true";
       return;
     }
@@ -1221,6 +1241,8 @@ export class CombatRenderer {
     if (phase === "ULTIMATE_COMPLETE") {
       this.batterRenderer.setState?.("IDLE");
       this.canvas.dataset.combatStageUltimateActive = "false";
+      this.canvas.dataset.combatStageUltimateImpact = "false";
+      this.canvas.dataset.combatStageUltimateActionComplete = "true";
       return;
     }
 
@@ -1350,9 +1372,9 @@ export class CombatRenderer {
     const frame = motion || transform;
     const radius = 42 * frame.scale;
     const t = presentation.progress || 0;
-    const pulse = presentation.phase === "IMPACT"
+    const pulse = ["IMPACT", "ULTIMATE_IMPACT"].includes(presentation.phase)
       ? Math.sin(t * Math.PI)
-      : presentation.phase === "TARGET_REACTION"
+      : ["TARGET_REACTION", "ULTIMATE_REACTION"].includes(presentation.phase)
         ? Math.sin(t * Math.PI)
         : 0;
     const x = frame.x;
@@ -1399,8 +1421,11 @@ export class CombatRenderer {
       ctx.fill();
     }
 
-    if (presentation.phase === "IMPACT" || presentation.phase === "TARGET_REACTION") {
-      const reactionPulse = presentation.phase === "IMPACT"
+    if (
+      ["IMPACT", "ULTIMATE_IMPACT"].includes(presentation.phase)
+      || ["TARGET_REACTION", "ULTIMATE_REACTION"].includes(presentation.phase)
+    ) {
+      const reactionPulse = ["IMPACT", "ULTIMATE_IMPACT"].includes(presentation.phase)
         ? 1 - (presentation.progress || 0)
         : 0.4;
       ctx.strokeStyle = "rgba(255,223,126," + clamp(reactionPulse, 0, 1) + ")";
@@ -1429,7 +1454,7 @@ export class CombatRenderer {
 
   _drawCombatStageProjectile(ctx, w, h) {
     const state = this.combatPresentation.getState();
-    if (!["ACTION", "IMPACT"].includes(state.phase)) return;
+    if (!["ACTION", "IMPACT", "ULTIMATE_ACTION", "ULTIMATE_IMPACT"].includes(state.phase)) return;
     const attackerId = state.result?.attackerId || this.combatStage.selectedActorId;
     const targetId = state.result?.targetId;
     if (!attackerId || !targetId) return;
@@ -1532,7 +1557,15 @@ export class CombatRenderer {
     this.canvas.dataset.combatStageUltimatePhases = (stageState.ultimatePhases || []).join(",");
     const ultimateState = this.combatPresentation.getState();
     const ultimatePhase = String(ultimateState.phase || "");
-    const ultimateFrames = ["ULTIMATE_STAGING", "ULTIMATE_CHARACTER_FOCUS", "ULTIMATE_ACTION_PREP", "ULTIMATE_RETURN"].includes(ultimatePhase)
+    const ultimateFrames = [
+      "ULTIMATE_STAGING",
+      "ULTIMATE_CHARACTER_FOCUS",
+      "ULTIMATE_ACTION_PREP",
+      "ULTIMATE_ACTION",
+      "ULTIMATE_IMPACT",
+      "ULTIMATE_REACTION",
+      "ULTIMATE_RETURN"
+    ].includes(ultimatePhase)
       ? this.combatStage.getSortedActors().map((actor) => this.combatStage.resolveCinematicActorFrame(actor.actorId, {
         phase: ultimatePhase,
         progress: ultimateState.progress,
@@ -1549,7 +1582,7 @@ export class CombatRenderer {
       })
       .map((frame) => Number(frame.opacity ?? 1));
     this.canvas.dataset.combatStageUltimateActive = String(
-      ultimateState.sequenceKind === "ULTIMATE_STAGING" && ultimateState.active === true
+      ultimateState.sequenceKind.startsWith("ULTIMATE") && ultimateState.active === true
     );
     this.canvas.dataset.combatStageUltimateSequenceKind = String(ultimateState.sequenceKind || "");
     this.canvas.dataset.combatStageUltimatePhase = ultimatePhase;
@@ -1568,7 +1601,12 @@ export class CombatRenderer {
       this.batterRenderer.getCharacterMotion?.(this.pixelWidth, this.pixelHeight)?.rotationDeg || 0
     );
     const presentationState = this.combatPresentation.getState();
-    const cinematicProjectile = ["ACTION", "IMPACT"].includes(presentationState.phase)
+    const cinematicProjectile = [
+      "ACTION",
+      "IMPACT",
+      "ULTIMATE_ACTION",
+      "ULTIMATE_IMPACT"
+    ].includes(presentationState.phase)
       ? this.combatStage.resolveCinematicProjectile(
         presentationState.result?.attackerId || stageState.selectedActorId,
         presentationState.result?.targetId || "",
@@ -1587,6 +1625,8 @@ export class CombatRenderer {
     this.canvas.dataset.combatStageProjectileTravel = cinematicProjectile
       ? String(Number(cinematicProjectile.travelProgress).toFixed(3))
       : "";
+    this.canvas.dataset.combatStageUltimateResult = String(presentationState.result?.result || "");
+    this.canvas.dataset.combatStageUltimateDamage = String(presentationState.result?.damage ?? "");
     this.canvas.dataset.combatStageCharacterState = String(this.batterRenderer.getState() || "");
     this.canvas.dataset.combatStageCharacterMotion = String(
       Number(characterMotion?.rotationDeg || 0).toFixed(3)
