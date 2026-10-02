@@ -8664,3 +8664,23 @@ La infraestructura del combat slice está bastante avanzada, pero no corresponde
 
 **NEXT:** T096 · FULL NORMAL COMBAT LOOP PROOF AFTER INPUT RESOLUTION FIX · TIMER: 1–2 horas
 
+### T096 · Full Normal Combat Loop Proof After Input Resolution Fix
+
+**BASE SHA:** `60255c57a895528fad6272cfc3e3befd0adae6bf`
+
+**RUNTIME PROOF:** Chromium headless + CDP sobre servidor estático reproducible, usando `character_journey_browser_probe.mjs` y input físico del canvas.
+
+**RESULT:** CLOSED.
+
+**FLOW VERIFIED:** `FORMATION → TACTICAL 1 → TACTICAL 2 → TACTICAL 3 → TACTICAL 4 → TACTICAL 5 → CLIMAX → TIMING ACTIVE → REAL POINTER INPUT → TIMING RESOLUTION → COMBAT RESULT → RETURN`.
+
+**EVIDENCE:** GitHub Actions Run `37003711351`, job `110826982938`. El probe reportó `PASS_REAL` para los 11 checkpoints obligatorios. El Timing resolvió como `HIT`; `COMBAT RESULT = HIT`; fase final `VICTORY`. No se produjo la excepción `FOLLOW_THROUGH → WINDUP`.
+
+**CHANGES:** ajuste mínimo del filtro del workflow T094 para cubrir `batter_renderer.js`, necesario para ejecutar el proof post-fix sobre el HEAD actual. No se modificó gameplay en T096.
+
+**TEST:** T094 deterministic normal combat proof = SUCCESS. Combat Vertical Slice Tests Run `37001337895` = SUCCESS en la cadena del fix.
+
+**FINAL SHA:** `fc53ce056b1071e1b67af30b48b22958a6b7729f`
+
+**NEXT:** T097 · NORMAL COMBAT RESULT RETURN / REWARD HANDOFF PROOF · TIMER: 1–2 horas
+
