@@ -9143,3 +9143,26 @@ La infraestructura del combat slice está bastante avanzada, pero no corresponde
 **CHANGES:** documentación de continuidad únicamente. Sin cambios de gameplay, rewards, persistence, balance, arte ni arquitectura.
 
 **STATUS:** PARTIAL.
+
+
+### T114-R · Normal Combat Terminal Timing Input Harness Recovery
+
+**Fecha:** 2026-10-02  \
+**BASE SHA:** `5c5d8e2a4192080af848f648067ca7f80074152c`  \
+**HARNESS COMMIT:** `c2a76eed73b159924f375f79c2f9c209eccaf09e`  \
+**WORKFLOW COMMIT:** `d9750fb4bb8d4293636a575f3049c0889d268669`  \
+**TIMER:** 1–2 horas
+
+**RESULT:** BLOCKED.
+
+**T096 RECOVERY:** Se recuperó en el probe existente el método histórico probado por T096: detectar `TIMING ACTIVE`, esperar exactamente 620 ms, leer el tiempo transcurrido, obtener el `boundingClientRect` real del `#gameCanvas`, usar el centro del canvas y enviar `Input.dispatchMouseEvent` en secuencia `mouseMoved → mousePressed → mouseReleased`. La cadena sigue siendo el listener real `pointerdown` del canvas → `resolveTimingInput("pointer")`.
+
+**CHANGES:** QA-only. Se añadió el modo `T114R_TERMINAL_INPUT_RECOVERY` al probe existente y su ejecución al workflow CDP existente. No se modificó gameplay, Timing Ring, reward, persistence, economía ni UI.
+
+**VALIDATION:** El contenido del probe y workflow fue confirmado en GitHub sobre el HEAD nuevo y el historial T096 fue contrastado con Run `37003711351`, Job `110826982938`. T096 documentó `TIMING GRADE=HIT`, `COMBAT RESULT=HIT`, `FINAL BATTLE PHASE=VICTORY`, con centro de canvas `x=390, y≈147`.
+
+**BLOCKER:** No apareció una nueva ejecución de GitHub Actions asociada al commit `d9750fb4bb8d4293636a575f3049c0889d268669` mediante las interfaces de ejecución disponibles. Por tanto no existe evidencia verificable de `node --check`, Chromium/CDP ni de una nueva resolución terminal sobre el HEAD actual. No se realizará una tercera estrategia ni se tocará gameplay.
+
+**STATUS:** BLOCKED.
+
+**NEXT:** T114-R2 · NORMAL COMBAT TERMINAL TIMING INPUT HARNESS EXECUTION · TIMER: 1–2 horas
