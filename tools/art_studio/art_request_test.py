@@ -461,12 +461,16 @@ class ArtRequestTests(unittest.TestCase):
         wrong_format["format"] = "svg"
         self.assertTrue(any("target_name mismatch" in error for error in validate_request(wrong_format)))
 
-        undersized = dict(mid)
-        undersized["minimum_width"] = 4096
-        undersized["minimum_height"] = 256
-        self.assertTrue(any("dimensions" in error for error in validate_request(undersized)))
-
         root = self.make_root()
+        undersized_source = root / mid["drop_zone"] / "undersized.svg"
+        undersized_source.parent.mkdir(parents=True, exist_ok=True)
+        undersized_source.write_text(
+            '<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="576"></svg>',
+            encoding="utf-8",
+        )
+        with self.assertRaises(ArtRequestError):
+            validate_image_file(mid, undersized_source)
+
         registry_path = root / "tools/art_studio/art_requests.json"
         fixture_request = build_request(
             request_id="AR-TEST-STAGE-MID-INTAKE-001",
