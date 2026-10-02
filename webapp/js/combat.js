@@ -1158,6 +1158,8 @@ export class CombatRenderer {
     const result = event?.result || {};
     if (phase === "ATTACKER_FOCUS") {
       this.canvas.dataset.combatStageActionComplete = "false";
+      this.activeWaifuCard?.classList.add("is-cinematic-action");
+      this.timingFeedback?.classList.remove("is-visible");
       this.batterRenderer.beginWindup();
       return;
     }
@@ -1171,6 +1173,8 @@ export class CombatRenderer {
       return;
     }
     if (phase === "COMBAT_RETURN") {
+      this.activeWaifuCard?.classList.remove("is-cinematic-action");
+      this.timingFeedback?.classList.remove("is-visible");
       this.canvas.dataset.combatStageActionComplete = "true";
     }
   }
