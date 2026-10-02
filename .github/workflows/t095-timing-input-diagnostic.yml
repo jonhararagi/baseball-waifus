@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - "webapp/js/combat.js"
+      - "webapp/js/batter_renderer.js"
       - "webapp/js/character_journey_browser_probe.mjs"
       - ".github/workflows/t095-timing-input-diagnostic.yml"
   workflow_dispatch:
