@@ -204,7 +204,13 @@ function readRuntime(cdp) {
       projectileTravel: c?.dataset?.combatStageProjectileTravel || '',
       actionComplete: c?.dataset?.combatStageActionComplete === 'true',
       timingFeedbackVisible: Boolean(document.querySelector('#timing-feedback')?.classList.contains('is-visible')),
-      timingFeedbackText: document.querySelector('#timing-feedback')?.textContent || ''
+      timingFeedbackText: document.querySelector('#timing-feedback')?.textContent || '',
+      characterCardVisible: (() => {
+        const el = document.querySelector('#active-waifu-card');
+        if (!el) return false;
+        const style = getComputedStyle(el);
+        return style.visibility !== 'hidden' && Number(style.opacity) > 0;
+      })()
     };
   })()`);
 }
@@ -332,6 +338,8 @@ async function run() {
     requireCondition(focus?.cameraAnchor === "PLAYER_FOCUS" && focus?.cameraSource === "ACTOR", "character focus did not use actor camera anchor", focus);
     requireCondition(action?.characterState === "SWING" || action?.characterState === "FOLLOW_THROUGH", "action did not drive BatterRenderer state", action);
     requireCondition(focus?.timingFeedbackVisible === false, "timing feedback obscured character focus", focus);
+    requireCondition(focus?.characterCardVisible === false, "active character card obscured cinematic focus", focus);
+    requireCondition(action?.characterCardVisible === false && actionLater?.characterCardVisible === false, "active character card obscured cinematic action", { action, actionLater });
     requireCondition(action?.timingFeedbackVisible === false && actionLater?.timingFeedbackVisible === false, "timing feedback obscured cinematic action", { action, actionLater });
     requireCondition(impact?.timingFeedbackVisible === false && reaction?.timingFeedbackVisible === false, "timing feedback remained visible during impact/reaction", { impact, reaction });
     requireCondition(action?.characterMotion !== actionLater?.characterMotion || action?.batPose !== actionLater?.batPose, "character motion did not visibly evolve during action", { action, actionLater });
