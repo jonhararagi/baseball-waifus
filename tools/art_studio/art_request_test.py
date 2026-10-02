@@ -407,6 +407,142 @@ class ArtRequestTests(unittest.TestCase):
         self.assertEqual(final["source_files"][0]["filename"], "artist-original.svg")
         self.assertEqual(len(final["source_files"][0]["sha256"]), 64)
 
+
+    def test_t085_midground_production_request_and_fixture_intake(self):
+        registry = load_registry(ROOT / "tools/art_studio/art_requests.json")
+        mid = next(item for item in registry["requests"] if item["request_id"] == "AR-T085-STAGE-BG-MID-01")
+
+        self.assertEqual(mid["status"], "REQUESTED")
+        self.assertEqual(mid["asset_kind"], "STAGE_BACKGROUND_MID")
+        self.assertEqual(mid["runtime_slot"], "stage.background.mid")
+        self.assertEqual(mid["camera"], "WIDE")
+        self.assertEqual(mid["composition"], "BACKGROUND")
+        self.assertEqual(mid["format"], "png")
+        self.assertEqual(mid["minimum_width"], 2048)
+        self.assertEqual(mid["minimum_height"], 1152)
+        self.assertEqual(
+            mid["target_name"],
+            "combat-stage--background--mid--wide.png",
+        )
+        self.assertEqual(
+            mid["target_path"],
+            "assets/stages/combat-stage--background--mid--wide.png",
+        )
+        self.assertEqual(
+            mid["drop_zone"],
+            "tools/art_studio/inbox/AR-T085-STAGE-BG-MID-01",
+        )
+        self.assertEqual(validate_request(mid), [])
+        self.assertFalse(mid["source_files"])
+        self.assertIsNone(mid["output"])
+        self.assertFalse((ROOT / mid["target_path"]).exists())
+
+        far = next(item for item in registry["requests"] if item["request_id"] == "AR-T084-STAGE-BG-FAR-01")
+        self.assertEqual(far["runtime_slot"], "stage.background.far")
+        self.assertEqual(far["target_name"], "combat-stage--background--far--wide.png")
+        self.assertNotEqual(mid["request_id"], far["request_id"])
+        self.assertNotEqual(mid["runtime_slot"], far["runtime_slot"])
+        self.assertNotEqual(mid["target_name"], far["target_name"])
+        self.assertFalse((ROOT / far["target_path"]).exists())
+
+        wrong_slot = dict(mid)
+        wrong_slot["runtime_slot"] = "stage.background.far"
+        self.assertTrue(any("runtime_slot mismatch" in error for error in validate_request(wrong_slot)))
+
+        wrong_target = dict(mid)
+        wrong_target["target_path"] = "assets/stages/combat-stage--background--far--wide.png"
+        self.assertTrue(any("target_path mismatch" in error for error in validate_request(wrong_target)))
+
+        unsafe_target = dict(mid)
+        unsafe_target["target_path"] = "../escape.png"
+        self.assertTrue(any("target_path" in error for error in validate_request(unsafe_target)))
+
+        wrong_format = dict(mid)
+        wrong_format["format"] = "svg"
+        self.assertTrue(any("target_name mismatch" in error for error in validate_request(wrong_format)))
+
+        undersized = dict(mid)
+        undersized["minimum_width"] = 4096
+        undersized["minimum_height"] = 256
+        self.assertTrue(any("dimensions" in error for error in validate_request(undersized)))
+
+        root = self.make_root()
+        registry_path = root / "tools/art_studio/art_requests.json"
+        fixture_request = build_request(
+            request_id="AR-TEST-STAGE-MID-INTAKE-001",
+            asset_kind="STAGE_BACKGROUND_MID",
+            character_id=None,
+            subject="combat-stage",
+            what_is_expected="Controlled midground fixture using production stage semantics.",
+            camera="WIDE",
+            composition="BACKGROUND",
+            environment="Synthetic CombatStage midground.",
+            visual_notes="Test-only source; no production approval.",
+            generation_prompt="Controlled local midground fixture.",
+            negative_prompt="No external dependencies.",
+            fmt="svg",
+            minimum_width=512,
+            minimum_height=256,
+        )
+        self.assertEqual(fixture_request["runtime_slot"], "stage.background.mid")
+        self.assertEqual(
+            fixture_request["target_name"],
+            "combat-stage--background--mid--wide.svg",
+        )
+        self.assertEqual(
+            fixture_request["target_path"],
+            "assets/stages/combat-stage--background--mid--wide.svg",
+        )
+        save_registry(
+            registry_path,
+            {"schema_version": 1, "registry_id": "test", "requests": [fixture_request]},
+        )
+
+        drop = root / fixture_request["drop_zone"]
+        drop.mkdir(parents=True, exist_ok=True)
+        source = ROOT / "tools/art_studio/inbox/AR-T083-FIXTURE-001/fixture-stage.svg"
+        (drop / "artist-original.svg").write_text(
+            source.read_text(encoding="utf-8"),
+            encoding="utf-8",
+        )
+
+        script = ROOT / "tools/art_studio/art_request.py"
+        for args in (
+            ["generate", fixture_request["request_id"]],
+            ["ingest", fixture_request["request_id"]],
+            ["validate", fixture_request["request_id"]],
+        ):
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    str(script),
+                    "--root",
+                    str(root),
+                    "--registry",
+                    str(registry_path),
+                    *args,
+                ],
+                text=True,
+                capture_output=True,
+                cwd=ROOT,
+            )
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+
+        final = load_registry(registry_path)["requests"][0]
+        self.assertEqual(final["status"], "VALIDATED")
+        self.assertEqual(final["runtime_slot"], "stage.background.mid")
+        self.assertEqual(
+            final["output"]["path"],
+            "assets/stages/combat-stage--background--mid--wide.svg",
+        )
+        self.assertTrue(
+            (root / "assets/stages/combat-stage--background--mid--wide.svg").is_file()
+        )
+        self.assertEqual(final["source_files"][0]["filename"], "artist-original.svg")
+        self.assertEqual(final["source_files"][0]["format"], "svg")
+        self.assertEqual(len(final["source_files"][0]["sha256"]), 64)
+        self.assertFalse((ROOT / mid["target_path"]).exists())
+
     def test_t084_production_request_is_requested_and_deterministic(self):
         registry = load_registry(ROOT / "tools/art_studio/art_requests.json")
         request = next(item for item in registry["requests"] if item["request_id"] == "AR-T084-STAGE-BG-FAR-01")
