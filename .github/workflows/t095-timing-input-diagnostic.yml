@@ -39,7 +39,7 @@ jobs:
       - name: Run T095 timing input diagnostic
         env:
           T072_SITE_DIR: webapp
-          T072_EVIDENCE_DIR: "browser-evidence/T095/\${GITHUB_SHA}/\${GITHUB_RUN_ID}"
+          T072_EVIDENCE_DIR: browser-evidence/T095/${{ github.sha }}/${{ github.run_id }}
           T095_TIMING_DIAGNOSTIC: "1"
           BROWSER_BIN: ${{ steps.chrome.outputs.browser_bin }}
         run: |
