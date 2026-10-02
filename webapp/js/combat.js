@@ -1053,6 +1053,10 @@ export class CombatRenderer {
     this.batterRenderer.update(delta);
     this.combatPresentation.update(delta);
     this._syncCinematicOverlayState();
+    const presentation = this.combatPresentation.getState();
+    this.canvas.dataset.combatStageUltimateHudSuppressed = String(
+      presentation.active && String(presentation.sequenceKind || "").startsWith("ULTIMATE")
+    );
     this._syncCombatStageDataset();
     this.canvas.dataset.combatPresentationPhase = this.combatPresentation.getState().phase;
     this.canvas.dataset.combatPresentationActive = String(this.combatPresentation.isActive());
