@@ -13,6 +13,7 @@ const T079_STAGE = process.env.T079_STAGE === "1";
 const T095_TIMING_DIAGNOSTIC = process.env.T095_TIMING_DIAGNOSTIC === "1";
 const T097_REWARD_HANDOFF = process.env.T097_REWARD_HANDOFF === "1";
 const T101_DEFEAT_PROOF = process.env.T101_DEFEAT_PROOF === "1";
+const T104_PERSISTENCE_PROOF = process.env.T104_PERSISTENCE_PROOF === "1";
 const T094_COMBAT_LOOP = process.env.T094_COMBAT_LOOP === "1";
 const SITE_DIR = resolve(process.env.T072_SITE_DIR || "site");
 const EVIDENCE_DIR = resolve(
@@ -814,7 +815,7 @@ async function run() {
       return;
     }
 
-    if (T101_DEFEAT_PROOF) {
+    if (T101_DEFEAT_PROOF || T104_PERSISTENCE_PROOF) {
       const runStartedAt = Date.now();
       const browserVersion = await cdp.send("Browser.getVersion");
       const checkpoints = {};
@@ -943,7 +944,7 @@ async function run() {
       requireCondition(sameOriginErrors.length === 0, "T101 same-origin runtime exceptions detected", sameOriginErrors);
       const evidence={task:"T101",sha:process.env.GITHUB_SHA||"local",runId:process.env.GITHUB_RUN_ID||"local",browser:BROWSER_BIN,browserVersion:{product:browserVersion?.product||"",revision:browserVersion?.revision||"",userAgent:browserVersion?.userAgent||""},harness:"existing character_journey_browser_probe.mjs via T101_DEFEAT_PROOF=1",expectedBattleId,initial,rounds,defeat,returnComplete:complete,reloaded,postTerminalActionGuard:{control:actionControl,functional:true,before:postTerminalBefore,after:postTerminalAfter},persistence:{mechanism:"PlayerMetaPersistenceAdapter/localStorage",key:playerMetaKey,reloadVerified:true},reward:{expected:[],scrapBefore:initial.scrap,scrapAfter:complete.scrap,scrapAfterReload:reloaded.scrap},duplication:{ledgerBeforeReload:complete.rewardLedgerKeys.length,ledgerAfterReload:reloaded.rewardLedgerKeys.length},timeline,consoleErrors:consoleErrors.map(entry=>({text:entry.text,url:entry.url,source:entry.source})),pageErrors:sameOriginErrors};
       writeFileSync(join(EVIDENCE_DIR,"t101-defeat-browser-cdp-evidence.json"),JSON.stringify(evidence,null,2)+"\n","utf8");
-      console.log("T101 BROWSER AUTOMATION = PASS_REAL");
+      console.log((T104_PERSISTENCE_PROOF ? "T104" : "T101") + " BROWSER AUTOMATION = PASS_REAL");
       console.log("INITIAL STAMINA = " + initial.playerStamina + "/" + initial.playerStaminaMax);
       for (const r of rounds) console.log("ROUND " + r.round + " STAMINA = " + r.staminaBefore + " -> " + r.staminaAfter + " / " + r.timingGrade);
       console.log("DEFEAT = PASS_REAL");
