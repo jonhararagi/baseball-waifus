@@ -276,7 +276,19 @@ async function run() {
     const initial = await runtime(cdp);
     assertCondition(initial.visible === true, "combat canvas is not visibly mounted", initial);
     assertCondition(initial.ultimateContract === "ULTIMATE_CINEMATIC_STAGING", "ultimate contract missing", initial);
-    assertCondition(initial.ultimatePhases === "ULTIMATE_TRIGGER,ULTIMATE_STAGING,ULTIMATE_CHARACTER_FOCUS,ULTIMATE_ACTION_PREP,ULTIMATE_RETURN", "ultimate phase contract invalid", initial);
+    const t081Phases = [
+      "ULTIMATE_TRIGGER",
+      "ULTIMATE_STAGING",
+      "ULTIMATE_CHARACTER_FOCUS",
+      "ULTIMATE_ACTION_PREP"
+    ];
+    const implementedPhases = String(initial.ultimatePhases || "").split(",").filter(Boolean);
+    assertCondition(
+      implementedPhases.slice(0, t081Phases.length).join(",") === t081Phases.join(",")
+      && implementedPhases.includes("ULTIMATE_RETURN"),
+      "ultimate phase contract no longer contains the T081 staging prefix and return",
+      initial
+    );
     assertCondition(initial.actorCount === "5" && initial.playerCount === "4" && initial.enemyCount === "1", "actor staging invalid", initial);
 
     const triggerResult = await evaluate(cdp, "window.__BW_T081_TRIGGER_ULTIMATE__()");
@@ -335,6 +347,7 @@ async function run() {
       sha: process.env.GITHUB_SHA || "local",
       runId: process.env.GITHUB_RUN_ID || "local",
       journey: ["HOME", "COMBAT", "FORMATION", "ULTIMATE_TRIGGER", "ULTIMATE_STAGING", "ULTIMATE_CHARACTER_FOCUS", "ULTIMATE_ACTION_PREP", "ULTIMATE_RETURN", "ULTIMATE_COMPLETE"],
+      contractNote: "T081 validates the staging prefix while T081-B extends the reusable contract with action, impact and reaction phases.",
       initial,
       trigger,
       staging,
