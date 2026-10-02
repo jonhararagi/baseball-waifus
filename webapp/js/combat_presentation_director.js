@@ -438,7 +438,7 @@ export class CombatPresentationDirector {
       this.stepElapsedMs = stepDuration;
       if (this.stepIndex >= this.activeStepDefinitions.length - 1) {
         this.active = false;
-        this.phase = this.sequenceKind === "ULTIMATE_STAGING"
+        this.phase = this.sequenceKind.startsWith("ULTIMATE")
           ? COMBAT_ULTIMATE_PHASE.COMPLETE
           : COMBAT_PRESENTATION_PHASE.COMPLETE;
         this.stepIndex = this.activeStepDefinitions.length;
@@ -604,9 +604,31 @@ export class CombatPresentationDirector {
       result: this.result,
       hooks: Object.freeze({
         camera: true,
-        audio: ["ATTACKER_FOCUS", "ATTACK", "IMPACT", "REACTION", "RETURN"],
-        vfx: ["ATTACKER_FOCUS", "ATTACK", "IMPACT", "REACTION", "RETURN"],
-        haptics: ["IMPACT", "REACTION"]
+        audio: [
+          "ATTACKER_FOCUS",
+          "ATTACK",
+          "IMPACT",
+          "REACTION",
+          "RETURN",
+          "ULTIMATE_CHARACTER_FOCUS",
+          "ULTIMATE_ACTION",
+          "ULTIMATE_IMPACT",
+          "ULTIMATE_REACTION",
+          "ULTIMATE_RETURN"
+        ],
+        vfx: [
+          "ATTACKER_FOCUS",
+          "ATTACK",
+          "IMPACT",
+          "REACTION",
+          "RETURN",
+          "ULTIMATE_CHARACTER_FOCUS",
+          "ULTIMATE_ACTION",
+          "ULTIMATE_IMPACT",
+          "ULTIMATE_REACTION",
+          "ULTIMATE_RETURN"
+        ],
+        haptics: ["IMPACT", "REACTION", "ULTIMATE_IMPACT", "ULTIMATE_REACTION"]
       })
     }));
   }
