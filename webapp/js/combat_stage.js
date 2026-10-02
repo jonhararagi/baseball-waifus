@@ -594,7 +594,7 @@ function drawStageMidground(ctx, w, h) {
     ctx.beginPath(); ctx.moveTo(x, horizon - h * 0.04); ctx.lineTo(x + w * 0.03, horizon + h * 0.08); ctx.stroke();
   }
 }
-function drawSetPiece(ctx, piece, w, h) {
+function drawSetPiece(ctx, piece, w, h, { showLabel = true } = {}) {
   const x = piece.x * w, y = piece.y * h, pw = piece.width * w, ph = piece.height * h;
   const lift = piece.elevation * h * 0.11;
   const depthScale = DEPTH_SCALE[piece.depth] || 1;
@@ -614,12 +614,15 @@ function drawSetPiece(ctx, piece, w, h) {
   ctx.fillRect(x, y, pw, Math.max(5, ph * 0.12));
   ctx.strokeStyle = "rgba(255,255,255,0.1)";
   ctx.beginPath(); ctx.moveTo(x, y + ph * 0.2); ctx.lineTo(x + pw, y + ph * (piece.type === "RAMP" ? 0.08 : 0.2)); ctx.stroke();
-  ctx.globalAlpha = 0.34 + depthScale * 0.08;
-  ctx.font = "800 7px Rajdhani, system-ui, sans-serif";
-  ctx.fillStyle = "#d7e9ff"; ctx.fillText(piece.id.replace("_", " "), x + 8, y + 12);
+  if (showLabel) {
+    ctx.globalAlpha = 0.34 + depthScale * 0.08;
+    ctx.font = "800 7px Rajdhani, system-ui, sans-serif";
+    ctx.fillStyle = "#d7e9ff";
+    ctx.fillText(piece.id.replace("_", " "), x + 8, y + 12);
+  }
   ctx.restore();
 }
-export function renderCombatStageWorld(ctx, stage, width, height, { cameraTransform = null, groundColor = "#10162a", showZones = true } = {}) {
+export function renderCombatStageWorld(ctx, stage, width, height, { cameraTransform = null, groundColor = "#10162a", showZones = true, showSetPieceLabels = true } = {}) {
   if (!ctx || !(stage instanceof CombatStage)) return false;
   const w = Math.max(1, Number(width) || stage.designWidth), h = Math.max(1, Number(height) || stage.designHeight);
   const camera = cameraTransform || { x: 0, y: 0 };
@@ -642,7 +645,9 @@ export function renderCombatStageWorld(ctx, stage, width, height, { cameraTransf
       const bottomX = w * (0.5 + xIndex * 0.14);
       ctx.beginPath(); ctx.moveTo(w * 0.5, horizon); ctx.lineTo(bottomX, h); ctx.stroke();
     }
-    for (const piece of stage.setPieces) drawSetPiece(ctx, piece, w, h);
+    for (const piece of stage.setPieces) {
+      drawSetPiece(ctx, piece, w, h, { showLabel: showSetPieceLabels });
+    }
     if (showZones) {
       for (const [id, zone] of Object.entries(stage.zones)) {
         ctx.save();

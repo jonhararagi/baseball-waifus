@@ -1080,6 +1080,16 @@ button {
   pointer-events: none;
 }
 
+#app-container.is-cinematic-ultimate .scoreboard-overlay,
+#app-container.is-cinematic-ultimate .match-strip,
+#app-container.is-cinematic-ultimate > .cyber-footer {
+  display: none;
+}
+
+#app-container.is-cinematic-ultimate .game-viewport {
+  flex: 1 1 auto;
+}
+
 #active-waifu-card.feedback-miss {
   animation: waifu-pout 620ms ease-in-out;
   border-color: rgba(255, 67, 86, 0.78);
