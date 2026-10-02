@@ -12,6 +12,7 @@ const T078_STAGE = process.env.T078_STAGE === "1";
 const T079_STAGE = process.env.T079_STAGE === "1";
 const T095_TIMING_DIAGNOSTIC = process.env.T095_TIMING_DIAGNOSTIC === "1";
 const T097_REWARD_HANDOFF = process.env.T097_REWARD_HANDOFF === "1";
+const T101_DEFEAT_PROOF = process.env.T101_DEFEAT_PROOF === "1";
 const T094_COMBAT_LOOP = process.env.T094_COMBAT_LOOP === "1";
 const SITE_DIR = resolve(process.env.T072_SITE_DIR || "site");
 const EVIDENCE_DIR = resolve(
@@ -813,6 +814,126 @@ async function run() {
       return;
     }
 
+    if (T101_DEFEAT_PROOF) {
+      const runStartedAt = Date.now();
+      const browserVersion = await cdp.send("Browser.getVersion");
+      const checkpoints = {};
+      const timeline = [];
+      const playerMetaKey = "baseball_waifus_player_meta_v1:local-player";
+      const expectedBattleId = "battle:demo-bw001-vs-bw002";
+
+      const readRuntime = async () => cdpEvaluate(cdp, "(() => { const canvas = document.querySelector('#gameCanvas'); const d = canvas?.dataset || {}; const gacha = window.BaseballWaifusGacha?.getStatus?.() || null; const raw = localStorage.getItem('baseball_waifus_player_meta_v1:local-player'); let persisted = null; try { persisted = raw ? JSON.parse(raw) : null; } catch { persisted = null; } return { battlePhase:d.combatBattlePhase||'', tacticalTurn:d.combatTacticalTurn===''?null:Number(d.combatTacticalTurn), timingActive:d.combatTimingActive==='true', timingGrade:d.combatTimingGrade||'', combatResult:d.combatResult||'', presentationPhase:d.combatStagePresentationPhase||'', presentationActive:d.combatPresentationActive==='true', playerStamina:d.combatPlayerStamina===''?null:Number(d.combatPlayerStamina), playerStaminaMax:d.combatPlayerStaminaMax===''?null:Number(d.combatPlayerStaminaMax), scrap:Number(gacha?.scavenger_scrap??NaN), persistedScrap:Number(persisted?.currencies?.SCRAP??NaN), rewardLedger:persisted?.rewardLedger||null, rewardLedgerKeys:persisted?.rewardLedger?Object.keys(persisted.rewardLedger):[], playerMetaRawPresent:Boolean(raw) }; })()");
+
+      const mark = async (name, condition, timeoutMs = 6000) => {
+        const deadline = Date.now() + timeoutMs;
+        let state = null;
+        while (Date.now() < deadline) {
+          state = await readRuntime();
+          if (condition(state)) {
+            checkpoints[name] = { at_ms: Date.now() - runStartedAt, ...state };
+            timeline.push({ at_ms: Date.now() - runStartedAt, label:name, ...state });
+            return state;
+          }
+          await sleep(25);
+        }
+        state = await readRuntime();
+        throw new Error("T101 TIMEOUT: " + name + " " + JSON.stringify(state));
+      };
+
+      const clickBat = async (label) => {
+        await waitFor(async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#action-bat') && !document.querySelector('#action-bat').disabled)"), { timeoutMs:6000, label:"T101 BATEAR ready " + label });
+        await cdpClickSelector(cdp, "#action-bat");
+      };
+
+      const resolveMiss = async (round) => {
+        await mark("ROUND " + round + " CLIMAX", s => s.battlePhase === "CLIMAX" && s.tacticalTurn === 5);
+        await mark("ROUND " + round + " TIMING", s => s.battlePhase === "CLIMAX" && s.timingActive === true);
+        await sleep(300);
+        const before = await readRuntime();
+        requireCondition(before.timingActive === true, "T101 timing window closed before MISS input", before);
+        requireCondition(before.playerStamina > 0, "T101 stamina non-positive before non-victory", before);
+        const rect = await cdpEvaluate(cdp, "(() => { const r=document.querySelector('#gameCanvas')?.getBoundingClientRect(); return r ? {left:r.left,top:r.top,width:r.width,height:r.height} : null; })()");
+        requireCondition(rect && rect.width > 0 && rect.height > 0, "T101 canvas geometry unavailable", rect);
+        const x = rect.left + rect.width / 2;
+        const y = rect.top + rect.height / 2;
+        const target = await cdpEvaluate(cdp, "(() => { const e=document.elementFromPoint(" + x + "," + y + "); return e === document.querySelector('#gameCanvas'); })()");
+        requireCondition(target === true, "T101 physical timing target is not canvas");
+        await cdp.send("Input.setIgnoreInputEvents", {ignore:false});
+        await cdp.send("Input.dispatchMouseEvent", {type:"mouseMoved",x,y,button:"none",buttons:0});
+        await cdp.send("Input.dispatchMouseEvent", {type:"mousePressed",x,y,button:"left",buttons:1,clickCount:1});
+        await cdp.send("Input.dispatchMouseEvent", {type:"mouseReleased",x,y,button:"left",buttons:0,clickCount:1});
+        const after = await mark("ROUND " + round + " RESOLVED", s => s.timingActive === false && s.timingGrade === "MISS", 5000);
+        requireCondition(after.playerStamina === before.playerStamina - 25, "T101 stamina did not decrease exactly 25", {before,after});
+        return {before,after};
+      };
+
+      const url = baseUrl + "?qa=t097";
+      await cdp.send("Page.navigate", {url});
+      await waitFor(async () => (await cdpEvaluate(cdp, "document.readyState")) === "complete", {timeoutMs:30000,label:"T101 document ready"});
+      await waitFor(async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#home-view') && !document.querySelector('#home-view').hidden)"), {timeoutMs:30000,label:"T101 Home visible"});
+      const initial = await readRuntime();
+      checkpoints.INITIAL = {at_ms:Date.now()-runStartedAt,...initial};
+      timeline.push({at_ms:Date.now()-runStartedAt,label:"INITIAL",...initial});
+      requireCondition(initial.scrap === 0 && initial.persistedScrap === 0, "T101 fresh Player Meta expected", initial);
+      requireCondition(initial.playerStamina > 0 && initial.playerStamina <= initial.playerStaminaMax && initial.playerStaminaMax <= 100, "T101 initial stamina bounds invalid", initial);
+      await cdpClickSelector(cdp, ".home-action-play");
+      await waitFor(async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#gameCanvas')?.dataset?.combatStageContract === 'COMBAT_STAGE_2_5D')"), {timeoutMs:30000,label:"T101 formation initialized"});
+      await mark("FORMATION", s => s.battlePhase === "TACTICAL" && s.tacticalTurn === 0);
+
+      const rounds=[];
+      for (const round of [1,2,3]) {
+        await clickBat("round " + round + " T1");
+        for (const turn of [1,2,3,4,5]) {
+          const phase = turn === 5 ? "CLIMAX" : "TACTICAL";
+          await mark("ROUND " + round + " TACTICAL " + turn, s => s.tacticalTurn === turn && s.battlePhase === phase);
+          if (turn < 5) {
+            await mark("ROUND " + round + " TACTICAL " + turn + " COMPLETE", s => s.tacticalTurn === turn && s.presentationPhase === "COMPLETE" && s.presentationActive === false);
+            await clickBat("round " + round + " T" + (turn + 1));
+          }
+        }
+        const resolution=await resolveMiss(round);
+        rounds.push({round,staminaBefore:resolution.before.playerStamina,staminaAfter:resolution.after.playerStamina,timingGrade:resolution.after.timingGrade,battlePhase:resolution.after.battlePhase,combatResult:resolution.after.combatResult});
+        if (round < 3) {
+          requireCondition(resolution.after.battlePhase === "TACTICAL" && resolution.after.playerStamina > 0, "T101 non-terminal round did not return to TACTICAL", resolution.after);
+          await mark("ROUND " + round + " RETURN", s => s.presentationPhase === "COMBAT_RETURN");
+          await mark("ROUND " + round + " RETURN COMPLETE", s => s.presentationPhase === "COMPLETE" && s.presentationActive === false);
+        }
+      }
+
+      const defeat=await mark("DEFEAT", s => s.battlePhase === "DEFEAT" && s.combatResult === "DEFEAT" && s.playerStamina === 0, 5000);
+      requireCondition(defeat.timingGrade === "MISS", "T101 defeat did not originate from MISS", defeat);
+      await mark("RETURN", s => s.presentationPhase === "COMBAT_RETURN", 5000);
+      const complete=await mark("RETURN COMPLETE", s => s.presentationPhase === "COMPLETE" && s.presentationActive === false, 5000);
+      requireCondition(complete.battlePhase === "DEFEAT" && complete.playerStamina === 0, "T101 terminal state changed after return", complete);
+      requireCondition(complete.scrap === 0 && complete.persistedScrap === 0, "T101 defeat awarded victory Scrap", complete);
+      requireCondition(complete.rewardLedgerKeys.length === 1 && complete.rewardLedgerKeys[0] === expectedBattleId && complete.rewardLedger?.[expectedBattleId] === true, "T101 defeat ledger identity missing or duplicated", complete);
+      const actionGuard=await cdpEvaluate(cdp, "Boolean(document.querySelector('#action-bat') && document.querySelector('#action-bat').disabled)");
+      requireCondition(actionGuard === true, "T101 post-terminal BATEAR guard is not active");
+      await cdp.send("Page.navigate", {url});
+      await waitFor(async () => (await cdpEvaluate(cdp, "document.readyState")) === "complete", {timeoutMs:30000,label:"T101 reload document ready"});
+      await waitFor(async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#home-view') && !document.querySelector('#home-view').hidden)"), {timeoutMs:30000,label:"T101 Home after reload"});
+      const reloaded=await readRuntime();
+      checkpoints.RELOAD={at_ms:Date.now()-runStartedAt,...reloaded};
+      timeline.push({at_ms:Date.now()-runStartedAt,label:"RELOAD",...reloaded});
+      requireCondition(reloaded.scrap === 0 && reloaded.persistedScrap === 0, "T101 reload produced victory Scrap", reloaded);
+      requireCondition(reloaded.rewardLedgerKeys.length === 1 && reloaded.rewardLedger?.[expectedBattleId] === true, "T101 defeat ledger did not survive reload consistently", reloaded);
+      const sameOriginErrors=pageExceptions.map(item => item?.exception?.description || item?.text || "").filter(Boolean).filter(entry => entry.includes(baseUrl) || entry.includes("/js/"));
+      requireCondition(sameOriginErrors.length === 0, "T101 same-origin runtime exceptions detected", sameOriginErrors);
+      const evidence={task:"T101",sha:process.env.GITHUB_SHA||"local",runId:process.env.GITHUB_RUN_ID||"local",browser:BROWSER_BIN,browserVersion:{product:browserVersion?.product||"",revision:browserVersion?.revision||"",userAgent:browserVersion?.userAgent||""},harness:"existing character_journey_browser_probe.mjs via T101_DEFEAT_PROOF=1",expectedBattleId,initial,rounds,defeat,returnComplete:complete,reloaded,postTerminalActionGuard:actionGuard,persistence:{mechanism:"PlayerMetaPersistenceAdapter/localStorage",key:playerMetaKey,reloadVerified:true},reward:{expected:[],scrapBefore:initial.scrap,scrapAfter:complete.scrap,scrapAfterReload:reloaded.scrap},duplication:{ledgerBeforeReload:complete.rewardLedgerKeys.length,ledgerAfterReload:reloaded.rewardLedgerKeys.length},timeline,consoleErrors:consoleErrors.map(entry=>({text:entry.text,url:entry.url,source:entry.source})),pageErrors:sameOriginErrors};
+      writeFileSync(join(EVIDENCE_DIR,"t101-defeat-browser-cdp-evidence.json"),JSON.stringify(evidence,null,2)+"\n","utf8");
+      console.log("T101 BROWSER AUTOMATION = PASS_REAL");
+      console.log("INITIAL STAMINA = " + initial.playerStamina + "/" + initial.playerStaminaMax);
+      for (const r of rounds) console.log("ROUND " + r.round + " STAMINA = " + r.staminaBefore + " -> " + r.staminaAfter + " / " + r.timingGrade);
+      console.log("DEFEAT = PASS_REAL");
+      console.log("MATCH END = PASS_REAL");
+      console.log("REWARD = []");
+      console.log("SCRAP = " + initial.scrap + " -> " + complete.scrap + " -> RELOAD " + reloaded.scrap);
+      console.log("DUPLICATION = PASS_REAL");
+      console.log("RETURN = PASS_REAL");
+      console.log("PERSISTENCE = PASS_REAL");
+      console.log("POST-TERMINAL GUARDS = PASS_REAL");
+      return;
+    }
     if (T094_COMBAT_LOOP) {
       const runStartedAt = Date.now();
       const browserVersion = await cdp.send("Browser.getVersion");

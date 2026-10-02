@@ -68,6 +68,25 @@ jobs:
           set -euo pipefail
           mkdir -p "$T072_EVIDENCE_DIR"
           node webapp/js/character_journey_browser_probe.mjs
+      - name: Run T101 normal combat defeat proof
+        shell: bash
+        env:
+          T072_SITE_DIR: webapp
+          T072_EVIDENCE_DIR: browser-evidence/T101/$GITHUB_SHA/$GITHUB_RUN_ID
+          T101_DEFEAT_PROOF: "1"
+          BROWSER_BIN: ${{ steps.chrome.outputs.browser_bin }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$T072_EVIDENCE_DIR"
+          node webapp/js/character_journey_browser_probe.mjs
+
+      - name: Upload T101 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: t101-defeat-browser-cdp-evidence
+          path: browser-evidence/T101/
+          if-no-files-found: warn
       - name: Upload T097 evidence
         if: always()
         uses: actions/upload-artifact@v4
