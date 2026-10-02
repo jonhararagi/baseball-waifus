@@ -533,6 +533,32 @@ export class CombatRenderer {
     return this.combatPresentation.getState();
   }
 
+  continueUltimateCinematicAction(result = {}) {
+    if (!this.matchReady || !this.state || !result || typeof result !== "object") return null;
+    const attackerId = String(
+      result.attackerId
+      || result.attacker_id
+      || this.combatStage.selectedActorId
+      || this.state?.batter?.id
+      || this.state?.batter?.character_id
+      || ""
+    );
+    const targetId = String(
+      result.targetId
+      || result.target_id
+      || this.state?.pitcher?.id
+      || this.state?.pitcher?.character_id
+      || ""
+    );
+    if (!attackerId || !targetId) return null;
+    return this.combatPresentation.continueUltimateAction({
+      ...result,
+      attackerId,
+      targetId,
+      actionType: result.actionType || result.action_type || "ULTIMATE_ACTION"
+    });
+  }
+
   triggerUltimateCinematicStaging(characterId = null, targetId = null) {
     if (!this.matchReady || !this.state) return null;
     const attackerId = String(
