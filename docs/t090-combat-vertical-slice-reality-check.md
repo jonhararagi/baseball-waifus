@@ -253,10 +253,10 @@ Demostrar con browser automation el loop completo de combate sobre el runtime ac
 
 - Combat Vertical Slice Tests: Run `36985962981`, success, SHA `9f95c9482ed5798cab325deb260994ce63f0179a`.
 - T080 Character Combat Cinematic Action CI: Run `36985962962`, success, SHA `9f95c9482ed5798cab325deb260994ce63f0179a`.
-- T077 Combat Presentation Browser QA: Run `36985963000`, success, SHA `9f95c9482ed5798cab325260994ce63f0179a`.
-- T081 Cinematic Ultimate Choreography Browser QA: Run `36985962945`, success, SHA `9f95c9482ed5798cab325260994ce63f0179a`.
-- T081-B Ultimate Action Reaction Browser QA: Run `36985962964`, success, SHA `9f95c9482ed5798cab325260994ce63f0179a`.
-- T081 Foundation CI: Run `36985962992`, success, SHA `9f95c9482ed5798cab325260994ce63f0179a`.
+- T077 Combat Presentation Browser QA: Run `36985963000`, success, SHA `9f95c9482ed5798cab325deb260994ce63f0179a`.
+- T081 Cinematic Ultimate Choreography Browser QA: Run `36985962945`, success, SHA `9f95c9482ed5798cab325deb260994ce63f0179a`.
+- T081-B Ultimate Action Reaction Browser QA: Run `36985962964`, success, SHA `9f95c9482ed5798cab325deb260994ce63f0179a`.
+- T081 Foundation CI: Run `36985962992`, success, SHA `9f95c9482ed5798cab325deb260994ce63f0179a`.
 
 ## Scope
 
