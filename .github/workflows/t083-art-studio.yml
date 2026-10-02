@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - "tools/art_studio/**"
+      - ".github/workflows/t083-art-studio.yml"
       - "tools/character_asset_factory.py"
       - "tools/character_asset_factory_test.py"
       - "data/character_asset_manifest.json"
