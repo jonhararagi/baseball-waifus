@@ -1306,10 +1306,6 @@ async function run() {
       console.log("PLAYER META = PASS_REAL");
       return;
     }
-OUNDARY = PASS_REAL");
-      console.log("PLAYER META = PASS_REAL");
-      return;
-    }
     if (T094_COMBAT_LOOP) {
       const runStartedAt = Date.now();
       const browserVersion = await cdp.send("Browser.getVersion");
