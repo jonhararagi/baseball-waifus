@@ -1530,7 +1530,36 @@ export class CombatRenderer {
     this.canvas.dataset.combatStageActionPhases = (stageState.actionPhases || []).join(",");
     this.canvas.dataset.combatStageUltimateContract = String(stageState.ultimateContract || "");
     this.canvas.dataset.combatStageUltimatePhases = (stageState.ultimatePhases || []).join(",");
-    this.canvas.dataset.combatStageUltimateActive = String(this.combatPresentation.getState().sequenceKind === "ULTIMATE_STAGING");
+    const ultimateState = this.combatPresentation.getState();
+    const ultimatePhase = String(ultimateState.phase || "");
+    const ultimateFrames = ["ULTIMATE_STAGING", "ULTIMATE_CHARACTER_FOCUS", "ULTIMATE_ACTION_PREP", "ULTIMATE_RETURN"].includes(ultimatePhase)
+      ? this.combatStage.getSortedActors().map((actor) => this.combatStage.resolveCinematicActorFrame(actor.actorId, {
+        phase: ultimatePhase,
+        progress: ultimateState.progress,
+        width: this.pixelWidth,
+        height: this.pixelHeight
+      }))
+      : [];
+    const ultimateHeroFrame = ultimateFrames.find((frame) => frame?.actorId === stageState.selectedActorId);
+    const ultimateSupportOpacities = ultimateFrames
+      .filter((frame) => frame?.actorId !== stageState.selectedActorId)
+      .filter((frame) => {
+        const actor = this.combatStage.getActor(frame.actorId);
+        return actor?.team === "PLAYER";
+      })
+      .map((frame) => Number(frame.opacity ?? 1));
+    this.canvas.dataset.combatStageUltimateActive = String(ultimateState.sequenceKind === "ULTIMATE_STAGING");
+    this.canvas.dataset.combatStageUltimateSequenceKind = String(ultimateState.sequenceKind || "");
+    this.canvas.dataset.combatStageUltimatePhase = ultimatePhase;
+    this.canvas.dataset.combatStageUltimateHeroScale = ultimateHeroFrame
+      ? Number(ultimateHeroFrame.scale).toFixed(3)
+      : "";
+    this.canvas.dataset.combatStageUltimateSupportOpacity = ultimateSupportOpacities.length
+      ? String(Math.min(...ultimateSupportOpacities).toFixed(3))
+      : "";
+    this.canvas.dataset.combatStageUltimateTeamStaged = String(
+      ultimatePhase.startsWith("ULTIMATE_") && ultimateSupportOpacities.some((value) => value < 0.99)
+    );
     this.canvas.dataset.combatStagePresentationPhase = String(this.combatPresentation.getState().phase || "");
     this.canvas.dataset.combatStageCharacterState = String(this.batterRenderer.getState() || "");
     this.canvas.dataset.combatStageCharacterMotion = String(
