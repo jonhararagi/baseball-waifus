@@ -8623,3 +8623,24 @@ La infraestructura del combat slice está bastante avanzada, pero no corresponde
 **BLOCKER:** ninguno de infraestructura para la observabilidad. El loop terminal completo queda para la prueba dedicada posterior.
 
 **NEXT:** T093 · FULL NORMAL COMBAT LOOP PROOF
+
+### T094 · Deterministic Normal Combat CDP Proof
+
+**BASE SHA:** `18a6aad6c8c58c1e48740b2901b38d0bec5d50b6`
+
+**RESULT:** BLOCKED.
+
+**VALIDATION METHOD:** Chromium headless en GitHub Actions, servidor estático reproducible del repositorio, CDP directo y `Input.dispatchMouseEvent`; se reutilizó `character_journey_browser_probe.mjs`.
+
+**LAST VERIFIED CHECKPOINT:** `TACTICAL 5 → CLIMAX → TIMING ACTIVE`. En el segundo intento el canvas físico fue identificado correctamente como target, pero el input CDP no produjo `timingActive=false` ni un grade de Timing. No se obtuvo evidencia runtime suficiente de `COMBAT RESULT → RETURN`.
+
+**EVIDENCE:** primer intento: `TACTICAL 5 / CLIMAX` y posterior timeout automático con `combatResult=STRIKE`, sin resolución por input físico; segundo intento: `TACTICAL 5 / CLIMAX / TIMING ACTIVE`, target `#gameCanvas` confirmado por geometría/DOM, pero el pointer input no resolvió el Timing antes del timeout de validación.
+
+**CHANGES:** extensión mínima del harness existente para T094 + workflow determinista; segundo ajuste mínimo del input físico CDP. Sin cambios de gameplay, balance, presentación, arte o arquitectura.
+
+**FINAL SHA:** `67a1ff593c1b5950c98f46d40c749665fc52474e`
+
+**BLOCKER:** la interacción física del Timing Ring no pudo reproducirse de forma fiable con CDP `Input.dispatchMouseEvent` pese a que el canvas era el target correcto. No existe evidencia suficiente para atribuir el bloqueo al gameplay.
+
+**NEXT:** T095 · NORMAL COMBAT TIMING INPUT PATH DIAGNOSTIC · TIMER: 1–2 horas
+
