@@ -103,6 +103,32 @@
       "source_files": [],
       "output": null,
       "failure": null
+    },
+    {
+      "request_id": "AR-T086-STAGE-GROUND-01",
+      "status": "REQUESTED",
+      "asset_kind": "STAGE_GROUND",
+      "target_name": "combat-stage--ground--wide.png",
+      "target_path": "assets/stages/combat-stage--ground--wide.png",
+      "runtime_slot": "stage.ground",
+      "character_id": null,
+      "what_is_expected": "Original production ground surface art for the BaseWarriors: Meta-Strike CombatStage 2.5D. The asset must read as the shared physical combat surface supporting players, enemy, set geometry, movement staging, camera framing and impact presentation without baking runtime geometry into the artwork.",
+      "camera": "WIDE",
+      "composition": "GROUND",
+      "subject": "combat-stage",
+      "environment": "Cyberpunk sports-tech combat arena ground plane with a perspective surface, depth lanes, large readable panels and abstract baseball-inspired arena markings. It is a combat floor, not a traditional baseball field.",
+      "visual_notes": "GROUND layer only. Support PLAYER_ZONE, ENEMY_ZONE, PLAYER_RAMP, CENTER_PLATFORM, ENEMY_PLATFORM and FRONT_STEP as runtime presentation geometry without baking those structures into the artwork. Maintain near/mid/far depth cues, directional perspective, actor support areas and camera-safe negative space. Use large controlled surfaces, subtle sport-tech energy tracks, reinforced panels and abstract arena geometry. Avoid high-frequency texture noise, strong patterns directly beneath feet and dominant focal points. The surface must remain coherent through FORMATION, PLAYER_FOCUS, ACTION, IMPACT, REACTION and RETURN, including push-in, pull-back, lateral movement and slight angle changes. Distinct from FAR atmosphere and MID environmental structures.",
+      "generation_prompt": "Wide anime 2.5D cyberpunk sports-tech combat arena GROUND surface for BaseWarriors: Meta-Strike, cinematic perspective floor designed as the shared physical combat surface beneath four playable characters and one enemy, large readable surface planes, clear depth lanes and directional perspective, subtle near mid far separation, broad actor support areas, abstract baseball-inspired arena geometry without a traditional baseball field layout, reinforced sport-tech floor panels, restrained energy tracks, training-zone motifs and layered surface seams, compatible with runtime ramps and platforms without baking them into the artwork, camera-safe composition for formation, player focus, action, impact, reaction and return, readable character silhouettes and clean foot placement, controlled visual density, stylized anime shonen presentation, cinematic 2.5D depth, cool cyan and magenta sports-tech lighting accents, no characters, no UI, designed as a stage floor rather than promotional illustration.",
+      "negative_prompt": "No characters, no UI, no text, no logos, no watermark, no screenshot, no third-party likeness, no photorealism, no semirealistic 3D, no traditional baseball field dominating composition, no baseball diamond dominating composition, no bases, no pitcher mound, no batter box, no runner lanes, no crowd of people, no giant central object, no excessive texture noise, no tiny repeated detail, no high-frequency micro-detail, no busy pattern beneath actor feet, no dominant focal point at center, no baked-in PLAYER_RAMP, no baked-in CENTER_PLATFORM, no baked-in ENEMY_PLATFORM, no baked-in FRONT_STEP, no fixed camera-frame crop.",
+      "format": "png",
+      "minimum_width": 2048,
+      "minimum_height": 1152,
+      "drop_zone": "tools/art_studio/inbox/AR-T086-STAGE-GROUND-01",
+      "created_at": "2026-10-02T08:00:00Z",
+      "updated_at": "2026-10-02T08:00:00Z",
+      "source_files": [],
+      "output": null,
+      "failure": null
     }
   ]
 }
