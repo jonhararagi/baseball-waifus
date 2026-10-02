@@ -50,6 +50,9 @@ assert.equal(continued.sequenceKind, "ULTIMATE_ACTION");
 assert.equal(continued.phase, COMBAT_ULTIMATE_PHASE.ACTION);
 assert.equal(director.getCurrentStep().actionIntent, "ULTIMATE_SWING");
 assert.equal(director.getCurrentStep().animationState, "SWING");
+assert.equal(director.getCameraTransform({ width: 720, height: 1280 }).cameraAnchor, "ACTION");
+assert.ok(Number(director.getCameraTransform({ width: 720, height: 1280 }).zoom) > 1);
+assert.equal(JSON.stringify(stage.getState()), beforeStage);
 assert.equal(director.getCommands()[0].payload.camera_anchor, "ACTION");
 assert.equal(director.getCommands()[0].payload.damage, gameplaySnapshot.damage);
 assert.equal(director.getCommands()[0].payload.action_type, "ULTIMATE_ACTION");
@@ -115,6 +118,8 @@ assert.equal(director.getCurrentStep().animationState, "IDLE");
 director.update(0.3);
 assert.equal(director.getState().phase, COMBAT_ULTIMATE_PHASE.COMPLETE);
 assert.equal(director.getState().active, false);
+assert.equal(director.getCameraTransform({ width: 720, height: 1280 }).phase, COMBAT_ULTIMATE_PHASE.COMPLETE);
+assert.equal(JSON.stringify(stage.getState()), beforeStage);
 
 assert.equal(JSON.stringify(stage.getState()), beforeStage);
 assert.equal(director.getState().result.damage, gameplaySnapshot.damage);
