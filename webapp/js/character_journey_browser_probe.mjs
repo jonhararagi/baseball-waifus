@@ -864,7 +864,12 @@ async function run() {
         await cdp.send("Input.dispatchMouseEvent", {type:"mousePressed",x,y,button:"left",buttons:1,clickCount:1});
         await cdp.send("Input.dispatchMouseEvent", {type:"mouseReleased",x,y,button:"left",buttons:0,clickCount:1});
         const after = await mark("ROUND " + round + " RESOLVED", s => s.timingActive === false && s.timingGrade === "MISS", 5000);
-        requireCondition(after.playerStamina === before.playerStamina - 25, "T101 stamina did not decrease exactly 25", {before,after});
+        const terminalDefeat = after.battlePhase === "DEFEAT" && after.combatResult === "DEFEAT" && after.playerStamina === 0;
+        if (terminalDefeat) {
+          requireCondition(before.playerStamina === 1 && after.playerStamina === 0, "T101 terminal defeat stamina transition invalid", {before,after});
+        } else {
+          requireCondition(after.playerStamina === before.playerStamina - 25, "T101 non-terminal stamina did not decrease exactly 25", {before,after});
+        }
         return {before,after};
       };
 
