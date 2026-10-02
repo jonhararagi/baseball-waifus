@@ -9000,3 +9000,36 @@ La infraestructura del combat slice está bastante avanzada, pero no corresponde
 **STATUS:** CLOSED.
 
 **NEXT:** T106 · NORMAL COMBAT MID-TURN REWARD BOUNDARY AUDIT · TIMER: 1–2 horas
+
+
+### T106 · Normal Combat Mid-Turn Reward Boundary Audit
+
+**Fecha:** 2026-10-02  
+**BASE SHA:** `346909bbfe33b9f6c6a8e89a0a9125a37eb329a5`  
+**TIMER:** 1–2 horas
+
+**RESULT:** CLOSED.
+
+**MID-TURN BOUNDARY:** REAL. `TACTICAL`, `CLIMAX` no terminal y `TIMING` producen estado de gameplay, pero no llaman al reward pipeline autoritativo. `createCombatResultFromTurnResult()` rechaza resultados que no contienen `VICTORY` o `DEFEAT`, y `applyCombatRewardPipeline()` requiere explícitamente un `COMBAT_RESULT`.
+
+**TACTICAL:** PASS. Los turnos tácticos actualizan daño/energía/effectiveness y no despachan `PlayerMetaAuthority` ni persistencia de reward.
+
+**CLIMAX NON-TERMINAL:** PASS. La rama no terminal de `resolveClimaxTurn()` vuelve a `TACTICAL`; `combat.js` no emite `TurnResultDTO` terminal ni llama `onLocalCombatResult` para esa rama.
+
+**TIMING:** PASS. `resolveTimingInput()` genera el grade y conduce a resolución de gameplay. El reward terminal solo ocurre después de que la resolución produzca `VICTORY` o `DEFEAT`.
+
+**PLAYER META AUTHORITY:** PASS. `applyRewardResultToPlayerMeta()` es el punto que despacha acciones de reward, registra `sourceEventId` y guarda mediante `PlayerMetaPersistenceAdapter`.
+
+**PERSISTENCE BOUNDARY:** PASS. No se encontró persistencia de reward desde Tactical/Climax/Timing. La persistencia autoritativa ocurre después de `REWARD_RESULT`.
+
+**LEGACY `_awardScrap()`:** SAFE LEGACY / NON-AUTHORITATIVE. Permanece en `CombatRenderer.applyTurnResult()` para la ruta remota/legacy, pero el callback actual `handleScrapEarned()` solo actualiza status/leaderboard con `scrapEarned:0`; no modifica Scrap autoritativo, Player Meta ni persistence. No constituye una segunda autoridad.
+
+**VICTORY / DEFEAT:** ambos cruzan la misma frontera terminal mediante `handleTerminalCombatReward()`, que acepta únicamente `VICTORY`/ `DEFEAT` y luego ejecuta el pipeline común. La tabla vigente permanece `VICTORY→+100 SCRAP`, `DEFEAT→[]`.
+
+**CHANGES:** documentación únicamente. No se modificaron combat, rewards, Player Meta, persistence, economy ni UI.
+
+**TEST:** Auditoría estática de `combat_core.js`, `combat.js`, `reward_pipeline.js`, `reward_resolver.js`, `player_meta_reward_adapter.js`, `player_meta_state.js`, `player_meta_persistence_adapter.js` y `app.js`. Se revisó `reward_pipeline_test.mjs` y `combat_core_test.mjs` como soporte existente. No se requirió browser nuevo porque no hubo cambio de producción.
+
+**STATUS:** CLOSED.
+
+**NEXT:** T107 · NORMAL COMBAT MID-TURN REWARD BROWSER PROOF · TIMER: 1–2 horas
