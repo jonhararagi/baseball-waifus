@@ -8644,3 +8644,23 @@ La infraestructura del combat slice está bastante avanzada, pero no corresponde
 
 **NEXT:** T095 · NORMAL COMBAT TIMING INPUT PATH DIAGNOSTIC · TIMER: 1–2 horas
 
+### T095 · Normal Combat Timing Input Path Diagnostic
+
+**BASE SHA:** `6509fa7a511bbe828bf72b1ba7a84bf2e41ea94f`
+
+**INPUT PATH:** navegador Chromium/CDP → `#gameCanvas` → listener `pointerdown` de `CombatRenderer.handleTimingPointer` → `resolveTimingInput("pointer")` → `_resolveClimaxDamage()` → `CombatPresentationDirector.startFromCombatResult()` → `CombatRenderer._handleCombatPresentationStep()` → `BatterRenderer.beginWindup()`.
+
+**ROOT CAUSE:** la entrada no se pierde. Durante la resolución del Timing, la presentación intenta iniciar `WINDUP` mientras `BatterRenderer` está en `FOLLOW_THROUGH`. `beginWindup()` declara esa transición como válida, pero la tabla `TRANSITIONS` no la permitía, provocando `Invalid BatterRenderer transition: FOLLOW_THROUGH -> WINDUP`.
+
+**CLASSIFICATION:** `GAMEPLAY RESOLUTION`.
+
+**EVIDENCE:** el runtime produjo stack trace explícito desde `handleTimingPointer` → `resolveTimingInput` → `_resolveClimaxDamage` y el crash en `BatterRenderer.transitionTo`. El segundo diagnóstico T095 no llegó a runtime por un timeout de arranque de Chrome/CDP, por lo que no se utilizó como evidencia del input.
+
+**CHANGES:** fix local en `webapp/js/batter_renderer.js` permitiendo `FOLLOW_THROUGH → WINDUP`, más regresión directa en `webapp/js/batter_renderer_test.mjs`. Se mantuvo intacto el gameplay del Timing y no se añadió ningún shortcut.
+
+**TEST:** `combat-tests` Run `37001337895` = SUCCESS en el SHA `213a41bdb8ffe3065da0450390a78a6bd164282c`.
+
+**STATUS:** CLOSED.
+
+**NEXT:** T096 · FULL NORMAL COMBAT LOOP PROOF AFTER INPUT RESOLUTION FIX · TIMER: 1–2 horas
+
