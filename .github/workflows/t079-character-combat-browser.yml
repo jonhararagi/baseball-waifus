@@ -8,6 +8,7 @@ on:
       - "webapp/js/combat_stage.js"
       - "webapp/js/combat_presentation_director.js"
       - "webapp/js/character_journey_browser_probe.mjs"
+      - "webapp/js/combat_stage_t079_test.mjs"
   workflow_dispatch:
 jobs:
   browser:
