@@ -108,7 +108,7 @@ assert.equal(director.getCurrentStep().actionIntent, "REACTION");
 director.update(0.3);
 assert.equal(director.getState().phase, "COMBAT_RETURN");
 assert.equal(director.getCurrentStep().animationState, "IDLE");
-director.update(0.32);
+director.update(0.3);
 assert.equal(director.getState().phase, "COMPLETE");
 assert.equal(director.getState().active, false);
 assert.deepEqual(director.getState().result, {
