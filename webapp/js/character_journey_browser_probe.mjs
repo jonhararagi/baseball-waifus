@@ -632,6 +632,12 @@ async function run() {
         throw new Error("T097 TIMEOUT: " + name + " " + JSON.stringify(state));
       };
 
+      const t097Url = baseUrl + "?qa=t097";
+      await cdp.send("Page.navigate", { url: t097Url });
+      await waitFor(
+        async () => (await cdpEvaluate(cdp, "document.readyState")) === "complete",
+        { timeoutMs: 30000, label: "T097 instrumented document ready" }
+      );
       await waitFor(
         async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#home-view') && !document.querySelector('#home-view').hidden)"),
         { timeoutMs: 30000, label: "T097 Home visible" }
@@ -686,7 +692,13 @@ async function run() {
         6000
       );
 
-      await sleep(680);
+      const timingElapsedAtInput = await waitFor(
+        async () => {
+          const elapsed = await cdpEvaluate(cdp, "window.__BW_T097_TIMING_ELAPSED__?.()");
+          return Number.isFinite(Number(elapsed)) && Number(elapsed) >= 690 && Number(elapsed) <= 760 ? Number(elapsed) : false;
+        },
+        { timeoutMs: 5000, intervalMs: 5, label: "T097 timing target band" }
+      );
       const timing = await readRuntime();
       requireCondition(timing.timingActive === true, "T097 timing window closed before physical input", timing);
       const rect = await cdpEvaluate(cdp, "(() => { const c = document.querySelector('#gameCanvas'); const r = c?.getBoundingClientRect(); return r ? { left:r.left, top:r.top, width:r.width, height:r.height } : null; })()");
@@ -728,7 +740,7 @@ async function run() {
       requireCondition(completeState.persistedScrap === 100, "T097 persisted Scrap changed after RETURN", completeState);
       requireCondition(completeState.rewardLedgerKeys.length === 1, "T097 reward ledger changed after RETURN", completeState);
 
-      await cdp.send("Page.navigate", { url: baseUrl });
+      await cdp.send("Page.navigate", { url: t097Url });
       await waitFor(
         async () => (await cdpEvaluate(cdp, "document.readyState")) === "complete",
         { timeoutMs: 30000, label: "T097 reload document ready" }

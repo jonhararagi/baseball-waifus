@@ -477,6 +477,12 @@ if (new URLSearchParams(window.location.search).get("qa") === "t081") {
     stage: renderer.combatStage.getState()
   });
 }
+if (new URLSearchParams(window.location.search).get("qa") === "t097") {
+  window.__BW_T097_TIMING_ELAPSED__ = () => {
+    if (!renderer.isTimingWindowActive?.() || !Number.isFinite(Number(renderer.timingState?.startedAt))) return null;
+    return performance.now() - Number(renderer.timingState.startedAt);
+  };
+}
 const rosterPanel = new RosterPanel({
   root: rosterPanelRoot,
   getCharacters: () => gachaController.getCharacters(),
