@@ -39,9 +39,12 @@ jobs:
           set -euo pipefail
           python tools/art_studio/art_request.py list
           python tools/art_studio/art_request.py show AR-T083-AIKO-BW001-01
+          python tools/art_studio/art_request.py show AR-T084-STAGE-BG-FAR-01
+          python tools/art_studio/art_request.py show AR-T085-STAGE-BG-MID-01
 
       - name: Verify fixture source remains non-production
         run: |
           set -euo pipefail
           test -f tools/art_studio/inbox/AR-T083-FIXTURE-001/fixture-stage.svg
           test ! -f tools/art_studio/fixtures/outputs/fixture-stage--background--far--wide.svg
+          test ! -f assets/stages/combat-stage--background--mid--wide.png
