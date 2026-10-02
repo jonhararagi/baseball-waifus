@@ -273,17 +273,22 @@ async function run() {
       label: "home visible"
     });
 
-    await click(cdp, ".home-action-play");
+    await click(cdp, ".main-menu-button[data-view="combat"]");
     await waitFor(() => {
       return evaluate(cdp, `(() => {
         const c = document.querySelector('#gameCanvas');
+        const shell = document.querySelector('.game-viewport');
+        const home = document.querySelector('#home-view');
         return c?.dataset?.combatStageContract === 'COMBAT_STAGE_2_5D'
           && c?.dataset?.combatStageActorCount === '5'
+          && shell && !shell.hidden
+          && home && home.hidden
           && Boolean(window.__BW_T081_TRIGGER_ULTIMATE__);
       })()`);
-    }, { label: "combat stage and T081 QA trigger" });
+    }, { label: "real combat view and T081 QA trigger" });
 
     const initial = await runtime(cdp);
+    assertCondition(initial.visible === true, "combat canvas is not visibly mounted", initial);
     assertCondition(initial.ultimateContract === "ULTIMATE_CINEMATIC_STAGING", "ultimate contract missing", initial);
     assertCondition(initial.ultimatePhases === "ULTIMATE_TRIGGER,ULTIMATE_STAGING,ULTIMATE_CHARACTER_FOCUS,ULTIMATE_ACTION_PREP,ULTIMATE_RETURN", "ultimate phase contract invalid", initial);
     assertCondition(initial.actorCount === "5" && initial.playerCount === "4" && initial.enemyCount === "1", "actor staging invalid", initial);
