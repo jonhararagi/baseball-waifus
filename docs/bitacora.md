@@ -8712,7 +8712,7 @@ La infraestructura del combat slice está bastante avanzada, pero no corresponde
 
 **CHANGES:** QA-only harness/probe + hook de observabilidad temporal para el input del Timing. No se modificaron gameplay, economía, recompensas, gacha ni persistence authority.
 
-**FINAL SHA:** `REPLACEME`
+**FINAL SHA:** `a34c51bf5c22c102341149db4588b644e65c1154`
 
 **STATUS:** CLOSED.
 
