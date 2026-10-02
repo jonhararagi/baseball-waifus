@@ -180,6 +180,7 @@ async function runtime(cdp) {
       visible: Boolean(canvas?.getBoundingClientRect().width > 0 && canvas?.getBoundingClientRect().height > 0),
       phase: canvas?.dataset?.combatStageUltimatePhase || '',
       sequenceKind: canvas?.dataset?.combatStageUltimateSequenceKind || '',
+      canvasHudSuppressed: canvas?.dataset?.combatStageUltimateHudSuppressed === 'true',
       active: canvas?.dataset?.combatStageUltimateActive === 'true',
       actionComplete: canvas?.dataset?.combatStageUltimateActionComplete === 'true',
       result: canvas?.dataset?.combatStageUltimateResult || '',
@@ -323,7 +324,8 @@ async function main() {
       complete?.cinematicHud?.rootActive === false
       && complete?.cinematicHud?.scoreboardDisplay !== "none"
       && complete?.cinematicHud?.matchStripDisplay !== "none"
-      && complete?.cinematicHud?.footerDisplay !== "none",
+      && complete?.cinematicHud?.footerDisplay !== "none"
+      && complete?.canvasHudSuppressed === false,
       "HUD did not recover after Ultimate completion",
       complete
     );
@@ -337,8 +339,9 @@ async function main() {
       action?.cinematicHud?.rootActive === true
       && action?.cinematicHud?.scoreboardDisplay === "none"
       && action?.cinematicHud?.matchStripDisplay === "none"
-      && action?.cinematicHud?.footerDisplay === "none",
-      "cinematic viewport HUD was not suppressed during action",
+      && action?.cinematicHud?.footerDisplay === "none"
+      && action?.canvasHudSuppressed === true,
+      "cinematic viewport HUD was not fully suppressed during action",
       action
     );
     requireCondition(
@@ -350,8 +353,9 @@ async function main() {
       impact?.cinematicHud?.rootActive === true
       && impact?.cinematicHud?.scoreboardDisplay === "none"
       && impact?.cinematicHud?.matchStripDisplay === "none"
-      && impact?.cinematicHud?.footerDisplay === "none",
-      "cinematic viewport HUD was not suppressed during impact",
+      && impact?.cinematicHud?.footerDisplay === "none"
+      && impact?.canvasHudSuppressed === true,
+      "cinematic viewport HUD was not fully suppressed during impact",
       impact
     );
     requireCondition(
@@ -363,8 +367,9 @@ async function main() {
       reaction?.cinematicHud?.rootActive === true
       && reaction?.cinematicHud?.scoreboardDisplay === "none"
       && reaction?.cinematicHud?.matchStripDisplay === "none"
-      && reaction?.cinematicHud?.footerDisplay === "none",
-      "cinematic viewport HUD was not suppressed during reaction",
+      && reaction?.cinematicHud?.footerDisplay === "none"
+      && reaction?.canvasHudSuppressed === true,
+      "cinematic viewport HUD was not fully suppressed during reaction",
       reaction
     );
     requireCondition(
