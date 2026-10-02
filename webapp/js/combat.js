@@ -1223,26 +1223,24 @@ export class CombatRenderer {
       return;
     }
 
-    if (phase === "ATTACKER_FOCUS") {
-    const phase = String(event?.phase || "").toUpperCase();
-    const result = event?.result || {};
-    if (phase === "ATTACKER_FOCUS") {
+    const normalPhase = phase;
+    if (normalPhase === "ATTACKER_FOCUS") {
       this.canvas.dataset.combatStageActionComplete = "false";
       this._syncCinematicOverlayState();
       this.timingFeedback?.classList.remove("is-visible");
       this.batterRenderer.beginWindup();
       return;
     }
-    if (phase === "ACTION") {
+    if (normalPhase === "ACTION") {
       this.batterRenderer.beginSwing();
       return;
     }
-    if (phase === "IMPACT") {
+    if (normalPhase === "IMPACT") {
       this.combatEffects.trigger(result.result || "HIT", { result: result.result || "HIT" });
       this.impactTimer = Math.max(this.impactTimer, 0.16);
       return;
     }
-    if (phase === "COMBAT_RETURN") {
+    if (normalPhase === "COMBAT_RETURN") {
       this._syncCinematicOverlayState();
       this.timingFeedback?.classList.remove("is-visible");
       this.canvas.dataset.combatStageActionComplete = "true";
