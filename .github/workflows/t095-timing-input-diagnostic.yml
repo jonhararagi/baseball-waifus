@@ -1,0 +1,55 @@
+name: T095 Normal Combat Timing Input Path Diagnostic
+on:
+  push:
+    branches: [main]
+    paths:
+      - "webapp/js/combat.js"
+      - "webapp/js/character_journey_browser_probe.mjs"
+      - ".github/workflows/t095-timing-input-diagnostic.yml"
+  workflow_dispatch:
+jobs:
+  t095-timing-input-diagnostic:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Prepare runtime data
+        run: |
+          set -euo pipefail
+          mkdir -p webapp/data
+          cp data/characters_queue.json webapp/data/characters_queue.json
+          cp data/game_schemas_recycled.json webapp/data/game_schemas_recycled.json
+      - name: Locate Chrome
+        id: chrome
+        run: |
+          set -euo pipefail
+          for candidate in google-chrome chromium chromium-browser; do
+            if command -v "$candidate" >/dev/null 2>&1; then
+              echo "browser_bin=$(command -v "$candidate")" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          done
+          exit 1
+      - name: Validate T095 probe syntax
+        run: node --check webapp/js/character_journey_browser_probe.mjs
+      - name: Run T095 timing input diagnostic
+        env:
+          T072_SITE_DIR: webapp
+          T072_EVIDENCE_DIR: "browser-evidence/T095/\${GITHUB_SHA}/\${GITHUB_RUN_ID}"
+          T095_TIMING_DIAGNOSTIC: "1"
+          BROWSER_BIN: ${{ steps.chrome.outputs.browser_bin }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$T072_EVIDENCE_DIR"
+          node webapp/js/character_journey_browser_probe.mjs
+      - name: Upload T095 diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: t095-timing-input-diagnostic
+          path: browser-evidence/T095/
+          if-no-files-found: warn

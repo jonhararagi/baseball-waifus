@@ -10,6 +10,7 @@ const T074_ART = process.env.T074_ART === "1";
 const T077_COMBAT = process.env.T077_COMBAT === "1";
 const T078_STAGE = process.env.T078_STAGE === "1";
 const T079_STAGE = process.env.T079_STAGE === "1";
+const T095_TIMING_DIAGNOSTIC = process.env.T095_TIMING_DIAGNOSTIC === "1";
 const T094_COMBAT_LOOP = process.env.T094_COMBAT_LOOP === "1";
 const SITE_DIR = resolve(process.env.T072_SITE_DIR || "site");
 const EVIDENCE_DIR = resolve(
@@ -529,6 +530,80 @@ async function run() {
 
     screenshots.home = await screenshot(cdp, "01-home-aiko-starter");
 
+
+
+    if (T095_TIMING_DIAGNOSTIC) {
+      const runStartedAt = Date.now();
+      const timeline = [];
+      const readState = async () => cdpEvaluate(cdp, "(() => { const c=document.querySelector('#gameCanvas'); const d=c?.dataset||{}; const r=c?.getBoundingClientRect(); return { battlePhase:d.combatBattlePhase||'', tacticalTurn:d.combatTacticalTurn===''?null:Number(d.combatTacticalTurn), timingActive:d.combatTimingActive==='true', timingGrade:d.combatTimingGrade||'', combatResult:d.combatResult||'', presentationPhase:d.combatStagePresentationPhase||'', rect:r?{left:r.left,top:r.top,width:r.width,height:r.height}:null}; })()");
+      const waitState = async (fn, timeoutMs, label) => {
+        const deadline=Date.now()+timeoutMs;
+        while(Date.now()<deadline){ const state=await readState(); if(fn(state)) return state; await sleep(25); }
+        throw new Error("T095 TIMEOUT: "+label+" "+JSON.stringify(await readState()));
+      };
+
+      await waitFor(async()=>cdpEvaluate(cdp,"Boolean(document.querySelector('#home-view')&&!document.querySelector('#home-view').hidden)"),{timeoutMs:30000,label:"T095 Home"});
+      await cdpClickSelector(cdp,".home-action-play");
+      await waitFor(async()=>cdpEvaluate(cdp,"Boolean(document.querySelector('#gameCanvas')&&document.querySelector('#gameCanvas').getBoundingClientRect().width>0)"),{timeoutMs:30000,label:"T095 Canvas"});
+
+      const remote=await cdp.send("Runtime.evaluate",{expression:"document.querySelector('#gameCanvas')",objectGroup:"t095",returnByValue:false});
+      requireCondition(remote?.result?.objectId,"T095 canvas object unavailable");
+      const listenerInfo=await cdp.send("DOMDebugger.getEventListeners",{objectId:remote.result.objectId});
+      const pointerListeners=(listenerInfo.listeners||[]).filter((x)=>String(x.type||"").toLowerCase()==="pointerdown").map((x)=>({type:x.type,useCapture:Boolean(x.useCapture),handler:x.handler?.description||""}));
+
+      await cdpEvaluate(cdp,"(() => { const c=document.querySelector('#gameCanvas'); window.__T095_INPUT_TRACE__=[]; const log=(scope,phase)=>(e)=>window.__T095_INPUT_TRACE__.push({scope,phase,type:e.type,defaultPrevented:Boolean(e.defaultPrevented),clientX:e.clientX??null,clientY:e.clientY??null}); const cc=log('canvas','capture'), cb=log('canvas','bubble'), wc=log('window','capture'); c.addEventListener('pointerdown',cc,true); c.addEventListener('pointerdown',cb,false); c.addEventListener('mousedown',cc,true); c.addEventListener('mousedown',cb,false); c.addEventListener('touchstart',cc,true); c.addEventListener('touchstart',cb,false); window.addEventListener('pointerdown',wc,true); window.addEventListener('mousedown',wc,true); window.addEventListener('touchstart',wc,true); return true; })()");
+
+      await waitState((x)=>x.battlePhase==="TACTICAL"&&x.tacticalTurn===0,3000,"initial combat state");
+      await cdpClickSelector(cdp,"#action-bat");
+      for(const turn of [1,2,3,4,5]){
+        const desired=turn===5?"CLIMAX":"TACTICAL";
+        await waitState((x)=>x.tacticalTurn===turn&&x.battlePhase===desired,6000,"T"+turn);
+        if(turn<5){
+          await waitState((x)=>x.presentationPhase==="COMPLETE"&&!x.timingActive,6000,"presentation T"+turn);
+          await waitFor(async()=>cdpEvaluate(cdp,"Boolean(document.querySelector('#action-bat')&&!document.querySelector('#action-bat').disabled)"),{timeoutMs:6000,label:"BATEAR T"+(turn+1)});
+          await cdpClickSelector(cdp,"#action-bat");
+        }
+      }
+      const timing=await waitState((x)=>x.battlePhase==="CLIMAX"&&x.tacticalTurn===5&&x.timingActive,6000,"TIMING ACTIVE");
+      timeline.push({at_ms:Date.now()-runStartedAt,label:"TIMING ACTIVE",...timing});
+
+      const rect=timing.rect;
+      const x=rect.left+rect.width/2, y=rect.top+rect.height/2;
+      const target=await cdpEvaluate(cdp,"(() => { const e=document.elementFromPoint("+x+","+y+"); return {tag:e?.tagName||'',id:e?.id||'',isCanvas:e===document.querySelector('#gameCanvas')}; })()");
+      await sleep(250);
+      const beforeTrace=await cdpEvaluate(cdp,"window.__T095_INPUT_TRACE__||[]");
+      await cdp.send("Input.dispatchMouseEvent",{type:"mouseMoved",x,y,button:"none",buttons:0});
+      await cdp.send("Input.dispatchMouseEvent",{type:"mousePressed",x,y,button:"left",buttons:1,clickCount:1});
+      await cdp.send("Input.dispatchMouseEvent",{type:"mouseReleased",x,y,button:"left",buttons:0,clickCount:1});
+      await sleep(300);
+      const afterMouse=await cdpEvaluate(cdp,"(() => { const c=document.querySelector('#gameCanvas'),d=c?.dataset||{}; return {state:{timingActive:d.combatTimingActive==='true',timingGrade:d.combatTimingGrade||'',battlePhase:d.combatBattlePhase||'',combatResult:d.combatResult||''},trace:window.__T095_INPUT_TRACE__||[]}; })()");
+      let afterTouch=null;
+      if(afterMouse.state.timingActive){
+        await cdp.send("Input.dispatchTouchEvent",{type:"touchStart",touchPoints:[{x,y,radiusX:1,radiusY:1,force:1,id:1}],modifiers:0});
+        await cdp.send("Input.dispatchTouchEvent",{type:"touchEnd",touchPoints:[],modifiers:0});
+        await sleep(300);
+        afterTouch=await cdpEvaluate(cdp,"(() => { const c=document.querySelector('#gameCanvas'),d=c?.dataset||{}; return {state:{timingActive:d.combatTimingActive==='true',timingGrade:d.combatTimingGrade||'',battlePhase:d.combatBattlePhase||'',combatResult:d.combatResult||''},trace:window.__T095_INPUT_TRACE__||[]}; })()");
+      }
+
+      const mousePointer=afterMouse.trace.some((e)=>e.type==="pointerdown");
+      const mouseDown=afterMouse.trace.some((e)=>e.type==="mousedown");
+      const touchPointer=(afterTouch?.trace||[]).filter((e)=>e.type==="pointerdown").length>afterMouse.trace.filter((e)=>e.type==="pointerdown").length;
+      const resolution=afterMouse.state.timingActive===false&&Boolean(afterMouse.state.timingGrade)?"MOUSE":afterTouch?.state.timingActive===false&&Boolean(afterTouch.state.timingGrade)?"TOUCH":"NONE";
+      const diagnosis=resolution==="MOUSE"?"INPUT PATH WORKS":resolution==="TOUCH"?"CDP MOUSE DOES NOT REPRODUCE POINTERDOWN; TOUCH REPRODUCES RESOLUTION":mousePointer?"POINTERDOWN REACHED CANVAS BUT DID NOT RESOLVE":"CDP MOUSE DID NOT PRODUCE POINTERDOWN";
+      const sameOriginErrors=pageExceptions.map((item)=>item?.exception?.description||item?.text||"").filter(Boolean).filter((entry)=>entry.includes(baseUrl)||entry.includes("/js/"));
+      const evidence={task:"T095",sha:process.env.GITHUB_SHA||"local",runId:process.env.GITHUB_RUN_ID||"local",browser:BROWSER_BIN,baseUrl,harness:"existing character_journey_browser_probe.mjs via T095_TIMING_DIAGNOSTIC",pointerListeners,listenerCount:pointerListeners.length,timingCheckpoint:timing,geometry:{x:Math.round(x),y:Math.round(y),target},beforeTrace,afterMouse,afterTouch,mousePointer,mouseDown,touchPointer,diagnosis,sameOriginErrors,timeline};
+      writeFileSync(join(EVIDENCE_DIR,"t095-timing-input-diagnostic.json"),JSON.stringify(evidence,null,2)+"\n","utf8");
+      requireCondition(pointerListeners.length>0,"T095 pointerdown listener missing",pointerListeners);
+      requireCondition(afterMouse.trace.length>0,"T095 mouse events did not reach canvas/window",afterMouse.trace);
+      requireCondition(sameOriginErrors.length===0,"T095 same-origin runtime exception detected",sameOriginErrors);
+      console.log("T095 DIAGNOSTIC = PASS");
+      console.log("POINTER LISTENERS = "+pointerListeners.length);
+      console.log("MOUSEDOWN = "+mouseDown);
+      console.log("MOUSE POINTERDOWN = "+mousePointer);
+      console.log("TOUCH POINTERDOWN = "+touchPointer);
+      console.log("DIAGNOSIS = "+diagnosis);
+      return;
+    }
 
     if (T094_COMBAT_LOOP) {
       const runStartedAt = Date.now();
