@@ -23,6 +23,7 @@ assert.equal(stage.getActor("enemy-fixture").facing, -1);
 assert.ok(stage.getActor("fixture-player-02").elevation > 0);
 assert.ok(stage.getActorAnchor("enemy-fixture", "IMPACT"));
 assert.ok(stage.getActorAnchor("enemy-fixture", "REACTION"));
+assert.equal(stage.getCameraAnchor("ENEMY_FOCUS", { actorId: "enemy-fixture" }).source, "ACTOR");
 
 const director = new CombatPresentationDirector({ stage });
 director.startFromCombatResult({ attackerId: "bw001", targetId: "enemy-fixture", result: "HIT", damage: 10, actionType: "SWING" });
