@@ -279,8 +279,11 @@ export class CombatStage {
     let scale = base.scale;
     let emphasis = 0;
     let opacity = 1;
+    const selectedActorId = this.selectedActorId;
+    const isHero = actor.actorId === selectedActorId;
+    const hero = this.getActor(selectedActorId);
+    const heroX = hero?.position?.x ?? actor.position.x;
 
-    
     if (normalizedPhase === "ULTIMATE_STAGING") {
       if (isHero) {
         offsetY = -0.022;
