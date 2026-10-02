@@ -273,7 +273,7 @@ async function run() {
       label: "home visible"
     });
 
-    await click(cdp, ".main-menu-button[data-view="combat"]");
+    await click(cdp, '.main-menu-button[data-view="combat"]');
     await waitFor(() => {
       return evaluate(cdp, `(() => {
         const c = document.querySelector('#gameCanvas');
