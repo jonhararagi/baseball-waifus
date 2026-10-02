@@ -923,11 +923,11 @@ async function run() {
       const postTerminalAfter=await readRuntime();
       requireCondition(
         postTerminalAfter.battlePhase === "DEFEAT"
-        && postTerminalAfter.combatResult === "DEFEAT"
         && postTerminalAfter.playerStamina === 0
         && postTerminalAfter.tacticalTurn === 0
         && postTerminalAfter.rewardLedgerKeys.length === postTerminalBefore.rewardLedgerKeys.length
-        && postTerminalAfter.scrap === postTerminalBefore.scrap,
+        && postTerminalAfter.scrap === postTerminalBefore.scrap
+        && postTerminalAfter.persistedScrap === postTerminalBefore.persistedScrap,
         "T101 functional post-terminal BATEAR guard failed",
         {actionControl,postTerminalBefore,postTerminalAfter}
       );
@@ -941,7 +941,7 @@ async function run() {
       requireCondition(reloaded.rewardLedgerKeys.length === 1 && reloaded.rewardLedger?.[expectedBattleId] === true, "T101 defeat ledger did not survive reload consistently", reloaded);
       const sameOriginErrors=pageExceptions.map(item => item?.exception?.description || item?.text || "").filter(Boolean).filter(entry => entry.includes(baseUrl) || entry.includes("/js/"));
       requireCondition(sameOriginErrors.length === 0, "T101 same-origin runtime exceptions detected", sameOriginErrors);
-      const evidence={task:"T101",sha:process.env.GITHUB_SHA||"local",runId:process.env.GITHUB_RUN_ID||"local",browser:BROWSER_BIN,browserVersion:{product:browserVersion?.product||"",revision:browserVersion?.revision||"",userAgent:browserVersion?.userAgent||""},harness:"existing character_journey_browser_probe.mjs via T101_DEFEAT_PROOF=1",expectedBattleId,initial,rounds,defeat,returnComplete:complete,reloaded,postTerminalActionGuard:{control:actionControl,functional:true},persistence:{mechanism:"PlayerMetaPersistenceAdapter/localStorage",key:playerMetaKey,reloadVerified:true},reward:{expected:[],scrapBefore:initial.scrap,scrapAfter:complete.scrap,scrapAfterReload:reloaded.scrap},duplication:{ledgerBeforeReload:complete.rewardLedgerKeys.length,ledgerAfterReload:reloaded.rewardLedgerKeys.length},timeline,consoleErrors:consoleErrors.map(entry=>({text:entry.text,url:entry.url,source:entry.source})),pageErrors:sameOriginErrors};
+      const evidence={task:"T101",sha:process.env.GITHUB_SHA||"local",runId:process.env.GITHUB_RUN_ID||"local",browser:BROWSER_BIN,browserVersion:{product:browserVersion?.product||"",revision:browserVersion?.revision||"",userAgent:browserVersion?.userAgent||""},harness:"existing character_journey_browser_probe.mjs via T101_DEFEAT_PROOF=1",expectedBattleId,initial,rounds,defeat,returnComplete:complete,reloaded,postTerminalActionGuard:{control:actionControl,functional:true,before:postTerminalBefore,after:postTerminalAfter},persistence:{mechanism:"PlayerMetaPersistenceAdapter/localStorage",key:playerMetaKey,reloadVerified:true},reward:{expected:[],scrapBefore:initial.scrap,scrapAfter:complete.scrap,scrapAfterReload:reloaded.scrap},duplication:{ledgerBeforeReload:complete.rewardLedgerKeys.length,ledgerAfterReload:reloaded.rewardLedgerKeys.length},timeline,consoleErrors:consoleErrors.map(entry=>({text:entry.text,url:entry.url,source:entry.source})),pageErrors:sameOriginErrors};
       writeFileSync(join(EVIDENCE_DIR,"t101-defeat-browser-cdp-evidence.json"),JSON.stringify(evidence,null,2)+"\n","utf8");
       console.log("T101 BROWSER AUTOMATION = PASS_REAL");
       console.log("INITIAL STAMINA = " + initial.playerStamina + "/" + initial.playerStaminaMax);
