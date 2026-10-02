@@ -8894,3 +8894,40 @@ La infraestructura del combat slice está bastante avanzada, pero no corresponde
 **STATUS:** PARTIAL.
 
 **NEXT:** T103 · NORMAL COMBAT DEFEAT HANDOFF PROOF AFTER QA ASSERTION FIX · TIMER: 1–2 horas
+
+
+### T103 · Normal Combat Defeat Handoff Proof After QA Assertion Fix
+
+**Fecha:** 2026-10-02  
+**BASE SHA:** `896bab8d70c68edf59aeadb3a31724931b326bb5`  
+**TIMER:** 1–2 horas
+
+**RESULT:** PARTIAL.
+
+**ASSERTION FIX:** El harness ahora separa la última transición terminal `1 → 0 → DEFEAT` del decremento normal de `-25`. En una segunda corrección QA, el guard post-terminal valida la permanencia en `DEFEAT`, Stamina 0, turno 0 y ausencia de cambios en Scrap/ledger, sin exigir que `combatResult` permanezca visible después de que la presentación lo limpia.
+
+**DEFEAT:** PASS en runtime. T102 ya había demostrado `76 → 51 → 26 → 1 → 0`; T103 volvió a alcanzar `DEFEAT` real con `combatResult=DEFEAT` durante el checkpoint terminal.
+
+**REWARD / PLAYER STATE:** PASS parcial en runtime. Tras `DEFEAT → RETURN/COMPLETE`, el estado observado mantuvo `SCRAP=0`, `persistedScrap=0` y el ledger único `battle:demo-bw001-vs-bw002`, sin aplicar el reward de victoria `+100`.
+
+**RETURN:** PASS en runtime. El segundo intento alcanzó `COMBAT_RETURN → COMPLETE` antes del fallo final del assertion anterior.
+
+**PERSISTENCE:** NOT VERIFIED. El assertion anterior abortó antes del `RELOAD`.
+
+**DUPLICATION:** PARTIAL. No hubo segunda modificación de Scrap ni cambio de ledger al probar el guard post-terminal, pero la persistencia tras reload no llegó a ejecutarse.
+
+**POST-TERMINAL GUARDS:** PASS funcionalmente en la ejecución T103. Un click real sobre `BATEAR` después de `DEFEAT` no cambió `battlePhase=DEFEAT`, `playerStamina=0`, `tacticalTurn=0`, Scrap ni ledger. El `combatResult` pasó de `DEFEAT` a `STRIKE` durante la limpieza normal de presentación, por lo que no se usa como criterio de estabilidad posterior.
+
+**ATTEMPTS:** Se consumieron los dos intentos controlados permitidos por T103. No se ejecutará un tercero.
+
+**CHANGES:** QA-only. Corrección de la assertion terminal y corrección de la assertion post-terminal para aceptar el cleanup normal del resultado de presentación. No se modificó gameplay, balance, reward resolver, persistence authority, Timing Ring ni UI de combate.
+
+**TEST:** Run `37014187102` / Job `110860898852` sobre `5bc8c6eddfe5f6f5e6d256bda4050934a396f99e`. T097 del mismo workflow = SUCCESS. T103 alcanzó `DEFEAT`, `SCRAP=0), ledger único y `RETURN → COMPLETE` antes del assertion de post-terminal. El primer assertion terminal de T103 ya había sido corregido y el segundo assertion identificado como falso positivo por cleanup de presentación.
+
+**FINAL SHA:** `808765efefa05f6e99fd11b7e92b58ca09a3a64e`
+
+**STATUS:** PARTIAL.
+
+**BLOCKER:** falta únicamente una ejecución browser posterior para completar `RELOAD` y verificar persistencia final de la derrota. El límite de dos intentos de T103 está agotado; no se realizará otro dentro de esta task.
+
+**NEXT:** T104 · NORMAL COMBAT DEFEAT RELOAD PERSISTENCE PROOF · TIMER: 1–2 horas
