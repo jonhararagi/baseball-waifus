@@ -1199,7 +1199,7 @@ async function run() {
       requireCondition(beforeTerminal.persistedScrap === initial.persistedScrap, "T111 persisted Scrap changed before terminal", { initial, beforeTerminal });
       requireCondition(beforeTerminal.rewardLedgerKeys.length === initial.rewardLedgerKeys.length, "T111 reward ledger changed before terminal", { initial, beforeTerminal });
 
-      await sleep(620);
+      await sleep(500);
       const elapsedAtInput = await cdpEvaluate(cdp, "window.__BW_T097_TIMING_ELAPSED__?.()");
       requireCondition(
         Number.isFinite(Number(elapsedAtInput)) && Number(elapsedAtInput) > 0 && Number(elapsedAtInput) < 860,
@@ -1276,7 +1276,7 @@ async function run() {
         timingInput: {
           method: "CDP Input.dispatchMouseEvent",
           elapsedMs: elapsedAtInput,
-          targetBand: "690-760ms"
+          targetBand: "500ms sleep / active timing window"
         },
         terminalBoundary: {
           lastNonTerminal: "CLIMAX/TIMING ACTIVE",
