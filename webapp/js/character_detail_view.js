@@ -37,8 +37,50 @@ function statValue(canonical, key) {
   return safeInteger(canonical?.stats?.[key], 0);
 }
 
+const BW001_FALLBACK_ART = Object.freeze({
+  artPath: "./assets/production/cards/bw001--normal.svg",
+  heroPath: "./assets/production/presentation/bw001--profile.svg",
+  victoryPath: "./assets/production/presentation/bw001--victory.svg"
+});
+
+export function resolveCharacterDetailArt(characterId, artBinding = null) {
+  const id = cleanText(characterId).toLowerCase();
+  const approvedPath = String(
+    artBinding?.runtime_path
+      || ""
+  ).trim();
+
+  if (
+    String(artBinding?.status || "").toUpperCase() === "APPROVED"
+    && Boolean(artBinding?.project_asset)
+    && approvedPath
+  ) {
+    return {
+      artPath: approvedPath,
+      heroPath: approvedPath,
+      victoryPath: approvedPath,
+      source: "APPROVED_ART_REGISTRY"
+    };
+  }
+
+  if (id === "bw001") {
+    return {
+      ...BW001_FALLBACK_ART,
+      source: "LEGACY_BW001_FALLBACK"
+    };
+  }
+
+  return {
+    artPath: "",
+    heroPath: "",
+    victoryPath: "",
+    source: "NO_REGISTERED_ART"
+  };
+}
+
 export function buildCharacterDetailViewModel({
   character = null,
+  artBinding = null,
   inventoryEntry = null,
   progression = null,
   roster = null,
@@ -78,9 +120,8 @@ export function buildCharacterDetailViewModel({
     duplicates: Math.max(quantity, safeInteger(progression?.duplicate_count, quantity)),
     unlocked,
     active,
-    artPath: character.character_id==="bw001"?"./assets/production/cards/bw001--normal.svg":cleanText(canonical.visual?.card_hd_url||canonical.visual?.card_url||canonical.visual?.avatar_url||""),
-    heroPath: character.character_id==="bw001"?"./assets/production/presentation/bw001--profile.svg":"",
-    victoryPath: character.character_id==="bw001"?"./assets/production/presentation/bw001--victory.svg":"",
+    ...resolveCharacterDetailArt(character.character_id, artBinding),
+    artSource: resolveCharacterDetailArt(character.character_id, artBinding).source,
     expressionPaths: character.character_id==="bw001"?Object.fromEntries(["neutral","focus","happy","surprised","determined"].map((m)=>[m,"./assets/characters/expressions/bw001_"+m+".svg"])):{} ,
     identity: {
       archetype: humanize(identity.archetype, EMPTY_IDENTITY.archetype),
@@ -150,6 +191,7 @@ export class CharacterDetailView {
     getCurrencies = () => ({ scrap: 0, fragments: 0 }),
     canUpgrade = () => false,
     getUpgradeCost = () => null,
+    getArtBinding = () => null,
     getStoryEntry = () => null,
     getRelationshipContext = () => null,
     onStory = null,
@@ -167,6 +209,7 @@ export class CharacterDetailView {
       getCurrencies,
       canUpgrade,
       getUpgradeCost,
+      getArtBinding,
       getStoryEntry,
       getRelationshipContext,
       onStory,
@@ -227,6 +270,7 @@ export class CharacterDetailView {
     if (!id) return null;
 
     const character = this.getCharacter?.(id);
+    const artBinding = this.getArtBinding?.(id) || null;
     const progression = this.getProgression?.(id);
     const upgradeCost = progression ? this.getUpgradeCost?.(id) : null;
     const storyEntry = this.getStoryEntry?.(id) || null;
@@ -234,6 +278,7 @@ export class CharacterDetailView {
 
     return buildCharacterDetailViewModel({
       character,
+      artBinding,
       inventoryEntry: this.getInventoryEntry?.(id),
       progression,
       roster: this.getRoster?.(),
