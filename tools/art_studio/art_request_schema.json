@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "schema_id": "basewarriors-art-request",
+  "states": [
+    "REQUESTED",
+    "GENERATED",
+    "IMPORTED",
+    "VALIDATED",
+    "REJECTED",
+    "APPROVED"
+  ],
+  "transitions": {
+    "REQUESTED": [
+      "GENERATED",
+      "REJECTED"
+    ],
+    "GENERATED": [
+      "IMPORTED",
+      "REJECTED"
+    ],
+    "IMPORTED": [
+      "VALIDATED",
+      "REJECTED"
+    ],
+    "VALIDATED": [
+      "APPROVED",
+      "REJECTED"
+    ],
+    "REJECTED": [],
+    "APPROVED": []
+  },
+  "asset_kinds": [
+    "CHARACTER_PORTRAIT",
+    "CHARACTER_CARD",
+    "CHARACTER_BATTLE_IDLE",
+    "CHARACTER_BATTLE_ACTION",
+    "CHARACTER_CUTIN",
+    "CHARACTER_VICTORY",
+    "CHARACTER_DEFEAT",
+    "CHARACTER_EVENT",
+    "STAGE_BACKGROUND_FAR",
+    "STAGE_BACKGROUND_MID",
+    "STAGE_GROUND",
+    "STAGE_FOREGROUND",
+    "STAGE_FX_BACK",
+    "STAGE_FX_FRONT",
+    "VFX",
+    "PROP",
+    "TEST_STAGE_BACKGROUND_FAR"
+  ],
+  "cameras": [
+    "FRONT",
+    "3/4_FRONT",
+    "3/4_BACK",
+    "SIDE",
+    "LOW_ANGLE",
+    "HIGH_ANGLE",
+    "WIDE",
+    "MEDIUM",
+    "CLOSE",
+    "TOP",
+    "PROFILE"
+  ],
+  "compositions": [
+    "FULL_BODY",
+    "HALF_BODY",
+    "PORTRAIT",
+    "ACTION_POSE",
+    "BATTLE_ACTION",
+    "CUTIN",
+    "BACKGROUND",
+    "MIDGROUND",
+    "GROUND",
+    "FOREGROUND",
+    "PROP",
+    "FX"
+  ],
+  "formats": [
+    "png",
+    "jpg",
+    "jpeg",
+    "svg"
+  ],
+  "required": [
+    "request_id",
+    "status",
+    "asset_kind",
+    "target_name",
+    "target_path",
+    "character_id",
+    "what_is_expected",
+    "camera",
+    "composition",
+    "subject",
+    "environment",
+    "visual_notes",
+    "generation_prompt",
+    "negative_prompt",
+    "format",
+    "minimum_width",
+    "minimum_height",
+    "drop_zone",
+    "created_at",
+    "updated_at"
+  ]
+}
