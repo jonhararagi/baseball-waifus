@@ -984,6 +984,18 @@ async function run() {
         await cdpClickSelector(cdp, "#action-bat");
       };
 
+      const advanceToClimax = async (round) => {
+        await clickBat("round " + round + " T1");
+        for (const turn of [1,2,3,4,5]) {
+          const phase = turn === 5 ? "CLIMAX" : "TACTICAL";
+          await mark("ROUND " + round + " TACTICAL " + turn, s => s.tacticalTurn === turn && s.battlePhase === phase);
+          if (turn < 5) {
+            await mark("ROUND " + round + " TACTICAL " + turn + " COMPLETE", s => s.tacticalTurn === turn && s.presentationPhase === "COMPLETE" && s.presentationActive === false);
+            await clickBat("round " + round + " T" + (turn + 1));
+          }
+        }
+      };
+
       const resolveNonTerminalMiss = async (round) => {
         await mark("ROUND " + round + " CLIMAX", s => s.battlePhase === "CLIMAX" && s.tacticalTurn === 5);
         await mark("ROUND " + round + " TIMING ACTIVE", s => s.battlePhase === "CLIMAX" && s.timingActive === true);
@@ -1046,14 +1058,16 @@ async function run() {
       requireCondition(tactical.persistedScrap === initial.persistedScrap, "T109 persisted Scrap changed during Tactical", { initial, tactical });
       requireCondition(tactical.rewardLedgerKeys.length === initial.rewardLedgerKeys.length, "T109 reward ledger changed during Tactical", { initial, tactical });
 
+      const round1Tactical = tactical;
+      await advanceToClimax(1);
       const round1 = await resolveNonTerminalMiss(1);
       requireCondition(round1.terminal === null, "T109 first Timing unexpectedly reached a terminal result", round1);
 
-      await clickBat("round 2");
-      const tactical2 = await mark("TACTICAL 2", s => s.battlePhase === "TACTICAL" && s.tacticalTurn >= 1);
+      const tactical2 = await mark("TACTICAL 2", s => s.battlePhase === "TACTICAL" && s.tacticalTurn === 0 && s.playerStamina > 0);
       requireCondition(tactical2.scrap === initial.scrap, "T109 Scrap changed before second non-terminal Timing", { initial, tactical2 });
       requireCondition(tactical2.persistedScrap === initial.persistedScrap, "T109 persisted Scrap changed before second non-terminal Timing", { initial, tactical2 });
 
+      await advanceToClimax(2);
       const round2 = await resolveNonTerminalMiss(2);
       requireCondition(round2.terminal === null, "T109 second Timing unexpectedly reached a terminal result", round2);
 
