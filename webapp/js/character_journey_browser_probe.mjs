@@ -686,7 +686,7 @@ async function run() {
         6000
       );
 
-      await sleep(620);
+      await sleep(680);
       const timing = await readRuntime();
       requireCondition(timing.timingActive === true, "T097 timing window closed before physical input", timing);
       const rect = await cdpEvaluate(cdp, "(() => { const c = document.querySelector('#gameCanvas'); const r = c?.getBoundingClientRect(); return r ? { left:r.left, top:r.top, width:r.width, height:r.height } : null; })()");
