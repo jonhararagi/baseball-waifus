@@ -92,17 +92,17 @@ director.startFromCombatResult({
 assert.equal(director.getState().phase, "ATTACKER_FOCUS");
 assert.equal(director.getState().progress, 0);
 assert.equal(director.getCurrentStep().actionIntent, "PREPARE");
-director.update(0.24);
+director.update(0.22);
 assert.equal(director.getState().phase, "ACTION");
 assert.ok(director.getState().progress >= 0);
 assert.equal(director.getCurrentStep().animationState, "SWING");
 assert.equal(director.getCommands()[1].payload.projectile_beat, "RELEASE_TO_IMPACT");
 
-director.update(0.26);
+director.update(0.3);
 assert.equal(director.getState().phase, "IMPACT");
 assert.equal(director.getCurrentStep().actionIntent, "CONTACT");
 assert.equal(director.getCommands()[2].payload.projectile_beat, "CONTACT");
-director.update(0.15);
+director.update(0.18);
 assert.equal(director.getState().phase, "TARGET_REACTION");
 assert.equal(director.getCurrentStep().actionIntent, "REACTION");
 director.update(0.3);
