@@ -1,0 +1,83 @@
+name: T077 Combat Presentation Browser QA
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "webapp/js/combat.js"
+      - "webapp/js/combat_presentation_director.js"
+      - "webapp/js/combat_presentation_director_test.mjs"
+      - "webapp/js/character_journey_browser_probe.mjs"
+      - "webapp/js/app.js"
+      - "webapp/index.html"
+  workflow_dispatch:
+
+jobs:
+  t077-combat-browser-qa:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Prepare runtime data
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p webapp/data
+          cp data/characters_queue.json webapp/data/characters_queue.json
+          cp data/game_schemas_recycled.json webapp/data/game_schemas_recycled.json
+          test -s webapp/data/characters_queue.json
+          test -s webapp/data/game_schemas_recycled.json
+
+      - name: Validate T077 browser probe syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check webapp/js/character_journey_browser_probe.mjs
+
+      - name: Locate Chrome
+        id: chrome
+        shell: bash
+        run: |
+          set -euo pipefail
+          BROWSER_BIN=""
+          for candidate in google-chrome chromium chromium-browser; do
+            if command -v "$candidate" >/dev/null 2>&1; then
+              BROWSER_BIN="$(command -v "$candidate")"
+              break
+            fi
+          done
+          if [ -z "$BROWSER_BIN" ]; then
+            echo "browser_bin=" >> "$GITHUB_OUTPUT"
+            echo "BROWSER AUTOMATION = NOT_RUN // no supported Chrome/Chromium binary on runner"
+            exit 0
+          fi
+          echo "browser_bin=$BROWSER_BIN" >> "$GITHUB_OUTPUT"
+          echo "BROWSER_BIN = $BROWSER_BIN"
+
+      - name: Run T077 real combat browser proof
+        if: steps.chrome.outputs.browser_bin != ''
+        shell: bash
+        env:
+          T072_SITE_DIR: webapp
+          T072_EVIDENCE_DIR: browser-evidence/T077/$GITHUB_SHA/$GITHUB_RUN_ID
+          T077_COMBAT: "1"
+          BROWSER_BIN: ${{ steps.chrome.outputs.browser_bin }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$T072_EVIDENCE_DIR"
+          BROWSER_BIN="$BROWSER_BIN" node webapp/js/character_journey_browser_probe.mjs
+
+      - name: Save T077 browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: t077-combat-browser-evidence
+          path: browser-evidence/T077/
+          if-no-files-found: warn

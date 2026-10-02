@@ -7,6 +7,7 @@ import { tmpdir } from "node:os";
 
 const T073_PRESENTATION = process.env.T073_PRESENTATION === "1";
 const T074_ART = process.env.T074_ART === "1";
+const T077_COMBAT = process.env.T077_COMBAT === "1";
 const SITE_DIR = resolve(process.env.T072_SITE_DIR || "site");
 const EVIDENCE_DIR = resolve(
   process.env.T072_EVIDENCE_DIR
@@ -349,7 +350,90 @@ async function run() {
     requireCondition(schema?.gacha?.pity?.hard_pity?.pull_limit === 80, "hard pity changed", schema?.gacha?.pity);
 
     const screenshots = {};
+
     screenshots.home = await screenshot(cdp, "01-home-aiko-starter");
+
+    if (T077_COMBAT) {
+      await cdpClickSelector(cdp, ".home-action-play");
+      await waitFor(
+        async () => cdpEvaluate(cdp, "(() => { const canvas = document.querySelector('#gameCanvas'); if (!canvas) return false; const rect = canvas.getBoundingClientRect(); return rect.width > 0 && rect.height > 0; })()"),
+        { label: "T077 Combat view visible" }
+      );
+      await waitFor(
+        async () => cdpEvaluate(cdp, "(() => { const button = document.querySelector('#action-bat'); return Boolean(button && !button.disabled); })()"),
+        { label: "T077 BATEAR enabled" }
+      );
+
+      const phaseTimeline = [];
+      const phaseScreenshots = {};
+      await cdpClickSelector(cdp, "#action-bat");
+
+      const deadline = Date.now() + 5000;
+      while (Date.now() < deadline) {
+        const state = await cdpEvaluate(cdp, "(() => { const canvas = document.querySelector('#gameCanvas'); return { phase: canvas?.dataset?.combatPresentationPhase || '', active: canvas?.dataset?.combatPresentationActive === 'true' }; })()");
+        if (state.phase && phaseTimeline[phaseTimeline.length - 1] !== state.phase) {
+          phaseTimeline.push(state.phase);
+          if (["ATTACKER_FOCUS", "ACTION", "IMPACT", "TARGET_REACTION", "COMBAT_RETURN", "COMPLETE"].includes(state.phase)) {
+            phaseScreenshots[state.phase] = await screenshot(cdp, "combat-" + state.phase.toLowerCase().replaceAll("_", "-"));
+          }
+        }
+        if (state.phase === "COMPLETE" && state.active === false) break;
+        await sleep(25);
+      }
+
+      const requiredPhases = ["ATTACKER_FOCUS", "ACTION", "IMPACT", "TARGET_REACTION", "COMBAT_RETURN", "COMPLETE"];
+      requireCondition(
+        requiredPhases.every((phase) => phaseTimeline.includes(phase)),
+        "T077 presentation phase sequence incomplete",
+        { phaseTimeline, requiredPhases }
+      );
+
+      const runtime = await cdpEvaluate(cdp, "(() => { const canvas = document.querySelector('#gameCanvas'); const button = document.querySelector('#action-bat'); const rect = canvas?.getBoundingClientRect(); return { phase: canvas?.dataset?.combatPresentationPhase || '', active: canvas?.dataset?.combatPresentationActive === 'true', combatVisible: Boolean(rect && rect.width > 0 && rect.height > 0), batEnabled: Boolean(button && !button.disabled) }; })()");
+      requireCondition(runtime.combatVisible, "T077 combat canvas is not visible after presentation", runtime);
+      requireCondition(runtime.phase === "COMPLETE" && runtime.active === false, "T077 presentation did not complete", runtime);
+      requireCondition(runtime.batEnabled, "T077 combat input did not recover after presentation", runtime);
+
+      const sameOriginErrors = pageExceptions
+        .map((item) => item?.exception?.description || item?.text || "")
+        .filter(Boolean)
+        .filter((entry) => entry.includes(baseUrl) || entry.includes("/js/"));
+      requireCondition(sameOriginErrors.length === 0, "same-origin page exceptions detected", sameOriginErrors);
+
+      const evidence = {
+        task: "T077",
+        sha: process.env.GITHUB_SHA || "local",
+        runId: process.env.GITHUB_RUN_ID || "local",
+        browser: BROWSER_BIN,
+        baseUrl,
+        journey: ["HOME", "COMBAT ENTRY", "REAL BAT INPUT", ...phaseTimeline],
+        runtime,
+        phaseTimeline,
+        screenshots: phaseScreenshots,
+        network: { requestCount: network.requests.length, responseCount: network.responses.length },
+        consoleErrors: consoleErrors.map((entry) => ({ text: entry.text, url: entry.url, source: entry.source })),
+        pageErrors: sameOriginErrors
+      };
+      writeFileSync(
+        join(EVIDENCE_DIR, "t077-combat-browser-evidence.json"),
+        JSON.stringify(evidence, null, 2) + "\n",
+        "utf8"
+      );
+
+      console.log("BROWSER AUTOMATION = PASS_REAL");
+      console.log("HOME = PASS_REAL");
+      console.log("COMBAT ENTRY = PASS_REAL");
+      console.log("REAL BAT INPUT = PASS_REAL");
+      console.log("ATTACKER FOCUS = PASS_REAL");
+      console.log("ACTION = PASS_REAL");
+      console.log("IMPACT = PASS_REAL");
+      console.log("TARGET REACTION = PASS_REAL");
+      console.log("COMBAT RETURN = PASS_REAL");
+      console.log("PRESENTATION COMPLETE = PASS_REAL");
+      console.log("GAMEPLAY INPUT RECOVERY = PASS_REAL");
+      console.log("T077 COMBAT PRESENTATION = PASS_REAL");
+      return;
+    }
+
 
     await cdpClickSelector(cdp, "#home-character-detail-open");
     await waitFor(
