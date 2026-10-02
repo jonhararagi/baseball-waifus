@@ -913,8 +913,24 @@ async function run() {
       requireCondition(complete.battlePhase === "DEFEAT" && complete.playerStamina === 0, "T101 terminal state changed after return", complete);
       requireCondition(complete.scrap === 0 && complete.persistedScrap === 0, "T101 defeat awarded victory Scrap", complete);
       requireCondition(complete.rewardLedgerKeys.length === 1 && complete.rewardLedgerKeys[0] === expectedBattleId && complete.rewardLedger?.[expectedBattleId] === true, "T101 defeat ledger identity missing or duplicated", complete);
-      const actionGuard=await cdpEvaluate(cdp, "Boolean(document.querySelector('#action-bat') && document.querySelector('#action-bat').disabled)");
-      requireCondition(actionGuard === true, "T101 post-terminal BATEAR guard is not active");
+      const actionControl=await cdpEvaluate(cdp, "(() => { const b=document.querySelector('#action-bat'); return {exists:Boolean(b),disabled:Boolean(b?.disabled)}; })()");
+      requireCondition(actionControl.exists, "T101 post-terminal BATEAR control is missing", actionControl);
+      const postTerminalBefore=await readRuntime();
+      if (!actionControl.disabled) {
+        await cdpClickSelector(cdp, "#action-bat");
+        await sleep(250);
+      }
+      const postTerminalAfter=await readRuntime();
+      requireCondition(
+        postTerminalAfter.battlePhase === "DEFEAT"
+        && postTerminalAfter.combatResult === "DEFEAT"
+        && postTerminalAfter.playerStamina === 0
+        && postTerminalAfter.tacticalTurn === 0
+        && postTerminalAfter.rewardLedgerKeys.length === postTerminalBefore.rewardLedgerKeys.length
+        && postTerminalAfter.scrap === postTerminalBefore.scrap,
+        "T101 functional post-terminal BATEAR guard failed",
+        {actionControl,postTerminalBefore,postTerminalAfter}
+      );
       await cdp.send("Page.navigate", {url});
       await waitFor(async () => (await cdpEvaluate(cdp, "document.readyState")) === "complete", {timeoutMs:30000,label:"T101 reload document ready"});
       await waitFor(async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#home-view') && !document.querySelector('#home-view').hidden)"), {timeoutMs:30000,label:"T101 Home after reload"});
@@ -925,7 +941,7 @@ async function run() {
       requireCondition(reloaded.rewardLedgerKeys.length === 1 && reloaded.rewardLedger?.[expectedBattleId] === true, "T101 defeat ledger did not survive reload consistently", reloaded);
       const sameOriginErrors=pageExceptions.map(item => item?.exception?.description || item?.text || "").filter(Boolean).filter(entry => entry.includes(baseUrl) || entry.includes("/js/"));
       requireCondition(sameOriginErrors.length === 0, "T101 same-origin runtime exceptions detected", sameOriginErrors);
-      const evidence={task:"T101",sha:process.env.GITHUB_SHA||"local",runId:process.env.GITHUB_RUN_ID||"local",browser:BROWSER_BIN,browserVersion:{product:browserVersion?.product||"",revision:browserVersion?.revision||"",userAgent:browserVersion?.userAgent||""},harness:"existing character_journey_browser_probe.mjs via T101_DEFEAT_PROOF=1",expectedBattleId,initial,rounds,defeat,returnComplete:complete,reloaded,postTerminalActionGuard:actionGuard,persistence:{mechanism:"PlayerMetaPersistenceAdapter/localStorage",key:playerMetaKey,reloadVerified:true},reward:{expected:[],scrapBefore:initial.scrap,scrapAfter:complete.scrap,scrapAfterReload:reloaded.scrap},duplication:{ledgerBeforeReload:complete.rewardLedgerKeys.length,ledgerAfterReload:reloaded.rewardLedgerKeys.length},timeline,consoleErrors:consoleErrors.map(entry=>({text:entry.text,url:entry.url,source:entry.source})),pageErrors:sameOriginErrors};
+      const evidence={task:"T101",sha:process.env.GITHUB_SHA||"local",runId:process.env.GITHUB_RUN_ID||"local",browser:BROWSER_BIN,browserVersion:{product:browserVersion?.product||"",revision:browserVersion?.revision||"",userAgent:browserVersion?.userAgent||""},harness:"existing character_journey_browser_probe.mjs via T101_DEFEAT_PROOF=1",expectedBattleId,initial,rounds,defeat,returnComplete:complete,reloaded,postTerminalActionGuard:{control:actionControl,functional:true},persistence:{mechanism:"PlayerMetaPersistenceAdapter/localStorage",key:playerMetaKey,reloadVerified:true},reward:{expected:[],scrapBefore:initial.scrap,scrapAfter:complete.scrap,scrapAfterReload:reloaded.scrap},duplication:{ledgerBeforeReload:complete.rewardLedgerKeys.length,ledgerAfterReload:reloaded.rewardLedgerKeys.length},timeline,consoleErrors:consoleErrors.map(entry=>({text:entry.text,url:entry.url,source:entry.source})),pageErrors:sameOriginErrors};
       writeFileSync(join(EVIDENCE_DIR,"t101-defeat-browser-cdp-evidence.json"),JSON.stringify(evidence,null,2)+"\n","utf8");
       console.log("T101 BROWSER AUTOMATION = PASS_REAL");
       console.log("INITIAL STAMINA = " + initial.playerStamina + "/" + initial.playerStaminaMax);
