@@ -77,10 +77,6 @@ function assetUrl(path) {
   return new URL(path, window.location.href).toString();
 }
 
-function stateValue(phase, value) {
-  return ["ACTION", "IMPACT"].includes(String(phase || "").toUpperCase()) ? String(value || "") : "";
-}
-
 function descriptorPath(descriptor, kind = "") {
   if (!descriptor || typeof descriptor !== "object") {
     return "";
