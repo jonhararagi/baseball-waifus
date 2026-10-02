@@ -335,7 +335,7 @@ class ArtRequestTests(unittest.TestCase):
             final["output"]["path"],
             request["target_path"],
         )
-        self.assertTrue((root / final["output"]["target_path"]).is_file())
+        self.assertTrue((root / final["output"]["path"]).is_file())
         self.assertEqual(final["source_files"][0]["filename"], "artist-original.svg")
         self.assertEqual(final["source_files"][0]["format"], "svg")
         self.assertEqual(len(final["source_files"][0]["sha256"]), 64)
