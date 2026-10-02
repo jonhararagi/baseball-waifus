@@ -1,0 +1,54 @@
+name: T080 Character Combat Cinematic Action Browser QA
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "webapp/js/combat.js"
+      - "webapp/js/combat_stage.js"
+      - "webapp/js/combat_presentation_director.js"
+      - "webapp/js/batter_renderer.js"
+      - "webapp/js/t080_character_combat_browser_probe.mjs"
+  workflow_dispatch:
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Prepare runtime data
+        run: |
+          set -euo pipefail
+          mkdir -p webapp/data
+          cp data/characters_queue.json webapp/data/characters_queue.json
+          cp data/game_schemas_recycled.json webapp/data/game_schemas_recycled.json
+      - name: Locate Chrome
+        id: chrome
+        run: |
+          set -euo pipefail
+          for candidate in google-chrome chromium chromium-browser; do
+            if command -v "$candidate" >/dev/null 2>&1; then
+              echo "browser_bin=$(command -v "$candidate")" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          done
+          exit 1
+      - name: Run T080 real browser proof
+        env:
+          T072_SITE_DIR: webapp
+          T072_EVIDENCE_DIR: browser-evidence/T080/${{ github.sha }}/${{ github.run_id }}
+          BROWSER_BIN: ${{ steps.chrome.outputs.browser_bin }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$T072_EVIDENCE_DIR"
+          node --check webapp/js/t080_character_combat_browser_probe.mjs
+          node webapp/js/t080_character_combat_browser_probe.mjs
+      - name: Upload T080 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: t080-character-combat-browser-evidence
+          path: browser-evidence/T080/
+          if-no-files-found: warn
