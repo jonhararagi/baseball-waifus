@@ -69,6 +69,7 @@ jobs:
           mkdir -p "$T072_EVIDENCE_DIR"
           node webapp/js/character_journey_browser_probe.mjs
       - name: Run T101 normal combat defeat proof
+        if: always()
         shell: bash
         env:
           T072_SITE_DIR: webapp
