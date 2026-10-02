@@ -547,9 +547,13 @@ def archive_and_copy(request: dict, source: Path, root: Path = ROOT) -> dict:
             target.unlink()
         raise
 
-    info = validate_image_file(request, target)
+    target_info = validate_image_file(request, target)
     return {
-        **info,
+        "filename": source.name,
+        "format": target_info["format"],
+        "width": target_info["width"],
+        "height": target_info["height"],
+        "sha256": file_sha256(source),
         "drop_path": str(source.relative_to(root)).replace("\\", "/"),
         "archive_path": str(archive.relative_to(root)).replace("\\", "/"),
         "target_path": str(target.relative_to(root)).replace("\\", "/"),
