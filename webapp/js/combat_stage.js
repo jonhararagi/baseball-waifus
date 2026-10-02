@@ -12,6 +12,19 @@ export const COMBAT_STAGE_ACTION_CONTRACT = Object.freeze({
   projectileSource: "BAT_TO_PROJECTILE",
   projectileTarget: "IMPACT"
 });
+export const COMBAT_STAGE_ULTIMATE_CONTRACT = Object.freeze({
+  id: "ULTIMATE_CINEMATIC_STAGING",
+  phases: Object.freeze([
+    "ULTIMATE_TRIGGER",
+    "ULTIMATE_STAGING",
+    "ULTIMATE_CHARACTER_FOCUS",
+    "ULTIMATE_ACTION_PREP",
+    "ULTIMATE_RETURN"
+  ]),
+  cameraAnchors: Object.freeze(["FORMATION", "PLAYER_FOCUS", "ACTION", "RETURN"]),
+  staging: "TEMPORARY_PRESENTATION_ONLY",
+  gameplayAuthority: "EXTERNAL_RESULT"
+});
 
 const ACTOR_CAMERA_ALIAS = Object.freeze({
   PLAYER_FOCUS: "FOCUS",
@@ -265,8 +278,84 @@ export class CombatStage {
     let rotationDeg = base.rotation;
     let scale = base.scale;
     let emphasis = 0;
+    let opacity = 1;
 
-    if (normalizedPhase === "ATTACKER_FOCUS") {
+    
+    if (normalizedPhase === "ULTIMATE_STAGING") {
+      if (isHero) {
+        offsetY = -0.022;
+        scale *= 1.05;
+        emphasis = 0.45;
+      } else if (actor.team === "PLAYER") {
+        const direction = actor.position.x < heroX ? -1 : 1;
+        offsetX = direction * 0.026;
+        offsetY = 0.018;
+        scale *= 0.88;
+        opacity = 0.72;
+      } else if (actor.team === "ENEMY") {
+        offsetX = 0.02;
+        offsetY = -0.008;
+        scale *= 0.94;
+        opacity = 0.84;
+      }
+    } else if (normalizedPhase === "ULTIMATE_CHARACTER_FOCUS") {
+      if (isHero) {
+        offsetX = forward * 0.012;
+        offsetY = -0.026;
+        rotationDeg += -forward * 2.5;
+        scale *= 1.12;
+        emphasis = 0.85;
+      } else if (actor.team === "PLAYER") {
+        const direction = actor.position.x < heroX ? -1 : 1;
+        offsetX = direction * 0.045;
+        offsetY = 0.024;
+        scale *= 0.80;
+        opacity = 0.56;
+      } else if (actor.team === "ENEMY") {
+        offsetX = 0.028;
+        offsetY = -0.01;
+        scale *= 0.90;
+        opacity = 0.70;
+      }
+    } else if (normalizedPhase === "ULTIMATE_ACTION_PREP") {
+      if (isHero) {
+        offsetX = forward * 0.018;
+        offsetY = -0.035;
+        rotationDeg += -forward * 3.2;
+        scale *= 1.16;
+        emphasis = 1;
+      } else if (actor.team === "PLAYER") {
+        const direction = actor.position.x < heroX ? -1 : 1;
+        offsetX = direction * 0.035;
+        offsetY = 0.028;
+        scale *= 0.78;
+        opacity = 0.5;
+      } else if (actor.team === "ENEMY") {
+        offsetX = 0.035;
+        offsetY = -0.012;
+        scale *= 0.88;
+        opacity = 0.66;
+      }
+    } else if (normalizedPhase === "ULTIMATE_RETURN") {
+      const settle = 1 - t;
+      if (isHero) {
+        offsetY = -0.035 * settle;
+        scale *= 1 + 0.16 * settle;
+        rotationDeg += -forward * 3.2 * settle;
+        emphasis = settle;
+      } else if (actor.team === "PLAYER") {
+        const direction = actor.position.x < heroX ? -1 : 1;
+        offsetX = direction * 0.035 * settle;
+        offsetY = 0.028 * settle;
+        scale *= 1 - 0.22 * settle;
+        opacity = 1 - 0.5 * settle;
+      } else if (actor.team === "ENEMY") {
+        offsetX = 0.035 * settle;
+        offsetY = -0.012 * settle;
+        scale *= 1 - 0.12 * settle;
+        opacity = 1 - 0.34 * settle;
+      }
+    } else if (normalizedPhase === "ATTACKER_FOCUS") {
       const prep = Math.sin(t * Math.PI);
       offsetX = -forward * 0.012 * prep;
       offsetY = -0.008 * prep;
@@ -310,6 +399,7 @@ export class CombatStage {
       elevation: actor.elevation,
       facing: actor.facing,
       emphasis,
+      opacity: clamp(opacity, 0, 1),
       presentationOnly: true
     });
   }
@@ -380,6 +470,8 @@ export class CombatStage {
       actorAnchors: COMBAT_STAGE_ACTOR_ANCHORS.slice(),
       actionContract: COMBAT_STAGE_ACTION_CONTRACT.id,
       actionPhases: COMBAT_STAGE_ACTION_CONTRACT.phases.slice(),
+      ultimateContract: COMBAT_STAGE_ULTIMATE_CONTRACT.id,
+      ultimatePhases: COMBAT_STAGE_ULTIMATE_CONTRACT.phases.slice(),
       depthModel: ["FAR", "MID", "NEAR"],
       actorCount: this.actors.size,
       playerCount: this.getActors({ team: "PLAYER" }).length,

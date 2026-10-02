@@ -533,6 +533,29 @@ export class CombatRenderer {
     return this.combatPresentation.getState();
   }
 
+  triggerUltimateCinematicStaging(characterId = null, targetId = null) {
+    if (!this.matchReady || !this.state) return null;
+    const attackerId = String(
+      characterId
+      || this.state?.batter?.id
+      || this.state?.batter?.character_id
+      || this.combatStage.selectedActorId
+      || ""
+    );
+    const resolvedTargetId = String(
+      targetId
+      || this.state?.pitcher?.id
+      || this.state?.pitcher?.character_id
+      || ""
+    );
+    if (!attackerId || !resolvedTargetId) return null;
+
+    return this.combatPresentation.startUltimateStaging({
+      attackerId,
+      targetId: resolvedTargetId
+    });
+  }
+
   getBattleLoopState() {
     return {
       phase: this.battlePhase,
@@ -1003,6 +1026,7 @@ export class CombatRenderer {
 
     this.batterRenderer.update(delta);
     this.combatPresentation.update(delta);
+    this._syncCinematicOverlayState();
     this._syncCombatStageDataset();
     this.canvas.dataset.combatPresentationPhase = this.combatPresentation.getState().phase;
     this.canvas.dataset.combatPresentationActive = String(this.combatPresentation.isActive());
@@ -1170,23 +1194,54 @@ export class CombatRenderer {
   _handleCombatPresentationStep(event) {
     const phase = String(event?.phase || "").toUpperCase();
     const result = event?.result || {};
-    if (phase === "ATTACKER_FOCUS") {
+
+    if (phase === "ULTIMATE_TRIGGER" || phase === "ULTIMATE_STAGING") {
+      this._syncCinematicOverlayState();
+      this.batterRenderer.setState?.("IDLE");
+      this.canvas.dataset.combatStageUltimateActive = "true";
+      return;
+    }
+    if (phase === "ULTIMATE_CHARACTER_FOCUS") {
+      this._syncCinematicOverlayState();
+      this.batterRenderer.beginWindup();
+      this.canvas.dataset.combatStageUltimateActive = "true";
+      return;
+    }
+    if (phase === "ULTIMATE_ACTION_PREP") {
+      this.batterRenderer.beginWindup();
+      this.canvas.dataset.combatStageUltimateActive = "true";
+      return;
+    }
+    if (phase === "ULTIMATE_RETURN") {
+      this._syncCinematicOverlayState();
+      this.batterRenderer.setState?.("IDLE");
+      this.canvas.dataset.combatStageUltimateActive = "true";
+      return;
+    }
+    if (phase === "ULTIMATE_COMPLETE") {
+      this.batterRenderer.setState?.("IDLE");
+      this.canvas.dataset.combatStageUltimateActive = "false";
+      return;
+    }
+
+    const normalPhase = phase;
+    if (normalPhase === "ATTACKER_FOCUS") {
       this.canvas.dataset.combatStageActionComplete = "false";
       this._syncCinematicOverlayState();
       this.timingFeedback?.classList.remove("is-visible");
       this.batterRenderer.beginWindup();
       return;
     }
-    if (phase === "ACTION") {
+    if (normalPhase === "ACTION") {
       this.batterRenderer.beginSwing();
       return;
     }
-    if (phase === "IMPACT") {
+    if (normalPhase === "IMPACT") {
       this.combatEffects.trigger(result.result || "HIT", { result: result.result || "HIT" });
       this.impactTimer = Math.max(this.impactTimer, 0.16);
       return;
     }
-    if (phase === "COMBAT_RETURN") {
+    if (normalPhase === "COMBAT_RETURN") {
       this._syncCinematicOverlayState();
       this.timingFeedback?.classList.remove("is-visible");
       this.canvas.dataset.combatStageActionComplete = "true";
@@ -1255,7 +1310,7 @@ export class CombatRenderer {
       return;
     }
 
-    this._drawCombatSupportActor(ctx, actor, transform, color);
+    this._drawCombatSupportActor(ctx, actor, motion, color);
   }
 
   _drawCombatSupportActor(ctx, actor, transform, color) {
@@ -1263,12 +1318,13 @@ export class CombatRenderer {
     ctx.save();
     ctx.translate(transform.x, transform.y);
     ctx.rotate((transform.rotation * Math.PI) / 180);
+    ctx.globalAlpha = clamp(Number(transform.opacity ?? 1), 0, 1);
     ctx.fillStyle = "rgba(4, 8, 20, 0.82)";
     ctx.beginPath();
     ctx.ellipse(0, 0, radius * 0.72, radius, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = color;
-    ctx.globalAlpha = 0.9;
+    ctx.globalAlpha *= 0.9;
     ctx.lineWidth = 2.5;
     ctx.stroke();
     ctx.fillStyle = color;
@@ -1307,6 +1363,7 @@ export class CombatRenderer {
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(rotation);
+    ctx.globalAlpha = clamp(Number(frame.opacity ?? 1), 0, 1);
     ctx.scale(1 + pulse * 0.055, 1 - pulse * 0.035);
 
     ctx.fillStyle = "rgba(0,0,0,0.24)";
@@ -1471,6 +1528,38 @@ export class CombatRenderer {
     this.canvas.dataset.combatStageFilmable = String(stageState.filmable);
     this.canvas.dataset.combatStageActionContract = String(stageState.actionContract || "");
     this.canvas.dataset.combatStageActionPhases = (stageState.actionPhases || []).join(",");
+    this.canvas.dataset.combatStageUltimateContract = String(stageState.ultimateContract || "");
+    this.canvas.dataset.combatStageUltimatePhases = (stageState.ultimatePhases || []).join(",");
+    const ultimateState = this.combatPresentation.getState();
+    const ultimatePhase = String(ultimateState.phase || "");
+    const ultimateFrames = ["ULTIMATE_STAGING", "ULTIMATE_CHARACTER_FOCUS", "ULTIMATE_ACTION_PREP", "ULTIMATE_RETURN"].includes(ultimatePhase)
+      ? this.combatStage.getSortedActors().map((actor) => this.combatStage.resolveCinematicActorFrame(actor.actorId, {
+        phase: ultimatePhase,
+        progress: ultimateState.progress,
+        width: this.pixelWidth,
+        height: this.pixelHeight
+      }))
+      : [];
+    const ultimateHeroFrame = ultimateFrames.find((frame) => frame?.actorId === stageState.selectedActorId);
+    const ultimateSupportOpacities = ultimateFrames
+      .filter((frame) => frame?.actorId !== stageState.selectedActorId)
+      .filter((frame) => {
+        const actor = this.combatStage.getActor(frame.actorId);
+        return actor?.team === "PLAYER";
+      })
+      .map((frame) => Number(frame.opacity ?? 1));
+    this.canvas.dataset.combatStageUltimateActive = String(ultimateState.sequenceKind === "ULTIMATE_STAGING");
+    this.canvas.dataset.combatStageUltimateSequenceKind = String(ultimateState.sequenceKind || "");
+    this.canvas.dataset.combatStageUltimatePhase = ultimatePhase;
+    this.canvas.dataset.combatStageUltimateHeroScale = ultimateHeroFrame
+      ? Number(ultimateHeroFrame.scale).toFixed(3)
+      : "";
+    this.canvas.dataset.combatStageUltimateSupportOpacity = ultimateSupportOpacities.length
+      ? String(Math.min(...ultimateSupportOpacities).toFixed(3))
+      : "";
+    this.canvas.dataset.combatStageUltimateTeamStaged = String(
+      ultimatePhase.startsWith("ULTIMATE_") && ultimateSupportOpacities.some((value) => value < 0.99)
+    );
     this.canvas.dataset.combatStagePresentationPhase = String(this.combatPresentation.getState().phase || "");
     this.canvas.dataset.combatStageCharacterState = String(this.batterRenderer.getState() || "");
     this.canvas.dataset.combatStageCharacterMotion = String(
