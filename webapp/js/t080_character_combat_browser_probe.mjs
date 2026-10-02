@@ -202,7 +202,9 @@ function readRuntime(cdp) {
       projectileSource: c?.dataset?.combatStageProjectileContract || '',
       projectileTarget: c?.dataset?.combatStageProjectileTarget || '',
       projectileTravel: c?.dataset?.combatStageProjectileTravel || '',
-      actionComplete: c?.dataset?.combatStageActionComplete === 'true'
+      actionComplete: c?.dataset?.combatStageActionComplete === 'true',
+      timingFeedbackVisible: Boolean(document.querySelector('#timing-feedback')?.classList.contains('is-visible')),
+      timingFeedbackText: document.querySelector('#timing-feedback')?.textContent || ''
     };
   })()`);
 }
@@ -329,6 +331,9 @@ async function run() {
     requireCondition(timeline.includes("COMPLETE"), "presentation did not complete", timeline);
     requireCondition(focus?.cameraAnchor === "PLAYER_FOCUS" && focus?.cameraSource === "ACTOR", "character focus did not use actor camera anchor", focus);
     requireCondition(action?.characterState === "SWING" || action?.characterState === "FOLLOW_THROUGH", "action did not drive BatterRenderer state", action);
+    requireCondition(focus?.timingFeedbackVisible === false, "timing feedback obscured character focus", focus);
+    requireCondition(action?.timingFeedbackVisible === false && actionLater?.timingFeedbackVisible === false, "timing feedback obscured cinematic action", { action, actionLater });
+    requireCondition(impact?.timingFeedbackVisible === false && reaction?.timingFeedbackVisible === false, "timing feedback remained visible during impact/reaction", { impact, reaction });
     requireCondition(action?.characterMotion !== actionLater?.characterMotion || action?.batPose !== actionLater?.batPose, "character motion did not visibly evolve during action", { action, actionLater });
     requireCondition(action?.projectileSource === "BAT_TO_PROJECTILE", "projectile did not originate from bat/projectile anchors", action);
     requireCondition(action?.projectileTarget === "IMPACT", "projectile target anchor missing", action);

@@ -5,6 +5,7 @@ on:
       - main
     paths:
       - "webapp/js/combat.js"
+      - "webapp/js/app.js"
       - "webapp/js/combat_stage.js"
       - "webapp/js/combat_presentation_director.js"
       - "webapp/js/batter_renderer.js"
@@ -25,5 +26,6 @@ jobs:
           node --check webapp/js/combat_presentation_director.js
           node --check webapp/js/batter_renderer.js
           node --check webapp/js/combat.js
+          node --check webapp/js/app.js
           node --check webapp/js/combat_action_t080_test.mjs
           node webapp/js/combat_action_t080_test.mjs

@@ -447,7 +447,7 @@ const renderer = new CombatRenderer(document.querySelector("#combat-canvas, #gam
   },
   onTacticalTurn: (event) => {
     if (timingFeedback) {
-      timingFeedback.textContent = `TACTICAL ${event.turn}/5 • MOBS ×${event.mob_count} • ENERGY ${event.energy}%`;
+      timingFeedback.textContent = `TACTICAL ${event.turn}/5 • MOBS ×${event.mob_count ?? 0} • ENERGY ${event.energy ?? event.internal_energy ?? 0}%`;
     }
     if (event.turn < 5) batButton.disabled = false;
   },
