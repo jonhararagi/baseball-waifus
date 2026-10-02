@@ -82,6 +82,27 @@ jobs:
           mkdir -p "$T072_EVIDENCE_DIR"
           node webapp/js/character_journey_browser_probe.mjs
 
+      - name: Run T109 mid-turn reward boundary proof
+        if: always()
+        shell: bash
+        env:
+          T072_SITE_DIR: webapp
+          T072_EVIDENCE_DIR: browser-evidence/T109/$GITHUB_SHA/$GITHUB_RUN_ID
+          T109_REWARD_BOUNDARY: "1"
+          BROWSER_BIN: ${{ steps.chrome.outputs.browser_bin }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$T072_EVIDENCE_DIR"
+          node webapp/js/character_journey_browser_probe.mjs
+
+      - name: Upload T109 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: t109-mid-turn-reward-browser-evidence
+          path: browser-evidence/T109/
+          if-no-files-found: warn
+
       - name: Upload T101 evidence
         if: always()
         uses: actions/upload-artifact@v4
