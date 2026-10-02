@@ -77,6 +77,32 @@
       "source_files": [],
       "output": null,
       "failure": null
+    },
+    {
+      "request_id": "AR-T085-STAGE-BG-MID-01",
+      "status": "REQUESTED",
+      "asset_kind": "STAGE_BACKGROUND_MID",
+      "target_name": "combat-stage--background--mid--wide.png",
+      "target_path": "assets/stages/combat-stage--background--mid--wide.png",
+      "character_id": null,
+      "what_is_expected": "Original production midground environment art for the BaseWarriors: Meta-Strike CombatStage 2.5D. The asset provides readable secondary arena structures behind the combat actors, distinct from the distant FAR backplate.",
+      "camera": "WIDE",
+      "composition": "BACKGROUND",
+      "subject": "combat-stage",
+      "environment": "Cyberpunk sports-tech combat arena at midground depth, designed as a secondary environmental structure layer rather than a playable baseball field.",
+      "visual_notes": "MIDGROUND layer only. Use large readable architecture, tiered arena forms, elevated walkways, structural beams, digital advertising panels without readable copy, energy rails and stadium-scale silhouettes. Preserve clear character and enemy silhouettes. Avoid a dominant central object and small-object clutter. Must tolerate camera movement across Formation, Player Focus, Action, Impact, Reaction and Return and remain visually distinct from the FAR atmosphere/backplate.",
+      "generation_prompt": "Wide anime 2.5D cyberpunk sports-tech combat arena MIDGROUND for BaseWarriors: Meta-Strike, secondary environmental structures at readable mid distance, tiered arena architecture, elevated walkways, large industrial-sport structural beams, subtle digital advertising panels with no readable text, energy rails, stadium-scale silhouettes, strong layered depth between a distant FAR background and the combat actors, cinematic negative space around four characters and one enemy, controlled visual density, cool cyan and magenta sports-tech energy, stylized anime shonen presentation, built for subtle parallax and filmable camera movement across formation, character focus, action, impact, reaction and return, no characters.",
+      "negative_prompt": "No characters, no UI, no text overlays, no readable advertising copy, no watermark, no logo, no game screenshot, no third-party character likeness, no baseball diamond composition, no bases, no pitcher mound, no batter box, no runner lanes, no foreground obstruction, no giant central object, no character-shaped silhouettes, no photorealism, no semirealistic 3D look, no tiny clutter.",
+      "format": "png",
+      "minimum_width": 2048,
+      "minimum_height": 1152,
+      "drop_zone": "tools/art_studio/inbox/AR-T085-STAGE-BG-MID-01",
+      "runtime_slot": "stage.background.mid",
+      "created_at": "2026-10-02T07:25:00Z",
+      "updated_at": "2026-10-02T07:25:00Z",
+      "source_files": [],
+      "output": null,
+      "failure": null
     }
   ]
 }
