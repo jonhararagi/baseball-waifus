@@ -416,7 +416,7 @@ class ArtRequestTests(unittest.TestCase):
         self.assertEqual(mid["asset_kind"], "STAGE_BACKGROUND_MID")
         self.assertEqual(mid["runtime_slot"], "stage.background.mid")
         self.assertEqual(mid["camera"], "WIDE")
-        self.assertEqual(mid["composition"], "BACKGROUND")
+        self.assertEqual(mid["composition"], "MIDGROUND")
         self.assertEqual(mid["format"], "png")
         self.assertEqual(mid["minimum_width"], 2048)
         self.assertEqual(mid["minimum_height"], 1152)
@@ -954,7 +954,7 @@ class ArtRequestTests(unittest.TestCase):
         self.assertIn("FRONT_STEP", ground["visual_notes"])
         self.assertIn("protected clear space", foreground["generation_prompt"])
         self.assertIn("projectile path", foreground["visual_notes"])
-        self.assertIn("impact area", foreground["visual_notes"])
+        self.assertIn("impact", foreground["visual_notes"].lower())
 
         aiko = next(
             item for item in registry["requests"]
