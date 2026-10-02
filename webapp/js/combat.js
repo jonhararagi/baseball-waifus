@@ -1410,6 +1410,8 @@ export class CombatRenderer {
     this.canvas.dataset.combatStageEnemyCount = String(stageState.enemyCount);
     this.canvas.dataset.combatStageDepthModel = stageState.depthModel.join(",");
     this.canvas.dataset.combatStageActorDepths = stageState.actorDepths.join(",");
+    this.canvas.dataset.combatStageActorElevations = stageState.actorElevations.join(",");
+    this.canvas.dataset.combatStageSetPieces = stageState.setPieces.map((piece) => piece.id).join(",");
     this.canvas.dataset.combatStageLayers = stageState.layers.map((layer) => layer.id).join(",");
     this.canvas.dataset.combatStageZones = Object.keys(stageState.zones).join(",");
     this.canvas.dataset.combatStageSelectedActor = stageState.selectedActorId;
