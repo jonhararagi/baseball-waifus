@@ -254,6 +254,8 @@ Aumenta la posibilidad de que un contacto de alta calidad produzca un resultado 
 ### Stamina
 Determina cuánto rendimiento conserva la jugadora durante el partido y cuánto resiste antes de necesitar descanso.
 
+En el combate normal de BaseWarriors: Meta-Strike, esta estadística alimenta la resistencia del bateador activo. Cada resolución de Climax que no termina en victoria consume 25 puntos de Stamina; al llegar a 0, el combate termina en DEFEAT. La Stamina de combate es de alcance local al encuentro y se reinicia al iniciar una nueva batalla.
+
 No se añade Dexterity/Technique como estadística independiente en v1.0 para evitar duplicar Contact, Speed, Control y Critical.
 
 ---

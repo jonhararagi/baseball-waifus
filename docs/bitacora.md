@@ -8786,3 +8786,35 @@ La infraestructura del combat slice está bastante avanzada, pero no corresponde
 **BLOCKER:** no puede definirse una condición legítima de derrota del combate local actual sin una decisión de diseño de gameplay o una modificación del modelo de combate. Crear un hook que fuerce `battlePhase = DEFEAT` sería precisamente la falsificación que T099 prohíbe.
 
 **NEXT:** T100 · NORMAL COMBAT DEFEAT CONDITION DECISION / MINIMAL IMPLEMENTATION · TIMER: 2–4 horas
+
+
+### T100 · Normal Combat Defeat Condition Decision / Minimal Implementation
+
+**Fecha:** 2026-10-02  
+**BASE SHA:** `e368ea9250d83be90d3e5ae0d2a3112e92b2d996`  
+**IMPLEMENTATION SHA:** `6745cacfe4c6144962123bd1ff5feeb69a574da5`  
+**TIMER:** 2–4 horas
+
+**RESULT:** CLOSED.
+
+**DEFEAT CONDITION:** agotamiento de `Stamina` del bateador activo durante una ronda de combate no terminal. `Stamina` ya existe como estadística de personaje con semántica de resistencia durante el partido.
+
+**GAMEPLAY STATE:** `playerStamina`, inicializado desde `batter.stamina` cuando existe, con fallback local 70. Cada resolución de Climax que no termina en victoria consume 25 puntos. Al llegar a 0, el core produce `DEFEAT`. La victoria tiene precedencia y no consume ese coste.
+
+**TERMINAL RESULT:** `DEFEAT`.
+
+**MATCH END:** PASS. El runtime local emite `TurnResultDTO` con `result/outcome = DEFEAT` y `match_end = true`.
+
+**REWARD:** `DEFEAT → []`. La tabla T062 existente no fue modificada.
+
+**RETURN:** PASS at contract level. El resultado terminal usa el mismo `CombatPresentationDirector` y flujo `COMBAT_RETURN → COMPLETE`. Browser proof player-facing queda para T101.
+
+**QA HOOK:** NOT NEEDED. No se agregó un shortcut de QA. La condición puede alcanzarse mediante gameplay normal, agotando Stamina con rondas de Climax no victoriosas.
+
+**CHANGES:** `combat_core.js`, `combat.js`, `app.js`, tests de combat/reward y documentación de T100. No se tocaron gacha, Timing Ring, economía de rewards, Kytos, Student 4v4, arte ni persistence architecture.
+
+**TEST:** Combat Vertical Slice Tests Run `37009729685` = SUCCESS. Player Meta Persistence Tests Run `37009729543` = SUCCESS.
+
+**STATUS:** CLOSED.
+
+**NEXT:** T101 · NORMAL COMBAT DEFEAT BROWSER PROOF / NO-REWARD RETURN · TIMER: 1–2 horas
