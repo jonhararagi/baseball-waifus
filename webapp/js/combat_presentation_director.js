@@ -374,8 +374,11 @@ export class CombatPresentationDirector {
   cancel() {
     if (!this.active) return this.getState();
 
+    const returnPhase = this.sequenceKind === "ULTIMATE_STAGING"
+      ? COMBAT_ULTIMATE_PHASE.RETURN
+      : COMBAT_PRESENTATION_PHASE.RETURN;
     const returnIndex = Math.max(0, this.activeStepDefinitions.findIndex(
-      (step) => step.phase === COMBAT_PRESENTATION_PHASE.RETURN
+      (step) => step.phase === returnPhase
     ));
     this.stepIndex = returnIndex;
     this.stepElapsedMs = 0;
