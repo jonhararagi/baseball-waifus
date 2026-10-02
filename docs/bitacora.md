@@ -8818,3 +8818,43 @@ La infraestructura del combat slice está bastante avanzada, pero no corresponde
 **STATUS:** CLOSED.
 
 **NEXT:** T101 · NORMAL COMBAT DEFEAT BROWSER PROOF / NO-REWARD RETURN · TIMER: 1–2 horas
+
+
+### T101 · Normal Combat Defeat Browser Proof / No-Reward Return
+
+**Fecha:** 2026-10-02  
+**BASE SHA:** `97175f3a4f81add07f79f54971a757a353f12aa3`  
+**FINAL SHA:** `24b88480b807cf9962b982d417f989eae309f6b5`  
+**TIMER:** 1–2 horas
+
+**RESULT:** PARTIAL.
+
+**RUNTIME EVIDENCE:** Se ejecutaron dos intentos browser/CDP controlados reutilizando `character_journey_browser_probe.mjs`. El primer intento llegó a `VICTORY` porque el input físico resolvió `GREAT`; no se cuenta como derrota. El segundo intento sí produjo tres rondas no victoriosas y confirmó consumo real de Stamina.
+
+**INITIAL STAMINA:** `76/76`.
+
+**OBSERVED STAMINA:** `76 → 51 → 26 → 1` después de tres resoluciones de Climax no victoriosas. Cada decremento fue exactamente `-25`.
+
+**DEFEAT:** NOT VERIFIED. La sesión terminó en `TACTICAL`, `Stamina=1`, por lo que todavía no alcanzó `0` ni emitió `DEFEAT`.
+
+**REWARD:** NOT VERIFIED EN RUNTIME. El segundo intento mantuvo `SCRAP=0` y `persistedScrap=0` mientras permaneció en combate, pero no se alcanzó el handoff terminal de derrota.
+
+**RETURN:** NOT VERIFIED PARA DEFEAT. Los retornos de las rondas no terminales sí fueron observables, pero no hubo `DEFEAT → COMBAT_RETURN`.
+
+**PERSISTENCE:** NOT VERIFIED PARA EL TERMINAL DE DERROTA. No corresponde presentar el estado previo como prueba de derrota persistida.
+
+**DUPLICATION:** NOT VERIFIED PARA DEFEAT.
+
+**POST-TERMINAL GUARDS:** NOT VERIFIED PARA DEFEAT.
+
+**ROOT CAUSE OF PROOF INCOMPLETION:** no es una contradicción del gameplay. El personaje real de la demo aporta `76` de Stamina, mientras T101 había preparado tres rondas suponiendo implícitamente el fallback `70`. Con coste `25`, la cuarta resolución no victoriosa es la que lleva `1 → 0` y permite producir `DEFEAT`.
+
+**CHANGES:** solo infraestructura QA existente: extensión del probe con modo `T101_DEFEAT_PROOF` y ejecución desde el workflow CDP existente. No se modificó gameplay, balance, reward resolver ni persistence.
+
+**TEST SUPPORT:** Combat Vertical Slice Tests Run `37009729685` = SUCCESS y Player Meta Persistence Tests Run `37009729543` = SUCCESS sobre la implementación T100. En T101, sintaxis del probe = PASS; segundo browser attempt = FAIL por timeout antes de terminal `DEFEAT`.
+
+**STATUS:** PARTIAL.
+
+**BLOCKER:** límite de dos intentos browser controlados consumido sin alcanzar la cuarta resolución necesaria. No se agrega un tercer intento dentro de T101.
+
+**NEXT:** T102 · NORMAL COMBAT DEFEAT BROWSER PROOF WITH REAL STAMINA BUDGET · TIMER: 1–2 horas
