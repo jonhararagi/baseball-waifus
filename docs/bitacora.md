@@ -8961,3 +8961,42 @@ La infraestructura del combat slice está bastante avanzada, pero no corresponde
 **STATUS:** CLOSED.
 
 **NEXT:** T105 · NORMAL COMBAT TERMINAL RESULT INTEGRITY AUDIT · TIMER: 1–2 horas
+
+
+### T105 · Normal Combat Terminal Result Integrity Audit
+
+**Fecha:** 2026-10-02  
+**BASE SHA:** `55874e280e75ac38262c6482251a5a5ba903491d`  
+**TIMER:** 1–2 horas
+
+**RESULT:** CLOSED.
+
+**VICTORY CONTRACT:** REAL. `resolveClimaxTurn()` produces the terminal victory authority in gameplay; `combat.js` normalizes it into the common `TurnResultDTO` with `result=VICTORY`, `outcome=VICTORY`, `match_end=true` and `state.match_complete=true`. The internal baseball outcome (`HOME_RUN/HIT`) remains presentation/gameplay detail before the terminal DTO boundary.
+
+**DEFEAT CONTRACT:** REAL. The same `resolveClimaxTurn()` produces `phase=DEFEAT`, `result/outcome=DEFEAT`, `defeat=true`, `match_end=true`; `combat.js` emits the same `TurnResultDTO` terminal shape as victory.
+
+**MATCH END:** PASS. Both terminal paths use `match_end=true`.
+
+**REWARD CONTRACT:** REAL. `VICTORY → +100 SCRAP`; `DEFEAT → []` through the same `applyCombatRewardPipeline → resolveStandardBattleRewards → applyRewardResultToPlayerMeta` path.
+
+**RETURN:** PASS. Both outcomes enter `CombatPresentationDirector.startFromCombatResult()` and use the same `COMBAT_RETURN → COMPLETE` sequence.
+
+**POST-TERMINAL GUARDS:** PASS by shared combat guard. Both `VICTORY` and `DEFEAT` are rejected by `beginTimingWindow()` and `_playTacticalTurn()`, preventing tactical/climax continuation.
+
+**PERSISTENCE:** PASS. Both outcomes reach the same `PlayerMetaPersistenceAdapter.save()` path. Existing T097 victory proof and T104 defeat proof provide runtime confirmation through reload.
+
+**LEDGER:** PASS. Both terminal rewards use the same stable battle identifier and `RECORD_REWARD` idempotency guard. Existing runtime proofs showed one ledger entry and no duplicate reward application for victory or defeat.
+
+**FINDINGS:**  
+- `REAL / INTENTIONAL`: terminal normalization occurs at the `combat.js` DTO boundary; victory keeps its baseball result internally, then becomes `VICTORY` for reward/terminal consumers.  
+- `REAL`: gameplay authority, not presentation/UI/QA, selects victory or defeat.  
+- `REAL`: persistence and reward use the same authority for both terminal outcomes.  
+- `PLACEHOLDER`: legacy `_awardScrap()` callback remains on remote `applyTurnResult()`, but the current `app.js` callback only reports legacy status/leaderboard and does not mutate authoritative Scrap. It is not a terminal reward leak in the audited runtime. No T105 change is justified.
+
+**CHANGES:** documentación únicamente. No gameplay, balance, reward table, persistence authority, ledger architecture, Timing Ring, UI ni combat engine fue modificado.
+
+**TEST:** Auditoría estática de `combat_core.js`, `combat.js`, `reward_pipeline.js`, `reward_resolver.js`, `player_meta_reward_adapter.js`, `player_meta_persistence_adapter.js`, `player_meta_state.js`, `gacha_player_meta_integration.js`, `combat_presentation_director.js` y `app.js`. Supporting runtime checkpoints: T097 victory persistence/duplication PASS y T104 defeat persistence/reload PASS. No se requirió nuevo browser proof porque T105 no cambió código de producción.
+
+**STATUS:** CLOSED.
+
+**NEXT:** T106 · NORMAL COMBAT MID-TURN REWARD BOUNDARY AUDIT · TIMER: 1–2 horas
