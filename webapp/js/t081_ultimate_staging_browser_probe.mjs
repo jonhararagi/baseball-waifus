@@ -140,27 +140,13 @@ async function evaluate(cdp, expression) {
 }
 
 async function click(cdp, selector) {
-  const point = await evaluate(cdp, `(() => {
+  const clicked = await evaluate(cdp, `(() => {
     const el = document.querySelector(${JSON.stringify(selector)});
-    if (!el || el.disabled) return null;
-    const r = el.getBoundingClientRect();
-    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    if (!el || el.disabled) return false;
+    el.click();
+    return true;
   })()`);
-  assertCondition(point, "click target unavailable: " + selector);
-  await cdp.send("Input.dispatchMouseEvent", {
-    type: "mousePressed",
-    x: point.x,
-    y: point.y,
-    button: "left",
-    clickCount: 1
-  });
-  await cdp.send("Input.dispatchMouseEvent", {
-    type: "mouseReleased",
-    x: point.x,
-    y: point.y,
-    button: "left",
-    clickCount: 1
-  });
+  assertCondition(clicked, "click target unavailable: " + selector);
 }
 
 async function screenshot(cdp, name) {
