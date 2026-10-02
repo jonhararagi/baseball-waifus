@@ -137,6 +137,38 @@ export class BatterRenderer {
     return this.state;
   }
 
+  getCharacterMotion(width = 360, height = 640) {
+    const state = this.state;
+    const s = clamp(height / 640, 0.72, 1.28);
+    if (state === BATTER_STATES.WINDUP) {
+      return Object.freeze({
+        x: -this.weightShift * width * 0.018,
+        y: -this.weightShift * height * 0.016,
+        rotationDeg: -this.weightShift * 4.5,
+        scale: 1 - this.weightShift * 0.02
+      });
+    }
+    if (state === BATTER_STATES.SWING) {
+      const arc = Math.sin(this.swingProgress * Math.PI);
+      return Object.freeze({
+        x: this.hipRotation * width * 0.17,
+        y: -arc * height * 0.018,
+        rotationDeg: this.hipRotation * 16,
+        scale: 1 + arc * 0.028 * s
+      });
+    }
+    if (state === BATTER_STATES.FOLLOW_THROUGH) {
+      const settle = this.followThroughProgress;
+      return Object.freeze({
+        x: this.hipRotation * width * 0.12 * (1 - settle * 0.3),
+        y: -Math.sin((1 - settle) * Math.PI) * height * 0.012,
+        rotationDeg: this.hipRotation * 11,
+        scale: 1 + (1 - settle) * 0.018 * s
+      });
+    }
+    return Object.freeze({ x: 0, y: 0, rotationDeg: 0, scale: 1 });
+  }
+
   getBatPose(width = 360, height = 640, { anchorX = null, anchorY = null } = {}) {
     const baseX = Number.isFinite(Number(anchorX)) ? Number(anchorX) : width * 0.27;
     const baseY = Number.isFinite(Number(anchorY)) ? Number(anchorY) : height * 0.76;
@@ -188,9 +220,11 @@ export class BatterRenderer {
     const ratio = image.naturalWidth > 0 ? image.naturalHeight / image.naturalWidth : 1.45;
     const targetWidth = targetHeight / ratio;
 
+    const motion = this.getCharacterMotion(width, height);
     ctx.save();
-    ctx.translate(pose.x + width * 0.12, pose.y);
-    ctx.scale(-1, 1);
+    ctx.translate(pose.x + width * 0.12 + motion.x, pose.y + motion.y);
+    ctx.rotate((motion.rotationDeg * Math.PI) / 180);
+    ctx.scale(-motion.scale, motion.scale);
     ctx.translate(-targetWidth * 0.5, -targetHeight * 0.84);
     ctx.globalAlpha = 0.98;
     ctx.shadowColor = "rgba(0, 0, 0, 0.5)";

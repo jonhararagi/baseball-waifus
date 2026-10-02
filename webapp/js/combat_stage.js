@@ -5,6 +5,13 @@ export const COMBAT_STAGE_LAYERS = Object.freeze(["BACKGROUND", "MIDGROUND", "GR
 export const COMBAT_STAGE_CAMERA_ANCHORS = Object.freeze(["FORMATION", "PLAYER_FOCUS", "ENEMY_FOCUS", "ACTION", "IMPACT", "REACTION", "RETURN"]);
 export const COMBAT_STAGE_ACTOR_ANCHORS = Object.freeze(["BODY", "HEAD", "BAT", "HAND", "PROJECTILE", "IMPACT", "REACTION"]);
 export const COMBAT_STAGE_SET_PIECES = Object.freeze(["PLAYER_RAMP", "CENTER_PLATFORM", "ENEMY_PLATFORM", "FRONT_STEP"]);
+export const COMBAT_STAGE_ACTION_CONTRACT = Object.freeze({
+  id: "CHARACTER_CINEMATIC_ACTION",
+  phases: Object.freeze(["ATTACKER_FOCUS", "ACTION", "IMPACT", "TARGET_REACTION", "COMBAT_RETURN"]),
+  anchors: COMBAT_STAGE_ACTOR_ANCHORS,
+  projectileSource: "BAT_TO_PROJECTILE",
+  projectileTarget: "IMPACT"
+});
 
 const ACTOR_CAMERA_ALIAS = Object.freeze({
   PLAYER_FOCUS: "FOCUS",
@@ -245,6 +252,108 @@ export class CombatStage {
     const source = actor.actionAnchors?.[name] || actor.vfxAnchors?.[name];
     return source ? deepFreeze(clone(source)) : null;
   }
+  resolveCinematicActorFrame(actorId, { phase = "FORMATION", progress = 0, width = this.designWidth, height = this.designHeight } = {}) {
+    const actor = this.getActor(actorId);
+    const base = this.resolveActorTransform(actorId, { width, height });
+    if (!actor || !base) return null;
+
+    const normalizedPhase = String(phase || "FORMATION").toUpperCase();
+    const t = clamp(finite(progress, 0), 0, 1);
+    const forward = actor.facing < 0 ? -1 : 1;
+    let offsetX = 0;
+    let offsetY = 0;
+    let rotationDeg = base.rotation;
+    let scale = base.scale;
+    let emphasis = 0;
+
+    if (normalizedPhase === "ATTACKER_FOCUS") {
+      const prep = Math.sin(t * Math.PI);
+      offsetX = -forward * 0.012 * prep;
+      offsetY = -0.008 * prep;
+      rotationDeg += -forward * 2.2 * prep;
+      emphasis = 0.35 * prep;
+    } else if (normalizedPhase === "ACTION") {
+      const swing = Math.sin(t * Math.PI);
+      offsetX = forward * (0.02 + 0.042 * swing);
+      offsetY = -0.012 * swing;
+      rotationDeg += forward * 4.5 * swing;
+      scale *= 1 + 0.045 * swing;
+      emphasis = swing;
+    } else if (normalizedPhase === "IMPACT") {
+      const hit = Math.sin(t * Math.PI);
+      offsetX = forward * 0.015 * hit;
+      offsetY = -0.008 * hit;
+      rotationDeg += forward * 1.6 * hit;
+      emphasis = 0.7 + hit * 0.3;
+    } else if (normalizedPhase === "TARGET_REACTION") {
+      const recoil = 1 - t;
+      offsetX = -forward * 0.052 * recoil;
+      offsetY = -0.014 * Math.sin(t * Math.PI);
+      rotationDeg += -forward * 7 * Math.sin(t * Math.PI);
+      scale *= 1 - 0.035 * Math.sin(t * Math.PI);
+      emphasis = recoil;
+    }
+
+    return deepFreeze({
+      actorId: actor.actorId,
+      phase: normalizedPhase,
+      progress: t,
+      x: clamp(actor.position.x + offsetX, 0, 1) * width,
+      y: clamp(actor.position.y - actor.elevation * 0.065 + offsetY, 0, 1) * height,
+      baseX: base.x,
+      baseY: base.y,
+      offsetX: offsetX * width,
+      offsetY: offsetY * height,
+      rotationDeg,
+      scale,
+      depth: actor.depth,
+      elevation: actor.elevation,
+      facing: actor.facing,
+      emphasis,
+      presentationOnly: true
+    });
+  }
+  resolveCinematicProjectile(attackerId, targetId, { phase = "ACTION", progress = 0, width = this.designWidth, height = this.designHeight } = {}) {
+    const attacker = this.getActor(attackerId);
+    const target = this.getActor(targetId);
+    if (!attacker || !target) return null;
+
+    const t = clamp(finite(progress, 0), 0, 1);
+    const normalizedPhase = String(phase || "ACTION").toUpperCase();
+    const bat = this.getActorAnchor(attacker.actorId, "BAT");
+    const projectile = this.getActorAnchor(attacker.actorId, "PROJECTILE");
+    const impact = this.getActorAnchor(target.actorId, "IMPACT");
+    if (!bat || !projectile || !impact) return null;
+
+    const frame = this.resolveCinematicActorFrame(attacker.actorId, { phase: normalizedPhase, progress: t, width, height });
+    const frameDx = frame ? frame.offsetX / width : 0;
+    const frameDy = frame ? frame.offsetY / height : 0;
+    const swingAttach = normalizedPhase === "ACTION" ? clamp((t - 0.08) / 0.42, 0, 1) : 1;
+    const source = {
+      x: bat.x + (projectile.x - bat.x) * swingAttach + frameDx,
+      y: bat.y + (projectile.y - bat.y) * swingAttach + frameDy
+    };
+    const travel = normalizedPhase === "ACTION"
+      ? clamp((t - 0.18) / 0.7, 0, 1)
+      : normalizedPhase === "IMPACT"
+        ? 1
+        : 0;
+    const eased = travel * travel * (3 - 2 * travel);
+    const x = source.x + (impact.x - source.x) * eased;
+    const y = source.y + (impact.y - source.y) * eased - Math.sin(eased * Math.PI) * 0.055;
+
+    return deepFreeze({
+      phase: normalizedPhase,
+      progress: t,
+      travelProgress: eased,
+      sourceAnchor: travel < 0.98 ? "BAT_TO_PROJECTILE" : "PROJECTILE",
+      targetAnchor: "IMPACT",
+      start: deepFreeze({ x: source.x, y: source.y }),
+      end: deepFreeze({ x: impact.x, y: impact.y }),
+      position: deepFreeze({ x, y }),
+      presentationOnly: true
+    });
+  }
   getSetPiece(id) { return this.setPieces.find((piece) => piece.id === String(id || "").toUpperCase()) || null; }
   resolveActorTransform(actorId, { width = this.designWidth, height = this.designHeight } = {}) {
     const actor = this.getActor(actorId);
@@ -269,6 +378,8 @@ export class CombatStage {
       setPieces: clone(this.setPieces),
       cameraAnchors: COMBAT_STAGE_CAMERA_ANCHORS.slice(),
       actorAnchors: COMBAT_STAGE_ACTOR_ANCHORS.slice(),
+      actionContract: COMBAT_STAGE_ACTION_CONTRACT.id,
+      actionPhases: COMBAT_STAGE_ACTION_CONTRACT.phases.slice(),
       depthModel: ["FAR", "MID", "NEAR"],
       actorCount: this.actors.size,
       playerCount: this.getActors({ team: "PLAYER" }).length,

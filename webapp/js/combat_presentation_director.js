@@ -13,36 +13,44 @@ export const COMBAT_PRESENTATION_PHASE = Object.freeze({
 const STEP_DEFINITIONS = Object.freeze([
   Object.freeze({
     phase: COMBAT_PRESENTATION_PHASE.ATTACKER_FOCUS,
-    durationMs: 220,
+    durationMs: 240,
     focusTarget: "ATTACKER",
     focusActor: "ATTACKER",
     cameraAnchor: "PLAYER_FOCUS",
     zoom: 1.08,
     panX: 0.045,
     panY: 0.015,
-    easing: "ease_out"
+    easing: "ease_out",
+    actionIntent: "PREPARE",
+    animationState: "WINDUP"
   }),
   Object.freeze({
     phase: COMBAT_PRESENTATION_PHASE.ACTION,
-    durationMs: 300,
+    durationMs: 260,
     focusTarget: "ATTACKER",
     focusActor: "ATTACKER",
     cameraAnchor: "ACTION",
     zoom: 1.14,
     panX: 0.02,
     panY: 0,
-    easing: "ease_in_out"
+    easing: "ease_in_out",
+    actionIntent: "SWING",
+    animationState: "SWING",
+    projectileBeat: "RELEASE_TO_IMPACT"
   }),
   Object.freeze({
     phase: COMBAT_PRESENTATION_PHASE.IMPACT,
-    durationMs: 180,
+    durationMs: 150,
     focusTarget: "TARGET",
     focusActor: "TARGET",
     cameraAnchor: "IMPACT",
     zoom: 1.20,
     panX: -0.045,
     panY: -0.012,
-    easing: "ease_out"
+    easing: "ease_out",
+    actionIntent: "CONTACT",
+    animationState: "FOLLOW_THROUGH",
+    projectileBeat: "CONTACT"
   }),
   Object.freeze({
     phase: COMBAT_PRESENTATION_PHASE.TARGET_REACTION,
@@ -53,18 +61,22 @@ const STEP_DEFINITIONS = Object.freeze([
     zoom: 1.10,
     panX: -0.085,
     panY: -0.02,
-    easing: "ease_in_out"
+    easing: "ease_in_out",
+    actionIntent: "REACTION",
+    animationState: "REACTION"
   }),
   Object.freeze({
     phase: COMBAT_PRESENTATION_PHASE.RETURN,
-    durationMs: 300,
+    durationMs: 320,
     focusTarget: "COMBAT",
     focusActor: null,
     cameraAnchor: "RETURN",
     zoom: 1,
     panX: 0,
     panY: 0,
-    easing: "ease_in"
+    easing: "ease_in",
+    actionIntent: "RESET",
+    animationState: "IDLE"
   })
 ]);
 
@@ -166,6 +178,9 @@ function buildCommands(sequenceId, combatResult, stepDefinitions = STEP_DEFINITI
       pan_x: step.panX,
       pan_y: step.panY,
       easing: step.easing,
+      action_intent: step.actionIntent || "",
+      animation_state: step.animationState || "",
+      projectile_beat: step.projectileBeat || "",
       attacker_id: combatResult.attackerId,
       target_id: combatResult.targetId,
       action_type: combatResult.actionType,
@@ -367,11 +382,17 @@ export class CombatPresentationDirector {
   }
 
   getState() {
+    const step = this.getCurrentStep();
+    const durationMs = Math.max(1, Number(step?.durationMs) || 1);
+    const progress = step
+      ? clamp(this.stepElapsedMs / durationMs, 0, 1)
+      : 1;
     return Object.freeze({
       sequenceId: this.sequenceId,
       phase: this.phase,
       stepIndex: this.stepIndex,
       stepElapsedMs: this.stepElapsedMs,
+      progress,
       active: this.active,
       result: this.result,
       commandCount: this.commands.length,
