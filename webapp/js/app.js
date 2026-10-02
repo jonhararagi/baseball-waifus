@@ -467,6 +467,10 @@ const renderer = new CombatRenderer(document.querySelector("#combat-canvas, #gam
 gachaController.setCutInRenderer(renderer);
 renderer.onEconomyTimingConsumed = () => shopUI.consumeTimingTurn?.();
 renderer.onEconomyRewardConsumed = () => shopUI.consumeRewardTurn?.();
+
+if (new URLSearchParams(window.location.search).get("qa") === "t081") {
+  window.__BW_T081_TRIGGER_ULTIMATE__ = () => renderer.triggerUltimateCinematicStaging();
+}
 const rosterPanel = new RosterPanel({
   root: rosterPanelRoot,
   getCharacters: () => gachaController.getCharacters(),
