@@ -9166,3 +9166,28 @@ La infraestructura del combat slice está bastante avanzada, pero no corresponde
 **STATUS:** BLOCKED.
 
 **NEXT:** T114-R2 · NORMAL COMBAT TERMINAL TIMING INPUT HARNESS EXECUTION · TIMER: 1–2 horas
+
+
+### T114-R2 · Normal Combat Terminal Timing Input Harness Execution
+
+**Fecha:** 2026-10-02  
+**BASE SHA:** `7a6cc1ed0b843417506fc3a2262ba1b4c2fd4c71`  
+**FINAL SHA:** `6e51b00e380f5e81bc3ca007e672d681013b9946`
+
+**RESULT:** BLOCKED.
+
+**EXECUTION 1:** Run `37075530936`, Job `111064460823`. Workflow creado sobre commit `3de065da7379ed8d0885d4c6d40cb309c0da363e`; el paso `T114-R2 historical T096 terminal timing recovery` existió, pero el probe falló en `node --check` antes de Chromium. Error en línea 1119: cadena T109 rota que incrustaba `if (T114R_TERMINAL_INPUT_RECOVERY)`.
+
+**REPAIR:** corrección QA mínima en `webapp/js/character_journey_browser_probe.mjs` para cerrar la cadena T109 y restaurar el bloque T114R. Commit `6e51b00e380f5e81bc3ca007e672d681013b9946`.
+
+**EXECUTION 2:** Run `37075657414`, Job `111064865501`. El método T096 todavía no llegó a Chromium porque `node --check` volvió a fallar, ahora en línea 1309, por un fragmento huérfano `OUNDARY = PASS_REAL");` inmediatamente después del cierre T114R. No se obtuvo evidencia de `TIMING ACTIVE`, input físico, `HIT` ni `VICTORY`.
+
+**T096 METHOD:** NOT REPRODUCED en runtime debido al bloqueo sintáctico previo.
+
+**CHANGES:** solo wiring QA del workflow para generar la ejecución nueva y una reparación sintáctica mínima del probe. No se modificaron gameplay, Timing Ring, CombatRenderer, rewards, persistence ni balance.
+
+**STATUS:** BLOCKED.
+
+**BLOCKER:** el harness contiene más corrupción sintáctica heredada del experimento T107/T114R de la que puede corregirse dentro del límite de dos intentos de T114-R2. No se realizará una tercera reparación/ejecución dentro de esta task.
+
+**NEXT:** T115 · NORMAL COMBAT BROWSER HARNESS SYNTAX RECOVERY FINAL PASS · TIMER: 1–2 horas
