@@ -15,7 +15,7 @@ const TRANSITIONS = Object.freeze({
   IDLE: new Set(["WINDUP", "SWING"]),
   WINDUP: new Set(["SWING", "IDLE"]),
   SWING: new Set(["FOLLOW_THROUGH", "IDLE"]),
-  FOLLOW_THROUGH: new Set(["IDLE", "SWING"])
+  FOLLOW_THROUGH: new Set(["IDLE", "SWING", "WINDUP"])
 });
 
 function clamp(value, min, max) {
