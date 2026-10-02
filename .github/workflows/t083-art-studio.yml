@@ -23,9 +23,10 @@ jobs:
           python-version: "3.12"
 
       - name: Run existing character asset factory tests
+        working-directory: tools
         run: |
           set -euo pipefail
-          python -m unittest tools/character_asset_factory_test.py
+          python -m unittest character_asset_factory_test.py
 
       - name: Run T083 art request and intake tests
         run: |
