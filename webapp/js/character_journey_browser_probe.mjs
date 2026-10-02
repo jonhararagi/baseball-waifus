@@ -14,6 +14,7 @@ const T095_TIMING_DIAGNOSTIC = process.env.T095_TIMING_DIAGNOSTIC === "1";
 const T097_REWARD_HANDOFF = process.env.T097_REWARD_HANDOFF === "1";
 const T101_DEFEAT_PROOF = process.env.T101_DEFEAT_PROOF === "1";
 const T104_PERSISTENCE_PROOF = process.env.T104_PERSISTENCE_PROOF === "1";
+const T114R_TERMINAL_INPUT_RECOVERY = process.env.T114R_TERMINAL_INPUT_RECOVERY === "1";
 const T111_TERMINAL_BOUNDARY = process.env.T111_TERMINAL_BOUNDARY === "1";
 const T094_COMBAT_LOOP = process.env.T094_COMBAT_LOOP === "1";
 const SITE_DIR = resolve(process.env.T072_SITE_DIR || "site");
@@ -1115,12 +1116,7 @@ async function run() {
       console.log("ROUND 2 NON-TERMINAL CLIMAX/TIMING SCRAP = " + round2.afterReturn.scrap);
       console.log("MID-TURN REWARD = NONE");
       console.log("REWARD LEDGER = UNCHANGED");
-      console.log("PLAYER META = UNCHANGED");
-      console.log("TERMINAL BOUNDARY = NOT REACHED");
-      return;
-    }
-
-    if (T111_TERMINAL_BOUNDARY) {
+      console.log("PLAYER META =    if (T114R_TERMINAL_INPUT_RECOVERY) {
       const runStartedAt = Date.now();
       const browserVersion = await cdp.send("Browser.getVersion");
       const playerMetaKey = "baseball_waifus_player_meta_v1:local-player";
@@ -1140,13 +1136,13 @@ async function run() {
           await sleep(25);
         }
         state = await readRuntime();
-        throw new Error("T111 TIMEOUT: " + name + " " + JSON.stringify(state));
+        throw new Error("T114-R TIMEOUT: " + name + " " + JSON.stringify(state));
       };
 
       const clickBat = async (label) => {
         await waitFor(
           async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#action-bat') && !document.querySelector('#action-bat').disabled)"),
-          { timeoutMs: 6000, label: "T111 BATEAR ready " + label }
+          { timeoutMs: 6000, label: "T114-R BATEAR ready " + label }
         );
         await cdpClickSelector(cdp, "#action-bat");
       };
@@ -1171,22 +1167,22 @@ async function run() {
       await cdp.send("Page.navigate", { url });
       await waitFor(
         async () => (await cdpEvaluate(cdp, "document.readyState")) === "complete",
-        { timeoutMs: 30000, label: "T111 document ready" }
+        { timeoutMs: 30000, label: "T114-R document ready" }
       );
       await waitFor(
         async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#home-view') && !document.querySelector('#home-view').hidden)"),
-        { timeoutMs: 30000, label: "T111 Home visible" }
+        { timeoutMs: 30000, label: "T114-R Home visible" }
       );
 
       const initial = await readRuntime();
-      requireCondition(initial.scrap === 0, "T111 initial Scrap must be 0", initial);
-      requireCondition(initial.persistedScrap === 0, "T111 initial persisted Scrap must be 0", initial);
-      requireCondition(initial.rewardLedgerKeys.length === 0, "T111 initial reward ledger must be empty", initial);
+      requireCondition(initial.scrap === 0, "T114-R initial Scrap must be 0", initial);
+      requireCondition(initial.persistedScrap === 0, "T114-R initial persisted Scrap must be 0", initial);
+      requireCondition(initial.rewardLedgerKeys.length === 0, "T114-R initial reward ledger must be empty", initial);
 
       await cdpClickSelector(cdp, ".home-action-play");
       await waitFor(
         async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#gameCanvas')?.dataset?.combatStageContract === 'COMBAT_STAGE_2_5D')"),
-        { timeoutMs: 30000, label: "T111 formation initialized" }
+        { timeoutMs: 30000, label: "T114-R formation initialized" }
       );
       await advanceToClimax();
 
@@ -1195,26 +1191,26 @@ async function run() {
         s => s.battlePhase === "CLIMAX" && s.timingActive === true,
         6000
       );
-      requireCondition(beforeTerminal.scrap === initial.scrap, "T111 Scrap changed before terminal", { initial, beforeTerminal });
-      requireCondition(beforeTerminal.persistedScrap === initial.persistedScrap, "T111 persisted Scrap changed before terminal", { initial, beforeTerminal });
-      requireCondition(beforeTerminal.rewardLedgerKeys.length === initial.rewardLedgerKeys.length, "T111 reward ledger changed before terminal", { initial, beforeTerminal });
+      requireCondition(beforeTerminal.scrap === initial.scrap, "T114-R Scrap changed before terminal", { initial, beforeTerminal });
+      requireCondition(beforeTerminal.persistedScrap === initial.persistedScrap, "T114-R persisted Scrap changed before terminal", { initial, beforeTerminal });
+      requireCondition(beforeTerminal.rewardLedgerKeys.length === initial.rewardLedgerKeys.length, "T114-R reward ledger changed before terminal", { initial, beforeTerminal });
 
-      await sleep(500);
+      await sleep(620);
       const elapsedAtInput = await cdpEvaluate(cdp, "window.__BW_T097_TIMING_ELAPSED__?.()");
       requireCondition(
         Number.isFinite(Number(elapsedAtInput)) && Number(elapsedAtInput) > 0 && Number(elapsedAtInput) < 860,
-        "T111 timing window closed before terminal input",
+        "T114-R timing window closed before terminal input",
         { elapsedAtInput }
       );
 
       const timingInput = await readRuntime();
-      requireCondition(timingInput.timingActive === true, "T111 timing closed before terminal input", timingInput);
+      requireCondition(timingInput.timingActive === true, "T114-R timing closed before terminal input", timingInput);
       const rect = await cdpEvaluate(cdp, "(() => { const r=document.querySelector('#gameCanvas')?.getBoundingClientRect(); return r ? {left:r.left,top:r.top,width:r.width,height:r.height} : null; })()");
-      requireCondition(rect && rect.width > 0 && rect.height > 0, "T111 timing canvas geometry unavailable", rect);
+      requireCondition(rect && rect.width > 0 && rect.height > 0, "T114-R timing canvas geometry unavailable", rect);
       const x = rect.left + rect.width / 2;
       const y = rect.top + rect.height / 2;
       const target = await cdpEvaluate(cdp, "(() => document.elementFromPoint(" + x + "," + y + ") === document.querySelector('#gameCanvas'))()");
-      requireCondition(target === true, "T111 physical timing target is not canvas");
+      requireCondition(target === true, "T114-R physical timing target is not canvas");
       await cdp.send("Input.setIgnoreInputEvents", { ignore:false });
       await cdp.send("Input.dispatchMouseEvent", { type:"mouseMoved", x, y, button:"none", buttons:0 });
       await cdp.send("Input.dispatchMouseEvent", { type:"mousePressed", x, y, button:"left", buttons:1, clickCount:1 });
@@ -1225,10 +1221,10 @@ async function run() {
         s => s.battlePhase === "VICTORY" && s.combatResult === "VICTORY",
         5000
       );
-      requireCondition(victory.scrap === beforeTerminal.scrap + 100, "T111 Victory reward amount/order invalid", { beforeTerminal, victory });
-      requireCondition(victory.persistedScrap === beforeTerminal.persistedScrap + 100, "T111 persisted victory reward amount invalid", { beforeTerminal, victory });
-      requireCondition(victory.rewardLedgerKeys.length === beforeTerminal.rewardLedgerKeys.length + 1, "T111 victory reward ledger did not gain exactly one terminal application", { beforeTerminal, victory });
-      requireCondition(victory.rewardLedger?.[expectedBattleId] === true, "T111 expected victory ledger entry missing", victory);
+      requireCondition(victory.scrap === beforeTerminal.scrap + 100, "T114-R Victory reward amount/order invalid", { beforeTerminal, victory });
+      requireCondition(victory.persistedScrap === beforeTerminal.persistedScrap + 100, "T114-R persisted victory reward amount invalid", { beforeTerminal, victory });
+      requireCondition(victory.rewardLedgerKeys.length === beforeTerminal.rewardLedgerKeys.length + 1, "T114-R victory reward ledger did not gain exactly one terminal application", { beforeTerminal, victory });
+      requireCondition(victory.rewardLedger?.[expectedBattleId] === true, "T114-R expected victory ledger entry missing", victory);
 
       const rewardApplication = {
         at_ms: Date.now() - runStartedAt,
@@ -1249,18 +1245,18 @@ async function run() {
         s => s.presentationPhase === "COMPLETE" && s.presentationActive === false,
         5000
       );
-      requireCondition(completeState.battlePhase === "VICTORY", "T111 victory terminal state changed during return", completeState);
-      requireCondition(completeState.scrap === victory.scrap, "T111 Scrap changed again after terminal return", { victory, completeState });
-      requireCondition(completeState.rewardLedgerKeys.length === 1, "T111 reward ledger changed after terminal return", completeState);
+      requireCondition(completeState.battlePhase === "VICTORY", "T114-R victory terminal state changed during return", completeState);
+      requireCondition(completeState.scrap === victory.scrap, "T114-R Scrap changed again after terminal return", { victory, completeState });
+      requireCondition(completeState.rewardLedgerKeys.length === 1, "T114-R reward ledger changed after terminal return", completeState);
 
       const sameOriginErrors = pageExceptions
         .map((item) => item?.exception?.description || item?.text || "")
         .filter(Boolean)
         .filter((entry) => entry.includes(baseUrl) || entry.includes("/js/"));
-      requireCondition(sameOriginErrors.length === 0, "T111 same-origin runtime exceptions detected", sameOriginErrors);
+      requireCondition(sameOriginErrors.length === 0, "T114-R same-origin runtime exceptions detected", sameOriginErrors);
 
       const evidence = {
-        task: "T111",
+        task: "T114-R",
         sha: process.env.GITHUB_SHA || "local",
         runId: process.env.GITHUB_RUN_ID || "local",
         browser: BROWSER_BIN,
@@ -1269,14 +1265,14 @@ async function run() {
           revision: browserVersion?.revision || "",
           userAgent: browserVersion?.userAgent || ""
         },
-        harness: "existing character_journey_browser_probe.mjs via T111_TERMINAL_BOUNDARY=1",
+        harness: "existing character_journey_browser_probe.mjs via T114R_TERMINAL_INPUT_RECOVERY=1",
         playerMetaKey,
         expectedBattleId,
         checkpoints: { initial, beforeTerminal, victory, rewardApplication, returnState, completeState },
         timingInput: {
           method: "CDP Input.dispatchMouseEvent",
           elapsedMs: elapsedAtInput,
-          targetBand: "500ms sleep / active timing window"
+          targetBand: "T096 recovered 620ms sleep / canvas center"
         },
         terminalBoundary: {
           lastNonTerminal: "CLIMAX/TIMING ACTIVE",
@@ -1291,7 +1287,7 @@ async function run() {
       };
       writeFileSync(join(EVIDENCE_DIR, "t111-terminal-reward-boundary-evidence.json"), JSON.stringify(evidence, null, 2) + "\n", "utf8");
 
-      console.log("T111 BROWSER AUTOMATION = PASS_REAL");
+      console.log("T114-R BROWSER AUTOMATION = PASS_REAL");
       console.log("SCRAP BEFORE TERMINAL = " + beforeTerminal.scrap);
       console.log("LAST NON-TERMINAL STATE = CLIMAX/TIMING ACTIVE");
       console.log("VICTORY = PASS_REAL");
@@ -1303,6 +1299,10 @@ async function run() {
       console.log("DUPLICATION = PASS_REAL");
       console.log("RETURN = PASS_REAL");
       console.log("TERMINAL BOUNDARY = PASS_REAL");
+      console.log("PLAYER META = PASS_REAL");
+      return;
+    }
+OUNDARY = PASS_REAL");
       console.log("PLAYER META = PASS_REAL");
       return;
     }
