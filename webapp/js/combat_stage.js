@@ -19,9 +19,12 @@ export const COMBAT_STAGE_ULTIMATE_CONTRACT = Object.freeze({
     "ULTIMATE_STAGING",
     "ULTIMATE_CHARACTER_FOCUS",
     "ULTIMATE_ACTION_PREP",
+    "ULTIMATE_ACTION",
+    "ULTIMATE_IMPACT",
+    "ULTIMATE_REACTION",
     "ULTIMATE_RETURN"
   ]),
-  cameraAnchors: Object.freeze(["FORMATION", "PLAYER_FOCUS", "ACTION", "RETURN"]),
+  cameraAnchors: Object.freeze(["FORMATION", "PLAYER_FOCUS", "ACTION", "IMPACT", "REACTION", "RETURN"]),
   staging: "TEMPORARY_PRESENTATION_ONLY",
   gameplayAuthority: "EXTERNAL_RESULT"
 });
@@ -271,6 +274,11 @@ export class CombatStage {
     if (!actor || !base) return null;
 
     const normalizedPhase = String(phase || "FORMATION").toUpperCase();
+    const behaviorPhase = Object.freeze({
+      ULTIMATE_ACTION: "ACTION",
+      ULTIMATE_IMPACT: "IMPACT",
+      ULTIMATE_REACTION: "TARGET_REACTION"
+    })[normalizedPhase] || normalizedPhase;
     const t = clamp(finite(progress, 0), 0, 1);
     const forward = actor.facing < 0 ? -1 : 1;
     let offsetX = 0;
@@ -284,7 +292,7 @@ export class CombatStage {
     const hero = this.getActor(selectedActorId);
     const heroX = hero?.position?.x ?? actor.position.x;
 
-    if (normalizedPhase === "ULTIMATE_STAGING") {
+    if (behaviorPhase === "ULTIMATE_STAGING") {
       if (isHero) {
         offsetY = -0.022;
         scale *= 1.05;
@@ -338,6 +346,70 @@ export class CombatStage {
         offsetY = -0.012;
         scale *= 0.88;
         opacity = 0.66;
+      }
+    } else if (normalizedPhase === "ULTIMATE_ACTION") {
+      if (isHero) {
+        const swing = Math.sin(t * Math.PI);
+        offsetX = forward * (0.026 + 0.058 * swing);
+        offsetY = -0.016 * swing;
+        rotationDeg += forward * 6.5 * swing;
+        scale *= 1.14 + 0.06 * swing;
+        emphasis = 1.15 * swing;
+      } else if (actor.team === "PLAYER") {
+        const direction = actor.position.x < heroX ? -1 : 1;
+        offsetX = direction * 0.04;
+        offsetY = 0.03;
+        scale *= 0.76;
+        opacity = 0.46;
+      } else if (actor.team === "ENEMY") {
+        offsetX = 0.04;
+        offsetY = -0.014;
+        scale *= 0.86;
+        opacity = 0.62;
+      }
+    } else if (normalizedPhase === "ULTIMATE_IMPACT") {
+      if (isHero) {
+        const hit = Math.sin(t * Math.PI);
+        offsetX = forward * 0.028 * hit;
+        offsetY = -0.014 * hit;
+        rotationDeg += forward * 2.8 * hit;
+        scale *= 1.12 + 0.05 * hit;
+        emphasis = 1.1 + 0.2 * hit;
+      } else if (actor.team === "ENEMY") {
+        const hit = Math.sin(t * Math.PI);
+        offsetX = -0.07 * (1 - t);
+        offsetY = -0.018 * hit;
+        rotationDeg += -forward * 9 * hit;
+        scale *= 1 + 0.08 * hit;
+        emphasis = 1;
+      } else if (actor.team === "PLAYER") {
+        const direction = actor.position.x < heroX ? -1 : 1;
+        offsetX = direction * 0.025;
+        offsetY = 0.02;
+        scale *= 0.74;
+        opacity = 0.42;
+      }
+    } else if (normalizedPhase === "ULTIMATE_REACTION") {
+      if (isHero) {
+        const settle = 1 - t;
+        offsetX = forward * 0.02 * settle;
+        offsetY = -0.01 * settle;
+        rotationDeg += forward * 2.2 * settle;
+        scale *= 1 + 0.04 * settle;
+        emphasis = 0.5 * settle;
+      } else if (actor.team === "ENEMY") {
+        const recoil = 1 - t;
+        offsetX = -0.065 * recoil;
+        offsetY = -0.012 * Math.sin(t * Math.PI);
+        rotationDeg += -forward * 6 * Math.sin(t * Math.PI);
+        scale *= 1 - 0.05 * Math.sin(t * Math.PI);
+        emphasis = recoil;
+      } else if (actor.team === "PLAYER") {
+        const direction = actor.position.x < heroX ? -1 : 1;
+        offsetX = direction * 0.02 * (1 - t);
+        offsetY = 0.018 * (1 - t);
+        scale *= 0.8 + 0.2 * t;
+        opacity = 0.46 + 0.54 * t;
       }
     } else if (normalizedPhase === "ULTIMATE_RETURN") {
       const settle = 1 - t;
@@ -413,6 +485,10 @@ export class CombatStage {
 
     const t = clamp(finite(progress, 0), 0, 1);
     const normalizedPhase = String(phase || "ACTION").toUpperCase();
+    const projectilePhase = Object.freeze({
+      ULTIMATE_ACTION: "ACTION",
+      ULTIMATE_IMPACT: "IMPACT"
+    })[normalizedPhase] || normalizedPhase;
     const bat = this.getActorAnchor(attacker.actorId, "BAT");
     const projectile = this.getActorAnchor(attacker.actorId, "PROJECTILE");
     const impact = this.getActorAnchor(target.actorId, "IMPACT");
@@ -421,14 +497,14 @@ export class CombatStage {
     const frame = this.resolveCinematicActorFrame(attacker.actorId, { phase: normalizedPhase, progress: t, width, height });
     const frameDx = frame ? frame.offsetX / width : 0;
     const frameDy = frame ? frame.offsetY / height : 0;
-    const swingAttach = normalizedPhase === "ACTION" ? clamp((t - 0.08) / 0.42, 0, 1) : 1;
+    const swingAttach = projectilePhase === "ACTION" ? clamp((t - 0.08) / 0.42, 0, 1) : 1;
     const source = {
       x: bat.x + (projectile.x - bat.x) * swingAttach + frameDx,
       y: bat.y + (projectile.y - bat.y) * swingAttach + frameDy
     };
-    const travel = normalizedPhase === "ACTION"
+    const travel = projectilePhase === "ACTION"
       ? clamp((t - 0.18) / 0.7, 0, 1)
-      : normalizedPhase === "IMPACT"
+      : projectilePhase === "IMPACT"
         ? 1
         : 0;
     const eased = travel * travel * (3 - 2 * travel);

@@ -1,0 +1,32 @@
+name: T081-B Ultimate Action Reaction CI
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "webapp/js/combat.js"
+      - "webapp/js/combat_stage.js"
+      - "webapp/js/combat_presentation_director.js"
+      - "webapp/js/batter_renderer.js"
+      - "webapp/js/ultimate_action_t081b_test.mjs"
+      - "webapp/js/ultimate_staging_t081_test.mjs"
+  workflow_dispatch:
+jobs:
+  t081b:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Run T081 staging and action contracts
+        run: |
+          set -euo pipefail
+          node --check webapp/js/combat_stage.js
+          node --check webapp/js/combat_presentation_director.js
+          node --check webapp/js/batter_renderer.js
+          node --check webapp/js/combat.js
+          node --check webapp/js/ultimate_staging_t081_test.mjs
+          node --check webapp/js/ultimate_action_t081b_test.mjs
+          node webapp/js/ultimate_staging_t081_test.mjs
+          node webapp/js/ultimate_action_t081b_test.mjs
