@@ -8684,3 +8684,39 @@ La infraestructura del combat slice está bastante avanzada, pero no corresponde
 
 **NEXT:** T097 · NORMAL COMBAT RESULT RETURN / REWARD HANDOFF PROOF · TIMER: 1–2 horas
 
+### T097 · Normal Combat Result Return / Reward Handoff Proof
+
+**BASE SHA:** `c6de01d9a001116f9bc04011679616829e9a8489`
+
+**RESULT:** CLOSED.
+
+**RUNTIME PROOF:** Chromium headless + CDP sobre servidor estático reproducible, con Player Meta fresco y observabilidad QA del Timing para sincronizar el input físico sin alterar la resolución del gameplay.
+
+**FLOW VERIFIED:** `VICTORY → REWARD HANDOFF → REWARD APPLIED → PLAYER STATE → PERSISTENCE → RETURN`.
+
+**REWARD HANDOFF:** `COMBAT RESULT / VICTORY → applyCombatRewardPipeline → resolveStandardBattleRewards → applyRewardResultToPlayerMeta`.
+
+**REWARD:** `+100 SCRAP`, proveniente de la tabla existente `T062_REWARD_TABLE.VICTORY`.
+
+**PLAYER STATE:** PASS. Runtime `SCRAP 0 → 100`; Player Meta snapshot actualizado a `SCRAP=100`.
+
+**PERSISTENCE:** PASS. `PlayerMetaPersistenceAdapter` sobre `localStorage`, key `baseball_waifus_player_meta_v1:local-player`. El balance y el `rewardLedger` sobrevivieron a reload.
+
+**DUPLICATION:** PASS. Una sola victoria produjo una sola entrada de ledger: `battle:demo-bw001-vs-bw002`.
+
+**RETURN:** PASS. `COMBAT_RETURN → COMPLETE` mantuvo `SCRAP=100` y el ledger sin cambios.
+
+**EVIDENCE:** GitHub Actions Run `37006210427` = SUCCESS. El probe reportó `PASS_REAL` para VICTORY, REWARD HANDOFF, REWARD, PLAYER STATE, PERSISTENCE, DUPLICATION, RETURN y RELOAD.
+
+**SUPPORTING TESTS:** Combat Vertical Slice Tests Run `37006210717` = SUCCESS; Player Meta Persistence Tests Run `37006210503` = SUCCESS.
+
+**CHANGES:** QA-only harness/probe + hook de observabilidad temporal para el input del Timing. No se modificaron gameplay, economía, recompensas, gacha ni persistence authority.
+
+**FINAL SHA:** `REPLACEME`
+
+**STATUS:** CLOSED.
+
+**BLOCKER:** ninguno.
+
+**NEXT:** T098 · NORMAL COMBAT DEFEAT / NO-REWARD HANDOFF PROOF · TIMER: 1–2 horas
+
