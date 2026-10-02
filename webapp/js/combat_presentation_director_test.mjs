@@ -82,6 +82,7 @@ const fakeCtx = {
   translate: (...args) => ctxOps.push(["translate", ...args]),
   scale: (...args) => ctxOps.push(["scale", ...args])
 };
+integration.update(0.05);
 assert.equal(integration.applyCamera(fakeCtx, 720, 480), true);
 assert.ok(ctxOps.some((entry) => entry[0] === "scale" && entry[1] > 1));
 
