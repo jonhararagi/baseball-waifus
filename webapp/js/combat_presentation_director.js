@@ -67,7 +67,7 @@ const STEP_DEFINITIONS = Object.freeze([
   }),
   Object.freeze({
     phase: COMBAT_PRESENTATION_PHASE.RETURN,
-    durationMs: 320,
+    durationMs: 300,
     focusTarget: "COMBAT",
     focusActor: null,
     cameraAnchor: "RETURN",
