@@ -8858,3 +8858,39 @@ La infraestructura del combat slice está bastante avanzada, pero no corresponde
 **BLOCKER:** límite de dos intentos browser controlados consumido sin alcanzar la cuarta resolución necesaria. No se agrega un tercer intento dentro de T101.
 
 **NEXT:** T102 · NORMAL COMBAT DEFEAT BROWSER PROOF WITH REAL STAMINA BUDGET · TIMER: 1–2 horas
+
+
+### T102 · Normal Combat Defeat Browser Proof With Real Stamina Budget
+
+**Fecha:** 2026-10-02  \
+**BASE SHA:** `ce9f014b9c9b2d69f6fee5d3f97ca8234b5b4c77`  \
+**PROBE SHA:** `a1fd70980ddef224c14f4d7041f05950908e7355`  \
+**TIMER:** 1–2 horas
+
+**RESULT:** PARTIAL.
+
+**RUNTIME EVIDENCE:** El segundo intento controlado de T102 sí alcanzó la terminal real con el personaje activo. La secuencia observada fue `76 → 51 → 26 → 1 → 0`, con cuatro resoluciones no victoriosas mediante input físico MISS.
+
+**DEFEAT:** PASS en runtime. Estado observado al terminal: `battlePhase=DEFEAT`, `combatResult=DEFEAT`, `playerStamina=0`, `playerStaminaMax=76`, `timingGrade=MISS`.
+
+**REWARD / PLAYER STATE:** El mismo estado terminal mostró `SCRAP=0`, `persistedScrap=0` y un único `rewardLedger` para `battle:demo-bw001-vs-bw002`. No apareció `SCRAP +100`. El valor de reward no se verificó como payload `[]` porque el probe falló inmediatamente después de leer el terminal.
+
+**INCOMPLETE CHECK:** El probe mantuvo una aserción válida para rondas no terminales (`after = before - 25`) también durante la cuarta ronda. Con `1 → 0`, el runtime produjo correctamente `DEFEAT`, pero la aserción comparó contra `-24` y abortó antes de ejecutar los checkpoints posteriores de `REWARD → RETURN → RELOAD`. Esto es un fallo local del harness de prueba, no del gameplay de T100.
+
+**RETURN:** NOT VERIFIED.
+
+**PERSISTENCE:** NOT VERIFIED para el terminal de derrota.
+
+**DUPLICATION:** NOT VERIFIED para `DEFEAT → RETURN → RELOAD`.
+
+**POST-TERMINAL GUARDS:** NOT VERIFIED.
+
+**ATTEMPTS:** T102 consumió sus dos intentos controlados. No se realizará un tercer browser attempt dentro de esta task.
+
+**CHANGES:** solo probe QA para recorrer cuatro resoluciones reales y endurecer el input MISS. No se modificaron reglas de Stamina, gameplay, rewards, persistence, Timing Ring, UI, economía ni otros sistemas.
+
+**TEST:** Workflow CDP Run `37012694647`, commit verificado en runner `a1fd70980ddef224c14f4d7041f05950908e7355`. T097 histórico del workflow falló por timing y no afecta la ejecución T102, que corre con `if: always()`. T102 alcanzó `DEFEAT` real antes del assertion del probe.
+
+**STATUS:** PARTIAL.
+
+**NEXT:** T103 · NORMAL COMBAT DEFEAT HANDOFF PROOF AFTER QA ASSERTION FIX · TIMER: 1–2 horas
