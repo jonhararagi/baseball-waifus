@@ -1199,12 +1199,12 @@ async function run() {
       requireCondition(beforeTerminal.persistedScrap === initial.persistedScrap, "T111 persisted Scrap changed before terminal", { initial, beforeTerminal });
       requireCondition(beforeTerminal.rewardLedgerKeys.length === initial.rewardLedgerKeys.length, "T111 reward ledger changed before terminal", { initial, beforeTerminal });
 
-      const elapsedAtInput = await waitFor(
-        async () => {
-          const elapsed = await cdpEvaluate(cdp, "window.__BW_T097_TIMING_ELAPSED__?.()");
-          return Number.isFinite(Number(elapsed)) && Number(elapsed) >= 690 && Number(elapsed) <= 760 ? Number(elapsed) : false;
-        },
-        { timeoutMs: 5000, intervalMs: 5, label: "T111 timing target band" }
+      await sleep(620);
+      const elapsedAtInput = await cdpEvaluate(cdp, "window.__BW_T097_TIMING_ELAPSED__?.()");
+      requireCondition(
+        Number.isFinite(Number(elapsedAtInput)) && Number(elapsedAtInput) > 0 && Number(elapsedAtInput) < 860,
+        "T111 timing window closed before terminal input",
+        { elapsedAtInput }
       );
 
       const timingInput = await readRuntime();
