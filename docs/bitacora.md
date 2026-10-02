@@ -8524,3 +8524,85 @@ Reciclar estructuras abiertas existentes para inventario/colección, gacha/pity 
 ### Porcentaje aproximado
 
 **≈96% estructural del prototipo.**
+
+
+## Revisión 82: T090 · Combat Vertical Slice Reality Check
+
+**Fecha:** 2026-10-02  
+**Tipo:** Auditoría de runtime / combate / presentación 2.5D / browser QA.
+
+### Motivo
+
+Validar el vertical slice real antes de producir arte definitivo. La pregunta operativa fue si BaseWarriors: Meta-Strike ya posee una experiencia de **character combat 2.5D cinematográfica** o si solamente existe infraestructura técnica.
+
+### HEAD y cambio correctivo
+
+- HEAD de auditoría inicial: `d22a4649bad28886f37ef96eeebcd416e4f8f3a1`.
+- Se reprodujo un bloqueo real en browser: el primer `BATEAR` ejecutaba el ataque visual, pero el botón quedaba deshabilitado después del turno táctico 1/5.
+- Causa: `app.js` volvía a aplicar `disabled = true` después de que el callback táctico ya lo había liberado.
+- Corrección localizada: `batButton.disabled = Boolean(renderer.isTimingWindowActive?.());`.
+- Commit correctivo: `9f95c9482ed5798cab325deb260994ce63f0179a`.
+
+### Reality check
+
+**GAMEPLAY:** REAL / PARCIAL.
+
+Existe resolución táctica real mediante `combat_core.js`, con daño, energía, efectividad, turnos tácticos y estado de jefe. La autoridad del resultado está separada de la presentación a nivel de resolvers, pero `CombatRenderer` todavía orquesta parte del loop y mantiene estado de combate local. Por tanto la separación arquitectónica es funcional, pero no completamente limpia.
+
+**PRESENTATION SYSTEM:** REAL para la acción normal.
+
+`CombatPresentationDirector` controla la ruta `FORMATION → ATTACKER_FOCUS → ACTION → IMPACT → TARGET_REACTION → COMBAT_RETURN → COMPLETE` y consume anchors de `CombatStage`. Browser QA de T077 en el SHA correctivo confirmó en runtime real: HOME, COMBAT ENTRY, REAL BAT INPUT, ATTACKER FOCUS, ACTION, IMPACT, TARGET REACTION, COMBAT RETURN y PRESENTATION COMPLETE.
+
+**CHARACTER ACTORS:** PARCIAL.
+
+`CombatStage` crea 4 actors de PLAYER y 1 ENEMY. El actor seleccionado puede usar sprite runtime real mediante `BatterRenderer`. Los otros tres players continúan siendo fixtures de blockout. El enemy puede usar sprite cuando existe, pero también tiene fallback procedural de fixture.
+
+**2.5D:** REAL / PARCIAL.
+
+El stage tiene modelo FAR/MID/NEAR, posiciones no uniformes, escala, elevación, facing, actor anchors, camera anchors y transforms cinematográficos. El browser proof muestra movimiento de cámara, actor focus, acción, impacto, reacción y retorno. Sin embargo las capas de escenario todavía se dibujan de forma procedural. Los `assetSlot` de FAR/MID/GROUND/FOREGROUND están declarados en el contrato pero el renderer no consume todavía los assets físicos de esos slots.
+
+**NORMAL ATTACK:** REAL como slice cinematográfico, con un bloqueo de progresión corregido en T090. El ataque visible incluye wind-up/swing, proyectil presentation-only, impacto y reacción del enemigo, y retorno. El primer turno táctico resuelve como juego real. Queda por demostrar mediante un browser proof dedicado el recorrido completo de los cinco turnos hasta el Timing Ring/Climax después de la corrección.
+
+**ULTIMATE:** PARCIAL.
+
+El circuito T081/T081-B existe y los browser workflows reportan PASS_REAL para staging, character focus, action prep, action, projectile, impact, enemy reaction, return y gameplay immutability. Pero ese circuito se activa mediante hooks QA y consume un resultado ya resuelto. El control visible `SUPER SWING` del runtime actual dispara `SuperSwingCutin`, no la secuencia Ultimate completa. Por tanto no equivale todavía a una Ultimate player-facing completa.
+
+### Arte y producción
+
+El pipeline de arte físico y sus requests están establecidos, pero no deben confundirse con consumo runtime.
+
+Los requests FAR/MID/GROUND/FOREGROUND existen y el T090 Art Intake Preflight ya determina disponibilidad. El FAR sigue sin PNG físico.
+
+Para producción de arte definitivo todavía faltan dos pruebas de integración importantes:
+
+1. conectar los assets de stage a sus `assetSlot` reales sin crear otro CombatStage;
+2. reemplazar los actors fixture/support y enemy placeholder por assets de producción manteniendo el mismo contrato de actor.
+
+### Evidencia remota
+
+- `Combat Vertical Slice Tests`: Run `36985962981`, success, SHA `9f95c9482ed5798cab325deb260994ce63f0179a`.
+- `T077 Combat Presentation Browser QA`: Run `36985963000`, success, SHA `9f95c9482ed5798cab325deb260994ce63f0179a`.
+- `T081 Cinematic Ultimate Choreography Browser QA`: Run `36985962945`, success, SHA `9f95c9482ed5798cab325deb260994ce63f0179a`.
+- `T081-B Ultimate Action Reaction Browser QA`: Run `36985962964`, success, SHA `9f95c9482ed5798cab325deb260994ce63f0179a`.
+- `T081 Cinematic Ultimate Choreography Foundation CI`: Run `36985962992`, success, SHA `9f95c9482ed5798cab325deb260994ce63f0179a`.
+- `T080 Character Combat Cinematic Action CI`: Run `36985962962`, success, SHA `9f95c9482ed5798cab325deb260994ce63f0179a`.
+
+La ejecución de Pages que motivó la corrección anterior había fallado en el arranque de Chrome/CDP, no por un error del combat runtime: Run `36974085802`, fallo en `T073 Character Presentation Browser QA`, timeout en `HTTP http://127.0.0.1:32889/json/version`.
+
+### Estado real del vertical slice
+
+**PARCIAL: el juego de combate ya existe como experiencia jugable/presentable de blockout, pero todavía no como vertical slice completo y listo para producción final.**
+
+Sí existe el núcleo de la experiencia CHARACTER → CAMERA → ACTION → IMPACT → REACTION. Lo que falta está concentrado en la integración completa de actores/arte y en cerrar la progresión jugable completa y player-facing de Ultimate.
+
+### Siguiente trabajo único recomendado
+
+**T091 · NORMAL COMBAT LOOP REAL PROGRESSION PROOF**
+
+Objetivo único: demostrar en browser, sobre el runtime actual y sin crear sistemas nuevos, el recorrido real completo desde FORMATION hasta los 5 turnos tácticos, Timing Ring/CLIMAX, resolución del resultado y retorno estable a FORMATION después de la corrección de T090.
+
+No producir arte final en T091. No ampliar Student 4v4. No crear otra cámara ni otro CombatStage. El resultado debe decidir si el loop de combate jugable está suficientemente cerrado para pasar a la siguiente integración de asset slots.
+
+### Avance orientativo
+
+La infraestructura del combat slice está bastante avanzada, pero no corresponde inflar el porcentaje global del proyecto por contratos o archivos que aún no son experiencia final. Esta revisión no modifica el porcentaje histórico de la bitácora anterior.
