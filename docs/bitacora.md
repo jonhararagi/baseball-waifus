@@ -8742,7 +8742,7 @@ La infraestructura del combat slice está bastante avanzada, pero no corresponde
 
 **CHANGES:** documentación únicamente.
 
-**FINAL SHA:** `FINAL_PENDING`
+**FINAL SHA:** `f2a8937b12908a9ff194693406644b4810a24333`
 
 **STATUS:** BLOCKED.
 
