@@ -1,6 +1,7 @@
 import { isCombatInitDTO, isTurnResultDTO } from "./api.js";
 import { resolveClimaxTurn, resolveTacticalTurn } from "./combat_core.js";
 import { AreaThemeManager } from "./area_theme_manager.js";
+import { CombatStage, createCombatStageActors, renderCombatStageForeground, renderCombatStageWorld } from "./combat_stage.js";
 import { BatterRenderer } from "./batter_renderer.js";
 import { CombatEffects } from "./combat_effects.js";
 import { CombatPresentationDirector } from "./combat_presentation_director.js";
@@ -225,14 +226,17 @@ export class CombatRenderer {
     this.onEconomyTimingConsumed = null;
     this.onEconomyRewardConsumed = null;
     this.themeManager = new AreaThemeManager("cyberpunk");
+    this.combatStage = new CombatStage();
     this.batterRenderer = new BatterRenderer({
       imageResolver: (path) => this.assetBank.get(path),
       getSpritePath: (batter) => this._spritePathForCharacter(batter)
     });
     this.combatEffects = new CombatEffects();
     this.combatPresentation = presentationDirector || new CombatPresentationDirector({
+      stage: this.combatStage,
       onStep: (event) => this.onPresentationStep?.(event)
     });
+    this.combatPresentation.setStage?.(this.combatStage);
     this.combatHud = new CombatHUD({ getResources: getHudResources });
     this.kytosPresentation = new KytosCombatPresentation();
     this.kytosPresentationState = null;
@@ -835,6 +839,7 @@ export class CombatRenderer {
     }
 
     this.state = cloneDTO(dto);
+    this._syncCombatStageActors();
     await this.setArea(
       dto.area_id
       || dto.area?.id
@@ -887,6 +892,7 @@ export class CombatRenderer {
       away_team: dto.away_team || this.state.away_team,
       ...(areaId ? { area_id: areaId } : {})
     };
+    this._syncCombatStageActors();
 
     this.combatPresentation.startFromCombatResult(dto, {
       attackerId: this.state?.batter?.id,
@@ -1001,6 +1007,7 @@ export class CombatRenderer {
 
     this.batterRenderer.update(delta);
     this.combatPresentation.update(delta);
+    this._syncCombatStageDataset();
     this.canvas.dataset.combatPresentationPhase = this.combatPresentation.getState().phase;
     this.canvas.dataset.combatPresentationActive = String(this.combatPresentation.isActive());
     this.combatEffects.update(
@@ -1155,28 +1162,10 @@ export class CombatRenderer {
   }
 
   _drawStadium(ctx, w, h) {
-    this.themeManager.renderGround(ctx, w, h, 0);
     ctx.save();
-    ctx.globalAlpha = 0.2;
-    ctx.strokeStyle = "#7f8db1";
-    ctx.lineWidth = 1;
-
-    const horizon = h * 0.34;
-
-    for (let x = 0; x <= w; x += Math.max(48, w / 14)) {
-      ctx.beginPath();
-      ctx.moveTo(x, horizon);
-      ctx.lineTo(w / 2, h);
-      ctx.stroke();
-    }
-
-    for (let y = horizon; y <= h; y += Math.max(24, h / 12)) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(w, y);
-      ctx.stroke();
-    }
-
+    ctx.globalAlpha = 0.72;
+    ctx.fillStyle = "rgba(4, 8, 20, 0.62)";
+    ctx.fillRect(0, h * 0.3, w, h * 0.04);
     ctx.restore();
   }
 
@@ -1189,73 +1178,163 @@ export class CombatRenderer {
   }
 
   _drawMatchState(ctx, w, h) {
-    const state = this.state.state || {};
-    const diamond = this._diamondPoints(w, h);
+    const camera = this.combatPresentation.getCameraTransform({ width: w, height: h });
+    const groundColor = this.themeManager.getCurrentTheme()?.groundColor || "#10162a";
+    renderCombatStageWorld(ctx, this.combatStage, w, h, { cameraTransform: camera, groundColor, showZones: true });
 
+    for (const actor of this.combatStage.getSortedActors()) {
+      const transform = this.combatStage.resolveActorTransform(actor.actorId, { width: w, height: h });
+      if (transform) this._drawCombatStageActor(ctx, actor, transform, w, h);
+    }
+
+    renderCombatStageForeground(ctx, this.combatStage, w, h, camera);
+
+    const stageState = this.combatStage.getState();
     ctx.save();
-    ctx.fillStyle = "#254f3f";
-    ctx.globalAlpha = 0.96;
+    ctx.textAlign = "center";
+    ctx.font = "900 10px Orbitron, system-ui, sans-serif";
+    ctx.fillStyle = "#dfe7f6";
+    ctx.shadowColor = "#050508";
+    ctx.shadowBlur = 8;
+    ctx.fillText("COMBAT STAGE // " + stageState.playerCount + "V" + stageState.enemyCount, w * 0.5, h * 0.105);
+    ctx.font = "800 8px Rajdhani, system-ui, sans-serif";
+    ctx.fillStyle = "#8fefff";
+    ctx.shadowBlur = 0;
+    ctx.fillText("SELECTED // " + (stageState.selectedActorId || "NONE"), w * 0.5, h * 0.125);
+    ctx.restore();
+    this._syncCombatStageDataset();
+  }
+
+  _drawCombatStageActor(ctx, actor, transform, w, h) {
+    const color = actor.team === "ENEMY" ? "#ff007f" : "#00f3ff";
+
+    if (actor.actorId === this.combatStage.selectedActorId) {
+      this.batterRenderer.draw(ctx, w, h, {
+        accentColor: color,
+        scale: clamp(transform.scale * 0.72, 0.58, 0.88),
+        anchorX: transform.x - w * 0.08,
+        anchorY: transform.y
+      });
+      this._drawCombatActorRing(ctx, transform.x, transform.y + 8, 42 * transform.scale, color, true);
+      return;
+    }
+
+    if (actor.team === "ENEMY") {
+      this._drawCombatEnemyActor(ctx, actor, transform);
+      return;
+    }
+
+    this._drawCombatSupportActor(ctx, actor, transform, color);
+  }
+
+  _drawCombatSupportActor(ctx, actor, transform, color) {
+    const radius = 28 * transform.scale;
+    ctx.save();
+    ctx.translate(transform.x, transform.y);
+    ctx.rotate((transform.rotation * Math.PI) / 180);
+    ctx.fillStyle = "rgba(4, 8, 20, 0.82)";
     ctx.beginPath();
-    ctx.moveTo(diamond.home.x, diamond.home.y);
-    ctx.lineTo(diamond.first.x, diamond.first.y);
-    ctx.lineTo(diamond.second.x, diamond.second.y);
-    ctx.lineTo(diamond.third.x, diamond.third.y);
+    ctx.ellipse(0, 0, radius * 0.72, radius, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = color;
+    ctx.globalAlpha = 0.9;
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.globalAlpha = 0.76;
+    ctx.beginPath();
+    ctx.arc(0, -radius * 0.64, radius * 0.36, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,0.48)";
+    ctx.beginPath();
+    ctx.moveTo(-radius * 0.5, radius * 0.12);
+    ctx.lineTo(radius * 0.5, radius * 0.12);
+    ctx.stroke();
+    ctx.textAlign = "center";
+    ctx.font = "800 8px Rajdhani, system-ui, sans-serif";
+    ctx.fillStyle = "#ccefff";
+    ctx.globalAlpha = 0.78;
+    ctx.fillText("FIXTURE", 0, radius * 1.34);
+    ctx.restore();
+  }
+
+  _drawCombatEnemyActor(ctx, actor, transform) {
+    const radius = 42 * transform.scale;
+    ctx.save();
+    ctx.translate(transform.x, transform.y);
+    ctx.fillStyle = "rgba(34, 3, 24, 0.9)";
+    ctx.beginPath();
+    ctx.ellipse(0, 2, radius * 0.8, radius * 1.15, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#ff007f";
+    ctx.lineWidth = 3;
+    ctx.shadowColor = "#ff007f";
+    ctx.shadowBlur = 16;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "#ff8ab8";
+    ctx.beginPath();
+    ctx.arc(0, -radius * 0.64, radius * 0.42, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#ffdf00";
+    ctx.beginPath();
+    ctx.moveTo(-radius * 0.42, -radius * 0.58);
+    ctx.lineTo(0, -radius * 0.78);
+    ctx.lineTo(radius * 0.42, -radius * 0.58);
     ctx.closePath();
     ctx.fill();
-
-    ctx.strokeStyle = "rgba(250, 248, 240, 0.88)";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(diamond.home.x, diamond.home.y);
-    ctx.lineTo(diamond.first.x, diamond.first.y);
-    ctx.lineTo(diamond.second.x, diamond.second.y);
-    ctx.lineTo(diamond.third.x, diamond.third.y);
-    ctx.closePath();
-    ctx.stroke();
-
-    this._drawBase(ctx, diamond.home, false);
-    this._drawBase(ctx, diamond.first, Boolean(state.bases?.first));
-    this._drawBase(ctx, diamond.second, Boolean(state.bases?.second));
-    this._drawBase(ctx, diamond.third, Boolean(state.bases?.third));
-
-    const batter = this.state.batter || {};
-    const pitcher = this.state.pitcher || {};
-
-    const theme = this.themeManager.getCurrentTheme();
-    this.batterRenderer.draw(ctx, w, h, {
-      accentColor: theme.strikeZoneColor,
-      scale: 1
-    });
-    this.themeManager.renderPitcher(
-      ctx,
-      w * 0.8,
-      h * 0.26,
-      clamp(w * 0.16, 64, 104),
-      clamp(h * 0.22, 96, 138)
-    );
-    this._drawStrikeZone(ctx, w, h);
-
-    ctx.font = "800 11px system-ui, sans-serif";
-    ctx.fillStyle = "#dfe7f6";
-    ctx.textAlign = "left";
-    ctx.fillText(String(batter.name || "Batter"), w * 0.06, h * 0.92);
-
-    ctx.textAlign = "right";
-    ctx.fillText(String(pitcher.name || "Pitcher"), w * 0.94, h * 0.08);
-
     ctx.textAlign = "center";
-    ctx.font = "900 12px system-ui, sans-serif";
-    ctx.fillStyle = "#ffcd66";
-    ctx.fillText("BASEBALL WAIFUS", w / 2, h * 0.1);
-
-    const half = String(state.half || "TOP");
-    const inning = safeNumber(state.inning, 0);
-    ctx.fillStyle = "#8f9bb3";
-    ctx.font = "700 10px system-ui, sans-serif";
-    ctx.fillText(`INNING ${inning} • ${half}`, w / 2, h * 0.15);
-
-    this._drawRunners(ctx, state, diamond);
+    ctx.font = "900 9px Orbitron, system-ui, sans-serif";
+    ctx.fillStyle = "#ffd6e8";
+    ctx.fillText(String(actor.visual?.name || "ENEMY"), 0, radius * 1.42);
+    ctx.font = "700 7px Rajdhani, system-ui, sans-serif";
+    ctx.fillStyle = "#ff8ab8";
+    ctx.fillText("ENEMY ACTOR", 0, radius * 1.58);
     ctx.restore();
+  }
+
+  _drawCombatActorRing(ctx, x, y, radius, color, selected = false) {
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.globalAlpha = selected ? 0.76 : 0.4;
+    ctx.lineWidth = selected ? 3 : 2;
+    ctx.beginPath();
+    ctx.ellipse(x, y, radius, radius * 0.22, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  _syncCombatStageActors() {
+    if (!this.combatStage) return;
+    const batter = this.state?.batter || {};
+    const enemy = this.state?.pitcher || {};
+    this.combatStage.setActors(createCombatStageActors({ batter, enemy }));
+    const selectedId = String(
+      batter?.id || batter?.character_id || batter?.card_id
+      || this.combatStage.getActors({ team: "PLAYER" })[0]?.actorId || ""
+    );
+    this.combatStage.setSelectedActor(selectedId);
+    this._syncCombatStageDataset();
+  }
+
+  _syncCombatStageDataset() {
+    if (!this.canvas || !this.combatStage) return;
+    const stageState = this.combatStage.getState();
+    const camera = this.combatPresentation.getCameraTransform({
+      width: this.pixelWidth,
+      height: this.pixelHeight
+    });
+    this.canvas.dataset.combatStageContract = stageState.contract;
+    this.canvas.dataset.combatStageActorCount = String(stageState.actorCount);
+    this.canvas.dataset.combatStagePlayerCount = String(stageState.playerCount);
+    this.canvas.dataset.combatStageEnemyCount = String(stageState.enemyCount);
+    this.canvas.dataset.combatStageDepthModel = stageState.depthModel.join(",");
+    this.canvas.dataset.combatStageActorDepths = stageState.actorDepths.join(",");
+    this.canvas.dataset.combatStageLayers = stageState.layers.map((layer) => layer.id).join(",");
+    this.canvas.dataset.combatStageZones = Object.keys(stageState.zones).join(",");
+    this.canvas.dataset.combatStageSelectedActor = stageState.selectedActorId;
+    this.canvas.dataset.combatPresentationCameraAnchor = camera.cameraAnchor || "";
+    this.canvas.dataset.combatPresentationCameraSource = camera.cameraSource || "";
   }
 
   _drawPlayerMarker(ctx, player, x, y, color) {

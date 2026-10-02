@@ -8,6 +8,7 @@ import { tmpdir } from "node:os";
 const T073_PRESENTATION = process.env.T073_PRESENTATION === "1";
 const T074_ART = process.env.T074_ART === "1";
 const T077_COMBAT = process.env.T077_COMBAT === "1";
+const T078_STAGE = process.env.T078_STAGE === "1";
 const SITE_DIR = resolve(process.env.T072_SITE_DIR || "site");
 const EVIDENCE_DIR = resolve(
   process.env.T072_EVIDENCE_DIR
@@ -296,6 +297,74 @@ async function run() {
       timeoutMs: 30000,
       label: "document readyState complete"
     });
+
+    if (T078_STAGE) {
+      await waitFor(async () => cdpEvaluate(cdp, "document.querySelector('#home-view') && !document.querySelector('#home-view').hidden"), { timeoutMs: 30000, label: "T078 Home visible" });
+      await cdpClickSelector(cdp, ".home-action-play");
+      await waitFor(async () => cdpEvaluate(cdp, "(() => { const c=document.querySelector('#gameCanvas'); return Boolean(c && c.dataset.combatStageContract === 'COMBAT_STAGE_2_5D' && c.dataset.combatStageActorCount === '5'); })()"), { label: "T078 Combat Stage initialized" });
+
+      const formation = await cdpEvaluate(cdp, "(() => { const c=document.querySelector('#gameCanvas'); return { contract:c?.dataset?.combatStageContract||'', actorCount:c?.dataset?.combatStageActorCount||'', playerCount:c?.dataset?.combatStagePlayerCount||'', enemyCount:c?.dataset?.combatStageEnemyCount||'', depthModel:c?.dataset?.combatStageDepthModel||'', layers:c?.dataset?.combatStageLayers||'', zones:c?.dataset?.combatStageZones||'', selectedActor:c?.dataset?.combatStageSelectedActor||'' }; })()");
+      requireCondition(formation.contract === "COMBAT_STAGE_2_5D", "T078 stage contract missing", formation);
+      requireCondition(formation.actorCount === "5" && formation.playerCount === "4" && formation.enemyCount === "1", "T078 actor counts invalid", formation);
+      requireCondition(formation.layers === "BACKGROUND,MIDGROUND,GROUND,FOREGROUND", "T078 layers invalid", formation);
+      requireCondition(formation.zones === "PLAYER_ZONE,ENEMY_ZONE", "T078 zones invalid", formation);
+      requireCondition(formation.depthModel === "FAR,MID,NEAR", "T078 depth model invalid", formation);
+      requireCondition(Boolean(formation.selectedActor), "T078 selected actor missing", formation);
+
+      const screenshots = { formation: await screenshot(cdp, "t078-01-formation") };
+      await cdpClickSelector(cdp, "#action-bat");
+
+      const phaseTimeline = [];
+      let focusEvidence = null;
+      let returnEvidence = null;
+      const deadline = Date.now() + 6000;
+      while (Date.now() < deadline) {
+        const state = await cdpEvaluate(cdp, "(() => { const c=document.querySelector('#gameCanvas'); return { phase:c?.dataset?.combatPresentationPhase||'', active:c?.dataset?.combatPresentationActive==='true', anchor:c?.dataset?.combatPresentationCameraAnchor||'', source:c?.dataset?.combatPresentationCameraSource||'', selected:c?.dataset?.combatStageSelectedActor||'' }; })()");
+        if (state.phase && phaseTimeline.at(-1) !== state.phase) {
+          phaseTimeline.push(state.phase);
+          if (state.phase === "ATTACKER_FOCUS") {
+            focusEvidence = state;
+            screenshots.playerFocus = await screenshot(cdp, "t078-02-player-focus");
+          }
+          if (state.phase === "COMBAT_RETURN") {
+            returnEvidence = state;
+            screenshots.return = await screenshot(cdp, "t078-03-return");
+          }
+        }
+        if (state.phase === "COMPLETE" && state.active === false) break;
+        await sleep(25);
+      }
+
+      const required = ["ATTACKER_FOCUS", "ACTION", "IMPACT", "TARGET_REACTION", "COMBAT_RETURN", "COMPLETE"];
+      requireCondition(required.every((phase) => phaseTimeline.includes(phase)), "T078 phase sequence incomplete", { phaseTimeline, required });
+      requireCondition(focusEvidence?.anchor === "PLAYER_FOCUS", "T078 PLAYER_FOCUS not consumed", focusEvidence);
+      requireCondition(Boolean(focusEvidence?.selected), "T078 selected actor missing at focus", focusEvidence);
+      requireCondition(returnEvidence?.anchor === "RETURN", "T078 RETURN not consumed", returnEvidence);
+
+      const runtime = await cdpEvaluate(cdp, "(() => { const c=document.querySelector('#gameCanvas'); const r=c?.getBoundingClientRect(); return { visible:Boolean(r&&r.width>0&&r.height>0), contract:c?.dataset?.combatStageContract||'', actorCount:c?.dataset?.combatStageActorCount||'', selected:c?.dataset?.combatStageSelectedActor||'', anchor:c?.dataset?.combatPresentationCameraAnchor||'', source:c?.dataset?.combatPresentationCameraSource||'', phase:c?.dataset?.combatPresentationPhase||'', active:c?.dataset?.combatPresentationActive==='true' }; })()");
+      requireCondition(runtime.visible, "T078 canvas not visible", runtime);
+      requireCondition(runtime.contract === "COMBAT_STAGE_2_5D" && runtime.actorCount === "5", "T078 runtime stage regressed", runtime);
+      requireCondition(runtime.phase === "COMPLETE" && runtime.active === false, "T078 presentation did not complete", runtime);
+
+      const sameOriginErrors = pageExceptions.map((item) => item?.exception?.description || item?.text || "").filter(Boolean).filter((entry) => entry.includes(baseUrl) || entry.includes("/js/"));
+      requireCondition(sameOriginErrors.length === 0, "same-origin page exceptions detected", sameOriginErrors);
+
+      const evidence = { task:"T078", sha:process.env.GITHUB_SHA||"local", runId:process.env.GITHUB_RUN_ID||"local", browser:BROWSER_BIN, baseUrl, journey:["HOME","COMBAT ENTRY","FORMATION","SELECTED CHARACTER",...phaseTimeline], formation, focusEvidence, returnEvidence, runtime, phaseTimeline, screenshots, network:{ requestCount:network.requests.length, responseCount:network.responses.length }, consoleErrors:consoleErrors.map((entry)=>({ text:entry.text, url:entry.url, source:entry.source })), pageErrors:sameOriginErrors };
+      writeFileSync(join(EVIDENCE_DIR, "t078-combat-stage-browser-evidence.json"), JSON.stringify(evidence, null, 2)+"\n", "utf8");
+
+      console.log("BROWSER AUTOMATION = PASS_REAL");
+      console.log("HOME = PASS_REAL");
+      console.log("COMBAT ENTRY = PASS_REAL");
+      console.log("FORMATION = PASS_REAL");
+      console.log("SELECTED CHARACTER = PASS_REAL");
+      console.log("PLAYER_FOCUS = PASS_REAL");
+      console.log("ACTION = PASS_REAL");
+      console.log("IMPACT = PASS_REAL");
+      console.log("TARGET REACTION = PASS_REAL");
+      console.log("RETURN = PASS_REAL");
+      console.log("T078 COMBAT STAGE = PASS_REAL");
+      return;
+    }
 
     const home = await waitFor(
       async () => cdpEvaluate(cdp, `(() => {

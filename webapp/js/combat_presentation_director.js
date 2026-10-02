@@ -15,6 +15,8 @@ const STEP_DEFINITIONS = Object.freeze([
     phase: COMBAT_PRESENTATION_PHASE.ATTACKER_FOCUS,
     durationMs: 220,
     focusTarget: "ATTACKER",
+    focusActor: "ATTACKER",
+    cameraAnchor: "PLAYER_FOCUS",
     zoom: 1.08,
     panX: 0.045,
     panY: 0.015,
@@ -24,6 +26,8 @@ const STEP_DEFINITIONS = Object.freeze([
     phase: COMBAT_PRESENTATION_PHASE.ACTION,
     durationMs: 300,
     focusTarget: "ATTACKER",
+    focusActor: "ATTACKER",
+    cameraAnchor: "ACTION",
     zoom: 1.14,
     panX: 0.02,
     panY: 0,
@@ -33,6 +37,8 @@ const STEP_DEFINITIONS = Object.freeze([
     phase: COMBAT_PRESENTATION_PHASE.IMPACT,
     durationMs: 180,
     focusTarget: "TARGET",
+    focusActor: "TARGET",
+    cameraAnchor: "IMPACT",
     zoom: 1.20,
     panX: -0.045,
     panY: -0.012,
@@ -42,6 +48,8 @@ const STEP_DEFINITIONS = Object.freeze([
     phase: COMBAT_PRESENTATION_PHASE.TARGET_REACTION,
     durationMs: 300,
     focusTarget: "TARGET",
+    focusActor: "TARGET",
+    cameraAnchor: "REACTION",
     zoom: 1.10,
     panX: -0.085,
     panY: -0.02,
@@ -51,6 +59,8 @@ const STEP_DEFINITIONS = Object.freeze([
     phase: COMBAT_PRESENTATION_PHASE.RETURN,
     durationMs: 300,
     focusTarget: "COMBAT",
+    focusActor: null,
+    cameraAnchor: "RETURN",
     zoom: 1,
     panX: 0,
     panY: 0,
@@ -136,8 +146,8 @@ function normalizePresentationInput(result, fallback = {}) {
   });
 }
 
-function buildCommands(sequenceId, combatResult) {
-  return Object.freeze(STEP_DEFINITIONS.map((step, index) => createPresentationCommand({
+function buildCommands(sequenceId, combatResult, stepDefinitions = STEP_DEFINITIONS, stage = null) {
+  return Object.freeze(stepDefinitions.map((step, index) => createPresentationCommand({
     type: "CAMERA",
     eventId: sequenceId + ":" + String(index + 1),
     target: step.focusTarget,
@@ -145,6 +155,13 @@ function buildCommands(sequenceId, combatResult) {
     payload: {
       phase: step.phase,
       focus_target: step.focusTarget,
+      camera_anchor: step.cameraAnchor || step.focusTarget,
+      focus_actor_id: step.focusActor === "TARGET"
+        ? combatResult.targetId
+        : step.focusActor === "ATTACKER"
+          ? combatResult.attackerId
+          : null,
+      stage_aware: Boolean(stage),
       zoom: step.zoom,
       pan_x: step.panX,
       pan_y: step.panY,
@@ -159,14 +176,20 @@ function buildCommands(sequenceId, combatResult) {
 }
 
 export class CombatPresentationDirector {
-  constructor({ onStep = null, stepDefinitions = STEP_DEFINITIONS } = {}) {
+  constructor({ onStep = null, stepDefinitions = STEP_DEFINITIONS, stage = null } = {}) {
     if (!Array.isArray(stepDefinitions) || stepDefinitions.length < 2) {
       throw new TypeError("CombatPresentationDirector requires deterministic steps");
     }
 
     this.stepDefinitions = Object.freeze(stepDefinitions.map((step) => Object.freeze({ ...step })));
     this.onStep = typeof onStep === "function" ? onStep : null;
+    this.stage = stage && typeof stage.getCameraAnchor === "function" ? stage : null;
     this.reset();
+  }
+
+  setStage(stage) {
+    this.stage = stage && typeof stage.getCameraAnchor === "function" ? stage : null;
+    return this.stage;
   }
 
   reset() {
@@ -184,7 +207,7 @@ export class CombatPresentationDirector {
     const normalized = normalizePresentationInput(result, fallback);
     this.sequenceId = "combat-presentation:" + normalized.attackerId + ":" + normalized.targetId + ":" + normalized.result;
     this.result = normalized;
-    this.commands = buildCommands(this.sequenceId, normalized);
+    this.commands = buildCommands(this.sequenceId, normalized, this.stepDefinitions, this.stage);
     this.stepIndex = 0;
     this.stepElapsedMs = 0;
     this.phase = this.stepDefinitions[0].phase;
@@ -281,12 +304,52 @@ export class CombatPresentationDirector {
       ? this.stepDefinitions[currentStepIndex - 1]
       : Object.freeze({ zoom: 1, panX: 0, panY: 0 });
 
+    if (this.stage?.getCameraAnchor) {
+      const resolveStageAnchor = (stageStep, fallbackName) => {
+        const anchorName = stageStep?.cameraAnchor || fallbackName;
+        const focusActorId = stageStep?.focusActor === "TARGET"
+          ? this.result?.targetId
+          : stageStep?.focusActor === "ATTACKER"
+            ? this.result?.attackerId
+            : null;
+        return this.stage.getCameraAnchor(anchorName, { actorId: focusActorId });
+      };
+      const currentAnchor = resolveStageAnchor(step, step.cameraAnchor || step.focusTarget);
+      const previousAnchor = currentStepIndex > 0
+        ? resolveStageAnchor(previous, previous.cameraAnchor || previous.focusTarget)
+        : this.stage.getCameraAnchor("FORMATION");
+      const fromX = (0.5 - Number(previousAnchor.x || 0.5)) * safeWidth;
+      const fromY = (0.5 - Number(previousAnchor.y || 0.5)) * safeHeight;
+      const toX = (0.5 - Number(currentAnchor.x || 0.5)) * safeWidth;
+      const toY = (0.5 - Number(currentAnchor.y || 0.5)) * safeHeight;
+      return Object.freeze({
+        phase: step.phase,
+        focusTarget: step.focusTarget,
+        focusActorId: step.focusActor === "TARGET"
+          ? this.result?.targetId || null
+          : step.focusActor === "ATTACKER"
+            ? this.result?.attackerId || null
+            : null,
+        cameraAnchor: step.cameraAnchor || step.focusTarget,
+        cameraSource: currentAnchor.source || "STAGE",
+        shot: currentAnchor.shot || "GENERAL",
+        angle: currentAnchor.angle || "EYE_LEVEL",
+        zoom: interpolate(Number(previousAnchor.zoom || 1), Number(currentAnchor.zoom || 1), progress, step.easing),
+        x: interpolate(fromX, toX, progress, step.easing),
+        y: interpolate(fromY, toY, progress, step.easing),
+        rotationDeg: interpolate(Number(previousAnchor.rotationDeg || 0), Number(currentAnchor.rotationDeg || 0), progress, step.easing),
+        progress,
+        easing: step.easing
+      });
+    }
     return Object.freeze({
       phase: step.phase,
       focusTarget: step.focusTarget,
+      cameraAnchor: step.cameraAnchor || step.focusTarget,
       zoom: interpolate(previous.zoom, step.zoom, progress, step.easing),
       x: interpolate(previous.panX, step.panX, progress, step.easing) * safeWidth,
       y: interpolate(previous.panY, step.panY, progress, step.easing) * safeHeight,
+      rotationDeg: 0,
       progress,
       easing: step.easing
     });
@@ -297,6 +360,7 @@ export class CombatPresentationDirector {
 
     const transform = this.getCameraTransform({ width, height });
     ctx.translate(width * 0.5 + transform.x, height * 0.5 + transform.y);
+    if (Number(transform.rotationDeg)) ctx.rotate((Number(transform.rotationDeg) * Math.PI) / 180);
     ctx.scale(transform.zoom, transform.zoom);
     ctx.translate(-width * 0.5, -height * 0.5);
     return true;

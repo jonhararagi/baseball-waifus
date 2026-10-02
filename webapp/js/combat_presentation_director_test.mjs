@@ -6,9 +6,12 @@ import {
 } from "./combat_presentation_director.js";
 import { createPresentationCommand } from "./presentation_event_contract.js";
 import { resolveClimaxTurn } from "./combat_core.js";
+import { CombatStage } from "./combat_stage.js";
 
 const cues = [];
+const stage = new CombatStage();
 const director = new CombatPresentationDirector({
+  stage,
   onStep: (event) => cues.push(event)
 });
 
@@ -23,6 +26,7 @@ const input = Object.freeze({
 const snapshot = director.startFromCombatResult(input);
 assert.equal(snapshot.phase, COMBAT_PRESENTATION_PHASE.ATTACKER_FOCUS);
 assert.equal(snapshot.active, true);
+assert.equal(director.getCameraTransform({ width: 1000, height: 600 }).cameraAnchor, "PLAYER_FOCUS");
 assert.equal(snapshot.commandCount, 5);
 assert.equal(snapshot.deterministic, true);
 assert.equal(cues.at(-1).phase, COMBAT_PRESENTATION_PHASE.ATTACKER_FOCUS);
@@ -34,6 +38,9 @@ assert.equal(commands[2].payload.phase, COMBAT_PRESENTATION_PHASE.IMPACT);
 assert.equal(commands[2].payload.attacker_id, "bw001");
 assert.equal(commands[2].payload.target_id, "bw002");
 assert.equal(commands[2].payload.damage, 58);
+assert.equal(commands[0].payload.camera_anchor, "PLAYER_FOCUS");
+assert.equal(commands[0].payload.focus_actor_id, "bw001");
+assert.equal(commands[0].payload.stage_aware, true);
 assert.notEqual(commands[0], commands[1]);
 assert.equal(COMBAT_PRESENTATION_PHASES.at(-1), COMBAT_PRESENTATION_PHASE.COMPLETE);
 
@@ -67,7 +74,7 @@ const result = resolveClimaxTurn({
   round: 2
 });
 const before = JSON.stringify(result);
-const integration = new CombatPresentationDirector();
+const integration = new CombatPresentationDirector({ stage });
 integration.startFromCombatResult(result, {
   attackerId: "bw003",
   targetId: "k1",
@@ -95,4 +102,9 @@ const command = createPresentationCommand({
 });
 assert.equal(command.type, "CAMERA");
 
-console.log("T077 combat presentation director: PASS");
+assert.ok(["PLAYER_FOCUS", "ACTION", "IMPACT", "REACTION", "RETURN"].includes(
+  integration.getCameraTransform({ width: 720, height: 480 }).cameraAnchor
+));
+assert.equal(stage.getState().presentationOnly, true);
+
+console.log("T077/T078 combat presentation director: PASS");
