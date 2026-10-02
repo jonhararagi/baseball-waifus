@@ -325,6 +325,7 @@ jobs:
         run: |
           set -euo pipefail
           node --experimental-default-type=module webapp/js/character_art_registry_test.mjs
+          node --experimental-default-type=module webapp/js/character_detail_view_art_test.mjs
           node --experimental-default-type=module --check webapp/js/art_panel.js
           node --experimental-default-type=module webapp/js/locker_room_test.mjs
           node --experimental-default-type=module webapp/js/reaction_rules_test.mjs
