@@ -1116,7 +1116,11 @@ async function run() {
       console.log("ROUND 2 NON-TERMINAL CLIMAX/TIMING SCRAP = " + round2.afterReturn.scrap);
       console.log("MID-TURN REWARD = NONE");
       console.log("REWARD LEDGER = UNCHANGED");
-      console.log("PLAYER META =    if (T114R_TERMINAL_INPUT_RECOVERY) {
+      console.log("PLAYER META = PASS_REAL");
+      return;
+    }
+
+    if (T114R_TERMINAL_INPUT_RECOVERY) {
       const runStartedAt = Date.now();
       const browserVersion = await cdp.send("Browser.getVersion");
       const playerMetaKey = "baseball_waifus_player_meta_v1:local-player";
