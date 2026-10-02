@@ -1,0 +1,45 @@
+name: T083 Art Request Intake CI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "tools/art_studio/**"
+      - "tools/character_asset_factory.py"
+      - "tools/character_asset_factory_test.py"
+      - "data/character_asset_manifest.json"
+      - "game/characters/character_archetypes.json"
+  workflow_dispatch:
+
+jobs:
+  art-studio:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run existing character asset factory tests
+        run: |
+          set -euo pipefail
+          python -m unittest tools/character_asset_factory_test.py
+
+      - name: Run T083 art request and intake tests
+        run: |
+          set -euo pipefail
+          python -m unittest tools/art_studio/art_request_test.py
+
+      - name: Smoke-test sample request registry
+        run: |
+          set -euo pipefail
+          python tools/art_studio/art_request.py list
+          python tools/art_studio/art_request.py show AR-T083-AIKO-BW001-01
+
+      - name: Verify fixture source remains non-production
+        run: |
+          set -euo pipefail
+          test -f tools/art_studio/inbox/AR-T083-FIXTURE-001/fixture-stage.svg
+          test ! -f tools/art_studio/fixtures/outputs/fixture-stage--background--far--wide.svg
