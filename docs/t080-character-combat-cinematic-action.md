@@ -63,6 +63,11 @@ The camera consumes actor-backed `FOCUS`, `ACTION`, `IMPACT` and `REACTION` anch
 
 `resolveCinematicProjectile()` binds the visual projectile to the attacker's `BAT` / `PROJECTILE` anchors and the enemy `IMPACT` anchor. It is not gameplay physics.
 
+## UI feedback during cinematics
+
+The existing tactical/timing feedback remains a combat UX surface, but it must not visually cover the character action once the presentation director owns the cinematic sequence.
+
+During `ATTACKER_FOCUS`, `ACTION`, `IMPACT` and `TARGET_REACTION`, the large timing-feedback overlay is suppressed. The underlying event text remains available to the normal HUD after the sequence. This is presentation-only and does not alter timing, damage, HP or result resolution.
 ## Impact and reaction
 
 The presentation director emits the `CONTACT` beat after the combat result has already been resolved.
