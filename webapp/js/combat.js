@@ -593,10 +593,11 @@ export class CombatRenderer {
       }
     }
     if (this.timingFeedback) {
+      const cinematicActive = Boolean(this.combatPresentation?.getState?.().active);
       this.timingFeedback.textContent = label;
       this.timingFeedback.classList.remove("is-visible");
       void this.timingFeedback.offsetWidth;
-      if (label) this.timingFeedback.classList.add("is-visible");
+      if (label && !cinematicActive) this.timingFeedback.classList.add("is-visible");
       window.setTimeout(() => this.timingFeedback?.classList.remove("is-visible"), 900);
     }
   }
