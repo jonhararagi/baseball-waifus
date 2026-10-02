@@ -124,6 +124,8 @@ jobs:
           test -s webapp/js/batter_renderer_test.mjs
           test -s webapp/js/combat_effects.js
           test -s webapp/js/combat_effects_test.mjs
+          test -s webapp/js/combat_presentation_director.js
+          test -s webapp/js/combat_presentation_director_test.mjs
           test -s webapp/js/combat_hud.js
           test -s webapp/js/gacha_engine.js
           test -s webapp/js/gacha_engine_test.mjs
@@ -188,6 +190,7 @@ jobs:
           node --experimental-default-type=module webapp/js/character_relationship_integration_test.mjs
           node --experimental-default-type=module webapp/js/canonical_character_availability_test.mjs
           node --experimental-default-type=module --check webapp/js/combat.js
+          node --experimental-default-type=module --check webapp/js/combat_presentation_director.js
           node --experimental-default-type=module --check webapp/js/app.js
           node --experimental-default-type=module --check webapp/js/audio_bridge.js
           node --experimental-default-type=module --check webapp/js/audio.js
@@ -200,6 +203,7 @@ jobs:
           node --experimental-default-type=module webapp/js/batter_renderer_test.mjs
           node --experimental-default-type=module --check webapp/js/combat_effects.js
           node --experimental-default-type=module webapp/js/combat_effects_test.mjs
+          node --experimental-default-type=module webapp/js/combat_presentation_director_test.mjs
           node --experimental-default-type=module --check webapp/js/combat_hud.js
           node --experimental-default-type=module --check webapp/js/gacha_engine.js
           node --experimental-default-type=module webapp/js/gacha_engine_test.mjs

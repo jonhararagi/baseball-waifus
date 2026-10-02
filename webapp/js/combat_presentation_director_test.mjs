@@ -44,7 +44,7 @@ assert.notDeepEqual(cameraA, cameraB);
 assert.equal(cameraB.phase, COMBAT_PRESENTATION_PHASE.ATTACKER_FOCUS);
 
 director.update(0.7);
-assert.equal(director.getState().phase, COMBAT_PRESENTATION_PHASE.IMPACT);
+assert.equal(director.getState().phase, COMBAT_PRESENTATION_PHASE.TARGET_REACTION);
 assert.equal(director.getState().active, true);
 
 director.cancel();
