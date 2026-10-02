@@ -131,6 +131,15 @@ KIND_NAME_TOKENS = {
     "PROP": ("prop",),
     "TEST_STAGE_BACKGROUND_FAR": ("background", "far"),
 }
+STAGE_RUNTIME_SLOTS = {
+    "STAGE_BACKGROUND_FAR": "stage.background.far",
+    "STAGE_BACKGROUND_MID": "stage.background.mid",
+    "STAGE_GROUND": "stage.ground",
+    "STAGE_FOREGROUND": "stage.foreground",
+    "STAGE_FX_BACK": "stage.fx.back",
+    "STAGE_FX_FRONT": "stage.fx.front",
+}
+
 GENERIC_FORMATS = {
     "STAGE_BACKGROUND_FAR": {"png", "jpg", "jpeg", "svg"},
     "STAGE_BACKGROUND_MID": {"png", "jpg", "jpeg", "svg"},
@@ -209,8 +218,21 @@ def relative_inside(path: Path, root: Path) -> bool:
 def character_asset_type(asset_kind: str) -> str | None:
     return CHARACTER_KIND_MAP.get(str(asset_kind).upper())
 
+def deterministic_runtime_slot(asset_kind: str) -> str | None:
+    return STAGE_RUNTIME_SLOTS.get(str(asset_kind).upper())
+
 def target_root_for(asset_kind: str) -> Path:
     kind = str(asset_kind).upper()
+    expected_runtime_slot = deterministic_runtime_slot(kind)
+    actual_runtime_slot = request.get("runtime_slot")
+    if expected_runtime_slot:
+        if actual_runtime_slot != expected_runtime_slot:
+            errors.append(
+                f"{kind}: runtime_slot mismatch: expected {expected_runtime_slot}"
+            )
+    elif actual_runtime_slot:
+        errors.append(f"{kind}: runtime_slot is only valid for stage asset requests")
+
     if kind.startswith("CHARACTER_"):
         return Path("assets/characters/approved")
     for prefix, root in GENERIC_TARGET_ROOTS.items():
@@ -446,6 +468,7 @@ def build_request(
         "minimum_width": int(minimum_width),
         "minimum_height": int(minimum_height),
         "drop_zone": deterministic_drop_zone(request_id),
+        "runtime_slot": deterministic_runtime_slot(kind),
         "created_at": now,
         "updated_at": now,
         "source_files": [],

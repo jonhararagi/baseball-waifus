@@ -51,6 +51,32 @@
       "source_files": [],
       "output": null,
       "failure": null
+    },
+    {
+      "request_id": "AR-T084-STAGE-BG-FAR-01",
+      "status": "REQUESTED",
+      "asset_kind": "STAGE_BACKGROUND_FAR",
+      "target_name": "combat-stage--background--far--wide.png",
+      "target_path": "assets/stages/combat-stage--background--far--wide.png",
+      "runtime_slot": "stage.background.far",
+      "character_id": null,
+      "what_is_expected": "Original production far-background plate for the BaseWarriors: Meta-Strike CombatStage 2.5D. It must establish distant arena scale and cinematic depth while leaving player and enemy actors readable in front.",
+      "camera": "WIDE",
+      "composition": "BACKGROUND",
+      "subject": "combat-stage",
+      "environment": "Cyberpunk sports-tech combat arena at stadium scale, built as a deep background plate rather than a playable baseball field.",
+      "visual_notes": "FAR layer only; large readable silhouettes, atmospheric depth, practical light structures and energy lanes, usable negative space, no dominant foreground object, no characters, designed to support Formation, Player Focus, Action, Impact, Reaction and Return camera framing. Preserve visual breathing room for midground, ground, actors and foreground.",
+      "generation_prompt": "Wide anime 2.5D cyberpunk sports-tech combat arena background plate for BaseWarriors: Meta-Strike, distant stadium-scale architecture, layered atmospheric depth, readable large silhouettes, cinematic negative space for four character combatants and one enemy, subtle baseball-inspired sports-tech architecture, field-light structures, scoreboard-like architecture without readable text, energy lanes, cool cyan and magenta accents, stylized anime shonen presentation, designed specifically as a FAR background layer with subtle parallax and filmable camera movement, no characters.",
+      "negative_prompt": "No characters, no UI, no text overlays, no watermark, no logos, no camera frame, no giant foreground props, no baseball diamond composition, no bases layout, no pitcher mound, no batter box, no runners, no third-party character likeness, no game screenshot recreation, no dominant object centered over the combatants.",
+      "format": "png",
+      "minimum_width": 2048,
+      "minimum_height": 1152,
+      "drop_zone": "tools/art_studio/inbox/AR-T084-STAGE-BG-FAR-01",
+      "created_at": "2026-10-02T06:20:00Z",
+      "updated_at": "2026-10-02T06:20:00Z",
+      "source_files": [],
+      "output": null,
+      "failure": null
     }
   ]
 }

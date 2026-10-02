@@ -135,6 +135,21 @@ Any validation-stage failure goes to:
 
 REJECTED and APPROVED are terminal. The tool does not silently reopen requests.
 
+## Optional runtime slot semantics
+
+Stage requests may carry an optional `runtime_slot` field. The field is backward-compatible because it is not required for legacy character/generic requests. For CombatStage asset kinds the runtime slot is derived deterministically from `asset_kind`, for example:
+
+```
+STAGE_BACKGROUND_FAR → stage.background.far
+STAGE_BACKGROUND_MID → stage.background.mid
+STAGE_GROUND        → stage.ground
+STAGE_FOREGROUND    → stage.foreground
+STAGE_FX_BACK       → stage.fx.back
+STAGE_FX_FRONT      → stage.fx.front
+```
+
+The request layer validates that the declared slot matches the deterministic mapping. It does not redefine the CombatStage runtime layer system.
+
 ## Naming and target routing
 
 The tool derives the production filename from structured metadata.
