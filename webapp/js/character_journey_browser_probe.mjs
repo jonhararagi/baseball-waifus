@@ -11,6 +11,7 @@ const T077_COMBAT = process.env.T077_COMBAT === "1";
 const T078_STAGE = process.env.T078_STAGE === "1";
 const T079_STAGE = process.env.T079_STAGE === "1";
 const T095_TIMING_DIAGNOSTIC = process.env.T095_TIMING_DIAGNOSTIC === "1";
+const T097_REWARD_HANDOFF = process.env.T097_REWARD_HANDOFF === "1";
 const T094_COMBAT_LOOP = process.env.T094_COMBAT_LOOP === "1";
 const SITE_DIR = resolve(process.env.T072_SITE_DIR || "site");
 const EVIDENCE_DIR = resolve(
@@ -602,6 +603,226 @@ async function run() {
       console.log("MOUSE POINTERDOWN = "+mousePointer);
       console.log("TOUCH POINTERDOWN = "+touchPointer);
       console.log("DIAGNOSIS = "+diagnosis);
+      return;
+    }
+
+    if (T097_REWARD_HANDOFF) {
+      const runStartedAt = Date.now();
+      const browserVersion = await cdp.send("Browser.getVersion");
+      const checkpoints = {};
+      const timeline = [];
+      const playerMetaKey = "baseball_waifus_player_meta_v1:local-player";
+      const expectedBattleId = "battle:demo-bw001-vs-bw002";
+
+      const readRuntime = async () => cdpEvaluate(cdp, "(() => {
+        const canvas = document.querySelector('#gameCanvas');
+        const d = canvas?.dataset || {};
+        const gacha = window.BaseballWaifusGacha?.getStatus?.() || null;
+        const raw = localStorage.getItem('baseball_waifus_player_meta_v1:local-player');
+        let persisted = null;
+        try { persisted = raw ? JSON.parse(raw) : null; } catch { persisted = null; }
+        return {
+          battlePhase: d.combatBattlePhase || '',
+          tacticalTurn: d.combatTacticalTurn === '' ? null : Number(d.combatTacticalTurn),
+          timingActive: d.combatTimingActive === 'true',
+          timingGrade: d.combatTimingGrade || '',
+          combatResult: d.combatResult || '',
+          presentationPhase: d.combatStagePresentationPhase || '',
+          presentationActive: d.combatPresentationActive === 'true',
+          rewardStatus: document.querySelector('#gacha-status')?.textContent?.trim() || '',
+          scrap: Number(gacha?.scavenger_scrap ?? NaN),
+          fragments: Number(gacha?.fragments ?? NaN),
+          inventorySize: Number(gacha?.inventory_size ?? NaN),
+          playerMetaRawPresent: Boolean(raw),
+          persistedScrap: Number(persisted?.currencies?.SCRAP ?? NaN),
+          rewardLedger: persisted?.rewardLedger || null,
+          rewardLedgerKeys: persisted?.rewardLedger ? Object.keys(persisted.rewardLedger) : [],
+          playerMeta: persisted
+        };
+      })()");
+
+      const mark = async (name, condition, timeoutMs = 6000) => {
+        const deadline = Date.now() + timeoutMs;
+        let state = null;
+        while (Date.now() < deadline) {
+          state = await readRuntime();
+          if (condition(state)) {
+            checkpoints[name] = { at_ms: Date.now() - runStartedAt, ...state };
+            timeline.push({ at_ms: Date.now() - runStartedAt, label: name, ...state });
+            return state;
+          }
+          await sleep(25);
+        }
+        state = await readRuntime();
+        throw new Error("T097 TIMEOUT: " + name + " " + JSON.stringify(state));
+      };
+
+      await waitFor(
+        async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#home-view') && !document.querySelector('#home-view').hidden)"),
+        { timeoutMs: 30000, label: "T097 Home visible" }
+      );
+
+      const initial = await readRuntime();
+      checkpoints["INITIAL"] = { at_ms: Date.now() - runStartedAt, ...initial };
+      timeline.push({ at_ms: Date.now() - runStartedAt, label: "INITIAL", ...initial });
+      requireCondition(initial.scrap === 0, "T097 initial Scrap must be 0", initial);
+      requireCondition(initial.persistedScrap === 0, "T097 initial persisted Scrap must be 0", initial);
+      requireCondition(initial.rewardLedgerKeys.length === 0, "T097 initial reward ledger must be empty", initial);
+      requireCondition(initial.playerMetaRawPresent === true, "T097 Player Meta state is not persisted after bootstrap", initial);
+
+      await cdpClickSelector(cdp, ".home-action-play");
+      await waitFor(
+        async () => cdpEvaluate(cdp, "(() => { const c = document.querySelector('#gameCanvas'); const d = c?.dataset || {}; return Boolean(c && c.getBoundingClientRect().width > 0 && c.getBoundingClientRect().height > 0 && d.combatStageContract === 'COMBAT_STAGE_2_5D' && d.combatStageActorCount === '5'); })()"),
+        { timeoutMs: 30000, label: "T097 Combat formation initialized" }
+      );
+      await mark(
+        "VICTORY PATH READY",
+        (state) => state.battlePhase === "TACTICAL" && state.tacticalTurn === 0
+      );
+      await waitFor(
+        async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#action-bat') && !document.querySelector('#action-bat').disabled)"),
+        { timeoutMs: 6000, label: "T097 BATEAR ready for T1" }
+      );
+      await cdpClickSelector(cdp, "#action-bat");
+
+      for (const turn of [1, 2, 3, 4, 5]) {
+        const targetBattlePhase = turn === 5 ? "CLIMAX" : "TACTICAL";
+        await mark(
+          "TACTICAL " + String(turn),
+          (state) => state.tacticalTurn === turn && state.battlePhase === targetBattlePhase
+        );
+        if (turn < 5) {
+          await mark(
+            "TACTICAL " + String(turn) + " COMPLETE",
+            (state) => state.tacticalTurn === turn && state.presentationPhase === "COMPLETE" && state.presentationActive === false
+          );
+          await waitFor(
+            async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#action-bat') && !document.querySelector('#action-bat').disabled)"),
+            { timeoutMs: 6000, label: "T097 BATEAR ready before T" + String(turn + 1) }
+          );
+          await cdpClickSelector(cdp, "#action-bat");
+        }
+      }
+
+      await mark("CLIMAX", (state) => state.battlePhase === "CLIMAX" && state.tacticalTurn === 5);
+      await mark(
+        "TIMING ACTIVE",
+        (state) => state.battlePhase === "CLIMAX" && state.tacticalTurn === 5 && state.timingActive === true,
+        6000
+      );
+
+      await sleep(620);
+      const timing = await readRuntime();
+      requireCondition(timing.timingActive === true, "T097 timing window closed before physical input", timing);
+      const rect = await cdpEvaluate(cdp, "(() => { const c = document.querySelector('#gameCanvas'); const r = c?.getBoundingClientRect(); return r ? { left:r.left, top:r.top, width:r.width, height:r.height } : null; })()");
+      requireCondition(rect && rect.width > 0 && rect.height > 0, "T097 timing canvas geometry unavailable", rect);
+      const clickX = rect.left + rect.width / 2;
+      const clickY = rect.top + rect.height / 2;
+      const target = await cdpEvaluate(cdp, "(() => { const e = document.elementFromPoint(" + clickX + ", " + clickY + "); return { tag:e?.tagName || '', id:e?.id || '', isCanvas:e === document.querySelector('#gameCanvas') }; })()");
+      requireCondition(target.isCanvas === true, "T097 timing target is not the game canvas", target);
+      await cdp.send("Input.setIgnoreInputEvents", { ignore: false });
+      await cdp.send("Input.dispatchMouseEvent", { type:"mouseMoved", x:clickX, y:clickY, button:"none", buttons:0 });
+      await cdp.send("Input.dispatchMouseEvent", { type:"mousePressed", x:clickX, y:clickY, button:"left", buttons:1, clickCount:1 });
+      await cdp.send("Input.dispatchMouseEvent", { type:"mouseReleased", x:clickX, y:clickY, button:"left", buttons:0, clickCount:1 });
+
+      const victory = await mark(
+        "VICTORY",
+        (state) => state.battlePhase === "VICTORY" && Boolean(state.combatResult),
+        5000
+      );
+      checkpoints["REWARD HANDOFF"] = await readRuntime();
+      timeline.push({ at_ms: Date.now() - runStartedAt, label:"REWARD HANDOFF", ...checkpoints["REWARD HANDOFF"] });
+
+      requireCondition(victory.scrap === 100, "T097 victory did not apply the existing 100 Scrap reward", victory);
+      requireCondition(victory.persistedScrap === 100, "T097 victory Scrap is not persisted in Player Meta", victory);
+      requireCondition(victory.rewardLedgerKeys.length === 1 && victory.rewardLedgerKeys[0] === expectedBattleId, "T097 reward ledger does not contain exactly one completed battle reward", victory);
+      requireCondition(victory.rewardLedger?.[expectedBattleId] === true, "T097 reward ledger entry is not true", victory);
+      requireCondition(victory.rewardStatus.includes("+100 SCRAP"), "T097 reward handoff UI status did not report the existing reward", victory);
+
+      const returnState = await mark(
+        "RETURN",
+        (state) => state.presentationPhase === "COMBAT_RETURN",
+        5000
+      );
+      const completeState = await mark(
+        "RETURN COMPLETE",
+        (state) => state.presentationPhase === "COMPLETE" && state.presentationActive === false,
+        5000
+      );
+      requireCondition(completeState.scrap === 100, "T097 Scrap balance changed after RETURN", completeState);
+      requireCondition(completeState.persistedScrap === 100, "T097 persisted Scrap changed after RETURN", completeState);
+      requireCondition(completeState.rewardLedgerKeys.length === 1, "T097 reward ledger changed after RETURN", completeState);
+
+      await cdp.send("Page.navigate", { url: baseUrl });
+      await waitFor(
+        async () => (await cdpEvaluate(cdp, "document.readyState")) === "complete",
+        { timeoutMs: 30000, label: "T097 reload document ready" }
+      );
+      await waitFor(
+        async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#home-view') && !document.querySelector('#home-view').hidden)"),
+        { timeoutMs: 30000, label: "T097 Home visible after reload" }
+      );
+      const reloaded = await readRuntime();
+      checkpoints["RELOAD"] = { at_ms: Date.now() - runStartedAt, ...reloaded };
+      timeline.push({ at_ms: Date.now() - runStartedAt, label:"RELOAD", ...reloaded });
+
+      requireCondition(reloaded.scrap === 100, "T097 persisted Scrap was not rehydrated after reload", reloaded);
+      requireCondition(reloaded.persistedScrap === 100, "T097 Player Meta persistence did not survive reload", reloaded);
+      requireCondition(reloaded.rewardLedgerKeys.length === 1 && reloaded.rewardLedger[expectedBattleId] === true, "T097 reward ledger did not survive reload", reloaded);
+      requireCondition(reloaded.rewardStatus !== "REWARD ERROR", "T097 reward error state detected after reload", reloaded);
+
+      const sameOriginErrors = pageExceptions
+        .map((item) => item?.exception?.description || item?.text || "")
+        .filter(Boolean)
+        .filter((entry) => entry.includes(baseUrl) || entry.includes("/js/"));
+      requireCondition(sameOriginErrors.length === 0, "T097 same-origin runtime exceptions detected", sameOriginErrors);
+
+      const evidence = {
+        task: "T097",
+        sha: process.env.GITHUB_SHA || "local",
+        runId: process.env.GITHUB_RUN_ID || "local",
+        browser: BROWSER_BIN,
+        browserVersion: {
+          product: browserVersion?.product || "",
+          revision: browserVersion?.revision || "",
+          userAgent: browserVersion?.userAgent || ""
+        },
+        harness: "existing character_journey_browser_probe.mjs via T097_REWARD_HANDOFF=1",
+        baseUrl,
+        expectedBattleId,
+        checkpoints,
+        timeline,
+        reward: {
+          type: "SCRAP",
+          amount: 100,
+          source: "existing T062_REWARD_TABLE VICTORY entry"
+        },
+        persistence: {
+          mechanism: "PlayerMetaPersistenceAdapter/localStorage",
+          key: playerMetaKey,
+          reloadVerified: true
+        },
+        duplication: {
+          initialScrap: initial.scrap,
+          victoryScrap: victory.scrap,
+          returnScrap: completeState.scrap,
+          reloadedScrap: reloaded.scrap,
+          rewardLedgerSize: reloaded.rewardLedgerKeys.length
+        },
+        consoleErrors: consoleErrors.map((entry) => ({ text: entry.text, url: entry.url, source: entry.source })),
+        pageErrors: sameOriginErrors
+      };
+      writeFileSync(join(EVIDENCE_DIR, "t097-reward-handoff-cdp-evidence.json"), JSON.stringify(evidence, null, 2) + "\n", "utf8");
+
+      console.log("T097 BROWSER AUTOMATION = PASS_REAL");
+      console.log("VICTORY = PASS_REAL");
+      console.log("REWARD HANDOFF = PASS_REAL");
+      console.log("REWARD = +100 SCRAP");
+      console.log("PLAYER STATE = SCRAP 0 -> 100");
+      console.log("PERSISTENCE = PASS_REAL");
+      console.log("DUPLICATION = PASS_REAL");
+      console.log("RETURN = PASS_REAL");
+      console.log("RELOAD = PASS_REAL");
       return;
     }
 

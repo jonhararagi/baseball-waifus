@@ -1,0 +1,77 @@
+name: T097 Normal Combat Reward Handoff CDP QA
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "webapp/js/character_journey_browser_probe.mjs"
+      - "webapp/js/app.js"
+      - "webapp/js/combat.js"
+      - "webapp/js/reward_pipeline.js"
+      - "webapp/js/reward_resolver.js"
+      - "webapp/js/player_meta_reward_adapter.js"
+      - "webapp/js/player_meta_state.js"
+      - "webapp/js/player_meta_persistence_adapter.js"
+      - "webapp/js/gacha_player_meta_integration.js"
+      - "webapp/js/gacha_controller.js"
+      - "webapp/index.html"
+      - ".github/workflows/t097-reward-handoff-cdp.yml"
+  workflow_dispatch:
+
+jobs:
+  t097-reward-handoff-cdp:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Prepare runtime data
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p webapp/data
+          cp data/characters_queue.json webapp/data/characters_queue.json
+          cp data/game_schemas_recycled.json webapp/data/game_schemas_recycled.json
+          test -s webapp/data/characters_queue.json
+          test -s webapp/data/game_schemas_recycled.json
+      - name: Locate Chrome
+        id: chrome
+        shell: bash
+        run: |
+          set -euo pipefail
+          BROWSER_BIN=""
+          for candidate in google-chrome chromium chromium-browser; do
+            if command -v "$candidate" >/dev/null 2>&1; then
+              BROWSER_BIN="$(command -v "$candidate")"
+              break
+            fi
+          done
+          test -n "$BROWSER_BIN"
+          echo "browser_bin=$BROWSER_BIN" >> "$GITHUB_OUTPUT"
+      - name: Validate T097 probe syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check webapp/js/character_journey_browser_probe.mjs
+      - name: Run T097 reward handoff proof
+        shell: bash
+        env:
+          T072_SITE_DIR: webapp
+          T072_EVIDENCE_DIR: browser-evidence/T097/$GITHUB_SHA/$GITHUB_RUN_ID
+          T097_REWARD_HANDOFF: "1"
+          BROWSER_BIN: ${{ steps.chrome.outputs.browser_bin }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$T072_EVIDENCE_DIR"
+          node webapp/js/character_journey_browser_probe.mjs
+      - name: Upload T097 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: t097-reward-handoff-cdp-evidence
+          path: browser-evidence/T097/
+          if-no-files-found: warn
