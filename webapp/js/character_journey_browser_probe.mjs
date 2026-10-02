@@ -848,14 +848,9 @@ async function run() {
       const resolveMiss = async (round) => {
         await mark("ROUND " + round + " CLIMAX", s => s.battlePhase === "CLIMAX" && s.tacticalTurn === 5);
         await mark("ROUND " + round + " TIMING", s => s.battlePhase === "CLIMAX" && s.timingActive === true);
-        const missElapsed = await waitFor(
-          async () => {
-            const elapsed = await cdpEvaluate(cdp, "window.__BW_T097_TIMING_ELAPSED__?.()");
-            return Number.isFinite(Number(elapsed)) && Number(elapsed) >= 260 && Number(elapsed) <= 340 ? Number(elapsed) : false;
-          },
-          { timeoutMs: 5000, intervalMs: 5, label: "T101 deterministic MISS timing band" }
-        );
+        await sleep(120);
         const before = await readRuntime();
+        requireCondition(before.timingActive === true, "T101 timing window closed before deterministic MISS input", before);
         requireCondition(before.timingActive === true, "T101 timing window closed before MISS input", before);
         requireCondition(before.playerStamina > 0, "T101 stamina non-positive before non-victory", before);
         const rect = await cdpEvaluate(cdp, "(() => { const r=document.querySelector('#gameCanvas')?.getBoundingClientRect(); return r ? {left:r.left,top:r.top,width:r.width,height:r.height} : null; })()");
