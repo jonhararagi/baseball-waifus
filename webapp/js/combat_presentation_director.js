@@ -382,11 +382,17 @@ export class CombatPresentationDirector {
   }
 
   getState() {
+    const step = this.getCurrentStep();
+    const durationMs = Math.max(1, Number(step?.durationMs) || 1);
+    const progress = step
+      ? clamp(this.stepElapsedMs / durationMs, 0, 1)
+      : 1;
     return Object.freeze({
       sequenceId: this.sequenceId,
       phase: this.phase,
       stepIndex: this.stepIndex,
       stepElapsedMs: this.stepElapsedMs,
+      progress,
       active: this.active,
       result: this.result,
       commandCount: this.commands.length,
