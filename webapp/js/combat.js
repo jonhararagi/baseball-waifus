@@ -1548,7 +1548,9 @@ export class CombatRenderer {
         return actor?.team === "PLAYER";
       })
       .map((frame) => Number(frame.opacity ?? 1));
-    this.canvas.dataset.combatStageUltimateActive = String(ultimateState.sequenceKind === "ULTIMATE_STAGING");
+    this.canvas.dataset.combatStageUltimateActive = String(
+      ultimateState.sequenceKind === "ULTIMATE_STAGING" && ultimateState.active === true
+    );
     this.canvas.dataset.combatStageUltimateSequenceKind = String(ultimateState.sequenceKind || "");
     this.canvas.dataset.combatStageUltimatePhase = ultimatePhase;
     this.canvas.dataset.combatStageUltimateHeroScale = ultimateHeroFrame
