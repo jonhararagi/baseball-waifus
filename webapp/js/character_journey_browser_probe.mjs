@@ -957,6 +957,165 @@ async function run() {
       console.log("POST-TERMINAL GUARDS = PASS_REAL");
       return;
     }
+    if (process.env.T109_REWARD_BOUNDARY === "1") {
+      const runStartedAt = Date.now();
+      const browserVersion = await cdp.send("Browser.getVersion");
+      const playerMetaKey = "baseball_waifus_player_meta_v1:local-player";
+
+      const readRewardState = async () => cdpEvaluate(cdp, "(() => {
+        const canvas = document.querySelector('#gameCanvas');
+        const d = canvas?.dataset || {};
+        const gacha = window.BaseballWaifusGacha?.getStatus?.() || null;
+        const raw = localStorage.getItem("baseball_waifus_player_meta_v1:local-player");
+        let persisted = null;
+        try { persisted = raw ? JSON.parse(raw) : null; } catch { persisted = null; }
+        return {
+          battlePhase: d.combatBattlePhase || "",
+          tacticalTurn: d.combatTacticalTurn === "" ? null : Number(d.combatTacticalTurn),
+          timingActive: d.combatTimingActive === "true",
+          timingGrade: d.combatTimingGrade || "",
+          combatResult: d.combatResult || "",
+          presentationPhase: d.combatStagePresentationPhase || "",
+          presentationActive: d.combatPresentationActive === "true",
+          playerStamina: d.combatPlayerStamina === "" ? null : Number(d.combatPlayerStamina),
+          scrap: Number(gacha?.scavenger_scrap ?? NaN),
+          persistedScrap: Number(persisted?.currencies?.SCRAP ?? NaN),
+          rewardLedger: persisted?.rewardLedger || null,
+          rewardLedgerKeys: persisted?.rewardLedger ? Object.keys(persisted.rewardLedger) : [],
+          playerMetaRawPresent: Boolean(raw)
+        };
+      })()");
+
+      const mark = async (name, condition, timeoutMs = 6000) => {
+        const deadline = Date.now() + timeoutMs;
+        let state = null;
+        while (Date.now() < deadline) {
+          state = await readRewardState();
+          if (condition(state)) return state;
+          await sleep(25);
+        }
+        state = await readRewardState();
+        throw new Error("T109 TIMEOUT: " + name + " " + JSON.stringify(state));
+      };
+
+      const clickBat = async (label) => {
+        await waitFor(
+          async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#action-bat') && !document.querySelector('#action-bat').disabled)"),
+          { timeoutMs: 6000, label: "T109 BATEAR ready " + label }
+        );
+        await cdpClickSelector(cdp, "#action-bat");
+      };
+
+      const resolveNonTerminalMiss = async (round) => {
+        await mark("ROUND " + round + " CLIMAX", s => s.battlePhase === "CLIMAX" && s.tacticalTurn === 5);
+        await mark("ROUND " + round + " TIMING ACTIVE", s => s.battlePhase === "CLIMAX" && s.timingActive === true);
+        const beforeTiming = await readRewardState();
+        requireCondition(beforeTiming.scrap === 0 && beforeTiming.persistedScrap === 0, "T109 Scrap changed before non-terminal timing", beforeTiming);
+        requireCondition(beforeTiming.rewardLedgerKeys.length === 0, "T109 reward ledger changed before non-terminal timing", beforeTiming);
+        await sleep(120);
+        const rect = await cdpEvaluate(cdp, "(() => { const r=document.querySelector('#gameCanvas')?.getBoundingClientRect(); return r ? {left:r.left,top:r.top,width:r.width,height:r.height} : null; })()");
+        requireCondition(rect && rect.width > 0 && rect.height > 0, "T109 canvas geometry unavailable", rect);
+        const x = rect.left + rect.width / 2;
+        const y = rect.top + rect.height / 2;
+        const target = await cdpEvaluate(cdp, "(() => document.elementFromPoint(" + x + "," + y + ") === document.querySelector('#gameCanvas'))()");
+        requireCondition(target === true, "T109 physical Timing target is not canvas");
+        await cdp.send("Input.setIgnoreInputEvents", { ignore: false });
+        await cdp.send("Input.dispatchMouseEvent", { type:"mouseMoved", x, y, button:"none", buttons:0 });
+        await cdp.send("Input.dispatchMouseEvent", { type:"mousePressed", x, y, button:"left", buttons:1, clickCount:1 });
+        await cdp.send("Input.dispatchMouseEvent", { type:"mouseReleased", x, y, button:"left", buttons:0, clickCount:1 });
+
+        const afterTiming = await mark(
+          "ROUND " + round + " NON-TERMINAL RESULT",
+          s => s.timingActive === false && (s.battlePhase === "TACTICAL" || s.battlePhase === "DEFEAT" || s.battlePhase === "VICTORY"),
+          5000
+        );
+        if (afterTiming.battlePhase !== "TACTICAL") {
+          return { beforeTiming, afterTiming, terminal: afterTiming.battlePhase };
+        }
+        requireCondition(afterTiming.scrap === beforeTiming.scrap, "T109 Scrap changed after non-terminal Timing", {beforeTiming,afterTiming});
+        requireCondition(afterTiming.persistedScrap === beforeTiming.persistedScrap, "T109 persisted Scrap changed after non-terminal Timing", {beforeTiming,afterTiming});
+        requireCondition(afterTiming.rewardLedgerKeys.length === beforeTiming.rewardLedgerKeys.length, "T109 reward ledger changed after non-terminal Timing", {beforeTiming,afterTiming});
+        await mark(
+          "ROUND " + round + " RETURN COMPLETE",
+          s => s.battlePhase === "TACTICAL" && s.presentationPhase === "COMPLETE" && s.presentationActive === false,
+          5000
+        );
+        const afterReturn = await readRewardState();
+        requireCondition(afterReturn.scrap === beforeTiming.scrap, "T109 Scrap changed after non-terminal return", {beforeTiming,afterReturn});
+        requireCondition(afterReturn.persistedScrap === beforeTiming.persistedScrap, "T109 persisted Scrap changed after non-terminal return", {beforeTiming,afterReturn});
+        requireCondition(afterReturn.rewardLedgerKeys.length === beforeTiming.rewardLedgerKeys.length, "T109 reward ledger changed after non-terminal return", {beforeTiming,afterReturn});
+        return { beforeTiming, afterTiming, afterReturn, terminal: null };
+      };
+
+      const url = baseUrl + "?qa=t097";
+      await cdp.send("Page.navigate", { url });
+      await waitFor(async () => (await cdpEvaluate(cdp, "document.readyState")) === "complete"), { timeoutMs: 30000, label: "T109 document ready" }
+      );
+      await waitFor(
+        async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#home-view') && !document.querySelector('#home-view').hidden)"),
+        { timeoutMs: 30000, label: "T109 Home visible" }
+      );
+
+      const initial = await readRewardState();
+      requireCondition(initial.scrap === 0, "T109 initial Scrap must be 0", initial);
+      requireCondition(initial.persistedScrap === 0, "T109 initial persisted Scrap must be 0", initial);
+      requireCondition(initial.rewardLedgerKeys.length === 0, "T109 initial reward ledger must be empty", initial);
+      await cdpClickSelector(cdp, ".home-action-play");
+      await waitFor(
+        async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#gameCanvas')?.dataset?.combatStageContract === 'COMBAT_STAGE_2_5D')"),
+        { timeoutMs: 30000, label: "T109 formation initialized" }
+      );
+
+      await clickBat("TACTICAL");
+      const tactical = await mark("TACTICAL", s => s.battlePhase === "TACTICAL" && s.tacticalTurn >= 1);
+      requireCondition(tactical.scrap === initial.scrap, "T109 Scrap changed during Tactical", {initial,tactical});
+      requireCondition(tactical.persistedScrap === initial.persistedScrap, "T109 persisted Scrap changed during Tactical", {initial,tactical});
+      requireCondition(tactical.rewardLedgerKeys.length === initial.rewardLedgerKeys.length, "T109 reward ledger changed during Tactical", {initial,tactical});
+
+      const round1 = await resolveNonTerminalMiss(1);
+      requireCondition(round1.terminal === null, "T109 first Timing unexpectedly reached a terminal result", round1);
+
+      await clickBat("round 2");
+      const tactical2 = await mark("TACTICAL 2", s => s.battlePhase === "TACTICAL" && s.tacticalTurn >= 1);
+      requireCondition(tactical2.scrap === initial.scrap, "T109 Scrap changed before second non-terminal Timing", {initial,tactical2});
+      const round2 = await resolveNonTerminalMiss(2);
+      requireCondition(round2.terminal === null, "T109 second Timing unexpectedly reached a terminal result", round2);
+
+      const finalState = await readRewardState();
+      requireCondition(finalState.scrap === initial.scrap, "T109 final authoritative Scrap changed mid-combat", {initial,finalState});
+      requireCondition(finalState.persistedScrap === initial.persistedScrap, "T109 final persisted Scrap changed mid-combat", {initial,finalState});
+      requireCondition(finalState.rewardLedgerKeys.length === initial.rewardLedgerKeys.length, "T109 reward ledger gained a terminal application mid-combat", {initial,finalState});
+      requireCondition(finalState.battlePhase === "TACTICAL" && finalState.combatResult !== "VICTORY" && finalState.combatResult !== "DEFEAT", "T109 proof did not remain non-terminal", finalState);
+
+      const evidence = {
+        task: "T109",
+        sha: process.env.GITHUB_SHA || "local",
+        runId: process.env.GITHUB_RUN_ID || "local",
+        browser: BROWSER_BIN,
+        browserVersion: { product: browserVersion?.product || "", revision: browserVersion?.revision || "", userAgent: browserVersion?.userAgent || "" },
+        harness: "existing character_journey_browser_probe.mjs via T109_REWARD_BOUNDARY=1",
+        playerMetaKey,
+        initial,
+        tactical,
+        rounds: [round1, round2],
+        finalState,
+        timingInput: { method: "CDP Input.dispatchMouseEvent", timingWaitMs: 120, expectedGrade: "MISS" },
+        rewardBoundary: { midCombatScrapUnchanged: true, persistedScrapUnchanged: true, rewardLedgerUnchanged: true, terminalNotReached: true },
+        at_ms: Date.now() - runStartedAt
+      };
+      writeFileSync(join(EVIDENCE_DIR, "t109-mid-turn-reward-browser-evidence.json"), JSON.stringify(evidence, null, 2) + "\n", "utf8");
+      console.log("T109 BROWSER AUTOMATION = PASS_REAL");
+      console.log("SCRAP BEFORE = " + initial.scrap);
+      console.log("TACTICAL SCRAP = " + tactical.scrap);
+      console.log("ROUND 1 NON-TERMINAL CLIMAX/TIMING SCRAP = " + round1.afterReturn.scrap);
+      console.log("ROUND 2 NON-TERMINAL CLIMAX/TIMING SCRAP = " + round2.afterReturn.scrap);
+      console.log("MID-TURN REWARD = NONE");
+      console.log("REWARD LEDGER = UNCHANGED");
+      console.log("PLAYER META = UNCHANGED");
+      console.log("TERMINAL BOUNDARY = NOT REACHED");
+      return;
+    }
+
     if (T094_COMBAT_LOOP) {
       const runStartedAt = Date.now();
       const browserVersion = await cdp.send("Browser.getVersion");
