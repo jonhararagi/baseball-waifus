@@ -77,6 +77,10 @@ function assetUrl(path) {
   return new URL(path, window.location.href).toString();
 }
 
+function stateValue(phase, value) {
+  return ["ACTION", "IMPACT"].includes(String(phase || "").toUpperCase()) ? String(value || "") : "";
+}
+
 function descriptorPath(descriptor, kind = "") {
   if (!descriptor || typeof descriptor !== "object") {
     return "";
@@ -234,7 +238,10 @@ export class CombatRenderer {
     this.combatEffects = new CombatEffects();
     this.combatPresentation = presentationDirector || new CombatPresentationDirector({
       stage: this.combatStage,
-      onStep: (event) => this.onPresentationStep?.(event)
+      onStep: (event) => {
+        this._handleCombatPresentationStep(event);
+        this.onPresentationStep?.(event);
+      }
     });
     this.combatPresentation.setStage?.(this.combatStage);
     this.combatHud = new CombatHUD({ getResources: getHudResources });
@@ -1157,6 +1164,27 @@ export class CombatRenderer {
     ctx.restore();
   }
 
+  _handleCombatPresentationStep(event) {
+    const phase = String(event?.phase || "").toUpperCase();
+    const result = event?.result || {};
+    if (phase === "ATTACKER_FOCUS") {
+      this.batterRenderer.beginWindup();
+      return;
+    }
+    if (phase === "ACTION") {
+      this.batterRenderer.beginSwing();
+      return;
+    }
+    if (phase === "IMPACT") {
+      this.combatEffects.trigger(result.result || "HIT", { result: result.result || "HIT" });
+      this.impactTimer = Math.max(this.impactTimer, 0.16);
+      return;
+    }
+    if (phase === "COMBAT_RETURN") {
+      this.canvas.dataset.combatStageActionComplete = "true";
+    }
+  }
+
   _drawBackground(ctx, w, h) {
     this.themeManager.renderBackground(ctx, w, h, 0);
   }
@@ -1180,7 +1208,7 @@ export class CombatRenderer {
   _drawMatchState(ctx, w, h) {
     const camera = this.combatPresentation.getCameraTransform({ width: w, height: h });
     const groundColor = this.themeManager.getCurrentTheme()?.groundColor || "#10162a";
-    renderCombatStageWorld(ctx, this.combatStage, w, h, { cameraTransform: camera, groundColor, showZones: true });
+    renderCombatStageWorld(ctx, this.combatStage, w, h, { cameraTransform: camera, groundColor, showZones: false });
 
     for (const actor of this.combatStage.getSortedActors()) {
       const transform = this.combatStage.resolveActorTransform(actor.actorId, { width: w, height: h });
@@ -1190,38 +1218,32 @@ export class CombatRenderer {
     this._drawCombatStageProjectile(ctx, w, h);
     renderCombatStageForeground(ctx, this.combatStage, w, h, camera);
 
-    const stageState = this.combatStage.getState();
-    ctx.save();
-    ctx.textAlign = "center";
-    ctx.font = "900 10px Orbitron, system-ui, sans-serif";
-    ctx.fillStyle = "#dfe7f6";
-    ctx.shadowColor = "#050508";
-    ctx.shadowBlur = 8;
-    ctx.fillText("COMBAT STAGE // " + stageState.playerCount + "V" + stageState.enemyCount, w * 0.5, h * 0.105);
-    ctx.font = "800 8px Rajdhani, system-ui, sans-serif";
-    ctx.fillStyle = "#8fefff";
-    ctx.shadowBlur = 0;
-    ctx.fillText("SELECTED // " + (stageState.selectedActorId || "NONE"), w * 0.5, h * 0.125);
-    ctx.restore();
     this._syncCombatStageDataset();
   }
 
   _drawCombatStageActor(ctx, actor, transform, w, h) {
     const color = actor.team === "ENEMY" ? "#ff007f" : "#00f3ff";
+    const presentation = this.combatPresentation.getState();
+    const motion = this.combatStage.resolveCinematicActorFrame(actor.actorId, {
+      phase: presentation.phase,
+      progress: presentation.progress,
+      width: w,
+      height: h
+    }) || transform;
 
     if (actor.actorId === this.combatStage.selectedActorId) {
       this.batterRenderer.draw(ctx, w, h, {
         accentColor: color,
-        scale: clamp(transform.scale * 0.72, 0.58, 0.88),
-        anchorX: transform.x - w * 0.08,
-        anchorY: transform.y
+        scale: clamp(motion.scale * 0.82, 0.62, 0.98),
+        anchorX: motion.x - w * 0.08,
+        anchorY: motion.y
       });
-      this._drawCombatActorRing(ctx, transform.x, transform.y + 8, 42 * transform.scale, color, true);
+      this._drawCombatActorRing(ctx, motion.x, motion.y + 8, 42 * motion.scale, color, true);
       return;
     }
 
     if (actor.team === "ENEMY") {
-      this._drawCombatEnemyActor(ctx, actor, transform, w, h);
+      this._drawCombatEnemyActor(ctx, actor, transform, w, h, motion);
       return;
     }
 
@@ -1259,27 +1281,25 @@ export class CombatRenderer {
     ctx.restore();
   }
 
-  _drawCombatEnemyActor(ctx, actor, transform, w, h) {
-    const radius = 42 * transform.scale;
-    const presentation = this.combatPresentation.getCameraTransform({ width: w, height: h });
-    let x = transform.x;
-    let y = transform.y;
-    let rotation = (transform.rotation * Math.PI) / 180;
-
-    if (presentation.phase === "IMPACT") {
-      const t = presentation.progress || 0;
-      x += Math.sin(t * Math.PI) * 7;
-      rotation += Math.sin(t * Math.PI) * 0.025;
-    } else if (presentation.phase === "TARGET_REACTION") {
-      const t = presentation.progress || 0;
-      x += (1 - t) * 20;
-      rotation += Math.sin(t * Math.PI) * -0.09;
-    }
+  _drawCombatEnemyActor(ctx, actor, transform, w, h, motion = null) {
+    const presentation = this.combatPresentation.getState();
+    const frame = motion || transform;
+    const radius = 42 * frame.scale;
+    const t = presentation.progress || 0;
+    const pulse = presentation.phase === "IMPACT"
+      ? Math.sin(t * Math.PI)
+      : presentation.phase === "TARGET_REACTION"
+        ? Math.sin(t * Math.PI)
+        : 0;
+    const x = frame.x;
+    const y = frame.y;
+    const rotation = (frame.rotationDeg ?? frame.rotation ?? 0) * Math.PI / 180;
 
     const sprite = this._combatSpriteForActor(actor.actorId);
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(rotation);
+    ctx.scale(1 + pulse * 0.055, 1 - pulse * 0.035);
 
     ctx.fillStyle = "rgba(0,0,0,0.24)";
     ctx.beginPath();
@@ -1315,11 +1335,13 @@ export class CombatRenderer {
     }
 
     if (presentation.phase === "IMPACT" || presentation.phase === "TARGET_REACTION") {
-      const pulse = presentation.phase === "IMPACT" ? 1 - (presentation.progress || 0) : 0.4;
-      ctx.strokeStyle = "rgba(255,223,126," + clamp(pulse, 0, 1) + ")";
-      ctx.lineWidth = 4;
+      const reactionPulse = presentation.phase === "IMPACT"
+        ? 1 - (presentation.progress || 0)
+        : 0.4;
+      ctx.strokeStyle = "rgba(255,223,126," + clamp(reactionPulse, 0, 1) + ")";
+      ctx.lineWidth = 4 + reactionPulse * 2;
       ctx.beginPath();
-      ctx.arc(0, -radius * 0.2, radius * (1.08 + pulse * 0.3), 0, Math.PI * 2);
+      ctx.arc(0, -radius * 0.2, radius * (1.08 + reactionPulse * 0.3), 0, Math.PI * 2);
       ctx.stroke();
     }
 
@@ -1343,33 +1365,56 @@ export class CombatRenderer {
   _drawCombatStageProjectile(ctx, w, h) {
     const state = this.combatPresentation.getState();
     if (!["ACTION", "IMPACT"].includes(state.phase)) return;
-    const attacker = this.combatStage.getActor(state.result?.attackerId || this.combatStage.selectedActorId);
-    const target = this.combatStage.getActor(state.result?.targetId);
-    if (!attacker || !target) return;
-    const start = this.combatStage.getActorAnchor(attacker.actorId, "PROJECTILE");
-    const end = this.combatStage.getActorAnchor(target.actorId, "IMPACT");
-    if (!start || !end) return;
+    const attackerId = state.result?.attackerId || this.combatStage.selectedActorId;
+    const targetId = state.result?.targetId;
+    if (!attackerId || !targetId) return;
 
     const camera = this.combatPresentation.getCameraTransform({ width: w, height: h });
-    const rawProgress = state.phase === "IMPACT" ? 1 : clamp(camera.progress + 0.08, 0, 1);
-    const eased = rawProgress * rawProgress * (3 - 2 * rawProgress);
-    const x = (start.x + (end.x - start.x) * eased) * w;
-    const y = (start.y + (end.y - start.y) * eased - Math.sin(eased * Math.PI) * 0.05) * h;
-    const trail = 24 + 38 * (1 - eased);
+    const projectile = this.combatStage.resolveCinematicProjectile(attackerId, targetId, {
+      phase: state.phase,
+      progress: camera.progress,
+      width: w,
+      height: h
+    });
+    if (!projectile) return;
+
+    const x = projectile.position.x * w;
+    const y = projectile.position.y * h;
+    const trail = 26 + 44 * (1 - projectile.travelProgress);
 
     ctx.save();
-    ctx.strokeStyle = "rgba(255,223,126,0.52)";
-    ctx.lineWidth = 5;
+    ctx.strokeStyle = "rgba(255,223,126,0.64)";
+    ctx.lineWidth = 5 + (1 - projectile.travelProgress) * 2;
     ctx.beginPath();
-    ctx.moveTo(x - trail * (attacker.facing || 1), y + trail * 0.16);
+    ctx.moveTo(
+      x - trail * (this.combatStage.getActor(attackerId)?.facing || 1),
+      y + trail * 0.14
+    );
     ctx.lineTo(x, y);
     ctx.stroke();
+
     ctx.fillStyle = "#fff5c7";
     ctx.shadowColor = "#ffdf7e";
     ctx.shadowBlur = 18;
     ctx.beginPath();
-    ctx.arc(x, y, 8 + (1 - eased) * 2, 0, Math.PI * 2);
+    ctx.arc(x, y, 8 + (1 - projectile.travelProgress) * 2, 0, Math.PI * 2);
     ctx.fill();
+
+    if (state.phase === "IMPACT") {
+      const impact = clamp(1 - (state.stepElapsedMs || 0) / 150, 0, 1);
+      ctx.globalAlpha = impact;
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 3;
+      for (let index = 0; index < 8; index += 1) {
+        const angle = (Math.PI * 2 * index) / 8;
+        const inner = 14 + (1 - impact) * 8;
+        const outer = 42 + (1 - impact) * 26;
+        ctx.beginPath();
+        ctx.moveTo(x + Math.cos(angle) * inner, y + Math.sin(angle) * inner);
+        ctx.lineTo(x + Math.cos(angle) * outer, y + Math.sin(angle) * outer);
+        ctx.stroke();
+      }
+    }
     ctx.restore();
   }
 
@@ -1416,6 +1461,14 @@ export class CombatRenderer {
     this.canvas.dataset.combatStageZones = Object.keys(stageState.zones).join(",");
     this.canvas.dataset.combatStageSelectedActor = stageState.selectedActorId;
     this.canvas.dataset.combatStageFilmable = String(stageState.filmable);
+    this.canvas.dataset.combatStageActionContract = String(stageState.actionContract || "");
+    this.canvas.dataset.combatStageActionPhases = (stageState.actionPhases || []).join(",");
+    this.canvas.dataset.combatStagePresentationPhase = String(this.combatPresentation.getState().phase || "");
+    this.canvas.dataset.combatStageCharacterState = String(this.batterRenderer.getState() || "");
+    this.canvas.dataset.combatStageCharacterMotion = String(
+      this.batterRenderer.getCharacterMotion?.(this.pixelWidth, this.pixelHeight)?.rotationDeg || 0
+    );
+    this.canvas.dataset.combatStageProjectileContract = stateValue(this.combatPresentation.getState().phase, "PROJECTILE");
     this.canvas.dataset.combatStageProjectileVisible = String(
       ["ACTION", "IMPACT"].includes(this.combatPresentation.getState().phase)
       && Boolean(this.combatPresentation.getState().result?.attackerId)
