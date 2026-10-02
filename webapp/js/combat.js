@@ -454,7 +454,6 @@ export class CombatRenderer {
 
     this.audioBridge?.playTacticalCard?.();
     this.audioBridge?.playTacticalCharge?.();
-    this.batterRenderer.beginSwing();
     this._applyWaifuFeedback("feedback-hit", "TACTICAL HIT");
     this.onTacticalTurn?.({
       ...result,
@@ -924,12 +923,6 @@ export class CombatRenderer {
     ).toUpperCase();
     if (turnEvent === "PITCH" || turnEvent === "PITCHER_THROW" || turnEvent === "THROW") {
       this.batterRenderer.beginWindup();
-    } else if (
-      turnEvent === "SWING"
-      || turnEvent === "HIT"
-      || dto?.result
-    ) {
-      this.batterRenderer.beginSwing();
     }
 
     this._triggerCutIn(dto);
@@ -1168,6 +1161,7 @@ export class CombatRenderer {
     const phase = String(event?.phase || "").toUpperCase();
     const result = event?.result || {};
     if (phase === "ATTACKER_FOCUS") {
+      this.canvas.dataset.combatStageActionComplete = "false";
       this.batterRenderer.beginWindup();
       return;
     }
@@ -1468,7 +1462,37 @@ export class CombatRenderer {
     this.canvas.dataset.combatStageCharacterMotion = String(
       this.batterRenderer.getCharacterMotion?.(this.pixelWidth, this.pixelHeight)?.rotationDeg || 0
     );
-    this.canvas.dataset.combatStageProjectileContract = stateValue(this.combatPresentation.getState().phase, "PROJECTILE");
+    const presentationState = this.combatPresentation.getState();
+    const cinematicProjectile = ["ACTION", "IMPACT"].includes(presentationState.phase)
+      ? this.combatStage.resolveCinematicProjectile(
+        presentationState.result?.attackerId || stageState.selectedActorId,
+        presentationState.result?.targetId || "",
+        {
+          phase: presentationState.phase,
+          progress: presentationState.progress,
+          width: this.pixelWidth,
+          height: this.pixelHeight
+        }
+      )
+      : null;
+    const batPose = this.batterRenderer.lastBatPose;
+    const characterMotion = this.batterRenderer.getCharacterMotion?.(this.pixelWidth, this.pixelHeight);
+    this.canvas.dataset.combatStageProjectileContract = cinematicProjectile?.sourceAnchor || "";
+    this.canvas.dataset.combatStageProjectileTarget = cinematicProjectile?.targetAnchor || "";
+    this.canvas.dataset.combatStageProjectileTravel = cinematicProjectile
+      ? String(Number(cinematicProjectile.travelProgress).toFixed(3))
+      : "";
+    this.canvas.dataset.combatStageCharacterState = String(this.batterRenderer.getState() || "");
+    this.canvas.dataset.combatStageCharacterMotion = String(
+      Number(characterMotion?.rotationDeg || 0).toFixed(3)
+    );
+    this.canvas.dataset.combatStageBatPose = batPose
+      ? [
+        Number(batPose.x).toFixed(2),
+        Number(batPose.y).toFixed(2),
+        Number(batPose.rotation).toFixed(3)
+      ].join(",")
+      : "";
     this.canvas.dataset.combatStageProjectileVisible = String(
       ["ACTION", "IMPACT"].includes(this.combatPresentation.getState().phase)
       && Boolean(this.combatPresentation.getState().result?.attackerId)
