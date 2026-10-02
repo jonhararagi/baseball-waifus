@@ -23,6 +23,8 @@ from art_studio.art_request import (  # noqa: E402
     validate_image_file,
     validate_request,
     deterministic_runtime_slot,
+    preflight_request,
+    preflight_stage_requests,
 )
 
 
@@ -50,6 +52,35 @@ class ArtRequestTests(unittest.TestCase):
             (root / relative).mkdir(parents=True, exist_ok=True)
         return root
 
+    def write_png_header(self, path, width, height):
+        import struct
+        path.parent.mkdir(parents=True, exist_ok=True)
+        png = (
+            b"\\x89PNG\\r\\n\\x1a\\n"
+            + b"\\x00\\x00\\x00\\x0dIHDR"
+            + struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0)
+            + b"\\x00\\x00\\x00\\x00IEND\\xaeB\\x60\\x82"
+        )
+        path.write_bytes(png)
+
+    def make_preflight_stage_request(self, request_id="AR-TEST-STAGE-FAR-PREFLIGHT-001"):
+        return build_request(
+            request_id=request_id,
+            asset_kind="STAGE_BACKGROUND_FAR",
+            character_id=None,
+            subject="combat-stage",
+            what_is_expected="Controlled production-shaped far background preflight request.",
+            camera="WIDE",
+            composition="BACKGROUND",
+            environment="Synthetic CombatStage background.",
+            visual_notes="Test-only preflight source.",
+            generation_prompt="Controlled local preflight fixture.",
+            negative_prompt="No external dependencies.",
+            fmt="png",
+            minimum_width=2048,
+            minimum_height=1152,
+        )
+
     def make_stage_request(self):
         return build_request(
             request_id="AR-TEST-STAGE-001",
@@ -67,6 +98,151 @@ class ArtRequestTests(unittest.TestCase):
             minimum_width=512,
             minimum_height=256,
         )
+
+    def test_preflight_missing_when_drop_zone_is_absent(self):
+        root = self.make_root()
+        request = self.make_preflight_stage_request()
+        result = preflight_request(request, root)
+        self.assertEqual(result["state"], "MISSING")
+        self.assertEqual(result["supported_sources"], 0)
+        self.assertEqual(result["reason"], "drop zone missing")
+
+    def test_preflight_missing_when_drop_zone_contains_only_gitkeep(self):
+        root = self.make_root()
+        request = self.make_preflight_stage_request()
+        drop = root / request["drop_zone"]
+        drop.mkdir(parents=True, exist_ok=True)
+        (drop / ".gitkeep").write_text("", encoding="utf-8")
+        result = preflight_request(request, root)
+        self.assertEqual(result["state"], "MISSING")
+        self.assertEqual(result["supported_sources"], 0)
+        self.assertEqual(result["reason"], "no supported source files")
+
+    def test_preflight_ready_for_exactly_one_valid_png(self):
+        root = self.make_root()
+        request = self.make_preflight_stage_request()
+        source = root / request["drop_zone"] / "stage-far.png"
+        self.write_png_header(source, 2048, 1152)
+        result = preflight_request(request, root)
+        self.assertEqual(result["state"], "READY")
+        self.assertEqual(result["supported_sources"], 1)
+        self.assertEqual(result["source"], "stage-far.png")
+        self.assertEqual(result["reason"], "source=stage-far.png; dimensions=2048x1152")
+        self.assertFalse((root / request["target_path"]).exists())
+
+    def test_preflight_ambiguous_for_two_compatible_pngs(self):
+        root = self.make_root()
+        request = self.make_preflight_stage_request()
+        for name in ("a.png", "b.png"):
+            self.write_png_header(root / request["drop_zone"] / name, 2048, 1152)
+        result = preflight_request(request, root)
+        self.assertEqual(result["state"], "AMBIGUOUS")
+        self.assertEqual(result["supported_sources"], 2)
+        self.assertIn("multiple supported sources: a.png, b.png", result["reason"])
+
+    def test_preflight_invalid_for_undersized_png(self):
+        root = self.make_root()
+        request = self.make_preflight_stage_request()
+        source = root / request["drop_zone"] / "small.png"
+        self.write_png_header(source, 1024, 576)
+        result = preflight_request(request, root)
+        self.assertEqual(result["state"], "INVALID")
+        self.assertEqual(result["supported_sources"], 1)
+        self.assertIn("dimensions 1024x576 below request minimum 2048x1152", result["reason"])
+
+    def test_preflight_invalid_for_format_mismatch(self):
+        root = self.make_root()
+        request = self.make_preflight_stage_request()
+        source = root / request["drop_zone"] / "artist-original.svg"
+        source.parent.mkdir(parents=True, exist_ok=True)
+        source.write_text(
+            '<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="1152"></svg>',
+            encoding="utf-8",
+        )
+        result = preflight_request(request, root)
+        self.assertEqual(result["state"], "INVALID")
+        self.assertEqual(result["supported_sources"], 1)
+        self.assertIn("format mismatch", result["reason"])
+
+    def test_preflight_invalid_when_target_already_exists(self):
+        root = self.make_root()
+        request = self.make_preflight_stage_request()
+        self.write_png_header(root / request["drop_zone"] / "stage-far.png", 2048, 1152)
+        target = root / request["target_path"]
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(b"existing-production-target")
+        result = preflight_request(request, root)
+        self.assertEqual(result["state"], "INVALID")
+        self.assertEqual(result["supported_sources"], 1)
+        self.assertEqual(
+            result["reason"],
+            f"target conflict: {request['target_path']}",
+        )
+
+    def test_preflight_processes_four_stage_requests_in_canonical_order(self):
+        real_registry = json.loads(
+            (ROOT / "tools/art_studio/art_requests.json").read_text(encoding="utf-8")
+        )
+        root = self.make_root()
+        registry_path = root / "tools/art_studio/art_requests.json"
+        registry_path.parent.mkdir(parents=True, exist_ok=True)
+        request_ids = (
+            "AR-T084-STAGE-BG-FAR-01",
+            "AR-T085-STAGE-BG-MID-01",
+            "AR-T086-STAGE-GROUND-01",
+            "AR-T087-STAGE-FOREGROUND-01",
+        )
+        requests = [
+            next(item for item in real_registry["requests"] if item["request_id"] == request_id)
+            for request_id in reversed(request_ids)
+        ]
+        registry_path.write_text(
+            json.dumps({"schema_version": 1, "registry_id": "test", "requests": requests}),
+            encoding="utf-8",
+        )
+        fixture_drop = root / "tools/art_studio/inbox/AR-T083-FIXTURE-001"
+        fixture_drop.mkdir(parents=True, exist_ok=True)
+        (fixture_drop / "fixture-stage.svg").write_text(
+            '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"></svg>',
+            encoding="utf-8",
+        )
+        results = preflight_stage_requests(load_registry(registry_path), root)
+        self.assertEqual(
+            [result["request_id"] for result in results],
+            list(request_ids),
+        )
+        self.assertTrue(all(result["state"] == "MISSING" for result in results))
+        self.assertFalse(
+            any(result["request_id"] == "AR-T083-FIXTURE-001" for result in results)
+        )
+
+    def test_preflight_is_zero_mutation_and_keeps_aiko_intact(self):
+        root = self.make_root()
+        registry_path = root / "tools/art_studio/art_requests.json"
+        source_registry = ROOT / "tools/art_studio/art_requests.json"
+        before = source_registry.read_bytes()
+        registry_path.write_bytes(before)
+
+        fixture_drop = root / "tools/art_studio/inbox/AR-T083-FIXTURE-001"
+        fixture_drop.mkdir(parents=True, exist_ok=True)
+        (fixture_drop / "fixture-stage.svg").write_text(
+            '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"></svg>',
+            encoding="utf-8",
+        )
+
+        loaded = load_registry(registry_path)
+        results = preflight_stage_requests(loaded, root)
+        self.assertEqual(len(results), 4)
+        self.assertEqual(registry_path.read_bytes(), before)
+
+        aiko = next(
+            item for item in loaded["requests"]
+            if item["request_id"] == "AR-T083-AIKO-BW001-01"
+        )
+        self.assertEqual(aiko["status"], "REQUESTED")
+        self.assertEqual(aiko["source_files"], [])
+        self.assertIsNone(aiko["output"])
+        self.assertEqual(registry_path.read_bytes(), before)
 
     def test_state_machine_is_explicit(self):
         self.assertEqual(TRANSITIONS["REQUESTED"], {"GENERATED", "REJECTED"})

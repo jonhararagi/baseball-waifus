@@ -761,6 +761,129 @@ def command_reject(args, registry_path: Path) -> int:
     print(f"{result['request_id']} -> {result['status']}")
     return 0
 
+
+STAGE_PREFLIGHT_REQUEST_IDS = (
+    "AR-T084-STAGE-BG-FAR-01",
+    "AR-T085-STAGE-BG-MID-01",
+    "AR-T086-STAGE-GROUND-01",
+    "AR-T087-STAGE-FOREGROUND-01",
+)
+
+PREFLIGHT_STATES = ("READY", "MISSING", "AMBIGUOUS", "INVALID")
+
+def _preflight_supported_sources(request: dict, root: Path) -> tuple[Path | None, list[Path]]:
+    drop_zone_value = request.get("drop_zone", "")
+    if not is_safe_relative_path(drop_zone_value):
+        return None, []
+    drop_zone = root / str(drop_zone_value)
+    inbox_root = root / "tools" / "art_studio" / "inbox"
+    if not relative_inside(drop_zone, inbox_root):
+        return None, []
+    if not drop_zone.is_dir():
+        return None, []
+    supported = sorted(
+        path
+        for path in drop_zone.iterdir()
+        if path.is_file() and path.suffix.lower() in {".png", ".jpg", ".jpeg", ".svg"}
+    )
+    return drop_zone, supported
+
+def preflight_request(request: dict, root: Path = ROOT) -> dict:
+    drop_zone, supported = _preflight_supported_sources(request, root)
+    request_errors = validate_request(request)
+
+    target_conflict = False
+    target_value = request.get("target_path", "")
+    if (
+        not request_errors
+        and is_safe_relative_path(target_value)
+        and relative_inside(
+            root / str(target_value),
+            root / target_root_for(request["asset_kind"]),
+        )
+    ):
+        target_conflict = (root / str(target_value)).exists()
+
+    base = {
+        "request_id": str(request.get("request_id", "")),
+        "supported_sources": len(supported),
+        "source": supported[0].name if len(supported) == 1 else None,
+    }
+
+    if request_errors:
+        return {
+            **base,
+            "state": "INVALID",
+            "reason": "request invalid: " + "; ".join(request_errors),
+        }
+
+    if target_conflict:
+        return {
+            **base,
+            "state": "INVALID",
+            "reason": f"target conflict: {request['target_path']}",
+        }
+
+    if drop_zone is None:
+        return {
+            **base,
+            "state": "MISSING",
+            "reason": "drop zone missing",
+        }
+
+    if not supported:
+        return {
+            **base,
+            "state": "MISSING",
+            "reason": "no supported source files",
+        }
+
+    if len(supported) > 1:
+        names = ", ".join(path.name for path in supported)
+        return {
+            **base,
+            "state": "AMBIGUOUS",
+            "reason": f"multiple supported sources: {names}",
+        }
+
+    source = discover_source(request, root)
+    try:
+        image = validate_image_file(request, source)
+    except ArtRequestError as exc:
+        return {
+            **base,
+            "state": "INVALID",
+            "reason": str(exc),
+        }
+
+    return {
+        **base,
+        "state": "READY",
+        "reason": f"source={image['filename']}; dimensions={image['width']}x{image['height']}",
+    }
+
+def preflight_stage_requests(registry: dict, root: Path = ROOT) -> list[dict]:
+    results = []
+    for request_id in STAGE_PREFLIGHT_REQUEST_IDS:
+        request = find_request(registry, request_id)
+        results.append(preflight_request(request, root))
+    return results
+
+def command_preflight_stage(args, registry_path: Path, root: Path) -> int:
+    results = preflight_stage_requests(load_registry(registry_path), root)
+    for result in results:
+        print(
+            " | ".join(
+                (
+                    result["request_id"],
+                    result["state"],
+                    result["reason"],
+                    f"supported_sources={result['supported_sources']}",
+                )
+            )
+        )
+    return 0
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="BaseWarriors Art Request / AI Asset Intake")
     parser.add_argument("--root", default=str(ROOT), help="repository root")
@@ -805,6 +928,11 @@ def build_parser() -> argparse.ArgumentParser:
     reject.add_argument("request_id")
     reject.add_argument("--reason", required=True)
 
+    sub.add_parser(
+        "preflight-stage",
+        help="non-destructive preflight for the four CombatStage production art requests",
+    )
+
     return parser
 
 def main(argv: list[str] | None = None) -> int:
@@ -830,6 +958,8 @@ def main(argv: list[str] | None = None) -> int:
             return command_approve(args, registry_path, root)
         if args.command == "reject":
             return command_reject(args, registry_path)
+        if args.command == "preflight-stage":
+            return command_preflight_stage(args, registry_path, root)
     except ArtRequestError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2

@@ -34,6 +34,13 @@ jobs:
           set -euo pipefail
           python -m unittest tools/art_studio/art_request_test.py
 
+      - name: Run T090 CombatStage art intake preflight
+        run: |
+          set -euo pipefail
+          python tools/art_studio/art_request.py preflight-stage | tee /tmp/t090-preflight.txt
+          test "$(grep -Ec '^AR-T08(4|5|6|7)-STAGE-' /tmp/t090-preflight.txt)" -eq 4
+          ! grep -q 'AR-T083-FIXTURE-001' /tmp/t090-preflight.txt
+
       - name: Smoke-test sample request registry
         run: |
           set -euo pipefail
