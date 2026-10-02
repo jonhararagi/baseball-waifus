@@ -10,6 +10,7 @@ const T074_ART = process.env.T074_ART === "1";
 const T077_COMBAT = process.env.T077_COMBAT === "1";
 const T078_STAGE = process.env.T078_STAGE === "1";
 const T079_STAGE = process.env.T079_STAGE === "1";
+const T094_COMBAT_LOOP = process.env.T094_COMBAT_LOOP === "1";
 const SITE_DIR = resolve(process.env.T072_SITE_DIR || "site");
 const EVIDENCE_DIR = resolve(
   process.env.T072_EVIDENCE_DIR
@@ -527,6 +528,166 @@ async function run() {
     const screenshots = {};
 
     screenshots.home = await screenshot(cdp, "01-home-aiko-starter");
+
+
+    if (T094_COMBAT_LOOP) {
+      const runStartedAt = Date.now();
+      const browserVersion = await cdp.send("Browser.getVersion");
+      const timeline = [];
+      const checkpoints = {};
+      let lastSignature = "";
+
+      const readCombatState = async () => cdpEvaluate(cdp, "(() => { const canvas = document.querySelector('#gameCanvas'); const d = canvas?.dataset || {}; const rect = canvas?.getBoundingClientRect(); return { battlePhase: d.combatBattlePhase || '', tacticalTurn: d.combatTacticalTurn === '' ? null : Number(d.combatTacticalTurn), tacticalMaxTurns: d.combatTacticalMaxTurns === '' ? null : Number(d.combatTacticalMaxTurns), timingActive: d.combatTimingActive === 'true', timingGrade: d.combatTimingGrade || '', combatResult: d.combatResult || '', presentationPhase: d.combatStagePresentationPhase || '', presentationActive: d.combatPresentationActive === 'true', stageContract: d.combatStageContract || '', actorCount: d.combatStageActorCount === '' ? null : Number(d.combatStageActorCount), playerCount: d.combatStagePlayerCount === '' ? null : Number(d.combatStagePlayerCount), enemyCount: d.combatStageEnemyCount === '' ? null : Number(d.combatStageEnemyCount), canvasVisible: Boolean(rect && rect.width > 0 && rect.height > 0), canvasRect: rect ? { left: rect.left, top: rect.top, width: rect.width, height: rect.height } : null }; })()");
+
+      const recordObservation = async (label = "OBSERVATION") => {
+        const state = await readCombatState();
+        const signature = [state.battlePhase, state.tacticalTurn, state.timingActive, state.timingGrade, state.combatResult, state.presentationPhase, state.presentationActive].join("|");
+        if (signature !== lastSignature) {
+          timeline.push({ at_ms: Date.now() - runStartedAt, label, ...state });
+          lastSignature = signature;
+        }
+        return state;
+      };
+
+      const waitCombatFor = async (condition, { timeoutMs = 6000, intervalMs = 25, label = "combat state" } = {}) => {
+        const deadline = Date.now() + timeoutMs;
+        while (Date.now() < deadline) {
+          const state = await recordObservation(label);
+          if (condition(state)) return state;
+          await sleep(intervalMs);
+        }
+        const finalState = await recordObservation(label + " TIMEOUT");
+        throw new Error("T094 TIMEOUT: " + label + " " + JSON.stringify(finalState));
+      };
+
+      const markCheckpoint = async (name, condition, timeoutMs = 6000) => {
+        const state = await waitCombatFor(condition, { timeoutMs, label: name });
+        checkpoints[name] = { at_ms: Date.now() - runStartedAt, ...state };
+        return state;
+      };
+
+      await waitFor(
+        async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#home-view') && !document.querySelector('#home-view').hidden)"),
+        { timeoutMs: 30000, label: "T094 Home visible" }
+      );
+      await cdpClickSelector(cdp, ".home-action-play");
+
+      await waitFor(
+        async () => cdpEvaluate(cdp, "(() => { const c = document.querySelector('#gameCanvas'); const d = c?.dataset || {}; return Boolean(c && c.getBoundingClientRect().width > 0 && c.getBoundingClientRect().height > 0 && d.combatStageContract === 'COMBAT_STAGE_2_5D' && d.combatStageActorCount === '5'); })()"),
+        { timeoutMs: 30000, label: "T094 Combat formation initialized" }
+      );
+
+      await markCheckpoint(
+        "FORMATION",
+        (state) => state.stageContract === "COMBAT_STAGE_2_5D" && state.actorCount === 5 && state.playerCount === 4 && state.enemyCount === 1 && state.canvasVisible && state.tacticalTurn === 0
+      );
+
+      await waitFor(
+        async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#action-bat') && !document.querySelector('#action-bat').disabled)"),
+        { timeoutMs: 6000, label: "T094 BATEAR ready for T1" }
+      );
+      await cdpClickSelector(cdp, "#action-bat");
+
+      for (const turn of [1, 2, 3, 4, 5]) {
+        const targetBattlePhase = turn === 5 ? "CLIMAX" : "TACTICAL";
+        await markCheckpoint(
+          "TACTICAL " + String(turn),
+          (state) => state.tacticalTurn === turn && state.battlePhase === targetBattlePhase
+        );
+        if (turn < 5) {
+          await waitCombatFor(
+            (state) => state.tacticalTurn === turn && state.presentationPhase === "COMPLETE" && state.presentationActive === false,
+            { timeoutMs: 6000, label: "TACTICAL " + String(turn) + " presentation complete" }
+          );
+          await waitFor(
+            async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#action-bat') && !document.querySelector('#action-bat').disabled)"),
+            { timeoutMs: 6000, label: "T094 BATEAR ready before T" + String(turn + 1) }
+          );
+          await cdpClickSelector(cdp, "#action-bat");
+        }
+      }
+
+      await markCheckpoint(
+        "CLIMAX",
+        (state) => state.battlePhase === "CLIMAX" && state.tacticalTurn === 5
+      );
+
+      await markCheckpoint(
+        "TIMING ACTIVE",
+        (state) => state.battlePhase === "CLIMAX" && state.tacticalTurn === 5 && state.timingActive === true,
+        6000
+      );
+
+      await sleep(680);
+      const timingClickState = await readCombatState();
+      requireCondition(timingClickState.timingActive === true, "T094 timing window closed before physical input", timingClickState);
+      const timingRect = timingClickState.canvasRect;
+      requireCondition(timingRect && timingRect.width > 0 && timingRect.height > 0, "T094 timing canvas geometry unavailable", timingRect);
+      const clickX = timingRect.left + timingRect.width / 2;
+      const clickY = timingRect.top + timingRect.height / 2;
+      await cdp.send("Input.dispatchMouseEvent", { type: "mousePressed", x: clickX, y: clickY, button: "left", clickCount: 1 });
+      await cdp.send("Input.dispatchMouseEvent", { type: "mouseReleased", x: clickX, y: clickY, button: "left", clickCount: 1 });
+
+      const timingResolved = await markCheckpoint(
+        "TIMING RESOLUTION",
+        (state) => state.timingActive === false && Boolean(state.timingGrade),
+        3000
+      );
+      const combatResult = await markCheckpoint(
+        "COMBAT RESULT",
+        (state) => Boolean(state.combatResult),
+        5000
+      );
+      const presentationReturn = await markCheckpoint(
+        "RETURN",
+        (state) => state.presentationPhase === "COMBAT_RETURN",
+        5000
+      );
+      const presentationComplete = await waitCombatFor(
+        (state) => state.presentationPhase === "COMPLETE" && state.presentationActive === false,
+        { timeoutMs: 5000, label: "T094 presentation complete after RETURN" }
+      );
+
+      const finalRuntime = await readCombatState();
+      const sameOriginErrors = pageExceptions
+        .map((item) => item?.exception?.description || item?.text || "")
+        .filter(Boolean)
+        .filter((entry) => entry.includes(baseUrl) || entry.includes("/js/"));
+      requireCondition(sameOriginErrors.length === 0, "T094 same-origin page exceptions detected", sameOriginErrors);
+
+      const required = ["FORMATION","TACTICAL 1","TACTICAL 2","TACTICAL 3","TACTICAL 4","TACTICAL 5","CLIMAX","TIMING ACTIVE","TIMING RESOLUTION","COMBAT RESULT","RETURN"];
+      requireCondition(required.every((name) => checkpoints[name]), "T094 required checkpoints incomplete", { checkpoints, required });
+      requireCondition(checkpoints["TACTICAL 5"].tacticalTurn === 5 && checkpoints["TACTICAL 5"].battlePhase === "CLIMAX" && checkpoints["CLIMAX"].tacticalTurn === 5, "T094 T5 -> CLIMAX order not verified", { tactical5: checkpoints["TACTICAL 5"], climax: checkpoints.CLIMAX });
+      requireCondition(checkpoints["TIMING RESOLUTION"].timingGrade !== "", "T094 timing grade missing after physical input", timingResolved);
+      requireCondition(checkpoints["COMBAT RESULT"].combatResult !== "", "T094 combat result missing after timing resolution", combatResult);
+      requireCondition(checkpoints["RETURN"].presentationPhase === "COMBAT_RETURN", "T094 RETURN presentation phase not observed", presentationReturn);
+
+      const evidence = {
+        task: "T094",
+        sha: process.env.GITHUB_SHA || "local",
+        runId: process.env.GITHUB_RUN_ID || "local",
+        browser: BROWSER_BIN,
+        browserVersion: { product: browserVersion?.product || "", revision: browserVersion?.revision || "", userAgent: browserVersion?.userAgent || "" },
+        harness: "existing character_journey_browser_probe.mjs via T094_COMBAT_LOOP=1",
+        baseUrl,
+        checkpoints,
+        timingInput: { method: "CDP Input.dispatchMouseEvent", x: Math.round(clickX), y: Math.round(clickY), source: "real browser pointer input path" },
+        timeline,
+        presentationComplete,
+        finalRuntime,
+        network: { requestCount: network.requests.length, responseCount: network.responses.length },
+        consoleErrors: consoleErrors.map((entry) => ({ text: entry.text, url: entry.url, source: entry.source })),
+        pageErrors: sameOriginErrors
+      };
+      writeFileSync(join(EVIDENCE_DIR, "t094-normal-combat-cdp-evidence.json"), JSON.stringify(evidence, null, 2) + "\n", "utf8");
+
+      console.log("T094 BROWSER AUTOMATION = PASS_REAL");
+      for (const name of required) console.log(name + " = PASS_REAL");
+      console.log("TIMING GRADE = " + checkpoints["TIMING RESOLUTION"].timingGrade);
+      console.log("COMBAT RESULT = " + checkpoints["COMBAT RESULT"].combatResult);
+      console.log("FINAL BATTLE PHASE = " + finalRuntime.battlePhase);
+      return;
+    }
 
     if (T077_COMBAT) {
       await cdpClickSelector(cdp, ".home-action-play");

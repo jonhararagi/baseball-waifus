@@ -1,0 +1,71 @@
+name: T094 Deterministic Normal Combat CDP QA
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "webapp/js/combat.js"
+      - "webapp/js/combat_presentation_director.js"
+      - "webapp/js/character_journey_browser_probe.mjs"
+      - "webapp/js/app.js"
+      - "webapp/index.html"
+      - ".github/workflows/t094-normal-combat-cdp.yml"
+  workflow_dispatch:
+
+jobs:
+  t094-normal-combat-cdp:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Prepare runtime data
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p webapp/data
+          cp data/characters_queue.json webapp/data/characters_queue.json
+          cp data/game_schemas_recycled.json webapp/data/game_schemas_recycled.json
+          test -s webapp/data/characters_queue.json
+          test -s webapp/data/game_schemas_recycled.json
+      - name: Locate Chrome
+        id: chrome
+        shell: bash
+        run: |
+          set -euo pipefail
+          BROWSER_BIN=""
+          for candidate in google-chrome chromium chromium-browser; do
+            if command -v "$candidate" >/dev/null 2>&1; then
+              BROWSER_BIN="$(command -v "$candidate")"
+              break
+            fi
+          done
+          test -n "$BROWSER_BIN"
+          echo "browser_bin=$BROWSER_BIN" >> "$GITHUB_OUTPUT"
+      - name: Validate T094 probe syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check webapp/js/character_journey_browser_probe.mjs
+      - name: Run T094 deterministic normal combat CDP proof
+        shell: bash
+        env:
+          T072_SITE_DIR: webapp
+          T072_EVIDENCE_DIR: browser-evidence/T094/$GITHUB_SHA/$GITHUB_RUN_ID
+          T094_COMBAT_LOOP: "1"
+          BROWSER_BIN: ${{ steps.chrome.outputs.browser_bin }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$T072_EVIDENCE_DIR"
+          node webapp/js/character_journey_browser_probe.mjs
+      - name: Upload T094 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: t094-normal-combat-cdp-evidence
+          path: browser-evidence/T094/
+          if-no-files-found: warn
