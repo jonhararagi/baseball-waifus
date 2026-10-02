@@ -36,7 +36,7 @@ assert.equal(action.phase, "ACTION");
 assert.equal(action.cameraAnchor, "ACTION");
 assert.equal(action.cameraSource, "ACTOR");
 
-director.update(0.08);
+director.update(0.16);
 const impact = director.getCameraTransform({ width: 720, height: 1280 });
 assert.equal(impact.phase, "IMPACT");
 assert.equal(impact.cameraAnchor, "IMPACT");
