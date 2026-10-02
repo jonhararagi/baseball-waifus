@@ -349,7 +349,9 @@ export class CombatPresentationDirector {
       this.stepElapsedMs = stepDuration;
       if (this.stepIndex >= this.stepDefinitions.length - 1) {
         this.active = false;
-        this.phase = COMBAT_PRESENTATION_PHASE.COMPLETE;
+        this.phase = this.sequenceKind === "ULTIMATE_STAGING"
+          ? COMBAT_ULTIMATE_PHASE.COMPLETE
+          : COMBAT_PRESENTATION_PHASE.COMPLETE;
         this.stepIndex = this.stepDefinitions.length;
         this.stepElapsedMs = 0;
         this._emitStep("COMPLETE");
