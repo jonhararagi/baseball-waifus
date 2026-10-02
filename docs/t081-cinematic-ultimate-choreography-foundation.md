@@ -2,9 +2,9 @@
 
 ## Status
 
-**IMPLEMENTED:** Ultimate staging choreography foundation only.
+**IMPLEMENTED:** Ultimate staging choreography plus the T081-B action/projectile/impact/reaction presentation checkpoint.
 
-**PROPOSED / NOT IMPLEMENTED:** Ultimate action projectile, impact, enemy reaction and final VFX/audio production.
+**NOT IMPLEMENTED:** final character art, final VFX/audio production, and new gameplay Ultimate mechanics.
 
 T081 is intentionally a checkpoint. It does not introduce a new combat Ultimate mechanic.
 
@@ -60,7 +60,17 @@ The existing T080 cinematic HUD visibility behavior is reused. The character car
 
 ## Trigger boundary
 
-The runtime exposes a **QA-only** trigger when the page is opened with `?qa=t081`:
+The runtime exposes **QA-only** triggers when the page is opened with `?qa=t081`:
+
+```text
+window.__BW_T081_TRIGGER_ULTIMATE__()
+window.__BW_T081B_CONTINUE_ULTIMATE__(result)
+window.__BW_T081B_GET_RUNTIME__()
+```
+
+The first starts the T081 staging sequence. The second continues from `ULTIMATE_ACTION_PREP` using a supplied already-resolved presentation result. The third returns presentation, gameplay and stage snapshots for browser immutability proof.
+
+These are presentation test hooks, not player-facing Ultimate mechanics.
 
 ```text
 window.__BW_T081_TRIGGER_ULTIMATE__()
@@ -95,18 +105,34 @@ T081 does not modify:
 
 The contract test explicitly verifies the CombatStage actor data remains unchanged after the presentation completes.
 
-## Future checkpoint T081-B
+## T081-B implemented checkpoint
 
-Not implemented here:
+Implemented as a separate continuation from `ULTIMATE_ACTION_PREP`:
 
 ```text
-ACTION
-→ BASEBALL PROJECTILE
-→ IMPACT
-→ ENEMY REACTION
+ULTIMATE_ACTION_PREP
+→ ULTIMATE_ACTION
+→ ULTIMATE_IMPACT
+→ ULTIMATE_REACTION
+→ ULTIMATE_RETURN
+→ ULTIMATE_COMPLETE
 ```
 
-That remains a separate checkpoint so the task stays recoverable and small.
+The continuation consumes a pre-resolved presentation result. The result can carry an existing combat outcome and damage value, but the presentation layer never calculates or mutates gameplay state.
+
+The existing baseball presentation path is reused through `BatterRenderer` and `CombatStage.resolveCinematicProjectile()`. The projectile remains presentation-only and is anchored to:
+
+```text
+BAT
+→ PROJECTILE
+→ ENEMY.IMPACT
+```
+
+Impact invokes existing `CombatEffects` and particle/camera feedback. Enemy recoil is expressed through the existing stage actor frame resolver, without introducing a gameplay reaction state.
+
+Return resets the BatterRenderer to `IDLE`, restores the camera through `RETURN`, and lets the T080 cinematic HUD cleanup recover after `ULTIMATE_COMPLETE`.
+
+Final art, final VFX/audio and player-facing Ultimate gameplay rules remain outside T081-B.
 
 ## Asset status
 
