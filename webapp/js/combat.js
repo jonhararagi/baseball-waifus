@@ -3,6 +3,7 @@ import { resolveClimaxTurn, resolveTacticalTurn } from "./combat_core.js";
 import { AreaThemeManager } from "./area_theme_manager.js";
 import { BatterRenderer } from "./batter_renderer.js";
 import { CombatEffects } from "./combat_effects.js";
+import { CombatPresentationDirector } from "./combat_presentation_director.js";
 import { CombatHUD } from "./combat_hud.js";
 import { KytosCombatPresentation } from "./kytos_combat_presentation.js";
 import { PerformanceAdapter } from "./performance_adapter.js";
@@ -179,7 +180,9 @@ export class CombatRenderer {
     onTacticalTurn = null,
     onClimaxStart = null,
     onLocalCombatResult = null,
-    getEconomyBoosts = null
+    getEconomyBoosts = null,
+    presentationDirector = null,
+    onPresentationStep = null
   } = {}) {
     if (!(canvas instanceof HTMLCanvasElement)) {
       throw new TypeError("CombatRenderer requires a canvas element");
@@ -218,6 +221,7 @@ export class CombatRenderer {
     this.onClimaxStart = typeof onClimaxStart === "function" ? onClimaxStart : null;
     this.onLocalCombatResult = typeof onLocalCombatResult === "function" ? onLocalCombatResult : null;
     this.getEconomyBoosts = typeof getEconomyBoosts === "function" ? getEconomyBoosts : () => ({ scrapMultiplier: 1, timingGraceMs: 0 });
+    this.onPresentationStep = typeof onPresentationStep === "function" ? onPresentationStep : null;
     this.onEconomyTimingConsumed = null;
     this.onEconomyRewardConsumed = null;
     this.themeManager = new AreaThemeManager("cyberpunk");
@@ -226,6 +230,9 @@ export class CombatRenderer {
       getSpritePath: (batter) => this._spritePathForCharacter(batter)
     });
     this.combatEffects = new CombatEffects();
+    this.combatPresentation = presentationDirector || new CombatPresentationDirector({
+      onStep: (event) => this.onPresentationStep?.(event)
+    });
     this.combatHud = new CombatHUD({ getResources: getHudResources });
     this.kytosPresentation = new KytosCombatPresentation();
     this.kytosPresentationState = null;
@@ -428,6 +435,11 @@ export class CombatRenderer {
     this.internalEnergy = result.energy_after;
     this.tacticalEffectiveness = result.effectiveness_after;
     this.lastTacticalEvent = result;
+    this.combatPresentation.startFromCombatResult(result, {
+      attackerId: this.state?.batter?.id,
+      targetId: this.state?.pitcher?.id,
+      actionType: "TACTICAL_HIT"
+    });
 
     this.audioBridge?.playTacticalCard?.();
     this.audioBridge?.playTacticalCharge?.();
@@ -462,6 +474,12 @@ export class CombatRenderer {
       internalEnergy: this.internalEnergy,
       tacticalEffectiveness: this.tacticalEffectiveness,
       round: this.round
+    });
+
+    this.combatPresentation.startFromCombatResult(result, {
+      attackerId: this.state?.batter?.id,
+      targetId: this.state?.pitcher?.id,
+      actionType: result.outcome || "CLIMAX_ACTION"
     });
 
     this.bossHp = result.boss_hp_after;
@@ -504,6 +522,10 @@ export class CombatRenderer {
     this.lastTacticalEvent = null;
     this.onState?.(this.state);
     return result;
+  }
+
+  getPresentationState() {
+    return this.combatPresentation.getState();
   }
 
   getBattleLoopState() {
@@ -866,6 +888,12 @@ export class CombatRenderer {
       ...(areaId ? { area_id: areaId } : {})
     };
 
+    this.combatPresentation.startFromCombatResult(dto, {
+      attackerId: this.state?.batter?.id,
+      targetId: this.state?.pitcher?.id,
+      actionType: dto?.event || dto?.action || dto?.animation?.event || "COMBAT_ACTION"
+    });
+
     this._awardScrap(dto);
 
     await this.assetBank.preload([
@@ -972,6 +1000,9 @@ export class CombatRenderer {
     }
 
     this.batterRenderer.update(delta);
+    this.combatPresentation.update(delta);
+    this.canvas.dataset.combatPresentationPhase = this.combatPresentation.getState().phase;
+    this.canvas.dataset.combatPresentationActive = String(this.combatPresentation.isActive());
     this.combatEffects.update(
       delta,
       this.batterRenderer.lastBatPose
@@ -1055,7 +1086,10 @@ export class CombatRenderer {
     }
 
     if (this.matchReady && this.state) {
+      target.save();
+      this.combatPresentation.applyCamera(target, w, h);
       this._drawMatchState(target, w, h);
+      target.restore();
       this._drawBattleLoopHud(target, w, h);
     }
 

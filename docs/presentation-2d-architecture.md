@@ -139,3 +139,41 @@ These are proposal-level event vocabulary, not implemented product features.
 - **PROPOSAL:** architecture intended for future implementation.
 - **FUTURE:** deliberately outside T061.
 - **UNKNOWN:** requires a future audit or environment-specific validation.
+
+
+## T077 Combat Cinematic Presentation Foundation
+
+**T077 status:** IMPLEMENTED FOUNDATION
+
+`webapp/js/combat_presentation_director.js` adds the reusable presentation director for the existing Canvas 2D combat renderer. It does not calculate gameplay and consumes an existing combat result as presentation input.
+
+Sequence contract:
+
+```text
+COMBAT_IDLE
+→ ATTACKER_FOCUS
+→ ACTION
+→ IMPACT
+→ TARGET_REACTION
+→ COMBAT_RETURN
+→ COMPLETE
+```
+
+Each step exposes a deterministic `CAMERA` presentation command with focus target, zoom, pan, easing, existing attacker/target IDs, action type, combat result and decided damage. Audio, VFX and haptic hook names are exposed as presentation requests for later integration without creating new effect systems.
+
+The director also provides deterministic camera transform interpolation, Canvas 2D camera application through save/restore-compatible transforms, explicit cancel-to-return fallback, runtime state inspection and presentation-only result normalization.
+
+`CombatRenderer` now owns one director instance and feeds it from existing `TurnResultDTO` results and existing local tactical/climax results. The renderer applies the camera only to the match scene, leaving the existing HUD path stable. No Kytos presentation system, timing rules, combat formulas, rewards or economy rules were changed.
+
+The architectural boundary remains:
+
+```text
+PLAYER DATA
+→ GAMEPLAY SYSTEMS
+→ BASEBALL / COMBAT RESULT
+→ DOMAIN EVENTS
+→ PRESENTATION
+→ UI / AVATAR / AUDIO / VFX / CAMERA
+```
+
+T077 deliberately remains foundation-level. Full cinematic choreography, character-specific action staging, enemy movement, production VFX and final camera polish belong to subsequent slices.
