@@ -8720,3 +8720,33 @@ La infraestructura del combat slice está bastante avanzada, pero no corresponde
 
 **NEXT:** T098 · NORMAL COMBAT DEFEAT / NO-REWARD HANDOFF PROOF · TIMER: 1–2 horas
 
+### T098 · Normal Combat Defeat / No-Reward Handoff Proof
+
+**BASE SHA:** `41c9d8bff49747e7ea8ec1ac154fdf1d6f621d25`
+
+**RESULT:** BLOCKED.
+
+**DEFEAT RESULT:** NOT OBSERVABLE EN EL RUNTIME NORMAL ACTUAL.
+
+**EVIDENCE:** `webapp/js/combat.js` solo inicializa `TACTICAL`, entra en `CLIMAX` tras cinco turnos y, en `_resolveClimaxDamage()`, transiciona a `VICTORY` cuando `result.victory === true`; en caso contrario vuelve a `result.phase`, que en `combat_core.js` es `TACTICAL`. No existe una transición normal a `DEFEAT` en ese runtime.
+
+**REWARD DOMAIN:** `webapp/js/reward_resolver.js` ya define `T062_REWARD_TABLE.DEFEAT = []` y la razón `NO_REWARD_ON_DEFEAT`. El handoff de `app.js` acepta `VICTORY` o `DEFEAT`, pero la rama `DEFEAT` no puede activarse desde el combate local normal actual.
+
+**PLAYER STATE:** NOT VERIFIED. Sin un `DEFEAT` runtime legítimo no corresponde fabricar el estado para esta prueba.
+
+**PERSISTENCE:** NOT VERIFIED. No se debe convertir un fixture sintético de derrota en evidencia de persistencia runtime.
+
+**RETURN:** NOT VERIFIED. El runtime normal no expone una fase terminal `DEFEAT` para observar `DEFEAT → RETURN`.
+
+**TEST:** Inspección directa de `combat.js`, `combat_core.js`, `reward_pipeline.js`, `reward_resolver.js` y `api.js`. Los tests de reward ya cubren sintéticamente `DEFEAT → []`, pero no sustituyen la prueba runtime solicitada.
+
+**CHANGES:** documentación únicamente.
+
+**FINAL SHA:** `FINAL_PENDING`
+
+**STATUS:** BLOCKED.
+
+**BLOCKER:** no existe actualmente un camino legítimo y reproducible de `COMBAT → DEFEAT` en el runtime normal WebApp; crear uno sería una ampliación de gameplay fuera de T098.
+
+**NEXT:** T099 · NORMAL COMBAT DEFEAT TERMINAL PATH DEFINITION / RUNTIME HOOK · TIMER: 2–4 horas
+
