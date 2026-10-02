@@ -533,6 +533,29 @@ export class CombatRenderer {
     return this.combatPresentation.getState();
   }
 
+  triggerUltimateCinematicStaging(characterId = null, targetId = null) {
+    if (!this.matchReady || !this.state) return null;
+    const attackerId = String(
+      characterId
+      || this.state?.batter?.id
+      || this.state?.batter?.character_id
+      || this.combatStage.selectedActorId
+      || ""
+    );
+    const resolvedTargetId = String(
+      targetId
+      || this.state?.pitcher?.id
+      || this.state?.pitcher?.character_id
+      || ""
+    );
+    if (!attackerId || !resolvedTargetId) return null;
+
+    return this.combatPresentation.startUltimateStaging({
+      attackerId,
+      targetId: resolvedTargetId
+    });
+  }
+
   getBattleLoopState() {
     return {
       phase: this.battlePhase,
@@ -1170,6 +1193,39 @@ export class CombatRenderer {
   _handleCombatPresentationStep(event) {
     const phase = String(event?.phase || "").toUpperCase();
     const result = event?.result || {};
+
+    if (phase === "ULTIMATE_TRIGGER" || phase === "ULTIMATE_STAGING") {
+      this._syncCinematicOverlayState();
+      this.batterRenderer.setState?.("IDLE");
+      this.canvas.dataset.combatStageUltimateActive = "true";
+      return;
+    }
+    if (phase === "ULTIMATE_CHARACTER_FOCUS") {
+      this._syncCinematicOverlayState();
+      this.batterRenderer.beginWindup();
+      this.canvas.dataset.combatStageUltimateActive = "true";
+      return;
+    }
+    if (phase === "ULTIMATE_ACTION_PREP") {
+      this.batterRenderer.beginWindup();
+      this.canvas.dataset.combatStageUltimateActive = "true";
+      return;
+    }
+    if (phase === "ULTIMATE_RETURN") {
+      this._syncCinematicOverlayState();
+      this.batterRenderer.setState?.("IDLE");
+      this.canvas.dataset.combatStageUltimateActive = "true";
+      return;
+    }
+    if (phase === "ULTIMATE_COMPLETE") {
+      this.batterRenderer.setState?.("IDLE");
+      this.canvas.dataset.combatStageUltimateActive = "false";
+      return;
+    }
+
+    if (phase === "ATTACKER_FOCUS") {
+    const phase = String(event?.phase || "").toUpperCase();
+    const result = event?.result || {};
     if (phase === "ATTACKER_FOCUS") {
       this.canvas.dataset.combatStageActionComplete = "false";
       this._syncCinematicOverlayState();
@@ -1255,7 +1311,7 @@ export class CombatRenderer {
       return;
     }
 
-    this._drawCombatSupportActor(ctx, actor, transform, color);
+    this._drawCombatSupportActor(ctx, actor, motion, color);
   }
 
   _drawCombatSupportActor(ctx, actor, transform, color) {
@@ -1263,12 +1319,13 @@ export class CombatRenderer {
     ctx.save();
     ctx.translate(transform.x, transform.y);
     ctx.rotate((transform.rotation * Math.PI) / 180);
+    ctx.globalAlpha = clamp(Number(transform.opacity ?? 1), 0, 1);
     ctx.fillStyle = "rgba(4, 8, 20, 0.82)";
     ctx.beginPath();
     ctx.ellipse(0, 0, radius * 0.72, radius, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = color;
-    ctx.globalAlpha = 0.9;
+    ctx.globalAlpha *= 0.9;
     ctx.lineWidth = 2.5;
     ctx.stroke();
     ctx.fillStyle = color;
@@ -1307,6 +1364,7 @@ export class CombatRenderer {
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(rotation);
+    ctx.globalAlpha = clamp(Number(frame.opacity ?? 1), 0, 1);
     ctx.scale(1 + pulse * 0.055, 1 - pulse * 0.035);
 
     ctx.fillStyle = "rgba(0,0,0,0.24)";
@@ -1471,6 +1529,9 @@ export class CombatRenderer {
     this.canvas.dataset.combatStageFilmable = String(stageState.filmable);
     this.canvas.dataset.combatStageActionContract = String(stageState.actionContract || "");
     this.canvas.dataset.combatStageActionPhases = (stageState.actionPhases || []).join(",");
+    this.canvas.dataset.combatStageUltimateContract = String(stageState.ultimateContract || "");
+    this.canvas.dataset.combatStageUltimatePhases = (stageState.ultimatePhases || []).join(",");
+    this.canvas.dataset.combatStageUltimateActive = String(this.combatPresentation.getState().sequenceKind === "ULTIMATE_STAGING");
     this.canvas.dataset.combatStagePresentationPhase = String(this.combatPresentation.getState().phase || "");
     this.canvas.dataset.combatStageCharacterState = String(this.batterRenderer.getState() || "");
     this.canvas.dataset.combatStageCharacterMotion = String(
