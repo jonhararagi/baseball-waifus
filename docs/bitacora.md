@@ -8606,3 +8606,20 @@ No producir arte final en T091. No ampliar Student 4v4. No crear otra cámara ni
 ### Avance orientativo
 
 La infraestructura del combat slice está bastante avanzada, pero no corresponde inflar el porcentaje global del proyecto por contratos o archivos que aún no son experiencia final. Esta revisión no modifica el porcentaje histórico de la bitácora anterior.
+
+
+### T092 · Normal Combat Browser Validation Infrastructure Check
+
+**BASE SHA:** `04835d224634a0a904d237c19251c7a09f704405`
+
+**INFRASTRUCTURE FINDING:** el gameplay sí alcanza internamente `tacticalTurn = 5`, pero el HUD pasa inmediatamente a `CLIMAX`; los probes existentes no exponían de forma estable `battlePhase`, `tacticalTurn`, `timingActive` ni el resultado de combate. Esto explica por qué la observación anterior podía registrar TACTICAL 4 → CLIMAX sin demostrar el checkpoint 5.
+
+**VALIDATION PATH:** usar CDP sobre el canvas existente y observar `data-combat-battle-phase`, `data-combat-tactical-turn`, `data-combat-timing-active`, `data-combat-timing-grade`, `data-combat-result` y el ya existente `data-combatStagePresentationPhase`. La entrada de Timing debe seguir siendo el input real del jugador; los atributos solo observan.
+
+**CHANGES:** instrumentación QA-observable mínima en `combat.js`. No se modificaron fórmulas, balance, presentación, arquitectura ni mecánicas.
+
+**TEST:** validación de sintaxis existente y ejecución de T077 sobre el mismo runtime para comprobar que la instrumentación no altera el cinematic slice.
+
+**BLOCKER:** ninguno de infraestructura para la observabilidad. El loop terminal completo queda para la prueba dedicada posterior.
+
+**NEXT:** T093 · FULL NORMAL COMBAT LOOP PROOF

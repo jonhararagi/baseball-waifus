@@ -1609,7 +1609,16 @@ export class CombatRenderer {
     this.canvas.dataset.combatStageActionPhases = (stageState.actionPhases || []).join(",");
     this.canvas.dataset.combatStageUltimateContract = String(stageState.ultimateContract || "");
     this.canvas.dataset.combatStageUltimatePhases = (stageState.ultimatePhases || []).join(",");
-    const ultimateState = this.combatPresentation.getState();
+    const loopState = this.getBattleLoopState();
+    const presentationState = this.combatPresentation.getState();
+    this.canvas.dataset.combatBattlePhase = String(loopState.phase || "");
+    this.canvas.dataset.combatTacticalTurn = String(loopState.tactical_turn ?? "");
+    this.canvas.dataset.combatTacticalMaxTurns = String(loopState.tactical_max_turns ?? "");
+    this.canvas.dataset.combatTimingActive = String(Boolean(this.timingState?.active));
+    this.canvas.dataset.combatTimingGrade = String(loopState.last_timing?.grade || "");
+    this.canvas.dataset.combatResult = String(presentationState.result?.result || "");
+    this.canvas.dataset.combatResultDamage = String(presentationState.result?.damage ?? "");
+    const ultimateState = presentationState;
     const ultimatePhase = String(ultimateState.phase || "");
     const ultimateFrames = [
       "ULTIMATE_STAGING",
