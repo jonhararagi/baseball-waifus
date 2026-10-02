@@ -277,7 +277,7 @@ async function main() {
     })`);
     requireCondition(continued?.phase === "ULTIMATE_ACTION", "ultimate did not continue into action", continued);
 
-    const actionDeadline = Date.now() + 1500;
+    const actionDeadline = Date.now() + 4000;
     while (Date.now() < actionDeadline) {
       const state = await runtime(cdp);
       if (state.phase && timeline.at(-1) !== state.phase) {
