@@ -1,3 +1,5 @@
+import { isApprovedArtBinding } from "./character_art_registry.js";
+
 const EMPTY_IDENTITY = Object.freeze({
   archetype: "IDENTITY // UNKNOWN",
   playIdentity: "PLAYSTYLE // UNKNOWN",
@@ -50,11 +52,7 @@ export function resolveCharacterDetailArt(characterId, artBinding = null) {
       || ""
   ).trim();
 
-  if (
-    String(artBinding?.status || "").toUpperCase() === "APPROVED"
-    && Boolean(artBinding?.project_asset)
-    && approvedPath
-  ) {
+  if (isApprovedArtBinding(artBinding) && approvedPath) {
     return {
       artPath: approvedPath,
       heroPath: approvedPath,
@@ -107,6 +105,7 @@ export function buildCharacterDetailViewModel({
   const styleTags = uniqueStrings(identity.style_tags);
   const signatureActions = uniqueStrings(identity.signature_action_ids);
   const skillRoles = uniqueStrings(identity.skill_roles);
+  const art = resolveCharacterDetailArt(character.character_id, artBinding);
 
   return {
     id: String(character.character_id),
@@ -120,8 +119,8 @@ export function buildCharacterDetailViewModel({
     duplicates: Math.max(quantity, safeInteger(progression?.duplicate_count, quantity)),
     unlocked,
     active,
-    ...resolveCharacterDetailArt(character.character_id, artBinding),
-    artSource: resolveCharacterDetailArt(character.character_id, artBinding).source,
+    ...art,
+    artSource: art.source,
     expressionPaths: character.character_id==="bw001"?Object.fromEntries(["neutral","focus","happy","surprised","determined"].map((m)=>[m,"./assets/characters/expressions/bw001_"+m+".svg"])):{} ,
     identity: {
       archetype: humanize(identity.archetype, EMPTY_IDENTITY.archetype),
