@@ -332,8 +332,8 @@ class ArtRequestTests(unittest.TestCase):
         self.assertEqual(final["status"], "VALIDATED")
         self.assertEqual(final["runtime_slot"], "stage.background.far")
         self.assertEqual(
-            final["output"]["target_path"],
-            "assets/stages/combat-stage--background--far--wide.svg",
+            final["output"]["path"],
+            request["target_path"],
         )
         self.assertTrue((root / final["output"]["target_path"]).is_file())
         self.assertEqual(final["source_files"][0]["filename"], "artist-original.svg")
