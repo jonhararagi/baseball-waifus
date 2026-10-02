@@ -1172,7 +1172,12 @@ export class CombatRenderer {
       this._drawZanSlash(target, w, h);
     }
 
-    this.combatHud.render(target, w, h, this.state, this.lastTurn);
+    const presentation = this.combatPresentation.getState();
+    const ultimateActive = presentation.active && String(presentation.sequenceKind || "").startsWith("ULTIMATE");
+    if (!ultimateActive) {
+      this.combatHud.render(target, w, h, this.state, this.lastTurn);
+    }
+    this.canvas.dataset.combatStageUltimateHudSuppressed = String(ultimateActive);
 
     target.restore();
 
