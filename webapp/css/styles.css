@@ -1074,6 +1074,12 @@ button {
   transition: opacity 120ms ease, visibility 0s linear 120ms;
 }
 
+#timing-feedback.is-cinematic-action {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
 #active-waifu-card.feedback-miss {
   animation: waifu-pout 620ms ease-in-out;
   border-color: rgba(255, 67, 86, 0.78);
