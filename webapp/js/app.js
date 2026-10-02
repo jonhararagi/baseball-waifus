@@ -470,6 +470,12 @@ renderer.onEconomyRewardConsumed = () => shopUI.consumeRewardTurn?.();
 
 if (new URLSearchParams(window.location.search).get("qa") === "t081") {
   window.__BW_T081_TRIGGER_ULTIMATE__ = () => renderer.triggerUltimateCinematicStaging();
+  window.__BW_T081B_CONTINUE_ULTIMATE__ = (result = {}) => renderer.continueUltimateCinematicAction(result);
+  window.__BW_T081B_GET_RUNTIME__ = () => ({
+    presentation: renderer.getPresentationState(),
+    battle: renderer.getBattleLoopState(),
+    stage: renderer.combatStage.getState()
+  });
 }
 const rosterPanel = new RosterPanel({
   root: rosterPanelRoot,
