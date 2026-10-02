@@ -9191,3 +9191,33 @@ La infraestructura del combat slice está bastante avanzada, pero no corresponde
 **BLOCKER:** el harness contiene más corrupción sintáctica heredada del experimento T107/T114R de la que puede corregirse dentro del límite de dos intentos de T114-R2. No se realizará una tercera reparación/ejecución dentro de esta task.
 
 **NEXT:** T115 · NORMAL COMBAT BROWSER HARNESS SYNTAX RECOVERY FINAL PASS · TIMER: 1–2 horas
+
+
+### T115 · Normal Combat Browser Harness Syntax Recovery Final Pass
+
+**Fecha:** 2026-10-02  
+**BASE SHA:** `149f8e78064e62b61e73739e535d900a85c0fc7c`  
+**HARNESS SHA:** `f0db6215bc7ce6e14d38c616853ce9b15d9b41e9`  
+**TIMER:** 1–2 horas
+
+**RESULT:** PARTIAL.
+
+**ROOT CAUSE:** fragmento JavaScript huérfano `OUNDARY = PASS_REAL");` fuera del bloque T114-R, remanente de la corrupción sintáctica acumulada durante T107/T114-R. Eliminado sin tocar la lógica de Timing ni el flujo de input.
+
+**SYNTAX:** PASS. GitHub Actions step `Validate T097 probe syntax` completó correctamente en Run `37076708364`, Job `111068124247`.
+
+**SMOKE:** PASS. La misma ejecución superó preparación de runtime, Node.js y localización de Chrome; además T101 y T109 ejecutaron el browser harness con éxito.
+
+**CHROMIUM/CDP:** REACHED. T101 = SUCCESS y T109 = SUCCESS en Job `111068124247`.
+
+**WORKFLOW:** FAIL como corrida global. El parser/harness está sano, pero pruebas históricas posteriores fallaron de forma independiente: T111 por assets de Character Detail no disponibles y T114-R2 por timeout de su prueba terminal. No son fallos de sintaxis del harness.
+
+**GAMEPLAY CHANGES:** NONE.
+
+**T096 INPUT:** READY. El harness volvió a cargar y ejecutar correctamente el flujo CDP; no se modificaron `sleep(620)`, coordenadas ni la secuencia `mouseMoved → mousePressed → mouseReleased`.
+
+**CHANGES:** eliminación de 4 líneas huérfanas del probe y esta documentación. Sin cambios de gameplay, rewards, persistence, balance o UI.
+
+**STATUS:** PARTIAL.
+
+**NEXT:** T116 · NORMAL COMBAT TERMINAL TIMING INPUT BROWSER PROOF AFTER HARNESS RECOVERY · TIMER: 1–2 horas
