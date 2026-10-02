@@ -102,5 +102,16 @@
     "drop_zone",
     "created_at",
     "updated_at"
-  ]
+  ],
+  "optional": [
+    "runtime_slot"
+  ],
+  "runtime_slots": {
+    "STAGE_BACKGROUND_FAR": "stage.background.far",
+    "STAGE_BACKGROUND_MID": "stage.background.mid",
+    "STAGE_GROUND": "stage.ground",
+    "STAGE_FOREGROUND": "stage.foreground",
+    "STAGE_FX_BACK": "stage.fx.back",
+    "STAGE_FX_FRONT": "stage.fx.front"
+  }
 }
