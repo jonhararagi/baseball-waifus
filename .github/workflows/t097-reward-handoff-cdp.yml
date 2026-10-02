@@ -108,6 +108,27 @@ jobs:
           mkdir -p "$T072_EVIDENCE_DIR"
           node webapp/js/character_journey_browser_probe.mjs
 
+      - name: Run T114-R historical T096 terminal timing recovery
+        if: always()
+        shell: bash
+        env:
+          T072_SITE_DIR: webapp
+          T072_EVIDENCE_DIR: browser-evidence/T114-R/$GITHUB_SHA/$GITHUB_RUN_ID
+          T114R_TERMINAL_INPUT_RECOVERY: "1"
+          BROWSER_BIN: ${{ steps.chrome.outputs.browser_bin }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$T072_EVIDENCE_DIR"
+          node webapp/js/character_journey_browser_probe.mjs
+
+      - name: Upload T114-R evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: t114-r-terminal-timing-recovery-evidence
+          path: browser-evidence/T114-R/
+          if-no-files-found: warn
+
       - name: Upload T111 evidence
         if: always()
         uses: actions/upload-artifact@v4
