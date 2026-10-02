@@ -985,12 +985,16 @@ async function run() {
       };
 
       const advanceToClimax = async (round) => {
-        let observed = await mark(
+        let observed = await readRewardState();
+        if (!(observed.battlePhase === "TACTICAL" && observed.tacticalTurn >= 1)) {
+          await clickBat("round " + round + " T1");
+        }
+        observed = await mark(
           "ROUND " + round + " TACTICAL PROGRESS",
           s => s.battlePhase === "TACTICAL" && s.tacticalTurn >= 1
         );
-        for (const turn of [1,2,3,4]) {
-          if (turn > observed.tacticalTurn) {
+        for (const turn of [2,3,4]) {
+          if (observed.tacticalTurn < turn) {
             await clickBat("round " + round + " T" + turn);
           }
           observed = await mark(
