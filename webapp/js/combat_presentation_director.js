@@ -274,6 +274,7 @@ export class CombatPresentationDirector {
     }
 
     this.stepDefinitions = Object.freeze(stepDefinitions.map((step) => Object.freeze({ ...step })));
+    this.activeStepDefinitions = this.stepDefinitions;
     this.onStep = typeof onStep === "function" ? onStep : null;
     this.stage = stage && typeof stage.getCameraAnchor === "function" ? stage : null;
     this.reset();
@@ -289,6 +290,7 @@ export class CombatPresentationDirector {
     this.sequenceKind = "NORMAL_ACTION";
     this.result = null;
     this.commands = Object.freeze([]);
+    this.activeStepDefinitions = this.stepDefinitions;
     this.stepIndex = -1;
     this.stepElapsedMs = 0;
     this.phase = COMBAT_PRESENTATION_PHASE.IDLE;
@@ -306,8 +308,9 @@ export class CombatPresentationDirector {
     });
     this.sequenceId = "ultimate-staging:" + normalized.attackerId + ":" + normalized.targetId;
     this.sequenceKind = "ULTIMATE_STAGING";
+    this.activeStepDefinitions = ULTIMATE_STEP_DEFINITIONS;
     this.result = normalized;
-    this.commands = buildCommands(this.sequenceId, normalized, ULTIMATE_STEP_DEFINITIONS, this.stage);
+    this.commands = buildCommands(this.sequenceId, normalized, this.activeStepDefinitions, this.stage);
     this.stepIndex = 0;
     this.stepElapsedMs = 0;
     this.phase = ULTIMATE_STEP_DEFINITIONS[0].phase;
@@ -320,8 +323,9 @@ export class CombatPresentationDirector {
     const normalized = normalizePresentationInput(result, fallback);
     this.sequenceId = "combat-presentation:" + normalized.attackerId + ":" + normalized.targetId + ":" + normalized.result;
     this.sequenceKind = "NORMAL_ACTION";
+    this.activeStepDefinitions = this.stepDefinitions;
     this.result = normalized;
-    this.commands = buildCommands(this.sequenceId, normalized, this.stepDefinitions, this.stage);
+    this.commands = buildCommands(this.sequenceId, normalized, this.activeStepDefinitions, this.stage);
     this.stepIndex = 0;
     this.stepElapsedMs = 0;
     this.phase = this.stepDefinitions[0].phase;
@@ -335,7 +339,7 @@ export class CombatPresentationDirector {
 
     let remainingMs = clamp(Number(deltaSeconds) || 0, 0, 0.5) * 1000;
     while (this.active && remainingMs > 0) {
-      const step = this.stepDefinitions[this.stepIndex];
+      const step = this.activeStepDefinitions[this.stepIndex];
       const stepDuration = Math.max(1, Number(step.durationMs) || 1);
       const availableMs = Math.max(0, stepDuration - this.stepElapsedMs);
 
@@ -347,7 +351,7 @@ export class CombatPresentationDirector {
 
       remainingMs -= availableMs;
       this.stepElapsedMs = stepDuration;
-      if (this.stepIndex >= this.stepDefinitions.length - 1) {
+      if (this.stepIndex >= this.activeStepDefinitions.length - 1) {
         this.active = false;
         this.phase = this.sequenceKind === "ULTIMATE_STAGING"
           ? COMBAT_ULTIMATE_PHASE.COMPLETE
@@ -360,7 +364,7 @@ export class CombatPresentationDirector {
 
       this.stepIndex += 1;
       this.stepElapsedMs = 0;
-      this.phase = this.stepDefinitions[this.stepIndex].phase;
+      this.phase = this.activeStepDefinitions[this.stepIndex].phase;
       this._emitStep("ENTER");
     }
 
@@ -370,7 +374,7 @@ export class CombatPresentationDirector {
   cancel() {
     if (!this.active) return this.getState();
 
-    const returnIndex = Math.max(0, this.stepDefinitions.findIndex(
+    const returnIndex = Math.max(0, this.activeStepDefinitions.findIndex(
       (step) => step.phase === COMBAT_PRESENTATION_PHASE.RETURN
     ));
     this.stepIndex = returnIndex;
@@ -386,10 +390,10 @@ export class CombatPresentationDirector {
   }
 
   getCurrentStep() {
-    if (!this.active || this.stepIndex < 0 || this.stepIndex >= this.stepDefinitions.length) {
+    if (!this.active || this.stepIndex < 0 || this.stepIndex >= this.activeStepDefinitions.length) {
       return null;
     }
-    return this.stepDefinitions[this.stepIndex];
+    return this.activeStepDefinitions[this.stepIndex];
   }
 
   getCommands() {
@@ -417,7 +421,7 @@ export class CombatPresentationDirector {
     const progress = clamp(this.stepElapsedMs / durationMs, 0, 1);
     const currentStepIndex = this.stepIndex;
     const previous = currentStepIndex > 0
-      ? this.stepDefinitions[currentStepIndex - 1]
+      ? this.activeStepDefinitions[currentStepIndex - 1]
       : Object.freeze({ zoom: 1, panX: 0, panY: 0 });
 
     if (this.stage?.getCameraAnchor) {
