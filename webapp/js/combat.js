@@ -1144,7 +1144,10 @@ export class CombatRenderer {
       this.combatPresentation.applyCamera(target, w, h);
       this._drawMatchState(target, w, h);
       target.restore();
-      this._drawBattleLoopHud(target, w, h);
+      const presentation = this.combatPresentation.getState();
+      if (!(presentation.active && String(presentation.sequenceKind || "").startsWith("ULTIMATE"))) {
+        this._drawBattleLoopHud(target, w, h);
+      }
     }
 
     if (this.kytosPresentationState) {
@@ -1205,9 +1208,12 @@ export class CombatRenderer {
   }
 
   _syncCinematicOverlayState() {
-    const active = Boolean(this.combatPresentation?.getState?.().active);
+    const presentation = this.combatPresentation?.getState?.() || {};
+    const active = Boolean(presentation.active);
+    const ultimateActive = active && String(presentation.sequenceKind || "").startsWith("ULTIMATE");
     const card = this.activeWaifuCard || document.querySelector("#active-waifu-card");
     const feedback = this.timingFeedback || document.querySelector("#timing-feedback");
+    const root = document.querySelector("#app-container");
 
     if (card) {
       card.classList.toggle("is-cinematic-action", active);
@@ -1215,6 +1221,7 @@ export class CombatRenderer {
       else card.setAttribute("aria-hidden", "true");
     }
     feedback?.classList.toggle("is-cinematic-action", active);
+    root?.classList.toggle("is-cinematic-ultimate", ultimateActive);
   }
 
   _handleCombatPresentationStep(event) {
@@ -1319,7 +1326,13 @@ export class CombatRenderer {
   _drawMatchState(ctx, w, h) {
     const camera = this.combatPresentation.getCameraTransform({ width: w, height: h });
     const groundColor = this.themeManager.getCurrentTheme()?.groundColor || "#10162a";
-    renderCombatStageWorld(ctx, this.combatStage, w, h, { cameraTransform: camera, groundColor, showZones: false });
+    const ultimateActive = String(this.combatPresentation.getState().sequenceKind || "").startsWith("ULTIMATE");
+    renderCombatStageWorld(ctx, this.combatStage, w, h, {
+      cameraTransform: camera,
+      groundColor,
+      showZones: false,
+      showSetPieceLabels: !ultimateActive
+    });
 
     for (const actor of this.combatStage.getSortedActors()) {
       const transform = this.combatStage.resolveActorTransform(actor.actorId, { width: w, height: h });
@@ -1385,11 +1398,14 @@ export class CombatRenderer {
     ctx.moveTo(-radius * 0.5, radius * 0.12);
     ctx.lineTo(radius * 0.5, radius * 0.12);
     ctx.stroke();
-    ctx.textAlign = "center";
-    ctx.font = "800 8px Rajdhani, system-ui, sans-serif";
-    ctx.fillStyle = "#ccefff";
-    ctx.globalAlpha = 0.78;
-    ctx.fillText("FIXTURE", 0, radius * 1.34);
+    const cinematicUltimate = String(this.combatPresentation.getState().sequenceKind || "").startsWith("ULTIMATE");
+    if (!cinematicUltimate) {
+      ctx.textAlign = "center";
+      ctx.font = "800 8px Rajdhani, system-ui, sans-serif";
+      ctx.fillStyle = "#ccefff";
+      ctx.globalAlpha = 0.78;
+      ctx.fillText("FIXTURE", 0, radius * 1.34);
+    }
     ctx.restore();
   }
 
@@ -1461,13 +1477,16 @@ export class CombatRenderer {
       ctx.stroke();
     }
 
-    ctx.textAlign = "center";
-    ctx.font = "900 9px Orbitron, system-ui, sans-serif";
-    ctx.fillStyle = "#ffd6e8";
-    ctx.fillText(String(actor.visual?.name || "ENEMY"), 0, radius * 1.42);
-    ctx.font = "700 7px Rajdhani, system-ui, sans-serif";
-    ctx.fillStyle = "#ff8ab8";
-    ctx.fillText("ENEMY ACTOR", 0, radius * 1.58);
+    const cinematicUltimate = String(this.combatPresentation.getState().sequenceKind || "").startsWith("ULTIMATE");
+    if (!cinematicUltimate) {
+      ctx.textAlign = "center";
+      ctx.font = "900 9px Orbitron, system-ui, sans-serif";
+      ctx.fillStyle = "#ffd6e8";
+      ctx.fillText(String(actor.visual?.name || "ENEMY"), 0, radius * 1.42);
+      ctx.font = "700 7px Rajdhani, system-ui, sans-serif";
+      ctx.fillStyle = "#ff8ab8";
+      ctx.fillText("ENEMY ACTOR", 0, radius * 1.58);
+    }
     ctx.restore();
   }
 
