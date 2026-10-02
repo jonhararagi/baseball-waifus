@@ -1026,6 +1026,7 @@ export class CombatRenderer {
 
     this.batterRenderer.update(delta);
     this.combatPresentation.update(delta);
+    this._syncCinematicOverlayState();
     this._syncCombatStageDataset();
     this.canvas.dataset.combatPresentationPhase = this.combatPresentation.getState().phase;
     this.canvas.dataset.combatPresentationActive = String(this.combatPresentation.isActive());
