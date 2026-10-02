@@ -887,7 +887,7 @@ async function run() {
       await mark("FORMATION", s => s.battlePhase === "TACTICAL" && s.tacticalTurn === 0);
 
       const rounds=[];
-      for (const round of [1,2,3]) {
+      for (const round of [1,2,3,4]) {
         await clickBat("round " + round + " T1");
         for (const turn of [1,2,3,4,5]) {
           const phase = turn === 5 ? "CLIMAX" : "TACTICAL";
