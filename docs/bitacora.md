@@ -9221,3 +9221,31 @@ La infraestructura del combat slice está bastante avanzada, pero no corresponde
 **STATUS:** PARTIAL.
 
 **NEXT:** T116 · NORMAL COMBAT TERMINAL TIMING INPUT BROWSER PROOF AFTER HARNESS RECOVERY · TIMER: 1–2 horas
+
+
+### T117 · Normal Combat Terminal Timing Path Diagnostic / One-Shot Recovery
+
+**Fecha:** 2026-10-03  \
+**BASE HEAD:** `f0db6215bc7ce6e14d38c616853ce9b15d9b41e9`  \
+**DIAGNOSTIC COMMIT:** `d96413541d82421d92b76c648f75d200328298d1`  \
+**FINAL QA COMMIT:** `b3ee219319eb75696d3b240a4124804cbad72ba4`  \
+**RUN DIAGNOSTIC:** #37 / `37089791806` / Job `111107479348`  \
+**RUN FINAL:** #38 / `37090077622` / Job `111108353302`
+
+**RESULT:** PARTIAL.
+
+**ASSET DIAGNOSTIC:** `bw001_idle.png` no aparece como archivo tracked encontrado en el repositorio. El runtime puede continuar hasta combate/Timing mediante su pipeline de assets alternativo, por lo que el asset ausente no fue identificado como causa del bloqueo terminal.
+
+**BOOTSTRAP:** PASS. **TRAVERSAL:** PASS hasta `CLIMAX → TIMING ACTIVE` usando el recorrido T097 recuperado. **INPUT:** PASS. El input histórico `sleep(620) → canvas center → mouseMoved → mousePressed → mouseReleased` fue ejecutado sin cambiar el sleep.
+
+**INPUT OBSERVATION:** En el diagnóstico y en la corrida final se observaron `pointerdown=true` y `pointerup=true` sobre el canvas.
+
+**TIMING RESULT:** El diagnóstico #37 produjo `HIT → VICTORY`. La corrida final #38 produjo `GREAT → VICTORY`. Esto descarta `INPUT ROUTING` y demuestra que el runtime acepta el input físico y puede alcanzar el terminal de victoria.
+
+**REWARD / RETURN:** La rama T117 final no llegó a registrar la validación específica de reward porque su clasificación esperaba `HIT_VICTORY` y la corrida real fue `GREAT_VICTORY`. En el mismo Run #38, el proof T097 independiente verificó `VICTORY → +100 SCRAP → Player Meta → Persistence → Return → Reload → Duplication PASS`. No se modifica ese resultado como evidencia de la arquitectura general, pero no se lo presenta como validación inmediata de la rama T117.
+
+**CHANGES:** QA-only: nuevo branch `T117_TERMINAL_TIMING_DIAGNOSTIC` con observabilidad de `pointerdown/up`, diagnóstico de geometría/input y validación terminal condicionada; paso de workflow y artifact para T117. No se modificó gameplay, Timing Ring, reward, persistence ni balance.
+
+**STATUS:** PARTIAL.
+
+**NEXT:** T118 · NORMAL COMBAT TERMINAL REWARD VALIDATION FOR NON-HIT TIMING GRADES · TIMER: 1–2 horas
