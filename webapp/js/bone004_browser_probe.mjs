@@ -162,7 +162,7 @@ try {
     "const canonical = module.canonicalizeServerCombatAttestationPayload({matchId, playerId, turnId, outcome, result, nonce});" +
     "const signatureBuffer = await crypto.subtle.sign({name:'ECDSA', hash:'SHA-256'}, keys.privateKey, new TextEncoder().encode(canonical));" +
     "let binary = ''; for (const byte of new Uint8Array(signatureBuffer)) binary += String.fromCharCode(byte);" +
-    "const signature = btoa(binary).replace(/\\\\+/g,'-').replace(/\\\\//g,'_').replace(/=+$/g,'');" +
+    "const signature = btoa(binary).split("=").shift().replaceAll("+","-").replaceAll("/","_");" +
     "const turnResult = {type:'TurnResultDTO', match_id:matchId, turn_id:turnId, result, outcome, match_end:true, state:{match_complete:true, outcome}};" +
     "const attestation = {version:module.SERVER_COMBAT_ATTESTATION_V1, algorithm:'ECDSA_P256_SHA256', match_id:matchId, player_id:playerId, turn_id:turnId, outcome, result, nonce, signature};" +
     "const context = {version:module.SERVER_COMBAT_ATTESTATION_V1, matchId, playerId, nonce, publicKeyJwk};" +
