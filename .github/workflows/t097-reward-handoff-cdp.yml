@@ -108,6 +108,27 @@ jobs:
           mkdir -p "$T072_EVIDENCE_DIR"
           node webapp/js/character_journey_browser_probe.mjs
 
+      - name: Run T117 terminal timing diagnostic
+        if: always()
+        shell: bash
+        env:
+          T072_SITE_DIR: webapp
+          T072_EVIDENCE_DIR: browser-evidence/T117/$GITHUB_SHA/$GITHUB_RUN_ID
+          T117_TERMINAL_TIMING_DIAGNOSTIC: "1"
+          BROWSER_BIN: ${{ steps.chrome.outputs.browser_bin }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$T072_EVIDENCE_DIR"
+          node webapp/js/character_journey_browser_probe.mjs
+
+      - name: Upload T117 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: t117-terminal-timing-diagnostic-evidence
+          path: browser-evidence/T117/
+          if-no-files-found: warn
+
       - name: Run T114-R2 historical T096 terminal timing recovery
         if: always()
         shell: bash
