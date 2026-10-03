@@ -182,7 +182,7 @@ function legacyState({ scrap, fragments, pity, characterId = "bw024" }) {
   adapter.save(authority.getSnapshot());
 
   const raw = JSON.parse(storage.getItem(adapter.keyFor(identity)));
-  raw.identity = { ...raw.identity, telegramUserId: "different-user" };
+  raw.state.identity = { ...raw.state.identity, telegramUserId: "different-user" };
   storage.setItem(adapter.keyFor(identity), JSON.stringify(raw));
   assert.throws(() => adapter.load(identity), PlayerMetaPersistenceError);
 }

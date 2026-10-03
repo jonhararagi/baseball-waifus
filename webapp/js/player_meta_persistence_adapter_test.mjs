@@ -22,6 +22,13 @@ class MemoryStorage {
     this.data.set(key, String(value));
   }
 
+  compareAndSet(key, expectedValue, nextValue) {
+    const current = this.getItem(key);
+    if (current !== (expectedValue === null ? null : String(expectedValue))) return false;
+    this.data.set(key, String(nextValue));
+    return true;
+  }
+
   removeItem(key) {
     this.data.delete(key);
   }
@@ -51,7 +58,8 @@ authority.dispatch({ type: "ADD_CURRENCY", currency: "SCRAP", amount: 500 });
 authority.dispatch({ type: "UPDATE_GACHA_STATE", pullsSinceUR: 17 });
 const savedState = authority.getSnapshot();
 const saveResult = adapter.save(savedState);
-assert.deepEqual(saveResult, { ok: true, playerId: "player-a", schemaVersion: 1 });
+assert.deepEqual(saveResult, { ok: true, playerId: "player-a", schemaVersion: 1, revision: 1 });
+assert.equal(adapter.getRevision(), 1);
 const loaded = adapter.load(localIdentity);
 assert.deepEqual(loaded, savedState);
 assert.notStrictEqual(loaded, savedState);
@@ -67,6 +75,33 @@ assert.equal(Object.isFrozen(loaded.roster), true);
 assert.throws(() => { loaded.currencies.SCRAP = 1; }, TypeError);
 assert.throws(() => { loaded.inventory.characters.bw001.quantity = 99; }, TypeError);
 assert.equal(adapter.load(localIdentity).currencies.SCRAP, 500);
+assert.equal(adapter.getRevision(), 1);
+
+const writerA = new PlayerMetaPersistenceAdapter({ storage });
+const writerB = new PlayerMetaPersistenceAdapter({ storage });
+const writerAState = writerA.load(localIdentity);
+const writerBState = writerB.load(localIdentity);
+assert.equal(writerA.getRevision(), 1);
+assert.equal(writerB.getRevision(), 1);
+
+const writerAAuthority = new PlayerMetaAuthority(writerAState);
+writerAAuthority.dispatch({ type: "ADD_CURRENCY", currency: "SCRAP", amount: 100 });
+const writerBAuthority = new PlayerMetaAuthority(writerBState);
+writerBAuthority.dispatch({ type: "ADD_CURRENCY", currency: "FRAGMENTS", amount: 5 });
+
+const writerASaved = writerA.save(writerAAuthority.getSnapshot());
+assert.equal(writerASaved.revision, 2);
+assert.throws(
+  () => writerB.save(writerBAuthority.getSnapshot()),
+  (error) => error instanceof PlayerMetaPersistenceError && error.code === "STALE_WRITE"
+);
+assert.deepEqual(writerB.load(localIdentity).currencies, { SCRAP: 600, FRAGMENTS: 0 });
+
+writerBAuthority.replaceSnapshot(writerB.load(localIdentity));
+writerBAuthority.dispatch({ type: "ADD_CURRENCY", currency: "FRAGMENTS", amount: 5 });
+const retry = writerB.save(writerBAuthority.getSnapshot());
+assert.equal(retry.revision, 3);
+assert.deepEqual(writerB.load(localIdentity).currencies, { SCRAP: 600, FRAGMENTS: 5 });
 
 // INVALID SAVE: persistence refuses invalid PlayerMetaState values.
 assert.throws(() => adapter.save(null), TypeError);

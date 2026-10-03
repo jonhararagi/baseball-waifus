@@ -59,6 +59,7 @@ const pity = authority.dispatch({ type: "UPDATE_GACHA_STATE", pullsSinceUR: 12 }
 assert.equal(pity.ok, true);
 assert.equal(pity.snapshot.gacha.pullsSinceUR, 12);
 
+authority.dispatch({ type: "ADD_CHARACTER", characterId: "bw002", quantity: 1 });
 const roster = authority.dispatch({ type: "SET_ROSTER", activeBatter: "bw001", supports: ["bw002", null] });
 assert.equal(roster.ok, true);
 assert.deepEqual(roster.snapshot.roster.supports, ["bw002", null]);
