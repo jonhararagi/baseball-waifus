@@ -9,7 +9,7 @@ let instance;
 let baseUrl;
 
 async function request(path, options = {}) {
-  return fetch(baseUrl + path, {
+  return fetch(baseUrl + path, {\n    signal: AbortSignal.timeout(5000),
     ...options,
     headers: {
       accept: "application/json",
