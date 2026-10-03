@@ -50,6 +50,7 @@ import { ARC0_TEAM11_RECRUITMENT } from "./narrative_arc0_team11.js";
 import { KytosCombatDemo } from "./kytos_combat_demo.js";
 import { BATTER_ORDER, SUPPORT_ACTION } from "./kytos_tactical_decision.js";
 import { applyCombatRewardPipeline, createCombatResultFromTurnResult } from "./reward_pipeline.js";
+import { runClientVersionGate } from "./version_gate.js";
 
 function initializeTelegramNativeShell() {
   const webApp = window.Telegram?.WebApp || null;
@@ -1533,6 +1534,9 @@ async function initializeGallery() {
 }
 
 async function bootstrap() {
+  const versionGate = await runClientVersionGate();
+  if (versionGate.status === "recovering" || versionGate.status === "failed") return;
+
   const query = new URLSearchParams(window.location.search);
   matchId = query.get("match") || "";
 
