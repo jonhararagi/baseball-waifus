@@ -9,7 +9,7 @@ import { AuthorityError, isAuthorityError } from "./errors.mjs";
 
 const JSON_HEADERS = {
   "content-type": "application/json; charset=utf-8",
-  "cache-control": "no-store"
+  "cache-control": "no-store",\n  "connection": "close"
 };
 
 function jsonResponse(res, status, payload, origin = "*") {
