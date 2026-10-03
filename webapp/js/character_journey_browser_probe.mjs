@@ -17,6 +17,7 @@ const T104_PERSISTENCE_PROOF = process.env.T104_PERSISTENCE_PROOF === "1";
 const T114R_TERMINAL_INPUT_RECOVERY = process.env.T114R_TERMINAL_INPUT_RECOVERY === "1";
 const T111_TERMINAL_BOUNDARY = process.env.T111_TERMINAL_BOUNDARY === "1";
 const T117_TERMINAL_TIMING_DIAGNOSTIC = process.env.T117_TERMINAL_TIMING_DIAGNOSTIC === "1";
+const T118_NON_HIT_REWARD_VALIDATION = process.env.T118_NON_HIT_REWARD_VALIDATION === "1";
 const T094_COMBAT_LOOP = process.env.T094_COMBAT_LOOP === "1";
 const SITE_DIR = resolve(process.env.T072_SITE_DIR || "site");
 const EVIDENCE_DIR = resolve(
@@ -960,7 +961,7 @@ async function run() {
       console.log("POST-TERMINAL GUARDS = PASS_REAL");
       return;
     }
-    if (process.env.T109_REWARD_BOUNDARY === "1") {
+    if (process.env.T109_REWARD_BOUNDARY === "1" || T118_NON_HIT_REWARD_VALIDATION) {
       const runStartedAt = Date.now();
       const browserVersion = await cdp.send("Browser.getVersion");
       const playerMetaKey = "baseball_waifus_player_meta_v1:local-player";
@@ -1032,6 +1033,12 @@ async function run() {
         await cdp.send("Input.dispatchMouseEvent", { type:"mouseReleased", x, y, button:"left", buttons:0, clickCount:1 });
 
         const afterTiming = await mark("ROUND " + round + " RESULT", s => s.timingActive === false && ["TACTICAL","VICTORY","DEFEAT"].includes(s.battlePhase), 5000);
+        if (T118_NON_HIT_REWARD_VALIDATION) {
+          requireCondition(afterTiming.timingGrade === "MISS", "T118 Timing Grade was not MISS", afterTiming);
+          requireCondition(afterTiming.combatResult === "STRIKE", "T118 Combat Result was not STRIKE", afterTiming);
+          requireCondition(afterTiming.battlePhase === "TACTICAL", "T118 MISS did not remain non-terminal", afterTiming);
+          requireCondition(afterTiming.match_end !== true, "T118 MISS produced match_end", afterTiming);
+        }
         if (afterTiming.battlePhase !== "TACTICAL") return { beforeTiming, afterTiming, afterReturn: afterTiming, terminal: afterTiming.battlePhase };
 
         requireCondition(afterTiming.scrap === beforeTiming.scrap, "T109 Scrap changed after non-terminal Timing", { beforeTiming, afterTiming });
@@ -1078,6 +1085,46 @@ async function run() {
       await advanceToClimax(1);
       const round1 = await resolveNonTerminalMiss(1);
       requireCondition(round1.terminal === null, "T109 first Timing unexpectedly reached a terminal result", round1);
+
+      if (T118_NON_HIT_REWARD_VALIDATION) {
+        const finalState = await readRewardState();
+        requireCondition(finalState.timingGrade === "MISS", "T118 final Timing Grade changed", finalState);
+        requireCondition(finalState.combatResult === "STRIKE", "T118 final Combat Result changed", finalState);
+        requireCondition(finalState.battlePhase === "TACTICAL", "T118 combat did not continue", finalState);
+        requireCondition(finalState.scrap === initial.scrap, "T118 authoritative Scrap changed", { initial, finalState });
+        requireCondition(finalState.persistedScrap === initial.persistedScrap, "T118 persisted Scrap changed", { initial, finalState });
+        requireCondition(finalState.rewardLedgerKeys.length === initial.rewardLedgerKeys.length, "T118 reward ledger changed", { initial, finalState });
+        const evidence = {
+          task: "T118",
+          sha: process.env.GITHUB_SHA || "local",
+          runId: process.env.GITHUB_RUN_ID || "local",
+          browser: BROWSER_BIN,
+          browserVersion: { product: browserVersion?.product || "", revision: browserVersion?.revision || "", userAgent: browserVersion?.userAgent || "" },
+          harness: "existing character_journey_browser_probe.mjs via T118_NON_HIT_REWARD_VALIDATION=1",
+          timingLayer: "MISS",
+          combatLayer: "STRIKE",
+          initial,
+          beforeTiming: round1.beforeTiming,
+          afterTiming: round1.afterTiming,
+          postMiss: round1.afterReturn,
+          finalState,
+          timingInput: { method: "CDP Input.dispatchMouseEvent", sequence: ["mouseMoved","mousePressed","mouseReleased"], waitMs: 120, expectedGrade: "MISS" },
+          rewardBoundary: { noVictory: finalState.battlePhase !== "VICTORY", noMatchEnd: true, scrapUnchanged: finalState.scrap === initial.scrap, persistedScrapUnchanged: finalState.persistedScrap === initial.persistedScrap, ledgerUnchanged: finalState.rewardLedgerKeys.length === initial.rewardLedgerKeys.length },
+          at_ms: Date.now() - runStartedAt
+        };
+        writeFileSync(join(EVIDENCE_DIR, "t118-non-hit-reward-browser-evidence.json"), JSON.stringify(evidence, null, 2) + "\n", "utf8");
+        console.log("T118 TIMING GRADE = MISS");
+        console.log("T118 COMBAT RESULT = STRIKE");
+        console.log("T118 COMBAT CONTINUES = PASS_REAL");
+        console.log("T118 VICTORY = NO");
+        console.log("T118 MATCH END = NO");
+        console.log("T118 SCRAP = " + initial.scrap + " -> " + finalState.scrap);
+        console.log("T118 PERSISTENCE = " + initial.persistedScrap + " -> " + finalState.persistedScrap);
+        console.log("T118 LEDGER = " + initial.rewardLedgerKeys.length + " -> " + finalState.rewardLedgerKeys.length);
+        console.log("T118 NON-HIT REWARD GUARD = PASS");
+        console.log("T118 = PASS_REAL");
+        return;
+      }
 
       const tactical2 = await mark("TACTICAL 2", s => s.battlePhase === "TACTICAL" && s.tacticalTurn === 0 && s.playerStamina > 0);
       requireCondition(tactical2.scrap === initial.scrap, "T109 Scrap changed before second non-terminal Timing", { initial, tactical2 });
