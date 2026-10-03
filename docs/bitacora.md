@@ -9381,3 +9381,35 @@ La infraestructura del combat slice está bastante avanzada, pero no corresponde
 **OTHER BONES:** NO.
 
 **BONE-004 STATUS:** BLOCKED únicamente por la ausencia del emisor backend productivo de `reward_attestation`. El blocker de browser harness queda cerrado.
+
+
+---
+
+## BONE-001-R · SERVICE WORKER REGRESSION RECOVERY
+
+**Fecha:** 2026-10-03  
+**HEAD BEFORE:** `2b474363d356e42ca6283e19e62637b3ab16c3f4`  
+**HEAD AFTER:** pendiente del commit documental final  
+**TIMER:** 60–90 minutos  
+**RESULT:** PASS.
+
+**ROOT CAUSE:** El runtime del Service Worker estaba realizando correctamente el purge. La regresión observada era una carrera de observación del harness Chromium: `serviceWorker.ready` permitió observar `registration.active.state=activating` antes de que el punto de control del probe fuera inequívoco. La primera recuperación añadió observación por etapas y confirmó que, al alcanzar el controller, `v16_capibara_core` y `baseball-waifus-v16` ya habían desaparecido. La segunda y última corrección de esta task movió la assertion de estado final a después de controller + settling determinista.
+
+**BROWSER:** PASS. Run `37144866699`, Job `111266613481`.  
+**CACHE:** `baseball-waifus-v17` PRESENT.  
+**LEGACY:** PURGED.  
+**OLD PRODUCT:** PURGED.  
+**FOREIGN CACHE:** PRESENT.  
+**VERSION GATE:** match.  
+**SERVICE WORKER:** READY.  
+**CONTROLLER:** READY.  
+**RELOAD LOOP:** NOT_DETECTED.
+
+**PWA UNIT TEST:** PASS.  
+**GLOBAL CI:** PASS.  
+**DEPLOY:** PASS.  
+**GAMEPLAY CHANGED:** NO.  
+**BALANCE CHANGED:** NO.  
+**BONE-004:** UNCHANGED.
+
+**STATUS:** CLOSED.
