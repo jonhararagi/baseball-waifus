@@ -5,7 +5,7 @@ const VERIFIED_PROOFS = new WeakSet();
 
 class RewardAuthorityError extends Error {
   constructor(code, message) {
-    super(message);
+    super(code + ": " + message);
     this.name = "RewardAuthorityError";
     this.code = code;
   }
