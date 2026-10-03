@@ -10,9 +10,9 @@ Minimal presentation-only correction:
 - No combat resolver, result mapping, reward, persistence, economy, Timing Ring, victory/defeat, or T118-R changes.
 
 T122-R3V2:
-- STATUS: PARTIAL pending executable CI/browser evidence
+- STATUS: PARTIAL pending executable CI/browser evidence; browser endpoint returned ERR_TUNNEL_CONNECTION_FAILED
 - HEAD BEFORE: 22748222c9df1a5d638bfcc6aac23d0e59ebafcb
-- HEAD AFTER: 8c2bcebddaa54f8d1402918d8c6fc04902aa2b05
+- HEAD AFTER: cc86677e701eb511eb9936941c01d572f217e6d2
 - REAL COMBAT ENTRY: PASS by source inspection
 - ATTACKER SOURCE: real `CombatPresentationDirector` presentation result, `attackerId`
 - ATTACKER ID: runtime `result.attackerId`, fallback existing selected actor
@@ -22,7 +22,7 @@ T122-R3V2:
 - RETURN: runtime attacker actor
 - FORMATION RESTORED: implementation path resets attacker on COMPLETE
 - TESTS: executable CI evidence pending
-- BROWSER: not completed
+- BROWSER: NOT RUN / public site tunnel failure
 - T118-R = BLOCKED / UNCHANGED
 
 The prior deterministic T122-R3 fixture remains a contract test and is not treated as real-runtime closure evidence.
