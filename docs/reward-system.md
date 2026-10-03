@@ -39,6 +39,29 @@ The current runtime integration is connected at the terminal combat-result bound
 
 Both paths use the same `reward_pipeline.js`. The runtime does not manufacture a fake battle result as a substitute for combat.
 
+## BONE-004 authoritative reward boundary
+
+La autoridad económica queda separada del resultado local:
+
+~~~
+LOCAL COMBAT
+→ DEMO / QA ONLY
+→ NO REAL ECONOMY GRANT
+
+SERVER COMBAT
+→ SERVER_COMBAT_ATTESTATION_V1
+→ REWARD AUTHORITY VALIDATION
+→ COMBAT_RESULT AUTHORITATIVE
+→ REWARD PIPELINE
+→ PLAYER META
+~~~
+
+El cliente valida una atestación ECDSA P-256/SHA-256 sobre un payload canónico vinculado a match_id, player_id, turn_id, outcome, result y nonce. Una prueba ausente o inválida no alcanza resolveStandardBattleRewards() ni PlayerMetaAuthority.
+
+El resultado local sigue siendo válido para demo/QA, pero no constituye autoridad económica comercial.
+
+El repositorio todavía no contiene un backend productivo que emita estas atestaciones. La implementación actual establece y verifica la frontera de autoridad del cliente, no un servidor de economía.
+
 ## T062 baseline reward table
 
 | Outcome | Reward |

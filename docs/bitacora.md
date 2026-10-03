@@ -9334,3 +9334,31 @@ La infraestructura del combat slice está bastante avanzada, pero no corresponde
 **SCOPE:** `problemas de huesos/README.md`, `problemas de huesos/00-gate-de-avance.md`, `docs/bitacora.md`.
 
 **STATUS:** CLOSED.
+
+
+---
+
+## BONE-004 · AUTHORITATIVE REWARD BOUNDARY
+
+**Fecha:** 2026-10-03  
+**HEAD BEFORE:** 3fd6ac7d15e87ae7d3b26ee1a9459f1185ca079e  
+**IMPLEMENTATION CHECKPOINT:** 524707a066572434d1c7af54f3c2d89228302a2e
+
+**LOCAL DEMO SAFETY:** PASS. El resultado local quedó separado del grant económico.  
+**SERVER ATTESTATION:** PASS a nivel de contrato/verificador unitario.  
+**FORGED RESULT REJECTION:** PASS.  
+**TAMPERED RESULT REJECTION:** PASS.  
+**MATCH / PLAYER / NONCE BINDING:** PASS en unit tests.  
+**DUPLICATE PROTECTION:** PASS, preservando battle:<matchId> y rewardLedger.  
+**BROWSER:** BLOCKED después de dos intentos controlados del probe por un defecto del harness CDP.  
+**CI:** PARTIAL. El contrato BONE-004 pasó en el flujo P0 37142969041; el workflow principal no pudo avanzar más allá de BONE-001.  
+**DEPLOY:** NOT COMPLETED. BONE-001 bloqueó el deploy y no fue modificado.  
+**PRODUCTION BACKEND:** NO PRESENTE en este repositorio; no se simula ni se declara implementado.
+
+**RUNTIME CHANGES:** sí, únicamente en la frontera de reward y su integración QA/CI.  
+**GAMEPLAY CHANGES:** NO.  
+**BALANCE:** NO.  
+**OTHER BONES:** NO.  
+**BONE-004:** BLOCKED.
+
+**BLOQUEO CONTROLADO:** máximo dos intentos del mismo defecto de harness consumidos. No se realizará un tercer retry en esta task. BONE-005 no fue iniciado.
