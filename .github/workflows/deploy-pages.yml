@@ -168,6 +168,12 @@ jobs:
           test -s webapp/data/characters_queue.json
           test -s webapp/data/game_schemas_recycled.json
 
+      - name: BONE-002 Gacha Runtime Data Contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --experimental-default-type=module webapp/js/bone002_gacha_runtime_data_test.mjs
+
       - name: Validate JavaScript syntax
         shell: bash
         run: |
@@ -310,6 +316,26 @@ jobs:
           fi
           echo "BONE-001 BROWSER BIN = $BROWSER_BIN"
           SITE_DIR="$SITE_DIR" BROWSER_BIN="$BROWSER_BIN" node webapp/js/bone001_browser_probe.mjs
+
+      - name: BONE-002 Native Chromium Gacha Validation
+        shell: bash
+        env:
+          SITE_DIR: site
+        run: |
+          set -euo pipefail
+          BROWSER_BIN=""
+          for candidate in google-chrome chromium chromium-browser; do
+            if command -v "$candidate" >/dev/null 2>&1; then
+              BROWSER_BIN="$(command -v "$candidate")"
+              break
+            fi
+          done
+          if [ -z "$BROWSER_BIN" ]; then
+            echo "BONE-002 BROWSER PROBE = NOT_RUN // no supported Chrome/Chromium binary on runner"
+            exit 1
+          fi
+          echo "BONE-002 BROWSER BIN = $BROWSER_BIN"
+          SITE_DIR="$SITE_DIR" BROWSER_BIN="$BROWSER_BIN" node webapp/js/bone002_browser_probe.mjs
 
       - name: T073 Character Presentation Browser QA
         shell: bash
