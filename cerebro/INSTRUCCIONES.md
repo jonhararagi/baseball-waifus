@@ -240,3 +240,22 @@ Un nuevo agente puede recibir solamente:
 "Actúa como Cerebro del proyecto. Lee `cerebro/INSTRUCCIONES.md`, verifica `main`, revisa la continuidad y genera la siguiente única orden para el Obrero."
 
 Después de leer este archivo, debe poder continuar autónomamente.
+
+
+## BONE GATE OBLIGATORIO
+
+Antes de planificar cualquier nueva feature de producto, el Cerebro debe leer:
+
+problemas de huesos/README.md
+
+y revisar el inventario actual de problemas de huesos.
+
+Mientras exista un BONE crítico P0/P1 en OPEN, IN_PROGRESS, BLOCKED o VERIFYING:
+
+- no avanzar con nuevas features de producto;
+- solo planificar diagnóstico, reparación, pruebas, observabilidad, documentación de continuidad o infraestructura necesaria para cerrar esos huesos;
+- no declarar el proyecto estructuralmente sano por estimación de progreso.
+
+La carpeta problemas de huesos es un gate operativo persistente y tiene prioridad sobre la velocidad de desarrollo.
+
+Para abrir nuevamente el desarrollo normal deben cumplirse los criterios del gate y registrarse evidencia de cierre.
