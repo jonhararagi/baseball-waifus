@@ -1261,6 +1261,18 @@ async function run() {
         return "OTHER_HARNESS_OR_RUNTIME";
       })();
 
+      let terminalValidation = { reward: "NOT_REACHED", return: "NOT_REACHED" };
+      if (diagnostic === "HIT_VICTORY") {
+        const victory = await mark("VICTORY REWARD", s => s.battlePhase === "VICTORY" && s.scrap === 100 && s.persistedScrap === 100 && s.rewardLedgerKeys.length === 1, 5000);
+        requireCondition(victory.rewardLedgerKeys.length === 1, "T117 victory ledger count invalid", victory);
+        terminalValidation = { reward: "PASS", return: "NOT_REACHED", victory };
+        await mark("COMBAT RETURN", s => s.presentationPhase === "COMBAT_RETURN", 5000);
+        const complete = await mark("RETURN COMPLETE", s => s.presentationPhase === "COMPLETE" && s.presentationActive === false, 5000);
+        requireCondition(complete.battlePhase === "VICTORY", "T117 terminal battle state changed during return", complete);
+        requireCondition(complete.scrap === victory.scrap && complete.persistedScrap === victory.persistedScrap, "T117 reward changed during return", { victory, complete });
+        terminalValidation = { reward: "PASS", return: "PASS", victory, complete };
+      }
+
       const evidence = {
         task:"T117",
         sha:process.env.GITHUB_SHA||"local",
@@ -1278,12 +1290,14 @@ async function run() {
         diagnostic,
         timeline,
         reward:{scrapBefore:initial.scrap,scrapAfter:afterInput.scrap,persistedBefore:initial.persistedScrap,persistedAfter:afterInput.persistedScrap,ledgerBefore:initial.rewardLedgerKeys,ledgerAfter:afterInput.rewardLedgerKeys},
-        terminal:{battlePhase:afterInput.battlePhase,combatResult:afterInput.combatResult},
+        terminal:{battlePhase:afterInput.battlePhase,combatResult:afterInput.combatResult,validation:terminalValidation},
         pageErrors:pageExceptions.map(item=>item?.exception?.description||item?.text||"").filter(Boolean)
       };
       writeFileSync(join(EVIDENCE_DIR,"t117-terminal-timing-diagnostic.json"),JSON.stringify(evidence,null,2)+"\n","utf8");
 
       console.log("T117 DIAGNOSTIC = " + diagnostic);
+      console.log("T117 REWARD = " + terminalValidation.reward);
+      console.log("T117 RETURN = " + terminalValidation.return);
       console.log("CLIMAX = PASS_REAL");
       console.log("TIMING ACTIVE = PASS_REAL");
       console.log("INPUT SENT = YES");
