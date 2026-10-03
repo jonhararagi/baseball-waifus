@@ -16,6 +16,7 @@ const T101_DEFEAT_PROOF = process.env.T101_DEFEAT_PROOF === "1";
 const T104_PERSISTENCE_PROOF = process.env.T104_PERSISTENCE_PROOF === "1";
 const T114R_TERMINAL_INPUT_RECOVERY = process.env.T114R_TERMINAL_INPUT_RECOVERY === "1";
 const T111_TERMINAL_BOUNDARY = process.env.T111_TERMINAL_BOUNDARY === "1";
+const T117_TERMINAL_TIMING_DIAGNOSTIC = process.env.T117_TERMINAL_TIMING_DIAGNOSTIC === "1";
 const T094_COMBAT_LOOP = process.env.T094_COMBAT_LOOP === "1";
 const SITE_DIR = resolve(process.env.T072_SITE_DIR || "site");
 const EVIDENCE_DIR = resolve(
@@ -1117,6 +1118,180 @@ async function run() {
       console.log("MID-TURN REWARD = NONE");
       console.log("REWARD LEDGER = UNCHANGED");
       console.log("PLAYER META = PASS_REAL");
+      return;
+    }
+
+    if (T117_TERMINAL_TIMING_DIAGNOSTIC) {
+      const runStartedAt = Date.now();
+      const browserVersion = await cdp.send("Browser.getVersion");
+      const timeline = [];
+      const playerMetaKey = "baseball_waifus_player_meta_v1:local-player";
+
+      const readRuntime = async () => cdpEvaluate(cdp, `(() => {
+        const canvas = document.querySelector("#gameCanvas");
+        const d = canvas?.dataset || {};
+        const gacha = window.BaseballWaifusGacha?.getStatus?.() || null;
+        const raw = localStorage.getItem("baseball_waifus_player_meta_v1:local-player");
+        let persisted = null;
+        try { persisted = raw ? JSON.parse(raw) : null; } catch {}
+        const rect = canvas?.getBoundingClientRect();
+        return {
+          battlePhase:d.combatBattlePhase||"",
+          tacticalTurn:d.combatTacticalTurn===""?null:Number(d.combatTacticalTurn),
+          timingActive:d.combatTimingActive==="true",
+          timingGrade:d.combatTimingGrade||"",
+          combatResult:d.combatResult||"",
+          presentationPhase:d.combatStagePresentationPhase||"",
+          presentationActive:d.combatPresentationActive==="true",
+          playerStamina:d.combatPlayerStamina===""?null:Number(d.combatPlayerStamina),
+          playerStaminaMax:d.combatPlayerStaminaMax===""?null:Number(d.combatPlayerStaminaMax),
+          scrap:Number(gacha?.scavenger_scrap??NaN),
+          persistedScrap:Number(persisted?.currencies?.SCRAP??NaN),
+          rewardLedgerKeys:persisted?.rewardLedger?Object.keys(persisted.rewardLedger):[],
+          canvasRect:rect ? {left:rect.left,top:rect.top,width:rect.width,height:rect.height}:null,
+          playerMetaRawPresent:Boolean(raw)
+        };
+      })()`);
+
+      const mark = async (name, condition, timeoutMs = 6000) => {
+        const deadline = Date.now() + timeoutMs;
+        while (Date.now() < deadline) {
+          const state = await readRuntime();
+          if (condition(state)) {
+            const checkpoint = { at_ms: Date.now() - runStartedAt, ...state };
+            timeline.push({ ...checkpoint, label:name });
+            return checkpoint;
+          }
+          await sleep(25);
+        }
+        const state = await readRuntime();
+        throw new Error("T117 TIMEOUT: " + name + " " + JSON.stringify(state));
+      };
+
+      const clickBat = async (label) => {
+        await waitFor(
+          async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#action-bat') && !document.querySelector('#action-bat').disabled)"),
+          { timeoutMs: 6000, label: "T117 BATEAR ready " + label }
+        );
+        await cdpClickSelector(cdp, "#action-bat");
+      };
+
+      const url = baseUrl + "?qa=t097";
+      await cdp.send("Page.navigate", { url });
+      await waitFor(async () => (await cdpEvaluate(cdp, "document.readyState")) === "complete", {
+        timeoutMs:30000, label:"T117 document ready"
+      });
+      await waitFor(async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#home-view') && !document.querySelector('#home-view').hidden)"), {
+        timeoutMs:30000, label:"T117 Home visible"
+      });
+
+      const initial = await readRuntime();
+      timeline.push({at_ms:Date.now()-runStartedAt,label:"INITIAL",...initial});
+      requireCondition(initial.scrap === 0 && initial.persistedScrap === 0, "T117 fresh Player Meta expected", initial);
+
+      await cdpClickSelector(cdp, ".home-action-play");
+      await waitFor(
+        async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#gameCanvas')?.dataset?.combatStageContract === 'COMBAT_STAGE_2_5D')"),
+        {timeoutMs:30000,label:"T117 formation initialized"}
+      );
+
+      const pointerEvidence = await cdpEvaluate(cdp, `(() => {
+        const canvas = document.querySelector("#gameCanvas");
+        if (!canvas) return null;
+        const existing = window.__BW_T117_POINTER_EVIDENCE__;
+        if (existing) return existing;
+        const evidence = { pointerdown:0, pointerup:0, lastDown:null, lastUp:null };
+        canvas.addEventListener("pointerdown", (event) => {
+          evidence.pointerdown += 1;
+          evidence.lastDown = {x:event.clientX,y:event.clientY,button:event.button,time:performance.now()};
+        }, {capture:true});
+        canvas.addEventListener("pointerup", (event) => {
+          evidence.pointerup += 1;
+          evidence.lastUp = {x:event.clientX,y:event.clientY,button:event.button,time:performance.now()};
+        }, {capture:true});
+        window.__BW_T117_POINTER_EVIDENCE__ = evidence;
+        return evidence;
+      })()`);
+      requireCondition(Boolean(pointerEvidence), "T117 pointer evidence setup failed");
+
+      await mark("FORMATION", s => s.battlePhase === "TACTICAL" && s.tacticalTurn === 0);
+
+      await clickBat("T1");
+      for (const turn of [1,2,3,4,5]) {
+        const phase = turn === 5 ? "CLIMAX" : "TACTICAL";
+        await mark("TACTICAL " + turn, s => s.tacticalTurn === turn && s.battlePhase === phase);
+        if (turn < 5) {
+          await mark("TACTICAL " + turn + " COMPLETE", s => s.tacticalTurn === turn && s.presentationPhase === "COMPLETE" && s.presentationActive === false);
+          await clickBat("T" + (turn + 1));
+        }
+      }
+
+      const climax = await mark("CLIMAX", s => s.battlePhase === "CLIMAX" && s.tacticalTurn === 5);
+      const timing = await mark("TIMING ACTIVE", s => s.battlePhase === "CLIMAX" && s.tacticalTurn === 5 && s.timingActive === true, 6000);
+      const timingAtStart = { ...timing, elapsed: await cdpEvaluate(cdp, "window.__BW_T097_TIMING_ELAPSED__?.()") };
+      const rect = await cdpEvaluate(cdp, "(() => { const r=document.querySelector('#gameCanvas')?.getBoundingClientRect(); return r ? {left:r.left,top:r.top,width:r.width,height:r.height} : null; })()");
+      requireCondition(rect && rect.width > 0 && rect.height > 0, "T117 timing canvas geometry unavailable", rect);
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const target = await cdpEvaluate(cdp, "(() => { const e=document.elementFromPoint(" + centerX + "," + centerY + "); return {tag:e?.tagName||'',id:e?.id||'',isCanvas:e===document.querySelector('#gameCanvas')}; })()");
+      requireCondition(target.isCanvas === true, "T117 physical timing target is not canvas", target);
+
+      await sleep(620);
+      const beforeInput = await readRuntime();
+      const elapsedAtInput = await cdpEvaluate(cdp, "window.__BW_T097_TIMING_ELAPSED__?.()");
+      requireCondition(beforeInput.timingActive === true, "T117 timing window closed before historical input", {beforeInput,elapsedAtInput});
+
+      await cdp.send("Input.setIgnoreInputEvents", {ignore:false});
+      await cdp.send("Input.dispatchMouseEvent", {type:"mouseMoved",x:centerX,y:centerY,button:"none",buttons:0});
+      await cdp.send("Input.dispatchMouseEvent", {type:"mousePressed",x:centerX,y:centerY,button:"left",buttons:1,clickCount:1});
+      await cdp.send("Input.dispatchMouseEvent", {type:"mouseReleased",x:centerX,y:centerY,button:"left",buttons:0,clickCount:1});
+
+      const inputEvidence = await waitFor(async () => cdpEvaluate(cdp, "(() => window.__BW_T117_POINTER_EVIDENCE__ || null)()"), {timeoutMs:1000,intervalMs:10,label:"T117 pointer evidence"});
+      await sleep(250);
+      const afterInput = await readRuntime();
+      timeline.push({at_ms:Date.now()-runStartedAt,label:"AFTER INPUT",...afterInput});
+
+      const diagnostic = (() => {
+        if (!timingAtStart.timingActive) return "TRAVERSAL_BLOCKED_BEFORE_TIMING";
+        if (!beforeInput.timingActive) return "TIMING_WINDOW_CLOSED_BEFORE_INPUT";
+        if (!inputEvidence || inputEvidence.pointerdown < 1) return "INPUT_SENT_POINTERDOWN_NOT_OBSERVED";
+        if (afterInput.timingGrade === "MISS") return "PHYSICAL_INPUT_ACCEPTED_MISS";
+        if (afterInput.timingGrade === "HIT" && afterInput.battlePhase === "VICTORY") return "HIT_VICTORY";
+        if (afterInput.timingGrade && afterInput.battlePhase === "DEFEAT") return "DEFEAT";
+        return "OTHER_HARNESS_OR_RUNTIME";
+      })();
+
+      const evidence = {
+        task:"T117",
+        sha:process.env.GITHUB_SHA||"local",
+        runId:process.env.GITHUB_RUN_ID||"local",
+        browser:BROWSER_BIN,
+        browserVersion:{product:browserVersion?.product||"",revision:browserVersion?.revision||"",userAgent:browserVersion?.userAgent||""},
+        harness:"existing character_journey_browser_probe.mjs via T117_TERMINAL_TIMING_DIAGNOSTIC=1",
+        assetDiagnostic:{bw001_idle_png_present:false, repositorySearch:"no matching tracked file found"},
+        initial,
+        climax,
+        timing:timingAtStart,
+        geometry:{canvas:rect,center:{x:centerX,y:centerY},target},
+        input:{method:"CDP Input.dispatchMouseEvent",historicalSleepMs:620,elapsedAtInput,pointerdown:inputEvidence?.pointerdown||0,pointerup:inputEvidence?.pointerup||0,lastDown:inputEvidence?.lastDown||null,lastUp:inputEvidence?.lastUp||null},
+        afterInput,
+        diagnostic,
+        timeline,
+        reward:{scrapBefore:initial.scrap,scrapAfter:afterInput.scrap,persistedBefore:initial.persistedScrap,persistedAfter:afterInput.persistedScrap,ledgerBefore:initial.rewardLedgerKeys,ledgerAfter:afterInput.rewardLedgerKeys},
+        terminal:{battlePhase:afterInput.battlePhase,combatResult:afterInput.combatResult},
+        pageErrors:pageExceptions.map(item=>item?.exception?.description||item?.text||"").filter(Boolean)
+      };
+      writeFileSync(join(EVIDENCE_DIR,"t117-terminal-timing-diagnostic.json"),JSON.stringify(evidence,null,2)+"\n","utf8");
+
+      console.log("T117 DIAGNOSTIC = " + diagnostic);
+      console.log("CLIMAX = PASS_REAL");
+      console.log("TIMING ACTIVE = PASS_REAL");
+      console.log("INPUT SENT = YES");
+      console.log("POINTERDOWN OBSERVED = " + String((inputEvidence?.pointerdown||0) > 0));
+      console.log("POINTERUP OBSERVED = " + String((inputEvidence?.pointerup||0) > 0));
+      console.log("TIMING GRADE = " + (afterInput.timingGrade || "NOT_REACHED"));
+      console.log("BATTLE PHASE = " + (afterInput.battlePhase || ""));
+      console.log("COMBAT RESULT = " + (afterInput.combatResult || ""));
       return;
     }
 
