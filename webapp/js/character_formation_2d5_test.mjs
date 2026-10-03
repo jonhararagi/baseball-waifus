@@ -4,17 +4,13 @@ import { CHARACTER_FORMATION_2D5_SLOTS, CharacterFormation2D5 } from "./characte
 
 const actors = [0, 1, 2, 3].map((index) => new CharacterActor2D5({
   actorId: `formation-test-${index + 1}`,
-  position: { x: 0.5, y: 0.5 },
-  depth: "MID",
-  scale: 1,
-  rotation: 0,
-  facing: 1,
-  visible: true
+  position: { x: 0.5, y: 0.5 }, depth: "MID", scale: 1, rotation: 0, facing: 1, visible: true
 }));
 
 const formation = new CharacterFormation2D5();
-assert.equal(formation.getState().lifecycle, "CLEAR");
+assert.equal(formation.getState().lifecycle, "CREATE");
 formation.populate(actors);
+assert.equal(formation.getState().lifecycle, "POPULATE");
 assert.equal(formation.getState().actorCount, 4);
 assert.equal(formation.getState().slotCount, 4);
 formation.present();

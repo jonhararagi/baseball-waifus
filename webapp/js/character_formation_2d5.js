@@ -7,9 +7,7 @@ export const CHARACTER_FORMATION_2D5_SLOTS = Object.freeze([
   Object.freeze({ slot: 3, position: { x: 0.48, y: 0.50 }, depth: "MID", scale: 0.96, rotation: 0, facing: 1, visible: true })
 ]);
 
-function clone(value) {
-  return JSON.parse(JSON.stringify(value));
-}
+function clone(value) { return JSON.parse(JSON.stringify(value)); }
 
 function normalizeSlot(slot, index) {
   const fallback = CHARACTER_FORMATION_2D5_SLOTS[index];
@@ -29,21 +27,16 @@ function normalizeSlot(slot, index) {
 
 export class CharacterFormation2D5 {
   constructor({ slots = CHARACTER_FORMATION_2D5_SLOTS, actors = [] } = {}) {
-    if (!Array.isArray(slots) || slots.length !== 4) {
-      throw new TypeError("CharacterFormation2D5 requires exactly 4 slots");
-    }
+    if (!Array.isArray(slots) || slots.length !== 4) throw new TypeError("CharacterFormation2D5 requires exactly 4 slots");
     this.slots = slots.map(normalizeSlot);
     this.actors = new Map();
     this.slotActors = new Map();
     this.lifecycle = "CREATE";
-    this.clear();
     if (Array.isArray(actors) && actors.length) this.populate(actors);
   }
 
   populate(actors = []) {
-    if (!Array.isArray(actors) || actors.length > 4) {
-      throw new TypeError("CharacterFormation2D5 accepts up to 4 actors");
-    }
+    if (!Array.isArray(actors) || actors.length > 4) throw new TypeError("CharacterFormation2D5 accepts up to 4 actors");
     this.clear();
     actors.forEach((actor, index) => this.attach(actor, index));
     this.lifecycle = "POPULATE";
@@ -51,9 +44,7 @@ export class CharacterFormation2D5 {
   }
 
   attach(actor, slotIndex = 0) {
-    if (!actor || !(actor instanceof CharacterActor2D5)) {
-      throw new TypeError("CharacterFormation2D5 accepts CharacterActor2D5 instances");
-    }
+    if (!actor || !(actor instanceof CharacterActor2D5)) throw new TypeError("CharacterFormation2D5 accepts CharacterActor2D5 instances");
     const slot = this.slots[slotIndex];
     if (!slot) throw new RangeError("CharacterFormation2D5 slot must be 0..3");
     if (this.actors.has(actor.actorId)) throw new Error("Duplicate formation actor: " + actor.actorId);
@@ -85,10 +76,7 @@ export class CharacterFormation2D5 {
     return this.getState();
   }
 
-  getActor(actorId) {
-    return this.actors.get(String(actorId || "")) || null;
-  }
-
+  getActor(actorId) { return this.actors.get(String(actorId || "")) || null; }
   getSlotActor(slotIndex) {
     const actorId = this.slotActors.get(Number(slotIndex));
     return actorId ? this.getActor(actorId) : null;
