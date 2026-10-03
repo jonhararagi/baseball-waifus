@@ -168,10 +168,47 @@ assert.equal(actor.getPresentationState(), "ACTION");
 
 
 const combatRendererSource = fs.readFileSync(new URL("./combat.js", import.meta.url), "utf8");
-assert.match(combatRendererSource, /selectedActor\?\.setPresentationState\?\.\("FOCUS"\)/);
-assert.match(combatRendererSource, /selectedActor\?\.setPresentationState\?\.\("ACTION"\)/);
-assert.match(combatRendererSource, /selectedActor\?\.setPresentationState\?\.\("RETURN"\)/);
-assert.match(combatRendererSource, /selectedActor\?\.resetPresentationState\?\.\(\)/);
+assert.match(combatRendererSource, /attackerActor\?\.setPresentationState\?\.\("FOCUS"\)/);
+assert.match(combatRendererSource, /attackerActor\?\.setPresentationState\?\.\("ACTION"\)/);
+assert.match(combatRendererSource, /attackerActor\?\.setPresentationState\?\.\("RETURN"\)/);
+assert.match(combatRendererSource, /attackerActor\?\.resetPresentationState\?\.\(\)/);
+
+const runtimeActors = createCombatStageActors({
+  batter: { id: "runtime-attacker", name: "Runtime Attacker" },
+  enemy: { id: "runtime-target", name: "Runtime Target" }
+});
+const runtimeStage = new CombatStage({ actors: runtimeActors });
+const runtimeDirector = new CombatPresentationDirector({ stage: runtimeStage });
+const runtimeResult = Object.freeze({
+  attackerId: "fixture-player-03",
+  targetId: "runtime-target",
+  result: "HOME_RUN",
+  damage: 100,
+  actionType: "SWING"
+});
+const runtimeAttacker = runtimeStage.getActor(runtimeResult.attackerId);
+const runtimeOthers = runtimeStage.getActors({ team: "PLAYER" }).filter((actor) => actor.actorId !== runtimeResult.attackerId);
+assert.ok(runtimeAttacker);
+const runtimeInitial = runtimeOthers.map((actor) => actor.getPresentationSnapshot());
+runtimeDirector.startFromCombatResult(runtimeResult);
+const runtimeHandler = (phase) => {
+  const attackerId = String(runtimeResult.attackerId || runtimeStage.selectedActorId || "");
+  const attackerActor = runtimeStage.getActor(attackerId);
+  if (phase === "ATTACKER_FOCUS") attackerActor?.setPresentationState?.("FOCUS");
+  if (phase === "ACTION") attackerActor?.setPresentationState?.("ACTION");
+  if (phase === "COMBAT_RETURN") attackerActor?.setPresentationState?.("RETURN");
+  if (phase === "COMPLETE") attackerActor?.resetPresentationState?.();
+};
+runtimeHandler("ATTACKER_FOCUS");
+assert.equal(runtimeAttacker.getPresentationState(), "FOCUS");
+runtimeHandler("ACTION");
+assert.equal(runtimeAttacker.getPresentationState(), "ACTION");
+assert.deepEqual(runtimeOthers.map((actor) => actor.getPresentationSnapshot()), runtimeInitial);
+runtimeHandler("COMBAT_RETURN");
+assert.equal(runtimeAttacker.getPresentationState(), "RETURN");
+runtimeHandler("COMPLETE");
+assert.equal(runtimeAttacker.getPresentationState(), "IDLE");
+assert.equal(runtimeDirector.getState().result.attackerId, runtimeResult.attackerId);
 
 const actorWiringActor = new CharacterActor2D5({
   actorId: "bw001",
