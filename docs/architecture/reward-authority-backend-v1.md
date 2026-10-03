@@ -361,3 +361,30 @@ The next implementation must establish a real server boundary where gameplay sta
 
 PRODUCTION BACKEND STATUS:
 NOT IMPLEMENTED
+
+
+## BONE-004-PROD-AUTH-002 · Current implementation status
+
+The provider-neutral backend described by this document now exists under `backend/`.
+
+Implemented locally:
+
+- Node.js ESM HTTP server with native `node:http`;
+- authenticated `GET /v1/combat/:matchId/init`;
+- authenticated `POST /v1/combat/:matchId/turn`;
+- server-side combat authority reusing `webapp/js/combat_core.js`;
+- server-generated match nonce;
+- server-owned turn sequence;
+- client-result rejection;
+- SERVER_COMBAT_ATTESTATION_V1 signer using ECDSA P-256 / SHA-256 / IEEE P1363;
+- production Telegram init-data verification boundary;
+- fail-closed `/ready` when persistence is not configured;
+- client compatibility proof against `webapp/js/reward_authority.js`.
+
+The current store is `InMemoryCombatStore` and is development/test only.
+
+Production deployment remains unconfigured. BONE-005 must provide the durable persistence boundary before BONE-004 can close.
+
+PRODUCTION BACKEND STATUS:
+
+IMPLEMENTED LOCALLY / NOT DEPLOYED
