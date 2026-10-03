@@ -98,3 +98,5 @@ console.log("SOURCE = PASS");
 console.log("DIRECTOR_RESULT_ATTACKER = PLAYER-03");
 console.log("CAMERA_FOCUS = PLAYER-03");
 console.log("GAMEPLAY_RESULT_UNCHANGED = PASS");
+
+// BONE-003 CLOSED: authenticated CI validates attacker authority, selected fallback, and gameplay immutability.
