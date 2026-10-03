@@ -168,9 +168,9 @@ assert.equal(actor.getPresentationState(), "ACTION");
 
 
 const combatRendererSource = fs.readFileSync(new URL("./combat.js", import.meta.url), "utf8");
-assert.match(combatRendererSource, /selectedActor\?\.setPresentationState\?\."FOCUS"/);
-assert.match(combatRendererSource, /selectedActor\?\.setPresentationState\?\."ACTION"/);
-assert.match(combatRendererSource, /selectedActor\?\.setPresentationState\?\."RETURN"/);
+assert.match(combatRendererSource, /selectedActor\?\.setPresentationState\?\.\("FOCUS"\)/);
+assert.match(combatRendererSource, /selectedActor\?\.setPresentationState\?\.\("ACTION"\)/);
+assert.match(combatRendererSource, /selectedActor\?\.setPresentationState\?\.\("RETURN"\)/);
 assert.match(combatRendererSource, /selectedActor\?\.resetPresentationState\?\(\)/);
 
 const actorWiringActor = new CharacterActor2D5({
