@@ -173,6 +173,8 @@ jobs:
         run: |
           set -euo pipefail
           node --version
+          node --experimental-default-type=module --check webapp/sw.js
+          node --experimental-default-type=module --check webapp/js/version_gate.js
           node --experimental-default-type=module --check webapp/js/api.js
           node --experimental-default-type=module --check webapp/js/reaction_rules.js
           node --experimental-default-type=module webapp/js/reaction_rules_test.mjs
@@ -225,6 +227,7 @@ jobs:
           set -euo pipefail
           node --experimental-default-type=module webapp/js/contract_test.mjs
           node --experimental-default-type=module webapp/js/pwa_sw_test.mjs
+          node --experimental-default-type=module webapp/js/version_gate_test.mjs
           node --experimental-default-type=module webapp/js/save_system_test.mjs
           node --experimental-default-type=module webapp/js/e2e_smoke_test.mjs
 
