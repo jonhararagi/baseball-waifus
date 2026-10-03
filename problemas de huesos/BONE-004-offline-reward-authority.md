@@ -29,34 +29,59 @@ Cierre: local demo safe PASS, server validation PASS, forged result rejection PA
 
 **P0 CONTRACT RUN:** Run 37142969041, step BONE-004 Reward Authority Contract = SUCCESS.
 
-**BROWSER:** BLOCKED. El probe Chromium alcanzó LOCAL_RESULT = DEMO_ONLY y LOCAL_REWARD = BLOCKED, pero la construcción dinámica del JavaScript evaluado en el harness falló en dos intentos controlados. No se hará un tercer intento dentro de esta task.
+**BROWSER:** PASS. El probe corregido ejecutó Chromium real y validó LOCAL_DEMO, rechazo de forged/tampered, atestación ECDSA P-256 temporal, grant canónico +100 SCRAP y duplicado no-op.
 
 **DEPLOY:** NOT COMPLETED. El workflow principal quedó bloqueado antes de deploy por BONE-001, cuyo probe reportó LEGACY_CACHE_PRESENT,OLD_PRODUCT_CACHE_PRESENT incluso en el reintento del run 37142855495. No se modificó BONE-001.
 
 **PRODUCTION BACKEND:** NO PRESENTE. No existe en este repositorio un emisor backend de reward_attestation; por lo tanto el contrato de verificación del cliente no se declara como backend productivo implementado.
 
-## Blocker
+## Estado tras BONE-004-R
 
-~~~
-CAUSE:
-BONE-004 browser harness todavía contiene un defecto de construcción dinámica de la expresión CDP.
+**HARNESS RECOVERY:** PASS. Se eliminó la construcción dinámica frágil del probe y se sustituyó por una única expresión CDP completa y determinista.
 
-ATTEMPTS:
-2
+**BROWSER EVIDENCE:** Run `37144155230`, step `BONE-004 Native Chromium Reward Authority Validation` = SUCCESS. Artifact `bone004-reward-authority-browser-evidence` contiene:
+- `LOCAL_RESULT = DEMO_ONLY`
+- `LOCAL_REWARD = BLOCKED`
+- `FORGED_SERVER_RESULT = REJECTED`
+- `TAMPERED_RESULT = REJECTED`
+- `VALID_SERVER_ATTESTATION = ACCEPTED`
+- `VALID_REWARD = ACCEPTED`
+- `SCRAP_AFTER_VALID = 100`
+- `DUPLICATE_REWARD = NO_OP`
+- `SCRAP_AFTER_DUPLICATE = 100`
+- `PLAYER_META = CONSISTENT`
+- `BONE-004 BROWSER PROBE = PASS`
 
-EVIDENCE:
-unit contract PASS;
-local economy block PASS;
-BONE-004 Chromium no alcanzó validación server completa;
-main deploy bloqueado además por BONE-001.
+**CI CONTRACT:** PASS. El mismo Run `37144155230`, step `BONE-004 Reward Authority Contract` = SUCCESS.
 
-NEEDS:
-corrección aislada del harness browser y posteriormente un backend real capaz de emitir atestaciones firmadas.
-~~~
+**GLOBAL CI:** BLOCKED por BONE-001 en Run `37144155227`. BONE-001 reportó su bloqueo de cache heredada y BONE-004 fue omitido en ese workflow. No se modificó BONE-001.
+
+**PRODUCTION BACKEND:** NOT PRESENT. El browser proof usa exclusivamente una keypair temporal generada dentro del navegador; no existe emisor backend productivo en este repositorio.
+
+**NEEDS:** backend productivo emisor de `reward_attestation` para retirar el último bloqueo comercial de BONE-004.
 
 **GAMEPLAY CHANGES:** NONE.  
 **BALANCE CHANGES:** NONE.  
 **OTHER BONES TOUCHED:** NONE.  
 **STATUS:** BLOCKED.
 
-**NEXT:** BONE-004 browser harness recovery, luego BONE-005 cuando corresponda.
+**BLOCKER ACTUAL:** PRODUCTION BACKEND EMITTER NOT PRESENT.
+
+**NEXT:** BONE-005 cuando corresponda.
+
+
+## BONE-004-R · BROWSER HARNESS RECOVERY
+
+**HEAD BEFORE:** `b5b3005ef599fafc2f8bcf428992d0d89e83e863`  
+**HEAD AFTER:** `127de485829a2b6f9efc07d2a0db08d9f88c1645`  
+**COMMIT:** `test: recover BONE-004 browser authority validation`
+
+**HARNESS RECOVERY:** PASS.  
+**UNIT TEST:** PASS.  
+**CHROMIUM:** PASS.  
+**BACKEND PRODUCTION:** NOT PRESENT.  
+**GAMEPLAY:** NO CHANGES.  
+**BALANCE:** NO CHANGES.  
+**OTHER BONES:** NO CHANGES.
+
+**STATUS:** BONE-004 permanece BLOCKED únicamente por la ausencia real del backend productivo emisor de atestaciones. El blocker browser quedó resuelto.

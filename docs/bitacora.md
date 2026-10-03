@@ -9362,3 +9362,22 @@ La infraestructura del combat slice está bastante avanzada, pero no corresponde
 **BONE-004:** BLOCKED.
 
 **BLOQUEO CONTROLADO:** máximo dos intentos del mismo defecto de harness consumidos. No se realizará un tercer retry en esta task. BONE-005 no fue iniciado.
+
+
+---
+
+## BONE-004-R · BROWSER HARNESS RECOVERY
+
+**Fecha:** 2026-10-03  
+**HEAD BEFORE:** `b5b3005ef599fafc2f8bcf428992d0d89e83e863`  
+**HEAD AFTER:** `127de485829a2b6f9efc07d2a0db08d9f88c1645`  
+**HARNESS RECOVERY:** PASS. Se reemplazó la concatenación frágil de expresiones CDP por una única expresión browser completa y determinista.  
+**UNIT TEST:** PASS. Run `37144155230`, step `BONE-004 Reward Authority Contract`.  
+**BROWSER:** PASS. Run `37144155230`, step `BONE-004 Native Chromium Reward Authority Validation`. Chromium real produjo forged/tampered reject, temporary ECDSA acceptance, `SCRAP_AFTER_VALID=100` y duplicate no-op.  
+**GLOBAL CI:** BLOCKED por BONE-001 en Run `37144155227`; BONE-001 no fue modificado.  
+**BACKEND PRODUCTION:** NOT PRESENT.  
+**GAMEPLAY:** NO.  
+**BALANCE:** NO.  
+**OTHER BONES:** NO.
+
+**BONE-004 STATUS:** BLOCKED únicamente por la ausencia del emisor backend productivo de `reward_attestation`. El blocker de browser harness queda cerrado.
