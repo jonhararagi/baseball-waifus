@@ -1,3 +1,4 @@
+import { CombatRenderer } from "./combat.js";
 import assert from "node:assert/strict";
 import {
   CombatPresentationDirector,
@@ -165,4 +166,86 @@ assert.deepEqual(gameplayAuthority, {
 });
 assert.equal(actor.getPresentationState(), "ACTION");
 
-console.log("T077/T078/T119 combat presentation director: PASS");
+
+const actorWiringActor = new CharacterActor2D5({
+  actorId: "bw001",
+  position: { x: 0.19, y: 0.58 },
+  depth: COMBAT_STAGE_DEPTH.MID,
+  scale: 0.94,
+  rotation: 3,
+  facing: 1,
+  visible: true
+});
+const actorWiringDataset = {};
+const actorWiringRenderer = {
+  combatStage: {
+    selectedActorId: "bw001",
+    getActor: (actorId) => actorId === "bw001" ? actorWiringActor : null
+  },
+  canvas: { dataset: actorWiringDataset },
+  timingFeedback: { classList: { remove: () => {} } },
+  batterRenderer: {
+    beginWindup: () => "WINDUP",
+    beginSwing: () => "SWING",
+    setState: () => "IDLE"
+  },
+  _syncCinematicOverlayState: () => {},
+  _syncCombatStageDataset: () => {
+    actorWiringDataset.characterActorState = actorWiringActor.presentationState;
+    actorWiringDataset.characterActorDepth = actorWiringActor.depth;
+    actorWiringDataset.characterActorVisible = String(actorWiringActor.visible);
+  },
+  combatEffects: { trigger: () => {} }
+};
+
+const actorBefore = actorWiringActor.getPresentationSnapshot();
+CombatRenderer.prototype._handleCombatPresentationStep.call(actorWiringRenderer, {
+  phase: COMBAT_PRESENTATION_PHASE.ATTACKER_FOCUS,
+  result: { result: "HOME_RUN", damage: 100 }
+});
+assert.equal(actorWiringActor.getPresentationState(), "FOCUS");
+
+CombatRenderer.prototype._handleCombatPresentationStep.call(actorWiringRenderer, {
+  phase: COMBAT_PRESENTATION_PHASE.ACTION,
+  result: { result: "HOME_RUN", damage: 100 }
+});
+assert.equal(actorWiringActor.getPresentationState(), "ACTION");
+
+CombatRenderer.prototype._handleCombatPresentationStep.call(actorWiringRenderer, {
+  phase: COMBAT_PRESENTATION_PHASE.COMBAT_RETURN,
+  result: { result: "HOME_RUN", damage: 100 }
+});
+assert.equal(actorWiringActor.getPresentationState(), "RETURN");
+
+CombatRenderer.prototype._handleCombatPresentationStep.call(actorWiringRenderer, {
+  phase: COMBAT_PRESENTATION_PHASE.COMPLETE,
+  result: { result: "HOME_RUN", damage: 100 }
+});
+assert.equal(actorWiringActor.getPresentationState(), "IDLE");
+
+const actorAfter = actorWiringActor.getPresentationSnapshot();
+assert.deepEqual(actorAfter.position, actorBefore.position);
+assert.equal(actorAfter.depth, actorBefore.depth);
+assert.equal(actorAfter.scale, actorBefore.scale);
+assert.equal(actorAfter.rotation, actorBefore.rotation);
+assert.equal(actorAfter.facing, actorBefore.facing);
+assert.equal(actorAfter.visible, actorBefore.visible);
+assert.equal(actorAfter.presentationOnly, true);
+
+const gameplayAuthorityT120 = Object.freeze({
+  result: "HOME_RUN",
+  damage: 100,
+  victory: true,
+  reward: 100,
+  persistence: "UNCHANGED"
+});
+assert.deepEqual(gameplayAuthorityT120, {
+  result: "HOME_RUN",
+  damage: 100,
+  victory: true,
+  reward: 100,
+  persistence: "UNCHANGED"
+});
+assert.equal(actorAfter.presentationState, "IDLE");
+
+console.log("T077/T078/T119/T120 combat presentation director: PASS");

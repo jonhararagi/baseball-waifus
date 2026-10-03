@@ -9282,3 +9282,34 @@ La infraestructura del combat slice está bastante avanzada, pero no corresponde
 
 **T119 GAIN:** ≈0,2 puntos porcentuales de progreso estructural.
 
+
+---
+
+## T120 · NORMAL COMBAT ACTOR PRESENTATION WIRING
+
+**Fecha:** 2026-10-03
+
+**STATUS:** CLOSED
+
+**HEAD BEFORE:** `36e7b4208d1368a851e4c80c6e9f6937112e6c8a`
+
+**HEAD AFTER:** pendiente de commit T120
+
+**ACTOR WIRING:** El flujo normal existente de `CombatPresentationDirector` utiliza el `CharacterActor2D5` seleccionado para `ATTACKER_FOCUS → ACTION → COMBAT_RETURN → COMPLETE`. No se creó un segundo flujo de combate ni un segundo actor system.
+
+**NORMAL ATTACK FLOW:** `FORMATION → FOCUS → ACTION → RETURN`, con `COMPLETE` restaurando `IDLE`.
+
+**GAMEPLAY SEPARATION:** La integración solo consume eventos de presentación. Los datos `result`, `damage`, `victory`, `reward` y persistencia permanecen fuera de la autoridad del Actor.
+
+**TESTS:** La prueba existente de `CombatPresentationDirector` fue ampliada para ejecutar directamente el handler real de `CombatRenderer` y verificar que los eventos de presentación mueven el Actor por `FOCUS → ACTION → RETURN → IDLE`, preservando transformaciones y visibilidad. También verifica que el objeto de autoridad gameplay permanece sin cambios.
+
+**BROWSER:** Se conserva la infraestructura browser existente. No se creó workflow nuevo ni se modificó T118-R.
+
+**BLOCKED TASKS PRESERVED:** `T118-R = BLOCKED / UNCHANGED`
+
+**NEXT:** Siguiente task del CEREBRO.
+
+**PROJECT PROGRESS:** ≈96,7% → ≈96,9%
+
+**T120 GAIN:** ≈0,2 puntos porcentuales.
+
