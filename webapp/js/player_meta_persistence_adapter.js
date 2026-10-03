@@ -101,7 +101,8 @@ export class PlayerMetaPersistenceAdapter {
     if (typeof keyPrefix !== "string" || keyPrefix.length === 0) throw new TypeError("keyPrefix must be non-empty");
     this.storage = storage;
     this.keyPrefix = keyPrefix;
-    this._revision = 0;
+    this._revisions = new Map();
+    this._lastKey = null;
   }
 
   _readCurrentRecord(identity) {
@@ -132,15 +133,21 @@ export class PlayerMetaPersistenceAdapter {
     }
   }
 
-  save(state, { expectedRevision = this._revision } = {}) {
+  save(state, { expectedRevision = null } = {}) {
     validatePlayerMetaState(state);
-    assertRevision(expectedRevision, "expectedRevision");
 
     const identity = assertIdentity(state.identity);
+    const key = storageKey(identity, this.keyPrefix);
+    const resolvedExpectedRevision = expectedRevision === null
+      ? (this._revisions.get(key) ?? 0)
+      : expectedRevision;
+    assertRevision(resolvedExpectedRevision, "expectedRevision");
+
     const current = this._readCurrentRecord(identity);
-    if (expectedRevision !== current.revision) {
-      this._revision = current.revision;
-      throw new StalePlayerMetaWriteError(expectedRevision, current.revision);
+    if (resolvedExpectedRevision !== current.revision) {
+      this._revisions.set(current.key, current.revision);
+      this._lastKey = current.key;
+      throw new StalePlayerMetaWriteError(resolvedExpectedRevision, current.revision);
     }
 
     const nextRevision = current.revision + 1;
@@ -156,14 +163,16 @@ export class PlayerMetaPersistenceAdapter {
         const swapped = this.storage.compareAndSet(current.key, current.serialized, serialized);
         if (!swapped) {
           const latest = this._readCurrentRecord(identity);
-          this._revision = latest.revision;
-          throw new StalePlayerMetaWriteError(expectedRevision, latest.revision);
+          this._revisions.set(latest.key, latest.revision);
+          this._lastKey = latest.key;
+          throw new StalePlayerMetaWriteError(resolvedExpectedRevision, latest.revision);
         }
       } else {
         const verification = this._readCurrentRecord(identity);
         if (verification.revision !== expectedRevision) {
-          this._revision = verification.revision;
-          throw new StalePlayerMetaWriteError(expectedRevision, verification.revision);
+          this._revisions.set(verification.key, verification.revision);
+          this._lastKey = verification.key;
+          throw new StalePlayerMetaWriteError(resolvedExpectedRevision, verification.revision);
         }
         this.storage.setItem(current.key, serialized);
       }
@@ -172,7 +181,8 @@ export class PlayerMetaPersistenceAdapter {
       throw new PlayerMetaPersistenceError("PlayerMetaState persistence failed", error);
     }
 
-    this._revision = nextRevision;
+    this._revisions.set(current.key, nextRevision);
+    this._lastKey = current.key;
     return Object.freeze({
       ok: true,
       playerId: state.identity.playerId,
@@ -184,12 +194,16 @@ export class PlayerMetaPersistenceAdapter {
   load(identity) {
     const normalizedIdentity = assertIdentity(identity);
     const current = this._readCurrentRecord(normalizedIdentity);
-    this._revision = current.revision;
+    this._revisions.set(current.key, current.revision);
+    this._lastKey = current.key;
     return current.state;
   }
 
-  getRevision() {
-    return this._revision;
+  getRevision(identity = null) {
+    if (identity !== null) {
+      return this._revisions.get(storageKey(identity, this.keyPrefix)) ?? 0;
+    }
+    return this._lastKey ? (this._revisions.get(this._lastKey) ?? 0) : 0;
   }
 
   clear(identity) {
@@ -200,7 +214,9 @@ export class PlayerMetaPersistenceAdapter {
     } catch (error) {
       throw new PlayerMetaPersistenceError("PlayerMetaState clear failed", error);
     }
-    this._revision = 0;
+    const key = storageKey(normalizedIdentity, this.keyPrefix);
+    this._revisions.set(key, 0);
+    this._lastKey = key;
     return Object.freeze({ ok: true, playerId: normalizedIdentity.playerId });
   }
 
