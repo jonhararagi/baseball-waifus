@@ -9,6 +9,9 @@ on:
       - "webapp/js/app.js"
       - "webapp/js/combat.js"
       - "webapp/js/reward_pipeline.js"
+      - "webapp/js/reward_authority.js"
+      - "webapp/js/bone004_reward_authority_test.mjs"
+      - "webapp/js/bone004_browser_probe.mjs"
       - "webapp/js/reward_resolver.js"
       - "webapp/js/player_meta_reward_adapter.js"
       - "webapp/js/player_meta_state.js"
@@ -57,6 +60,28 @@ jobs:
         run: |
           set -euo pipefail
           node --check webapp/js/character_journey_browser_probe.mjs
+      - name: BONE-004 Reward Authority Contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --experimental-default-type=module --check webapp/js/reward_authority.js
+          node --experimental-default-type=module webapp/js/bone004_reward_authority_test.mjs
+      - name: BONE-004 Native Chromium Reward Authority Validation
+        shell: bash
+        env:
+          SITE_DIR: webapp
+          BROWSER_BIN: ${{ steps.chrome.outputs.browser_bin }}
+        run: |
+          set -euo pipefail
+          mkdir -p browser-evidence/BONE-004
+          node webapp/js/bone004_browser_probe.mjs | tee browser-evidence/BONE-004/bone004-browser-output.txt
+      - name: Upload BONE-004 browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bone004-reward-authority-browser-evidence
+          path: browser-evidence/BONE-004/
+          if-no-files-found: warn
       - name: Run T097 reward handoff proof
         shell: bash
         env:
