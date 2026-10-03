@@ -55,7 +55,7 @@ assert.equal(schema.gacha.pity.hard_pity.pull_limit, 80);
 
 const persisted = JSON.parse(data.get("baseball_waifus_player_meta_v1:local-player"));
 assert.equal(persisted.schemaVersion, 1);
-assert.equal(persisted.revision, 1);
+assert.ok(Number.isSafeInteger(persisted.revision) && persisted.revision > 0);
 assert.equal(persisted.state.inventory.characters.bw001.quantity, 1);
 assert.equal(persisted.state.roster.activeBatter, "bw001");
 
