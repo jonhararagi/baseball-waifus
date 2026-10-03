@@ -1,0 +1,39 @@
+name: BaseWarriors Backend Authority Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "webapp/js/combat_core.js"
+      - "webapp/js/reward_authority.js"
+      - ".github/workflows/backend-authority-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Validate backend syntax
+        run: |
+          node --check src/config.mjs
+          node --check src/errors.mjs
+          node --check src/auth.mjs
+          node --check src/combat_store.mjs
+          node --check src/combat_service.mjs
+          node --check src/attestation_signer.mjs
+          node --check src/server.mjs
+      - name: Backend authority tests
+        run: npm test
