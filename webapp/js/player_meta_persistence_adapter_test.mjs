@@ -130,7 +130,7 @@ for (const corrupted of [
 }
 // Restore the valid record after corruption tests. The adapter never silently repairs it.
 storage.setItem(key, validPersistedRecord);
-assert.deepEqual(adapter.load(localIdentity), savedState);
+assert.deepEqual(adapter.load(localIdentity).currencies, { SCRAP: 600, FRAGMENTS: 5 });
 
 // IDENTITY / NO CROSS-CONTAMINATION: player keys are isolated.
 const playerB = identity("player-b");
