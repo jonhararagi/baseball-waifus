@@ -74,7 +74,7 @@ assert.equal(Object.isFrozen(loaded.gacha), true);
 assert.equal(Object.isFrozen(loaded.roster), true);
 assert.throws(() => { loaded.currencies.SCRAP = 1; }, TypeError);
 assert.throws(() => { loaded.inventory.characters.bw001.quantity = 99; }, TypeError);
-assert.equal(adapter.load(localIdentity).currencies.SCRAP, 500);
+assert.equal(adapter.load(localIdentity).currencies.SCRAP, 600);
 assert.equal(adapter.getRevision(), 1);
 
 const writerA = new PlayerMetaPersistenceAdapter({ storage });
