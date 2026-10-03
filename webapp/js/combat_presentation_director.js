@@ -118,7 +118,14 @@ export class CombatPresentationDirector {
     return formation;
   }
 
-  getFormation() { return this.formation; }
+  _ensureRuntimeFormation() {
+    if (!this.formation) this.formation = this._createRuntimeFormation();
+    return this.formation;
+  }
+
+  getFormation() {
+    return this._ensureRuntimeFormation();
+  }
 
   setStage(stage) {
     this.stage = stage && typeof stage.getCameraAnchor === "function" ? stage : null;
@@ -176,6 +183,7 @@ export class CombatPresentationDirector {
   }
 
   startFromCombatResult(result, fallback = {}) {
+    this._ensureRuntimeFormation();
     const normalized = normalizePresentationInput(result, fallback);
     this.sequenceId = "combat-presentation:" + normalized.attackerId + ":" + normalized.targetId + ":" + normalized.result;
     this.sequenceKind = "NORMAL_ACTION";
@@ -315,8 +323,8 @@ export class CombatPresentationDirector {
       result: this.result,
       commandCount: this.commands.length,
       deterministic: true,
-      formationInitialized: Boolean(this.formation),
-      formationActorCount: this.formation?.getState().actorCount || 0
+      formationInitialized: Boolean(this._ensureRuntimeFormation()),
+      formationActorCount: this._ensureRuntimeFormation()?.getState().actorCount || 0
     });
   }
 
