@@ -9413,3 +9413,45 @@ La infraestructura del combat slice está bastante avanzada, pero no corresponde
 **BONE-004:** UNCHANGED.
 
 **STATUS:** CLOSED.
+
+
+---
+
+## BONE-004-PROD-AUTH-001 · BACKEND AUTHORITY INFRASTRUCTURE DIAGNOSTIC
+
+**Fecha:** 2026-10-03  
+**HEAD BEFORE:** `c4b0368fe6ea4121c858e21175b912a0d180b4bc`  
+**HEAD AFTER:** ver checkpoint documental final de esta task  
+**TIMER:** 60–90 minutos  
+**RESULT:** PASS.
+
+**STATIC FRONTEND:** GitHub Pages / WebApp estático.
+
+**BACKEND:** No existe implementación productiva desplegable de backend, servidor, functions o API en el repositorio. `webapp/js/api.js` solo define el contrato cliente para `/v1/combat/:matchId/init` y `/v1/combat/:matchId/turn`.
+
+**REWARD AUTHORITY:** `SERVER_COMBAT_ATTESTATION_V1` + `ECDSA_P256_SHA256` están implementados y verificados del lado cliente, pero el emisor productivo de `reward_attestation` no existe.
+
+**GAMEPLAY AUTHORITY:** existe gameplay local/client-side; no existe todavía autoridad de combate server-side.
+
+**PERSISTENCE AUTHORITY:** existe `PlayerMetaAuthority` + persistencia local; la autoridad persistente backend queda pendiente y depende de BONE-005.
+
+**TELEGRAM:** el cliente envía `x-telegram-init-data`; no existe validación server-side de identidad Telegram. `initDataUnsafe` queda explícitamente fuera de la frontera de autenticación económica.
+
+**SECRET BOUNDARY:** no se encontró material de clave privada ni un sistema productivo de secret/key management en el repositorio. La futura clave privada deberá vivir fuera del repositorio y del cliente, en la infraestructura del backend.
+
+**INFRASTRUCTURE OPTIONS:** documentadas de forma neutral: serverless functions, containerized API y managed application backend. No se seleccionó proveedor.
+
+**BONE-005 DEPENDENCY:** documentada para durable reward ledger, nonce/replay state, Player Meta y persistencia/concurrencia.
+
+**BONE-011 DEPENDENCY:** documentada para transaction ID, idempotency, secrets, authenticated identity, persistence y audit trail compartidos.
+
+**BACKEND SCAFFOLD:** NONE. Se evitó crear un mock que pudiera confundirse con producción.
+
+**DOCUMENT:** `docs/architecture/reward-authority-backend-v1.md`.
+
+**RUNTIME:** UNCHANGED.  
+**GAMEPLAY:** UNCHANGED.  
+**BALANCE:** UNCHANGED.  
+**BONE-004:** BLOCKED.  
+**BONE-005:** OPEN / UNCHANGED.  
+**BONE-011:** OPEN / UNCHANGED.
