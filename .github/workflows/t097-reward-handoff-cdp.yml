@@ -129,6 +129,27 @@ jobs:
           path: browser-evidence/T117/
           if-no-files-found: warn
 
+      - name: Run T118 non-hit terminal reward validation
+        if: always()
+        shell: bash
+        env:
+          T072_SITE_DIR: webapp
+          T072_EVIDENCE_DIR: browser-evidence/T118/$GITHUB_SHA/$GITHUB_RUN_ID
+          T118_NON_HIT_REWARD_VALIDATION: "1"
+          BROWSER_BIN: ${{ steps.chrome.outputs.browser_bin }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$T072_EVIDENCE_DIR"
+          node webapp/js/character_journey_browser_probe.mjs
+
+      - name: Upload T118 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: t118-non-hit-reward-browser-evidence
+          path: browser-evidence/T118/
+          if-no-files-found: warn
+
       - name: Run T114-R2 historical T096 terminal timing recovery
         if: always()
         shell: bash
