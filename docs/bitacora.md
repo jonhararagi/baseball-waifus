@@ -9496,3 +9496,59 @@ La infraestructura del combat slice está bastante avanzada, pero no corresponde
 
 **FILES:** `backend/**`, `.github/workflows/backend-authority-tests.yml`, documentación BONE-004 y arquitectura.
 
+
+
+---
+
+## BONE-005-PERSISTENCE-AUTH-001 · PERSISTENCE AUTHORITY
+
+Fecha: 2026-10-03
+BASE SHA: febc0131116a39c8d8c523acfe0f4e0f8c5715d4
+IMPLEMENTATION VALIDATED SHA: 219d99e2b4d67d799ccfe49693eff6bed4bfabb0
+TIMER: 90–120 minutos
+RESULT: PASS / BONE-005 CLOSED
+
+Se implementó persistencia durable provider-neutral para el backend mediante PersistentCombatStore, manteniendo CombatService desacoplado del proveedor.
+
+### Backend
+
+- schema version 1;
+- matches + rewardLedger persistidos juntos;
+- nonce, turn sequence, player binding y completed state recuperables tras restart;
+- atomic write temporal + fsync + rename;
+- corrupción/schema/reward ledger inválidos bloqueados;
+- InMemoryCombatStore preservado para tests rápidos.
+
+### Player Meta / migration
+
+- modern Player Meta precedence PASS;
+- new-device Cloud → local rehydration PASS;
+- stale legacy/local snapshot no puede sobrescribir modern Player Meta;
+- legacy Gacha migration PASS;
+- migration idempotente PASS;
+- Telegram CloudStorage existente reutilizado;
+- identity isolation PASS;
+- corrupt Cloud JSON fail-closed PASS;
+- Player Meta persisted identity validates playerId/provider/telegramUserId.
+
+### Reward ledger
+
+battle:<matchId> durable y protegido tras restart. Primera autorización aceptada; segunda autorización devuelve NO_OP/false.
+
+No se modificaron reward amounts, gacha rates, pity, damage formulas ni webapp/js/combat_core.js.
+
+### Evidence
+
+- Backend GitHub Actions Run 37149995577 = SUCCESS.
+- Backend npm test = 14/14 PASS.
+- Client targeted GitHub Actions Run 37149981537 = SUCCESS.
+- Compare febc013...219d99e = 5 commits, sin cambios fuera de backend/persistence workflows/client persistence surfaces.
+- BONE-001/002/003 permanecen CLOSED y no fueron reabiertos.
+- BONE-004 permanece BLOCKED; no se declara deployment productivo.
+- BONE-011 permanece OPEN y sin cambios.
+
+### CI note
+
+El workflow amplio Player Meta Persistence Tests (Run 37149896256) sigue rojo por un assert de reward_pipeline_test.mjs perteneciente a la regresión de BONE-004. Ese workflow ya había mostrado fallo antes de BONE-005 (Run 37142700526 sobre fd832040...). No se modificó ese pipeline dentro de esta task para evitar ampliar el scope.
+
+STATUS: CLOSED.

@@ -235,3 +235,22 @@ GitHub Actions Run `37147971145` on HEAD `6d67d0577d2e96e01d98218eb996efc49f101f
 
 **REMAINING BLOCKER:** production infrastructure is not configured yet: durable persistence/reward ledger, external production secret/key configuration, Telegram Bot Token/environment configuration and deployed HTTPS backend origin are still required.
 
+
+
+## BONE-005-PERSISTENCE-AUTH-001 · DEPENDENCY UPDATE
+
+Fecha: 2026-10-03
+BONE-005: CLOSED en su alcance de persistencia dual y durable filesystem/integration tests.
+
+La dependencia de BONE-005 queda satisfecha para la implementación y validación local del backend: existe PersistentCombatStore, reward ledger durable, restart recovery y protección de migración Player Meta.
+
+Esto NO convierte BONE-004 en producción.
+
+BONE-004 permanece BLOCKED mientras falten:
+
+- configuración externa de production secrets/private key;
+- Telegram Bot Token en entorno productivo;
+- backend HTTPS desplegado;
+- persistence provider y operación productiva.
+
+No se modificó BONE-011.

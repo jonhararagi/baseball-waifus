@@ -388,3 +388,32 @@ Production deployment remains unconfigured. BONE-005 must provide the durable pe
 PRODUCTION BACKEND STATUS:
 
 IMPLEMENTED LOCALLY / NOT DEPLOYED
+
+
+## Current implementation checkpoint · 2026-10-03
+
+The repository now contains the first provider-neutral backend authority implementation created for BONE-004 and the durable persistence implementation completed by BONE-005.
+
+### Durable persistence
+
+backend/src/persistent_combat_store.mjs provides a filesystem-backed schema-versioned store containing:
+
+- authoritative combat matches;
+- durable rewardLedger;
+- atomic temp-file + fsync + rename writes;
+- validation and fail-closed recovery;
+- same-document match/reward persistence.
+
+The CombatService contract remains provider-neutral and can continue using InMemoryCombatStore for fast tests.
+
+### Client persistence boundary
+
+PlayerMetaAuthority is the modern client state authority.
+
+Legacy Gacha/local/Telegram data is migration/cache input only. Existing Player Meta wins over a later legacy snapshot. Cloud corruption does not silently fall back to stale local data.
+
+### Production boundary
+
+This is still NOT A PRODUCTION DEPLOYMENT.
+
+The durable filesystem adapter is a development/integration provider. BONE-004 remains blocked until production secrets, Telegram bot configuration, deployment and production persistence operations are configured outside this repository.

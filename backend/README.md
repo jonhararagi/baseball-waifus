@@ -70,3 +70,12 @@ The store interface is isolated behind createMatch, loadMatch and saveMatch.
 PRODUCTION BACKEND STATUS
 
 IMPLEMENTED LOCALLY / NOT DEPLOYED
+
+
+## BONE-005 durable persistence
+
+The backend now includes PersistentCombatStore as a provider-neutral filesystem implementation for development/integration.
+
+It persists combat matches and battle:<matchId> reward authorization in one versioned document and writes through a temporary file followed by fsync and atomic rename.
+
+Production deployment remains disabled. InMemoryCombatStore is still available for fast tests, while PersistentCombatStore can be replaced by a future managed database implementation without changing CombatService.
