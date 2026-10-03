@@ -214,7 +214,6 @@ export class PlayerMetaPersistenceAdapter {
     } catch (error) {
       throw new PlayerMetaPersistenceError("PlayerMetaState clear failed", error);
     }
-    const key = storageKey(normalizedIdentity, this.keyPrefix);
     this._revisions.set(key, 0);
     this._lastKey = key;
     return Object.freeze({ ok: true, playerId: normalizedIdentity.playerId });
