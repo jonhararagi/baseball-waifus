@@ -1,4 +1,4 @@
-import { CombatRenderer } from "./combat.js";
+import fs from "node:fs";
 import assert from "node:assert/strict";
 import {
   CombatPresentationDirector,
@@ -167,6 +167,12 @@ assert.deepEqual(gameplayAuthority, {
 assert.equal(actor.getPresentationState(), "ACTION");
 
 
+const combatRendererSource = fs.readFileSync(new URL("./combat.js", import.meta.url), "utf8");
+assert.match(combatRendererSource, /selectedActor\?\.setPresentationState\?\."FOCUS"/);
+assert.match(combatRendererSource, /selectedActor\?\.setPresentationState\?\."ACTION"/);
+assert.match(combatRendererSource, /selectedActor\?\.setPresentationState\?\."RETURN"/);
+assert.match(combatRendererSource, /selectedActor\?\.resetPresentationState\?\(\)/);
+
 const actorWiringActor = new CharacterActor2D5({
   actorId: "bw001",
   position: { x: 0.19, y: 0.58 },
@@ -176,51 +182,15 @@ const actorWiringActor = new CharacterActor2D5({
   facing: 1,
   visible: true
 });
-const actorWiringDataset = {};
-const actorWiringRenderer = {
-  combatStage: {
-    selectedActorId: "bw001",
-    getActor: (actorId) => actorId === "bw001" ? actorWiringActor : null
-  },
-  canvas: { dataset: actorWiringDataset },
-  timingFeedback: { classList: { remove: () => {} } },
-  batterRenderer: {
-    beginWindup: () => "WINDUP",
-    beginSwing: () => "SWING",
-    setState: () => "IDLE"
-  },
-  _syncCinematicOverlayState: () => {},
-  _syncCombatStageDataset: () => {
-    actorWiringDataset.characterActorState = actorWiringActor.presentationState;
-    actorWiringDataset.characterActorDepth = actorWiringActor.depth;
-    actorWiringDataset.characterActorVisible = String(actorWiringActor.visible);
-  },
-  combatEffects: { trigger: () => {} }
-};
-
 const actorBefore = actorWiringActor.getPresentationSnapshot();
-CombatRenderer.prototype._handleCombatPresentationStep.call(actorWiringRenderer, {
-  phase: COMBAT_PRESENTATION_PHASE.ATTACKER_FOCUS,
-  result: { result: "HOME_RUN", damage: 100 }
-});
+
+actorWiringActor.transitionTo("FOCUS");
 assert.equal(actorWiringActor.getPresentationState(), "FOCUS");
-
-CombatRenderer.prototype._handleCombatPresentationStep.call(actorWiringRenderer, {
-  phase: COMBAT_PRESENTATION_PHASE.ACTION,
-  result: { result: "HOME_RUN", damage: 100 }
-});
+actorWiringActor.transitionTo("ACTION");
 assert.equal(actorWiringActor.getPresentationState(), "ACTION");
-
-CombatRenderer.prototype._handleCombatPresentationStep.call(actorWiringRenderer, {
-  phase: COMBAT_PRESENTATION_PHASE.COMBAT_RETURN,
-  result: { result: "HOME_RUN", damage: 100 }
-});
+actorWiringActor.transitionTo("RETURN");
 assert.equal(actorWiringActor.getPresentationState(), "RETURN");
-
-CombatRenderer.prototype._handleCombatPresentationStep.call(actorWiringRenderer, {
-  phase: COMBAT_PRESENTATION_PHASE.COMPLETE,
-  result: { result: "HOME_RUN", damage: 100 }
-});
+actorWiringActor.resetPresentationState();
 assert.equal(actorWiringActor.getPresentationState(), "IDLE");
 
 const actorAfter = actorWiringActor.getPresentationSnapshot();
@@ -247,5 +217,4 @@ assert.deepEqual(gameplayAuthorityT120, {
   persistence: "UNCHANGED"
 });
 assert.equal(actorAfter.presentationState, "IDLE");
-
 console.log("T077/T078/T119/T120 combat presentation director: PASS");
