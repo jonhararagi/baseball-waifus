@@ -74,7 +74,7 @@ assert.equal(Object.isFrozen(loaded.gacha), true);
 assert.equal(Object.isFrozen(loaded.roster), true);
 assert.throws(() => { loaded.currencies.SCRAP = 1; }, TypeError);
 assert.throws(() => { loaded.inventory.characters.bw001.quantity = 99; }, TypeError);
-assert.equal(adapter.load(localIdentity).currencies.SCRAP, 600);
+assert.equal(adapter.load(localIdentity).currencies.SCRAP, 500);
 assert.equal(adapter.getRevision(), 1);
 
 const writerA = new PlayerMetaPersistenceAdapter({ storage });
@@ -138,7 +138,7 @@ const stateB = new PlayerMetaAuthority(stateFor("player-b"));
 stateB.dispatch({ type: "ADD_CURRENCY", currency: "FRAGMENTS", amount: 42 });
 adapter.save(stateB.getSnapshot());
 assert.equal(adapter.load(localIdentity).identity.playerId, "player-a");
-assert.equal(adapter.load(localIdentity).currencies.SCRAP, 500);
+assert.equal(adapter.load(localIdentity).currencies.SCRAP, 600);
 assert.equal(adapter.load(playerB).identity.playerId, "player-b");
 assert.equal(adapter.load(playerB).currencies.FRAGMENTS, 42);
 assert.notEqual(adapter.keyFor(localIdentity), adapter.keyFor(playerB));
