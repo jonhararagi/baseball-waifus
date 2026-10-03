@@ -6,7 +6,12 @@ import {
 } from "./combat_presentation_director.js";
 import { createPresentationCommand } from "./presentation_event_contract.js";
 import { resolveClimaxTurn } from "./combat_core.js";
-import { CombatStage } from "./combat_stage.js";
+import {
+  CHARACTER_ACTOR_2D5_STATES,
+  CharacterActor2D5,
+  CombatStage,
+  COMBAT_STAGE_DEPTH
+} from "./combat_stage.js";
 
 const cues = [];
 const stage = new CombatStage();
@@ -107,4 +112,57 @@ assert.ok(["PLAYER_FOCUS", "ACTION", "IMPACT", "REACTION", "RETURN"].includes(
 ));
 assert.equal(stage.getState().presentationOnly, true);
 
-console.log("T077/T078 combat presentation director: PASS");
+const actor = new CharacterActor2D5({
+  actorId: "t119-character",
+  position: { x: 0.42, y: 0.61 },
+  depth: COMBAT_STAGE_DEPTH.FAR,
+  scale: 0.84,
+  rotation: 7,
+  facing: -1,
+  visible: true
+});
+const initialActor = actor.getPresentationSnapshot();
+assert.equal(initialActor.presentationState, CHARACTER_ACTOR_2D5_STATES.IDLE);
+assert.deepEqual(initialActor.position, { x: 0.42, y: 0.61 });
+assert.equal(initialActor.depth, "FAR");
+assert.equal(initialActor.scale, 0.84);
+assert.equal(initialActor.rotation, 7);
+assert.equal(initialActor.facing, -1);
+assert.equal(initialActor.visible, true);
+assert.equal(initialActor.presentationOnly, true);
+
+assert.equal(actor.transitionTo("FOCUS"), "FOCUS");
+assert.equal(actor.transitionTo("ACTION"), "ACTION");
+assert.equal(actor.transitionTo("RETURN"), "RETURN");
+assert.equal(actor.resetPresentationState(), "IDLE");
+const finalActor = actor.getPresentationSnapshot();
+assert.equal(finalActor.presentationState, "IDLE");
+assert.deepEqual(finalActor.position, initialActor.position);
+assert.equal(finalActor.depth, initialActor.depth);
+assert.equal(finalActor.scale, initialActor.scale);
+assert.equal(finalActor.rotation, initialActor.rotation);
+assert.equal(finalActor.facing, initialActor.facing);
+assert.equal(finalActor.visible, true);
+
+assert.throws(() => actor.transitionTo("ACTION"), /Invalid CharacterActor2D5 transition/);
+actor.setVisible(false);
+assert.equal(actor.getPresentationSnapshot().visible, false);
+
+const gameplayAuthority = Object.freeze({
+  result: "HOME_RUN",
+  damage: 100,
+  victory: true,
+  reward: 100
+});
+actor.setVisible(true);
+actor.transitionTo("FOCUS");
+actor.transitionTo("ACTION");
+assert.deepEqual(gameplayAuthority, {
+  result: "HOME_RUN",
+  damage: 100,
+  victory: true,
+  reward: 100
+});
+assert.equal(actor.getPresentationState(), "ACTION");
+
+console.log("T077/T078/T119 combat presentation director: PASS");

@@ -139,40 +139,122 @@ function buildActorAnchors(position, depth, scale, elevation) {
     REACTION_CAMERA: { x: clamp(position.x + depthOffset * 0.6, 0, 1), y: clamp(base.y - 0.02, 0, 1), zoom: clamp(focusZoom + 0.01, 1.08, 1.3), rotationDeg: depth === "FAR" ? -1 : 0, shot: "MEDIUM", angle: "EYE_LEVEL" }
   };
 }
-export function createCombatActor({
-  actorId, team = "PLAYER", kind = "CHARACTER", position = { x: 0.5, y: 0.5 }, depth = "MID",
-  scale = null, rotation = 0, elevation = 0, facing = null, visual = {}, state = "IDLE",
-  cameraAnchors = {}, actionAnchors = {}, vfxAnchors = {}
-} = {}) {
-  const id = String(actorId || "").trim();
-  if (!id) throw new TypeError("Combat actor requires actorId");
-  const normalizedDepth = normalizeDepth(depth);
-  const normalizedPosition = normalizePoint(position, { x: 0.5, y: 0.5 });
-  const normalizedScale = clamp(finite(scale, DEPTH_SCALE[normalizedDepth]), 0.55, 1.5);
-  const normalizedElevation = clamp(finite(elevation, 0), 0, 0.5);
-  const normalizedFacing = finite(facing, String(team).toUpperCase() === "ENEMY" ? -1 : 1) < 0 ? -1 : 1;
-  const generated = buildActorAnchors(normalizedPosition, normalizedDepth, normalizedScale, normalizedElevation);
-  return deepFreeze({
-    actorId: id, team: String(team || "PLAYER").toUpperCase(), kind: String(kind || "CHARACTER").toUpperCase(),
-    position: deepFreeze(normalizedPosition), depth: normalizedDepth, depthValue: DEPTH_ORDER[normalizedDepth],
-    scale: normalizedScale, elevation: normalizedElevation, facing: normalizedFacing, rotation: clamp(finite(rotation, 0), -45, 45),
-    visual: deepFreeze({ ...(visual && typeof visual === "object" ? clone(visual) : {}) }),
-    state: String(state || "IDLE").toUpperCase(),
-    cameraAnchors: deepFreeze({
+export const CHARACTER_ACTOR_2D5_STATES = Object.freeze({
+  IDLE: "IDLE",
+  FOCUS: "FOCUS",
+  ACTION: "ACTION",
+  RETURN: "RETURN"
+});
+
+const CHARACTER_ACTOR_2D5_TRANSITIONS = Object.freeze({
+  IDLE: new Set(["FOCUS"]),
+  FOCUS: new Set(["ACTION"]),
+  ACTION: new Set(["RETURN"]),
+  RETURN: new Set(["IDLE"])
+});
+
+function normalizeCharacterActorPresentationState(value) {
+  const state = String(value || "").toUpperCase();
+  if (!Object.prototype.hasOwnProperty.call(CHARACTER_ACTOR_2D5_STATES, state)) {
+    throw new TypeError("CharacterActor2D5 presentationState must be IDLE, FOCUS, ACTION, or RETURN");
+  }
+  return state;
+}
+
+export class CharacterActor2D5 {
+  constructor({
+    actorId, team = "PLAYER", kind = "CHARACTER", position = { x: 0.5, y: 0.5 }, depth = "MID",
+    scale = null, rotation = 0, elevation = 0, facing = null, visible = true, visual = {}, state = "IDLE",
+    presentationState = state, cameraAnchors = {}, actionAnchors = {}, vfxAnchors = {}
+  } = {}) {
+    const id = String(actorId || "").trim();
+    if (!id) throw new TypeError("CharacterActor2D5 requires actorId");
+    const normalizedDepth = normalizeDepth(depth);
+    const normalizedPosition = normalizePoint(position, { x: 0.5, y: 0.5 });
+    const normalizedScale = clamp(finite(scale, DEPTH_SCALE[normalizedDepth]), 0.55, 1.5);
+    const normalizedElevation = clamp(finite(elevation, 0), 0, 0.5);
+    const normalizedFacing = finite(facing, String(team).toUpperCase() === "ENEMY" ? -1 : 1) < 0 ? -1 : 1;
+    const generated = buildActorAnchors(normalizedPosition, normalizedDepth, normalizedScale, normalizedElevation);
+    this.actorId = id;
+    this.team = String(team || "PLAYER").toUpperCase();
+    this.kind = String(kind || "CHARACTER").toUpperCase();
+    this.position = Object.freeze(normalizedPosition);
+    this.depth = normalizedDepth;
+    this.depthValue = DEPTH_ORDER[normalizedDepth];
+    this.scale = normalizedScale;
+    this.elevation = normalizedElevation;
+    this.facing = normalizedFacing;
+    this.rotation = clamp(finite(rotation, 0), -45, 45);
+    this.visible = Boolean(visible);
+    this.visual = Object.freeze({ ...(visual && typeof visual === "object" ? clone(visual) : {}) });
+    this.presentationState = normalizeCharacterActorPresentationState(presentationState);
+    this.state = this.presentationState;
+    this.cameraAnchors = Object.freeze({
       FOCUS: normalizeAnchor(cameraAnchors?.FOCUS, generated.FOCUS),
       ACTION: normalizeAnchor(cameraAnchors?.ACTION, generated.ACTION),
       IMPACT: normalizeAnchor(cameraAnchors?.IMPACT, generated.IMPACT_CAMERA),
       REACTION: normalizeAnchor(cameraAnchors?.REACTION, generated.REACTION_CAMERA)
-    }),
-    actionAnchors: deepFreeze({
+    });
+    this.actionAnchors = Object.freeze({
       BODY: generated.BODY, HEAD: generated.HEAD, BAT: generated.BAT, HAND: generated.HAND, PROJECTILE: generated.PROJECTILE, IMPACT: generated.IMPACT, REACTION: generated.REACTION,
       ...(actionAnchors && typeof actionAnchors === "object" ? clone(actionAnchors) : {})
-    }),
-    vfxAnchors: deepFreeze({
+    });
+    this.vfxAnchors = Object.freeze({
       BODY: generated.BODY, HEAD: generated.HEAD, BAT: generated.BAT, HAND: generated.HAND, PROJECTILE: generated.PROJECTILE, IMPACT: generated.IMPACT, REACTION: generated.REACTION,
       ...(vfxAnchors && typeof vfxAnchors === "object" ? clone(vfxAnchors) : {})
-    })
-  });
+    });
+  }
+
+  getPresentationState() {
+    return this.presentationState;
+  }
+
+  setVisible(visible) {
+    this.visible = Boolean(visible);
+    return this.visible;
+  }
+
+  transitionTo(nextState) {
+    const next = normalizeCharacterActorPresentationState(nextState);
+    if (next === this.presentationState) return next;
+    const allowed = CHARACTER_ACTOR_2D5_TRANSITIONS[this.presentationState] || new Set();
+    if (!allowed.has(next)) {
+      throw new Error("Invalid CharacterActor2D5 transition: " + this.presentationState + " -> " + next);
+    }
+    this.presentationState = next;
+    this.state = next;
+    return next;
+  }
+
+  setPresentationState(nextState) {
+    return this.transitionTo(nextState);
+  }
+
+  resetPresentationState() {
+    if (this.presentationState === CHARACTER_ACTOR_2D5_STATES.IDLE) return this.presentationState;
+    if (this.presentationState === CHARACTER_ACTOR_2D5_STATES.RETURN) {
+      return this.transitionTo(CHARACTER_ACTOR_2D5_STATES.IDLE);
+    }
+    throw new Error("CharacterActor2D5 can only reset from RETURN");
+  }
+
+  getPresentationSnapshot() {
+    return deepFreeze({
+      actorId: this.actorId,
+      position: { ...this.position },
+      depth: this.depth,
+      scale: this.scale,
+      rotation: this.rotation,
+      facing: this.facing,
+      visible: this.visible,
+      presentationState: this.presentationState,
+      presentationOnly: true
+    });
+  }
+}
+
+export function createCombatActor(options = {}) {
+  return new CharacterActor2D5(options);
 }
 export function createCombatStageActors({ batter = {}, enemy = {} } = {}) {
   const batterId = String(batter?.id || batter?.character_id || batter?.card_id || "selected-character");

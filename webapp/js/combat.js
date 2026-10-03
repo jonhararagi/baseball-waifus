@@ -1313,15 +1313,20 @@ export class CombatRenderer {
     }
 
     const normalPhase = phase;
+    const selectedActor = this.combatStage?.getActor?.(this.combatStage?.selectedActorId);
     if (normalPhase === "ATTACKER_FOCUS") {
       this.canvas.dataset.combatStageActionComplete = "false";
+      selectedActor?.setPresentationState?.("FOCUS");
       this._syncCinematicOverlayState();
       this.timingFeedback?.classList.remove("is-visible");
       this.batterRenderer.beginWindup();
+      this._syncCombatStageDataset();
       return;
     }
     if (normalPhase === "ACTION") {
+      selectedActor?.setPresentationState?.("ACTION");
       this.batterRenderer.beginSwing();
+      this._syncCombatStageDataset();
       return;
     }
     if (normalPhase === "IMPACT") {
@@ -1330,9 +1335,16 @@ export class CombatRenderer {
       return;
     }
     if (normalPhase === "COMBAT_RETURN") {
+      selectedActor?.setPresentationState?.("RETURN");
       this._syncCinematicOverlayState();
       this.timingFeedback?.classList.remove("is-visible");
       this.canvas.dataset.combatStageActionComplete = "true";
+      this._syncCombatStageDataset();
+      return;
+    }
+    if (normalPhase === "COMPLETE") {
+      selectedActor?.resetPresentationState?.();
+      this._syncCombatStageDataset();
     }
   }
 
@@ -1628,6 +1640,10 @@ export class CombatRenderer {
     this.canvas.dataset.combatStageLayers = stageState.layers.map((layer) => layer.id).join(",");
     this.canvas.dataset.combatStageZones = Object.keys(stageState.zones).join(",");
     this.canvas.dataset.combatStageSelectedActor = stageState.selectedActorId;
+    const selectedActor = this.combatStage.getActor(stageState.selectedActorId);
+    this.canvas.dataset.characterActorState = String(selectedActor?.presentationState || "IDLE");
+    this.canvas.dataset.characterActorDepth = String(selectedActor?.depth || "MID");
+    this.canvas.dataset.characterActorVisible = String(selectedActor?.visible !== false);
     this.canvas.dataset.combatStageFilmable = String(stageState.filmable);
     this.canvas.dataset.combatStageActionContract = String(stageState.actionContract || "");
     this.canvas.dataset.combatStageActionPhases = (stageState.actionPhases || []).join(",");

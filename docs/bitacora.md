@@ -9249,3 +9249,36 @@ La infraestructura del combat slice está bastante avanzada, pero no corresponde
 **STATUS:** PARTIAL.
 
 **NEXT:** T118 · NORMAL COMBAT TERMINAL REWARD VALIDATION FOR NON-HIT TIMING GRADES · TIMER: 1–2 horas
+
+---
+
+## T119 · CHARACTER 2.5D ACTOR FOUNDATION
+
+**Fecha:** 2026-10-03
+
+**STATUS:** CLOSED
+
+**HEAD BEFORE:** `9acc3afe51e94d216ff985e095cca832b881e0d2`
+
+**HEAD AFTER:** pendiente de commit T119
+
+**ACTOR FOUNDATION:** Implementado mediante la abstracción reutilizable `CharacterActor2D5`, integrada sobre el sistema existente `CombatStage`/actors. No se creó un segundo sistema paralelo.
+
+**STATE MACHINE:** `IDLE → FOCUS → ACTION → RETURN → IDLE`
+
+**2.5D DEPTH:** El actor conserva `position`, `depth`, `scale`, `rotation`, `facing` y `visible` como estado de presentación. La profundidad continúa siendo artificial y se mantiene separada de gameplay.
+
+**PRESENTATION STATE:** `presentationState` es observable y separado de los resultados de combate. El runtime expone el estado del actor seleccionado mediante `data-character-actor-state`, `data-character-actor-depth` y `data-character-actor-visible`.
+
+**TEST:** La prueba existente de `CombatPresentationDirector` fue ampliada para validar la unidad T119 sin crear un workflow nuevo. Comprueba estado inicial, secuencia completa, preservación de transformaciones/visibilidad y separación respecto de un objeto de resultado de gameplay.
+
+**BROWSER:** No se añadió infraestructura browser nueva. La validación de runtime browser existente de combate queda sin modificar.
+
+**BLOCKED TASKS PRESERVED:** `T118-R = BLOCKED / UNCHANGED`
+
+**NEXT:** Siguiente task del CEREBRO, sin reabrir T118-R.
+
+**PROJECT PROGRESS:** ≈96,5% → ≈96,7%
+
+**T119 GAIN:** ≈0,2 puntos porcentuales de progreso estructural.
+
