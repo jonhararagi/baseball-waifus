@@ -21,6 +21,12 @@ function assertIdentity(identity) {
   return normalized;
 }
 
+function identitiesMatch(expected, actual) {
+  return expected.playerId === actual.playerId
+    && expected.provider === actual.provider
+    && (expected.telegramUserId || null) === (actual.telegramUserId || null);
+}
+
 function storageKey(identity, keyPrefix) {
   const normalized = assertIdentity(identity);
   return `${keyPrefix}${encodeURIComponent(normalized.playerId)}`;
@@ -75,7 +81,7 @@ export class PlayerMetaPersistenceAdapter {
 
     try {
       const state = deserializePlayerMetaState(serialized);
-      if (state.identity.playerId !== normalizedIdentity.playerId) {
+      if (!identitiesMatch(normalizedIdentity, state.identity)) {
         throw new TypeError("Persisted PlayerMetaState identity mismatch");
       }
       validatePlayerMetaState(state);

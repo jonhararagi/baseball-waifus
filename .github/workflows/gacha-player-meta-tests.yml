@@ -18,6 +18,7 @@ on:
       - "docs/gacha-player-meta-integration.md"
       - "webapp/js/player_meta_roster_integration.js"
       - "webapp/js/player_meta_roster_rehydration_test.mjs"
+      - "webapp/js/persistence_authority_test.mjs"
       - "webapp/js/team_manager.js"
       - ".github/workflows/gacha-player-meta-tests.yml"
   workflow_dispatch:
@@ -43,6 +44,8 @@ jobs:
           set -euo pipefail
           node --experimental-default-type=module webapp/js/player_meta_authority_test.mjs
           node --experimental-default-type=module webapp/js/player_meta_persistence_adapter_test.mjs
+          node --experimental-default-type=module webapp/js/persistence_authority_test.mjs
+          node --experimental-default-type=module webapp/js/gacha_player_meta_migration_test.mjs
 
       - name: Run Gacha / Player Meta integration test
         shell: bash
@@ -61,10 +64,12 @@ jobs:
           node --experimental-default-type=module --check webapp/js/player_meta_authority_test.mjs
           node --experimental-default-type=module --check webapp/js/player_meta_persistence_adapter.js
           node --experimental-default-type=module --check webapp/js/player_meta_persistence_adapter_test.mjs
+          node --experimental-default-type=module --check webapp/js/persistence_authority_test.mjs
           node --experimental-default-type=module --check webapp/js/gacha_controller.js
           node --experimental-default-type=module --check webapp/js/gacha_controller_runtime.js
           node --experimental-default-type=module --check webapp/js/gacha_player_meta_integration.js
           node --experimental-default-type=module --check webapp/js/gacha_player_meta_integration_test.mjs
           node --experimental-default-type=module --check webapp/js/player_meta_roster_integration.js
           node --experimental-default-type=module --check webapp/js/player_meta_roster_rehydration_test.mjs
+          node --experimental-default-type=module --check webapp/js/gacha_player_meta_migration_test.mjs
           node --experimental-default-type=module --check webapp/js/team_manager.js

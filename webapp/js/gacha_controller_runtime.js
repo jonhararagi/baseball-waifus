@@ -36,14 +36,19 @@ function callCloudMethod(cloudStorage, methodName, args = []) {
 
 export async function readLegacyGachaCloudState(cloudStorage) {
   if (!cloudStorage) return null;
+  const raw = await callCloudMethod(cloudStorage, "getItem", [TELEGRAM_CLOUD_KEY]);
+  if (typeof raw !== "string" || raw.trim() === "") return null;
+
+  let parsed;
   try {
-    const raw = await callCloudMethod(cloudStorage, "getItem", [TELEGRAM_CLOUD_KEY]);
-    if (typeof raw !== "string" || raw.trim() === "") return null;
-    const parsed = JSON.parse(raw);
-    return isObject(parsed) ? parsed : null;
+    parsed = JSON.parse(raw);
   } catch {
-    return null;
+    throw new Error("Telegram CloudStorage legacy Player Meta source is corrupted");
   }
+  if (!isObject(parsed)) {
+    throw new Error("Telegram CloudStorage legacy Player Meta source is invalid");
+  }
+  return parsed;
 }
 
 function isObject(value) {
@@ -593,17 +598,21 @@ export class GachaController {
 
   async _restoreCloudState() {
     if (!this.cloudStorage) return false;
+    const raw = await callCloudMethod(this.cloudStorage, "getItem", [TELEGRAM_CLOUD_KEY]);
+    if (typeof raw !== "string" || raw.trim() === "") return false;
+
+    let parsed;
     try {
-      const raw = await callCloudMethod(this.cloudStorage, "getItem", [TELEGRAM_CLOUD_KEY]);
-      if (typeof raw !== "string" || raw.trim() === "") return false;
-      const parsed = JSON.parse(raw);
-      if (!isObject(parsed)) return false;
-      this._applyPersistedState(parsed);
-      this._writeLocalState();
-      return true;
+      parsed = JSON.parse(raw);
     } catch {
-      return false;
+      throw new Error("Telegram CloudStorage state is corrupted");
     }
+    if (!isObject(parsed)) {
+      throw new Error("Telegram CloudStorage state is invalid");
+    }
+    this._applyPersistedState(parsed);
+    this._writeLocalState();
+    return true;
   }
 
   _pushCloudState(snapshot) {
