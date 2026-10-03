@@ -117,6 +117,7 @@ assert.throws(() => adapter.save({
 
 // CORRUPTED LOAD: malformed persisted data is rejected, never normalized into a valid state.
 const key = adapter.keyFor(localIdentity);
+const validPersistedRecord = storage.getItem(key);
 for (const corrupted of [
   "{not-json",
   JSON.stringify({ ...savedState, schemaVersion: 99 }),
@@ -128,7 +129,8 @@ for (const corrupted of [
   assert.throws(() => adapter.load(localIdentity), PlayerMetaPersistenceError);
 }
 // Restore the valid record after corruption tests. The adapter never silently repairs it.
-adapter.save(savedState);
+storage.setItem(key, validPersistedRecord);
+assert.deepEqual(adapter.load(localIdentity), savedState);
 
 // IDENTITY / NO CROSS-CONTAMINATION: player keys are isolated.
 const playerB = identity("player-b");
