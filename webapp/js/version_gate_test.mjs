@@ -17,8 +17,9 @@ const cacheApi = {
   delete: async (name) => { deleted.push(name); return true; }
 };
 const purged = await purgeProductCaches(cacheApi);
-assert.deepEqual(purged.sort(), ["baseball-waifus-v16", "v16_capibara_core"].sort());
-assert.deepEqual(deleted.sort(), ["baseball-waifus-v16", "v16_capibara_core"].sort());
+assert.deepEqual(purged.sort(), ["baseball-waifus-v16", "baseball-waifus-v17", "v16_capibara_core"].sort());
+assert.deepEqual(deleted.sort(), ["baseball-waifus-v16", "baseball-waifus-v17", "v16_capibara_core"].sort());
+assert.equal(deleted.includes("foreign-site-cache"), false);
 
 const storage = new Map();
 globalThis.window = {
