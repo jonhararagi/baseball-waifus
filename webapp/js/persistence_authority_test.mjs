@@ -49,8 +49,10 @@ function fetchImpl(url) {
   });
 }
 
-function createController({ storage, cloudStorage = null, playerId }) {
-  const identity = createPlayerIdentity({ playerId });
+function createController({ storage, cloudStorage = null, playerId = null, identity: providedIdentity = null }) {
+  const identity = providedIdentity
+    ? createPlayerIdentity(providedIdentity)
+    : createPlayerIdentity({ playerId });
   return new GachaController({
     storage,
     playerMetaStorage: storage,
@@ -115,7 +117,7 @@ function legacyState({ scrap, fragments, pity, characterId = "bw024" }) {
   const controller = createController({
     storage,
     cloudStorage: new FakeCloudStorage(JSON.stringify(legacyState({ scrap: 900, fragments: 99, pity: 2 }))),
-    playerId: "telegram:2001"
+    identity
   });
   await controller.initialize();
   const snapshot = controller.playerMetaIntegration.getSnapshot();
@@ -141,15 +143,17 @@ function legacyState({ scrap, fragments, pity, characterId = "bw024" }) {
 
 {
   const storage = new MemoryStorage();
+  const identityA = createPlayerIdentity({ playerId: "telegram:3001", provider: "telegram", telegramUserId: "3001" });
+  const identityB = createPlayerIdentity({ playerId: "telegram:3002", provider: "telegram", telegramUserId: "3002" });
   const controllerA = createController({
     storage,
     cloudStorage: new FakeCloudStorage(JSON.stringify(legacyState({ scrap: 900, fragments: 9, pity: 10 }))),
-    playerId: "telegram:3001"
+    identity: identityA
   });
   const controllerB = createController({
     storage,
     cloudStorage: new FakeCloudStorage(JSON.stringify(legacyState({ scrap: 50, fragments: 2, pity: 4 }))),
-    playerId: "telegram:3002"
+    identity: identityB
   });
   await controllerA.initialize();
   await controllerB.initialize();
