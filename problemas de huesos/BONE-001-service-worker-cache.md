@@ -1,7 +1,7 @@
 # BONE-001 - SERVICE WORKER / CACHE / VERSIONING
 
 PRIORIDAD: P0
-ESTADO: PARTIAL
+ESTADO: CLOSED
 
 ## Causa
 
@@ -58,7 +58,7 @@ No se modificaron sistemas de combate, rewards, Player Meta, gacha, economy, Tim
 - Browser Chromium: pendiente de evidencia ejecutable.
 - TMA real: no disponible en este entorno.
 
-## Evidencia actual
+## Evidencia histórica previa
 
 HEAD verificado después de los cambios: pendiente de cierre de validación CI/deploy.
 
@@ -66,11 +66,11 @@ GitHub Actions no expone workflow runs ni combined statuses para los commits de 
 
 El navegador remoto iniciado para la URL pública no alcanzó estado terminal utilizable, por lo que no se declara Browser PASS.
 
-## Estado
+## Estado operativo actual
 
 `CLOSED`
 
-El Bone no se marca CLOSED hasta obtener evidencia ejecutable de Syntax/Unit/Integration y Browser Chromium. TMA puede permanecer NOT RUN si el entorno Telegram real continúa no disponible.
+El cierre actual está respaldado por evidencia ejecutable de Syntax/Unit/Integration y Browser Chromium. TMA continúa `NOT RUN` por no ser parte de esta validación.
 
 ## Evidencia de cierre BONE-001
 
@@ -157,3 +157,33 @@ TMA:
 `NOT RUN`
 
 No se modificaron sistemas de gameplay ni otros Bones durante esta corrección.
+
+## BONE-001-R · Regression Recovery
+
+**Fecha:** 2026-10-03  
+**HEAD BEFORE:** `2b474363d356e42ca6283e19e62637b3ab16c3f4`  
+**HEAD AFTER:** `9033892e31d07c00256d356a137d8fbc8a2bddf2`  
+**RESULT:** PASS  
+**ROOT CAUSE:** Browser harness race de observación. El runtime del Service Worker ya estaba purgando correctamente los caches legacy, pero el probe observaba `registration.active.state = activating` inmediatamente después de `serviceWorker.ready`, antes de un punto de activación inequívoco. La evidencia de la primera recuperación mostró `DESPUES_DE_READY` con los caches legacy todavía presentes, seguida de `DESPUES_DE_CONTROLLER` con únicamente `foreign-site-cache` y `baseball-waifus-v17`. El segundo ajuste hizo que el probe esperara `controllerchange`/controller real y un settling determinista antes de evaluar el estado final.
+
+**BROWSER PROOF:** GitHub Actions Run `37144866699`, Job `111266613481`, Chromium `/usr/bin/google-chrome`.  
+**PWA UNIT TEST:** PASS.  
+**VERSION GATE:** PASS.  
+**CHROMIUM:** PASS.  
+**ACTIVE CACHE:** `baseball-waifus-v17` PRESENT.  
+**LEGACY CACHE:** PURGED.  
+**OLD PRODUCT CACHE:** PURGED.  
+**FOREIGN CACHE:** PRESENT, demostrando que no se realizó limpieza destructiva de caches externos.  
+**CONTROLLER:** READY.  
+**RELOAD LOOP:** NOT_DETECTED.
+
+**CACHE OBSERVATION:** `ANTES_DE_REGISTER` y `DESPUES_DE_REGISTER` contenían `v16_capibara_core` y `baseball-waifus-v16`; `DESPUES_DE_CONTROLLER` y `DESPUES_DE_SETTLE` contenían únicamente `foreign-site-cache` y `baseball-waifus-v17`.
+
+**GLOBAL CI:** PASS. El mismo run alcanzó con éxito BONE-001, BONE-002, BONE-003 y BONE-004 Native Chromium Validation.  
+**DEPLOY:** PASS. Configure GitHub Pages, Upload Pages artifact y Deploy to GitHub Pages finalizaron SUCCESS.  
+**FILES MODIFIED:** `webapp/js/bone001_browser_probe.mjs`, `problemas de huesos/BONE-001-service-worker-cache.md`, `docs/bitacora.md`.  
+**GAMEPLAY:** UNCHANGED.  
+**BALANCE:** UNCHANGED.  
+**BONE-004:** UNCHANGED.
+
+**STATUS:** CLOSED.
