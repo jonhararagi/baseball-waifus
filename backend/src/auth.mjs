@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { AuthorityError } from "./errors.mjs";
 
-function parseTelegramInitData(raw) {
+function getHeader(request, name) {\n  const headers = request?.headers || {};\n  return typeof headers.get === "function" ? headers.get(name) : headers[String(name).toLowerCase()] || null;\n}\n\nfunction parseTelegramInitData(raw) {
   const params = new URLSearchParams(String(raw || ""));
   const hash = params.get("hash");
   if (!hash) throw new AuthorityError(401, "TELEGRAM_HASH_MISSING", "Telegram init data hash is required");
@@ -53,14 +53,14 @@ export async function authenticateRequest(request, {
   telegramInitDataMaxAgeSeconds = 3600
 } = {}) {
   if (nodeEnv === "test") {
-    const playerId = request.headers.get("x-test-player-id");
+    const playerId = getHeader(request, "x-test-player-id");
     if (!playerId || !/^[A-Za-z0-9._:-]+$/.test(playerId)) {
       throw new AuthorityError(401, "TEST_IDENTITY_REQUIRED", "Test identity is required");
     }
     return Object.freeze({ playerId, provider: "test", telegramUserId: null });
   }
 
-  const rawInitData = request.headers.get("x-telegram-init-data");
+  const rawInitData = getHeader(request, "x-telegram-init-data");
   if (!rawInitData) {
     throw new AuthorityError(401, "AUTHENTICATION_REQUIRED", "Server-verifiable Telegram init data is required");
   }
