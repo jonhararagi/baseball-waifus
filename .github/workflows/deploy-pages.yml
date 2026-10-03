@@ -291,6 +291,26 @@ jobs:
         with:
           node-version: "22"
 
+      - name: BONE-001 Native Chromium Validation
+        shell: bash
+        env:
+          SITE_DIR: site
+        run: |
+          set -euo pipefail
+          BROWSER_BIN=""
+          for candidate in google-chrome chromium chromium-browser; do
+            if command -v "$candidate" >/dev/null 2>&1; then
+              BROWSER_BIN="$(command -v "$candidate")"
+              break
+            fi
+          done
+          if [ -z "$BROWSER_BIN" ]; then
+            echo "BONE-001 BROWSER PROBE = NOT_RUN // no supported Chrome/Chromium binary on runner"
+            exit 1
+          fi
+          echo "BONE-001 BROWSER BIN = $BROWSER_BIN"
+          SITE_DIR="$SITE_DIR" BROWSER_BIN="$BROWSER_BIN" node webapp/js/bone001_browser_probe.mjs
+
       - name: T073 Character Presentation Browser QA
         shell: bash
         env:
