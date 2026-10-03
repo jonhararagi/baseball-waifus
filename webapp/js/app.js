@@ -50,6 +50,7 @@ import { ARC0_TEAM11_RECRUITMENT } from "./narrative_arc0_team11.js";
 import { KytosCombatDemo } from "./kytos_combat_demo.js";
 import { BATTER_ORDER, SUPPORT_ACTION } from "./kytos_tactical_decision.js";
 import { applyCombatRewardPipeline, createCombatResultFromTurnResult } from "./reward_pipeline.js";
+import { SERVER_COMBAT_ATTESTATION_V1, RewardAuthorityError, authorizeServerCombatResult } from "./reward_authority.js";
 import { runClientVersionGate } from "./version_gate.js";
 
 function initializeTelegramNativeShell() {
@@ -159,6 +160,7 @@ const combatShell = document.querySelector(".combat-shell, .game-viewport");
 const combatViewPieces = [...document.querySelectorAll(".combat-view-piece")];
 
 let matchId = "";
+let rewardAuthorityContext = null;
 let actionPending = false;
 let gachaRolling = false;
 let sharePayload = null;
@@ -308,33 +310,33 @@ function handleScrapEarned({ amount, result }) {
   }
 }
 
-function applyRealCombatReward(turnResult) {
-  const integration = gachaController.playerMetaIntegration;
-  if (!integration) return null;
-
-  const result = createCombatResultFromTurnResult({
-    turnResult,
-    matchId: matchId || renderer.state?.match_id || turnResult?.match_id,
-    playerId: integration.identity.playerId
-  });
-
-  const pipeline = applyCombatRewardPipeline({
-    combatResult: result,
-    authority: integration.authority,
-    persistenceAdapter: integration.persistenceAdapter
-  });
-
-  const rewardText = pipeline.applied.duplicate
-    ? "REWARD ALREADY CLAIMED"
-    : pipeline.rewardResult.rewards.length
-      ? pipeline.rewardResult.rewards.map((reward) => "+" + reward.amount + " " + reward.currency).join(" • ")
-      : "NO BATTLE REWARD";
-  if (gachaStatusValue) gachaStatusValue.textContent = rewardText + " // " + result.outcome;
-  updateGachaHud(gachaController.getStatus());
-  return pipeline;
+function setRewardAuthorityStatus(message, error = false) {
+  if (gachaStatusValue) gachaStatusValue.textContent = String(message);
+  if (error) setConnection("Reward authority rejected", "error");
 }
 
-function handleTerminalCombatReward(turnResult) {
+function recordRewardAuthorityContext(payload) {
+  const context = payload?.reward_authority;
+  if (!context || typeof context !== "object") {
+    rewardAuthorityContext = null;
+    return null;
+  }
+  const integration = gachaController.playerMetaIntegration;
+  if (!integration || typeof context.nonce !== "string" || typeof context.public_key_jwk !== "object") {
+    rewardAuthorityContext = null;
+    return null;
+  }
+  rewardAuthorityContext = Object.freeze({
+    version: String(context.version || SERVER_COMBAT_ATTESTATION_V1),
+    matchId: String(payload.match_id || ""),
+    playerId: String(integration.identity.playerId),
+    nonce: String(context.nonce),
+    publicKeyJwk: context.public_key_jwk
+  });
+  return rewardAuthorityContext;
+}
+
+function handleLocalCombatResult(turnResult) {
   const outcome = String(
     turnResult?.outcome
       || turnResult?.state?.outcome
@@ -342,19 +344,81 @@ function handleTerminalCombatReward(turnResult) {
       || ""
   ).toUpperCase();
   if (!["VICTORY", "DEFEAT"].includes(outcome)) return null;
+  setRewardAuthorityStatus("LOCAL_RESULT // DEMO_ONLY // REWARD BLOCKED");
+  return Object.freeze({
+    mode: "LOCAL_DEMO",
+    economicRewardGranted: false,
+    rewardStatus: "REWARD_AUTHORITY_REQUIRED"
+  });
+}
 
-  try {
-    return applyRealCombatReward({
-      ...turnResult,
-      outcome
-    });
-  } catch (rewardError) {
-    setConnection("Reward application failed", "error");
-    if (gachaStatusValue) {
-      gachaStatusValue.textContent = "REWARD ERROR // " + String(rewardError.message || rewardError);
-    }
+async function applyServerCombatReward(turnResult, contextOverride = null) {
+  const integration = gachaController.playerMetaIntegration;
+  if (!integration) return null;
+
+  const context = contextOverride || rewardAuthorityContext;
+  if (!context) {
+    setRewardAuthorityStatus("REWARD_AUTHORITY_REJECTED // AUTHORITY_CONTEXT_REQUIRED", true);
     return null;
   }
+
+  try {
+    const proof = await authorizeServerCombatResult({
+      turnResult,
+      attestation: turnResult.reward_attestation,
+      authorityContext: context
+    });
+
+    const result = createCombatResultFromTurnResult({
+      turnResult,
+      matchId: context.matchId || matchId || renderer.state?.match_id || turnResult?.match_id,
+      playerId: integration.identity.playerId
+    });
+
+    const pipeline = applyCombatRewardPipeline({
+      combatResult: result,
+      authority: integration.authority,
+      persistenceAdapter: integration.persistenceAdapter,
+      authorityProof: proof
+    });
+
+    const rewardText = pipeline.applied.duplicate
+      ? "REWARD ALREADY CLAIMED"
+      : pipeline.rewardResult.rewards.length
+        ? pipeline.rewardResult.rewards.map((reward) => "+" + reward.amount + " " + reward.currency).join(" • ")
+        : "NO BATTLE REWARD";
+    setRewardAuthorityStatus(rewardText + " // " + result.outcome);
+    updateGachaHud(gachaController.getStatus());
+    return pipeline;
+  } catch (rewardError) {
+    const code = rewardError instanceof RewardAuthorityError
+      ? rewardError.code
+      : String(rewardError?.message || rewardError || "REWARD_AUTHORITY_REJECTED");
+    setRewardAuthorityStatus("REWARD_AUTHORITY_REJECTED // " + code, true);
+    return null;
+  }
+}
+
+async function handleTerminalCombatReward(turnResult) {
+  const outcome = String(
+    turnResult?.outcome
+      || turnResult?.state?.outcome
+      || turnResult?.result
+      || ""
+  ).toUpperCase();
+  if (!["VICTORY", "DEFEAT"].includes(outcome)) return null;
+  return applyServerCombatReward({ ...turnResult, outcome });
+}
+
+function installBone004QaHooks(query) {
+  if (query.get("qa") !== "bone004") return;
+  window.__BW_BONE004_TEST__ = Object.freeze({
+    localTerminalResult: (turnResult) => handleLocalCombatResult(turnResult),
+    serverTerminalResult: (turnResult, context) => applyServerCombatReward(turnResult, context),
+    getPlayerMetaScrap: () => gachaController.playerMetaIntegration?.authority?.getSnapshot()?.currencies?.SCRAP ?? null,
+    getPlayerId: () => gachaController.playerMetaIntegration?.identity?.playerId || null,
+    getRewardAuthorityContext: () => rewardAuthorityContext
+  });
 }
 
 let qualitySetting = "auto";
@@ -440,7 +504,7 @@ const renderer = new CombatRenderer(document.querySelector("#combat-canvas, #gam
   hapticsBridge,
   onScrapEarned: handleScrapEarned,
   onLocalCombatResult: api.configured() ? null : (turnResult) => {
-    handleTerminalCombatReward(turnResult);
+    handleLocalCombatResult(turnResult);
   },
   performanceAdapter,
   onTimingResult: (timing) => {
@@ -1102,6 +1166,7 @@ async function syncCombat() {
     const payload = await api.getCombatInit(matchId);
     if (!isCombatInitDTO(payload)) throw new Error("Server returned an invalid CombatInitDTO");
     const rosterPayload = applyActiveRoster(payload);
+    recordRewardAuthorityContext(payload);
     await renderer.setCombatInit(rosterPayload);
     updateHud(rosterPayload);
     setConnection(telegram.isAvailable() ? "Telegram connected" : "Web client ready", "ok");
@@ -1143,7 +1208,7 @@ async function sendAction(actionType, timing = {}) {
     if (String(payload.result || payload.outcome || payload.state?.outcome || "").toUpperCase() === "VICTORY") {
       lockerRoom.handleEvent("ON_VICTORY", getActiveLockerWaifu());
     }
-    handleTerminalCombatReward(payload);
+    await handleTerminalCombatReward(payload);
     gameModes.registerResult(payload.result);
     updatePlayHud();
     saveSystem.save();
@@ -1501,6 +1566,7 @@ window.addEventListener("message", async (event) => {
   const payload = event.data;
   if (isCombatInitDTO(payload)) {
     const rosterPayload = applyActiveRoster(payload);
+    recordRewardAuthorityContext(payload);
     await renderer.setCombatInit(rosterPayload);
     updateHud(rosterPayload);
     setConnection("Embedded match ready", "ok");
@@ -1539,6 +1605,7 @@ async function bootstrap() {
 
   const query = new URLSearchParams(window.location.search);
   matchId = query.get("match") || "";
+  installBone004QaHooks(query);
 
   if (query.get("kytos_demo") === "1") {
     kytosDemo.step();

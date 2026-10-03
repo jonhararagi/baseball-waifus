@@ -214,6 +214,8 @@ jobs:
           node --experimental-default-type=module webapp/js/combat_presentation_director_test.mjs
           node --experimental-default-type=module webapp/js/combat_stage_test.mjs
           node --experimental-default-type=module webapp/js/bone003_attacker_actor_resolution_test.mjs
+          node --experimental-default-type=module --check webapp/js/reward_authority.js
+          node --experimental-default-type=module webapp/js/bone004_reward_authority_test.mjs
           node --experimental-default-type=module --check webapp/js/combat_hud.js
           node --experimental-default-type=module --check webapp/js/gacha_engine.js
           node --experimental-default-type=module webapp/js/gacha_engine_test.mjs
@@ -358,6 +360,26 @@ jobs:
           fi
           echo "BONE-003 BROWSER BIN = $BROWSER_BIN"
           SITE_DIR="$SITE_DIR" BROWSER_BIN="$BROWSER_BIN" node webapp/js/bone003_browser_probe.mjs
+
+      - name: BONE-004 Native Chromium Reward Authority Validation
+        shell: bash
+        env:
+          SITE_DIR: site
+        run: |
+          set -euo pipefail
+          BROWSER_BIN=""
+          for candidate in google-chrome chromium chromium-browser; do
+            if command -v "$candidate" >/dev/null 2>&1; then
+              BROWSER_BIN="$(command -v "$candidate")"
+              break
+            fi
+          done
+          if [ -z "$BROWSER_BIN" ]; then
+            echo "BONE-004 BROWSER PROBE = NOT_RUN // no supported Chrome/Chromium binary on runner"
+            exit 1
+          fi
+          echo "BONE-004 BROWSER BIN = $BROWSER_BIN"
+          SITE_DIR="$SITE_DIR" BROWSER_BIN="$BROWSER_BIN" node webapp/js/bone004_browser_probe.mjs
 
       - name: T073 Character Presentation Browser QA
         shell: bash
