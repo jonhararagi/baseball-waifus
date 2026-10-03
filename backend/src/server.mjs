@@ -47,7 +47,7 @@ async function readJson(request, limitBytes = 64 * 1024) {
 
 function readiness(config, signer) {
   return {
-    ready: Boolean(signer && authenticationConfigured(config)),
+    ready: Boolean(signer && authenticationConfigured(config) && config.persistenceConfigured),
     signing_key: Boolean(signer),
     authentication: authenticationConfigured(config),
     persistence: Boolean(config.persistenceConfigured),
