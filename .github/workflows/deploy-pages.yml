@@ -212,6 +212,8 @@ jobs:
           node --experimental-default-type=module --check webapp/js/combat_effects.js
           node --experimental-default-type=module webapp/js/combat_effects_test.mjs
           node --experimental-default-type=module webapp/js/combat_presentation_director_test.mjs
+          node --experimental-default-type=module webapp/js/combat_stage_test.mjs
+          node --experimental-default-type=module webapp/js/bone003_attacker_actor_resolution_test.mjs
           node --experimental-default-type=module --check webapp/js/combat_hud.js
           node --experimental-default-type=module --check webapp/js/gacha_engine.js
           node --experimental-default-type=module webapp/js/gacha_engine_test.mjs
