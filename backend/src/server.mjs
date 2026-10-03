@@ -24,7 +24,7 @@ function jsonResponse(res, status, payload, origin = "*") {
 }
 
 function corsOrigin(request, config) {
-  const requested = request.headers.get("origin") || "*";
+  const requested = request.headers?.origin || "*";
   if (config.allowedOrigins.includes("*")) return "*";
   return config.allowedOrigins.includes(requested) ? requested : "null";
 }
