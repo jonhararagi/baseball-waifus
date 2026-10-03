@@ -23,7 +23,7 @@ function validState(store, matchId = "durable-match", playerId = "telegram:1001"
 
 test("persistent store create/load and schema", () => {
   const { filePath, directory } = tempPath();
-  const store = new PersistentCombatStore({ filePath, nonceFactory: () => "nonce-test-001" });
+  const store = new PersistentCombatStore({ filePath, nonceFactory: () => "nonce-test-000001" });
   const created = validState(store);
   assert.equal(created.nonce, "nonce-test-001");
   assert.equal(store.loadMatch(created.matchId).matchId, created.matchId);
