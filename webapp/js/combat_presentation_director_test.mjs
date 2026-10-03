@@ -10,6 +10,7 @@ import { resolveClimaxTurn } from "./combat_core.js";
 import {
   CHARACTER_ACTOR_2D5_STATES,
   CharacterActor2D5,
+  createCombatStageActors,
   CombatStage,
   COMBAT_STAGE_DEPTH
 } from "./combat_stage.js";
