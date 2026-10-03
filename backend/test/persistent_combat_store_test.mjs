@@ -25,7 +25,7 @@ test("persistent store create/load and schema", () => {
   const { filePath, directory } = tempPath();
   const store = new PersistentCombatStore({ filePath, nonceFactory: () => "nonce-test-000001" });
   const created = validState(store);
-  assert.equal(created.nonce, "nonce-test-001");
+  assert.equal(created.nonce, "nonce-test-000001");
   assert.equal(store.loadMatch(created.matchId).matchId, created.matchId);
 
   const document = JSON.parse(fs.readFileSync(filePath, "utf8"));
