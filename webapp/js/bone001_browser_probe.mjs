@@ -159,9 +159,8 @@ try {
     const active = registration.active;
     if (!active) {
       failures.push("SERVICE_WORKER_NOT_ACTIVE");
-    } else {
-      if (active.state !== "activated") failures.push("ACTIVE_STATE=" + active.state);
-      if (!new URL(active.scriptURL).pathname.endsWith("/sw.js")) failures.push("ACTIVE_SCRIPT=" + active.scriptURL);
+    } else if (!new URL(active.scriptURL).pathname.endsWith("/sw.js")) {
+      failures.push("ACTIVE_SCRIPT=" + active.scriptURL);
     }
 
     const controllerReady = navigator.serviceWorker.controller
@@ -190,6 +189,10 @@ try {
     await new Promise((resolve) => setTimeout(resolve, 100));
     await recordCaches("DESPUES_DE_SETTLE");
 
+    if (!registration.active || registration.active.state !== "activated") {
+      failures.push("ACTIVE_STATE=" + (registration.active?.state || "MISSING"));
+    }
+
     const cacheNames = observations.DESPUES_DE_SETTLE || [];
     if (!cacheNames.includes("baseball-waifus-v17")) failures.push("ACTIVE_CACHE_MISSING");
     if (cacheNames.includes("v16_capibara_core")) failures.push("LEGACY_CACHE_PRESENT");
@@ -204,7 +207,7 @@ try {
       oldProduct: cacheNames.includes("baseball-waifus-v16") ? "PRESENT" : "PURGED",
       foreign: cacheNames.includes("foreign-site-cache") ? "PRESENT" : "REMOVED",
       gate: gateResult.status,
-      serviceWorker: active && active.state === "activated" ? "READY" : "NOT_READY",
+      serviceWorker: registration.active && registration.active.state === "activated" ? "READY" : "NOT_READY",
       reloadLoop: failures.some((item) => item === "RELOAD_LOOP" || item === "UNEXPECTED_RELOAD") ? "DETECTED" : "NOT_DETECTED",
       controller: navigator.serviceWorker.controller ? "READY" : "NOT_READY",
       observations,
