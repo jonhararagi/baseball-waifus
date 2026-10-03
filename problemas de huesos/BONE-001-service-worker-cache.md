@@ -68,6 +68,92 @@ El navegador remoto iniciado para la URL pública no alcanzó estado terminal ut
 
 ## Estado
 
-`PARTIAL`
+`CLOSED`
 
 El Bone no se marca CLOSED hasta obtener evidencia ejecutable de Syntax/Unit/Integration y Browser Chromium. TMA puede permanecer NOT RUN si el entorno Telegram real continúa no disponible.
+
+## Evidencia de cierre BONE-001
+
+### Causa del fallo de validación anterior
+
+Workflow Run `37133511189` falló en `Validate P0 runtime integration` porque `webapp/js/version_gate_test.mjs` esperaba solamente:
+
+- `baseball-waifus-v16`
+- `v16_capibara_core`
+
+mientras el contrato real de `purgeProductCaches()` elimina toda la familia `baseball-waifus-*`, incluyendo la cache activa `baseball-waifus-v17`, además de la cache legacy `v16_capibara_core`.
+
+El test fue corregido para aceptar:
+
+- `baseball-waifus-v16`
+- `baseball-waifus-v17`
+- `v16_capibara_core`
+
+y conservar explícitamente que `foreign-site-cache` no se elimina.
+
+### Validación ejecutable
+
+Commit de corrección del test:
+
+`5c483d940b973092dfba48e198a55d165196d554`
+
+Commit con validación Chromium nativa y workflow:
+
+`0189e1843678d2a2b2e1dff7ee5358ac9473214f`
+
+Workflow Run:
+
+`37137712974`
+
+URL:
+
+https://github.com/jonhararagi/baseball-waifus/actions/runs/37137712974
+
+Job:
+
+`111245522644`
+
+Conclusion:
+
+`success`
+
+Resultados del run:
+
+- Validate JavaScript syntax: PASS
+- Validate P0 runtime integration: PASS
+- Prepare static site: PASS
+- BONE-001 Native Chromium Validation: PASS
+- Configure GitHub Pages: PASS
+- Upload Pages artifact: PASS
+- Deploy to GitHub Pages: PASS
+
+Salida real del probe Chromium:
+
+- `BONE-001 BROWSER PROBE = PASS`
+- `VERSION = v17`
+- `CACHE = baseball-waifus-v17`
+- `LEGACY_CACHE = PURGED`
+- `VERSION_GATE = match`
+- `SERVICE_WORKER = READY`
+- `RELOAD_LOOP = NOT_DETECTED`
+
+El probe ejecutó Chrome/Chromium nativo del runner mediante CDP, sirvió una copia local de `site`, registró `./sw.js`, inspeccionó `caches.keys()` y comprobó el purge de `v16_capibara_core` y `baseball-waifus-v16`.
+
+Deploy producido:
+
+`https://jonhararagi.github.io/baseball-waifus/`
+
+El endpoint público `/version.json` respondió HTTP `200` y devolvió:
+
+- `version: "v17"`
+- `cacheVersion: "baseball-waifus-v17"`
+
+### Estado final
+
+`CLOSED`
+
+TMA:
+
+`NOT RUN`
+
+No se modificaron sistemas de gameplay ni otros Bones durante esta corrección.
