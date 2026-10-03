@@ -198,6 +198,7 @@ export class CombatRenderer {
       alpha: false,
       desynchronized: true
     });
+
     if (!this.ctx) {
       throw new Error("Canvas 2D context is unavailable");
     }
@@ -396,7 +397,8 @@ export class CombatRenderer {
     this.timingState = null;
 
     const timing = {
-      grade,      delta_ms: Math.round(deltaMs),
+      grade,
+      delta_ms: Math.round(deltaMs),
       elapsed_ms: Math.round(elapsedMs),
       target_ms: current.targetMs,
       great_window_ms: Math.round(current.greatWindowMs),
@@ -595,7 +597,8 @@ export class CombatRenderer {
   }
 
   getBattleLoopState() {
-    return {      phase: this.battlePhase,
+    return {
+      phase: this.battlePhase,
       round: this.round,
       tactical_turn: this.tacticalTurn,
       tactical_max_turns: this.tacticalMaxTurns,
@@ -794,7 +797,8 @@ export class CombatRenderer {
 
     const activated = this.combatHud.triggerSuperSwing({
       name: configured?.name || name,
-      archetype,      quote_super: configured?.quote_super || source.quote_super || "¡SUPER SWING TEST!",
+      archetype,
+      quote_super: configured?.quote_super || source.quote_super || "¡SUPER SWING TEST!",
       skill_name: source.skill_name || "ADMIN TEST"
     }, loaded);
 
@@ -993,7 +997,8 @@ export class CombatRenderer {
     this._triggerCutIn(dto);
     this._triggerVisualImpact(dto);
     this.resultPulse = 1;
-    this.onState?.(this.state);  }
+    this.onState?.(this.state);
+  }
 
   resize() {
     const container = this.canvas.parentElement || this.canvas;
@@ -1192,7 +1197,8 @@ export class CombatRenderer {
     }
 
     if (this.zanTimer > 0) {
-      this._drawZanSlash(target, w, h);    }
+      this._drawZanSlash(target, w, h);
+    }
 
     const presentation = this.combatPresentation.getState();
     const ultimateActive = presentation.active && String(presentation.sequenceKind || "").startsWith("ULTIMATE");
@@ -1404,7 +1410,8 @@ export class CombatRenderer {
       phase: presentation.phase,
       progress: presentation.progress,
       width: w,
-      height: h    }) || transform;
+      height: h
+    }) || transform;
 
     if (actor.actorId === this.combatStage.selectedActorId) {
       this.batterRenderer.draw(ctx, w, h, {
@@ -1603,6 +1610,7 @@ export class CombatRenderer {
     }
     ctx.restore();
   }
+
   _drawCombatActorRing(ctx, x, y, radius, color, selected = false) {
     ctx.save();
     ctx.strokeStyle = color;
@@ -1802,7 +1810,8 @@ export class CombatRenderer {
     ctx.restore();
   }
 
-  _drawStrikeZone(ctx, w, h) {    const color = this.themeManager.getStrikeZoneColor();
+  _drawStrikeZone(ctx, w, h) {
+    const color = this.themeManager.getStrikeZoneColor();
     const x = w * 0.35;
     const y = h * 0.39;
     const zoneWidth = w * 0.3;
@@ -2001,7 +2010,8 @@ export class CombatRenderer {
 
   _drawResultPulse(ctx, w, h) {
     const result = String(this.lastTurn?.result || "");
-    const color = RESULT_COLORS[result] || "#ffffff";    const alpha = clamp(this.resultPulse, 0, 1) * 0.22;
+    const color = RESULT_COLORS[result] || "#ffffff";
+    const alpha = clamp(this.resultPulse, 0, 1) * 0.22;
     const fontSize = clamp(w * 0.07, 18, 52);
 
     ctx.save();
@@ -2201,3 +2211,250 @@ export class CombatRenderer {
     }
 
     if (result === "FOUL" || (timing === "BAD" && !hitResults.includes(result))) {
+      this._playAudio("bat.foul");
+      this._playHaptics("combat_error");
+      return;
+    }
+
+    if (result === "MISS") {
+      this._playAudio("result.miss");
+      this._playHaptics("miss");
+      return;
+    }
+
+    if (result === "HOME_RUN") {
+      this._playAudio("result.home_run");
+      this._playHaptics("home_run");
+      return;
+    }
+
+    if (hitResults.includes(result) || event === "HIT") {
+      if (timing === "PERFECT") {
+        this._playAudio("result.perfect");
+        this._playHaptics("perfect");
+      } else {
+        this._playAudio("result.hit");
+        this._playHaptics("good");
+      }
+    }
+  }
+
+  _triggerVisualImpact(dto) {
+    const result = String(dto?.result || "").toUpperCase();
+    const timing = String(dto?.timing || "").toUpperCase();
+    const theme = this.themeManager.getCurrentTheme();
+    const hitLike = new Set(["SINGLE", "DOUBLE", "TRIPLE", "HIT", "FIELDING_ERROR"]);
+    const effectQuality = result === "HOME_RUN"
+      ? "HOME_RUN"
+      : timing === "PERFECT" && hitLike.has(result)
+        ? "PERFECT"
+        : timing === "GOOD" && hitLike.has(result)
+          ? "GOOD"
+          : result === "FOUL"
+            ? "FOUL"
+            : result === "MISS"
+              ? "MISS"
+              : hitLike.has(result)
+                ? "HIT"
+                : null;
+
+    if (effectQuality) {
+      this.combatEffects.trigger(effectQuality, {
+        color: theme.strikeZoneColor,
+        result
+      });
+    }
+    const event = String(
+      dto?.event
+      || dto?.animation?.event
+      || dto?.action
+      || ""
+    ).toUpperCase();
+    const isSwingEvent = event === "SWING" || event === "HIT";
+    const hitResults = new Set(["SINGLE", "DOUBLE", "TRIPLE", "FIELDING_ERROR", "HIT"]);
+    const runResults = new Set(["RUN", "STEAL", "STEAL_BLOCKED", "SAFE", "HOME_RUN"]);
+    const dangerResults = new Set(["OUT", "STRIKE", "FOUL", "FIELDING_ERROR"]);
+    const timingBad = String(dto?.timing || "").toUpperCase() === "BAD";
+    const superResults = new Set(["HOME_RUN", "TRIPLE"]);
+
+    let kind = "hit";
+    if (runResults.has(result)) {
+      kind = "run";
+    } else if (dangerResults.has(result)) {
+      kind = "danger";
+    }
+
+    if (timingBad) {
+      kind = "danger";
+    }
+
+    this.impactKind = kind;
+    this.impactTimer = superResults.has(result)
+      ? 0.42
+      : (isSwingEvent || hitResults.has(result) || runResults.has(result) || dangerResults.has(result) ? 0.24 : 0);
+
+    const criticalImpact = Boolean(
+      dto?.critical === true
+      || dto?.animation?.critical === true
+      || result === "HOME_RUN"
+    );
+    const cutInImpact = dto?.animation?.event === "CUT_IN";
+    const hasImpactPresentation = Boolean(
+      dto?.animation?.camera_shake === true
+      || cutInImpact
+      || criticalImpact
+      || timingBad
+    );
+
+    if (hasImpactPresentation) {
+      this._startCameraShake();
+    }
+
+    if (criticalImpact || cutInImpact) {
+      this._triggerZanSlash();
+    }
+
+    if (hitResults.has(result) || superResults.has(result) || isSwingEvent) {
+      this._spawnImpactParticles(result || "HIT");
+    }
+
+    this._applyServerWaifuFeedback(result, timing);
+    this._triggerAudioForTurn(dto);
+
+    if (
+      !this.combatShell
+      || (!hitResults.has(result) && !runResults.has(result) && !dangerResults.has(result) && !timingBad)
+    ) {
+      return;
+    }
+
+    this.combatShell.classList.remove(
+      "is-glitching",
+      "impact-hit",
+      "impact-run",
+      "impact-danger",
+      "impact-super"
+    );
+
+    void this.combatShell.offsetWidth;
+
+    this.combatShell.classList.add("is-glitching", `impact-${kind}`);
+    if (superResults.has(result)) {
+      this.combatShell.classList.add("impact-super");
+    }
+  }
+
+  _applyServerWaifuFeedback(result, timing) {
+    const normalized = String(result || "").toUpperCase();
+    if (normalized === "HOME_RUN") {
+      this._applyWaifuFeedback("feedback-home-run", "HOME RUN!");
+      return;
+    }
+    if (["SINGLE", "DOUBLE", "TRIPLE", "HIT", "FIELDING_ERROR"].includes(normalized)) {
+      this._applyWaifuFeedback("feedback-hit", "HIT");
+      return;
+    }
+    if (["MISS", "STRIKE", "OUT", "FOUL"].includes(normalized) || String(timing || "").toUpperCase() === "BAD") {
+      this._applyWaifuFeedback("feedback-miss", "MISS");
+    }
+  }
+
+  _awardScrap(dto) {
+    const amount = getScrapRewardForResult(dto?.result);
+    if (amount <= 0 || typeof this.onScrapEarned !== "function") return;
+    const turnId = String(dto?.turn_id || "");
+    if (turnId && this.scrapTurnIds.has(turnId)) return;
+    if (turnId) {
+      this.scrapTurnIds.add(turnId);
+      if (this.scrapTurnIds.size > 128) {
+        const oldest = this.scrapTurnIds.values().next().value;
+        this.scrapTurnIds.delete(oldest);
+      }
+    }
+    const multiplier = Math.max(1, Number(this.getEconomyBoosts()?.scrapMultiplier) || 1);
+    this.onScrapEarned({ amount: amount * multiplier, base_amount: amount, multiplier, result: String(dto.result || ""), turn_id: turnId || null });
+    this.onEconomyRewardConsumed?.();
+  }
+
+  _triggerCutIn(dto) {
+    if (!this.cutinRoot) {
+      return;
+    }
+
+    const activeBatter = this.state?.batter || {};
+    const cardId = String(
+      dto.animation?.cut_in_card_id
+      || dto.batter?.card_id
+      || activeBatter.card_id
+      || dto.pitcher?.card_id
+      || ""
+    );
+
+    const cardAssets = [
+      ...(dto.assets?.cards || []),
+      ...(this.state?.assets?.cards || [])
+    ];
+    const descriptor = cardAssets.find((item) => item?.id === cardId);
+    const portraitPath = descriptorPath(descriptor, "card")
+      || String(dto.animation?.cut_in_card_hd_url || dto.animation?.cut_in_card_path || "");
+    const portrait = this.assetBank.get(portraitPath);
+
+    this.cutinEyebrow.textContent = dto.animation?.eyebrow || "GAME EVENT";
+    this.cutinTitle.textContent = resultLabel(dto.result);
+    this.cutinDetail.textContent = [
+      dto.timing || "",
+      dto.animation?.detail || ""
+    ].filter(Boolean).join(" • ");
+
+    if (portrait) {
+      this.cutinPortrait.src = portrait.src;
+      this.cutinPortrait.alt = "";
+      this.cutinPortrait.style.opacity = "1";
+    } else {
+      this.cutinPortrait.removeAttribute("src");
+      this.cutinPortrait.style.opacity = "0";
+    }
+
+    if (dto.animation?.event === "CUT_IN" || dto.animation?.camera_shake === true) {
+      this._startCameraShake();
+    }
+
+    this.cutinRoot.classList.remove("visible");
+    void this.cutinRoot.offsetWidth;
+    this.cutinRoot.classList.add("visible");
+
+    this.cutInStartedAt = performance.now();
+
+    const panel = this.cutinRoot.querySelector(".cutin-panel");
+    if (panel) {
+      panel.animate(
+        [
+          { opacity: 0, transform: "translateX(9%) skewX(-6deg)" },
+          { opacity: 1, transform: "translateX(0) skewX(-6deg)" }
+        ],
+        {
+          duration: 320,
+          easing: "cubic-bezier(.18,.84,.32,1)",
+          fill: "forwards"
+        }
+      );
+    }
+
+    if (this.cutinPortrait) {
+      this.cutinPortrait.animate(
+        [
+          { opacity: 0, transform: "translateY(6%) scale(.97)" },
+          { opacity: 1, transform: "translateY(0) scale(1)" }
+        ],
+        {
+          duration: 420,
+          easing: "cubic-bezier(.18,.84,.32,1)",
+          fill: "forwards"
+        }
+      );
+    }
+
+    const detailColor = TIMING_COLORS[String(dto.timing || "")] || "#c9d1e1";
+    this.cutinDetail.style.color = detailColor;
+  }
+}
