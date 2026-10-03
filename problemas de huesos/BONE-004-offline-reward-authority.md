@@ -168,3 +168,70 @@ No production backend was created. No private key was created. No BONE-005 or BO
 **BALANCE:** UNCHANGED.  
 **BONE-004:** BLOCKED.
 
+
+
+## BONE-004-PROD-AUTH-002
+
+**Fecha:** 2026-10-03  
+**HEAD BEFORE:** `988745f073df9a21f87ed7d2f79d3d4b3bed8057`  
+**CURRENT VALIDATED HEAD:** `6d67d0577d2e96e01d98218eb996efc49f101f79`  
+
+### Backend implementation
+
+- **BACKEND:** PASS. Created provider-neutral `backend/` Node.js ESM authority service.
+- **SERVER GAMEPLAY AUTHORITY:** PASS. Server loads authoritative match state and calculates tactical/climax results by importing the existing `webapp/js/combat_core.js`; no duplicated combat formulas were created.
+- **CLIENT RESULT TRUST:** REJECTED. Economic/result fields supplied by the client are rejected rather than copied into authoritative state.
+- **COMBAT STORE:** `InMemoryCombatStore` only. Interface is isolated for BONE-005 durable persistence.
+- **NONCE:** generated server-side per match and included in the attestation payload.
+- **TURN SEQUENCING:** server-owned expected turn ids; explicit replayed/out-of-sequence ids are rejected.
+- **REWARD IDENTITY:** remains `battle:<matchId>`.
+- **SERVER ATTESTATION:** PASS. P-256 ECDSA + SHA-256 uses IEEE P1363 signature bytes, matching the Web Crypto verifier.
+- **HTTP:** `GET /health`, `GET /ready`, `GET /v1/combat/:matchId/init`, `POST /v1/combat/:matchId/turn`.
+
+### Authentication
+
+Production authentication code now verifies Telegram Mini App init data server-side from `x-telegram-init-data`, derives `telegram:<userId>`, and does not use `initDataUnsafe` as authority.
+
+The test-only `x-test-player-id` bypass is gated by `NODE_ENV=test`.
+
+Production Bot Token configuration remains external and is not stored in the repository.
+
+### Signer / secret boundary
+
+The signer loads `REWARD_SIGNING_PRIVATE_KEY` from external configuration and exposes only the public JWK. Tests generate an ephemeral P-256 keypair in memory.
+
+No production private key was committed.
+
+### Validation
+
+GitHub Actions Run `37147971145` on HEAD `6d67d0577d2e96e01d98218eb996efc49f101f79`:
+
+- backend syntax: PASS
+- client/server ECDSA compatibility: PASS
+- health: PASS
+- readiness fail-closed without persistence: PASS
+- forged client result rejection: PASS
+- wrong player: PASS
+- wrong match: PASS
+- wrong turn: PASS
+- replayed turn id: PASS
+- terminal server result + attestation: PASS
+- Web Crypto client verification: PASS
+
+### Production status
+
+**PERSISTENCE:** DEVELOPMENT ONLY.  
+**AUTHENTICATION:** PRODUCTION-CAPABLE CODE, CONFIGURATION REQUIRED.  
+**DEPLOYMENT:** NOT CONFIGURED.  
+**PRIVATE KEY:** OUTSIDE REPOSITORY.  
+**GAMEPLAY:** UNCHANGED.  
+**BALANCE:** UNCHANGED.  
+**BONE-005:** OPEN / dependency remains for durable Player Meta, reward ledger and concurrency-safe persistence.  
+**BONE-011:** OPEN / unchanged.
+
+### Final Bone state
+
+`BONE-004` remains **BLOCKED**.
+
+**REMAINING BLOCKER:** production infrastructure is not configured yet: durable persistence/reward ledger, external production secret/key configuration, Telegram Bot Token/environment configuration and deployed HTTPS backend origin are still required.
+
