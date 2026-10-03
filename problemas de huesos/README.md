@@ -12,9 +12,9 @@ Estados: OPEN, IN_PROGRESS, BLOCKED, VERIFYING, CLOSED.
 
 | ID | Problema | Prioridad | Estado |
 |---|---|---:|---|
-| BONE-001 | Service Worker, cache y versionado | P0 | OPEN |
-| BONE-002 | Datos runtime faltantes del Gacha WebApp | P0 | OPEN |
-| BONE-003 | attackerId vs selectedActorId | P0 | OPEN |
+| BONE-001 | Service Worker, cache y versionado | P0 | CLOSED |
+| BONE-002 | Datos runtime faltantes del Gacha WebApp | P0 | CLOSED |
+| BONE-003 | attackerId vs selectedActorId | P0 | CLOSED |
 | BONE-004 | Autoridad de recompensa offline/local | P0 | OPEN |
 | BONE-005 | Persistencia dual Player Meta/local/Telegram | P0 | OPEN |
 | BONE-006 | Concurrencia roster/inventario/recompensa | P0 | OPEN |

@@ -9313,3 +9313,24 @@ La infraestructura del combat slice está bastante avanzada, pero no corresponde
 
 **T120 GAIN:** ≈0,2 puntos porcentuales.
 
+
+
+---
+
+## BONE-GATE-RECON-001 · RECONCILIACIÓN DEL INVENTARIO Y GATE ESTRUCTURAL
+
+**Fecha:** 2026-10-03  
+**HEAD inicial:** `fbeed1b9b416b638c83bbc5c6ef3b7acd53dd643`  
+**HEAD final:** ver `COMMIT` del cierre de este checkpoint.
+
+**BONE-001:** CLOSED.  
+**BONE-002:** CLOSED.  
+**BONE-003:** CLOSED.  
+**BONE-004..011:** OPEN.  
+**GLOBAL GATE:** CLOSED.
+
+**CHANGES:** reconciliación documental del inventario y del estado del gate. No hubo cambios de runtime, gameplay ni balance. BONE-004 no fue iniciado.
+
+**SCOPE:** `problemas de huesos/README.md`, `problemas de huesos/00-gate-de-avance.md`, `docs/bitacora.md`.
+
+**STATUS:** CLOSED.
