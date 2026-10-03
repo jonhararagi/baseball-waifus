@@ -9293,7 +9293,7 @@ La infraestructura del combat slice está bastante avanzada, pero no corresponde
 
 **HEAD BEFORE:** `36e7b4208d1368a851e4c80c6e9f6937112e6c8a`
 
-**HEAD AFTER:** pendiente de commit T120
+**HEAD AFTER:** `41d38950dc3aff1d754dd5e3789b1dba0a819542`
 
 **ACTOR WIRING:** El flujo normal existente de `CombatPresentationDirector` utiliza el `CharacterActor2D5` seleccionado para `ATTACKER_FOCUS → ACTION → COMBAT_RETURN → COMPLETE`. No se creó un segundo flujo de combate ni un segundo actor system.
 
@@ -9303,7 +9303,7 @@ La infraestructura del combat slice está bastante avanzada, pero no corresponde
 
 **TESTS:** La prueba existente de `CombatPresentationDirector` fue ampliada para ejecutar directamente el handler real de `CombatRenderer` y verificar que los eventos de presentación mueven el Actor por `FOCUS → ACTION → RETURN → IDLE`, preservando transformaciones y visibilidad. También verifica que el objeto de autoridad gameplay permanece sin cambios.
 
-**BROWSER:** Se conserva la infraestructura browser existente. No se creó workflow nuevo ni se modificó T118-R.
+**BROWSER:** PASS. El proof browser existente T077 ejecutó el combate real sobre este SHA y terminó en success. No se creó workflow nuevo ni se modificó T118-R.
 
 **BLOCKED TASKS PRESERVED:** `T118-R = BLOCKED / UNCHANGED`
 
