@@ -171,9 +171,11 @@ try {
     };
 
     const fakeCtx = {
-      save() {}, restore() {}, beginPath() {}, moveTo() {}, lineTo() {}, stroke() {}, arc() {}, fill() {},
+      save() {}, restore() {}, beginPath() {}, moveTo() {}, lineTo() {}, stroke() {}, arc() {}, ellipse() {}, fill() {},
+      translate() {}, rotate() {}, scale() {}, fillRect() {}, drawImage() {}, fillText() {},
       set strokeStyle(_) {}, set lineWidth(_) {}, set fillStyle(_) {}, set shadowColor(_) {}, set shadowBlur(_) {},
-      set globalAlpha(_) {}
+      set globalAlpha(_) {}, set textAlign(_) {}, set font(_) {}, set textBaseline(_) {}, set filter(_) {},
+      set globalCompositeOperation(_) {}
     };
 
     const result = Object.freeze({
