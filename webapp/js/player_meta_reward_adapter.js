@@ -1,4 +1,5 @@
 import { REWARD_KINDS, REWARD_RESULT_TYPE } from "./reward_resolver.js";
+import { isStaleWriteError } from "./player_meta_persistence_adapter.js";
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -54,49 +55,59 @@ export function applyRewardResultToPlayerMeta({
 
   const sourceEventId = String(rewardResult.sourceEventId || "");
   if (!sourceEventId) throw new TypeError("REWARD_RESULT sourceEventId is required");
-  if (typeof authority.hasAppliedReward === "function" && authority.hasAppliedReward(sourceEventId)) {
-    return Object.freeze({
-      ok: true,
-      duplicate: true,
-      sourceEventId,
-      snapshot: authority.getSnapshot(),
-      appliedRewards: []
-    });
-  }
 
-  const before = authority.getSnapshot();
-  const actions = rewardResult.rewards
-    .flatMap((reward) => actionsForReward(reward));
-  actions.push({ type: "RECORD_REWARD", sourceEventId });
-
-  try {
-    if (typeof authority.dispatchBatch === "function") {
-      const transaction = authority.dispatchBatch(actions);
-      if (!transaction.ok) {
-        throw new Error(transaction.reason || "PLAYER_META_ACTION_REJECTED");
-      }
-    } else {
-      for (const action of actions) {
-        const result = authority.dispatch(action);
-        if (!result.ok) throw new Error(result.reason || "PLAYER_META_ACTION_REJECTED");
-      }
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    if (typeof authority.hasAppliedReward === "function" && authority.hasAppliedReward(sourceEventId)) {
+      return Object.freeze({
+        ok: true,
+        duplicate: true,
+        sourceEventId,
+        snapshot: authority.getSnapshot(),
+        appliedRewards: []
+      });
     }
 
-    const after = authority.getSnapshot();
-    if (persistenceAdapter) {
-      if (typeof persistenceAdapter.save !== "function") throw new TypeError("Invalid persistence adapter");
-      persistenceAdapter.save(after);
-    }
+    const before = authority.getSnapshot();
+    const actions = rewardResult.rewards
+      .flatMap((reward) => actionsForReward(reward));
+    actions.push({ type: "RECORD_REWARD", sourceEventId });
 
-    return Object.freeze({
-      ok: true,
-      duplicate: false,
-      sourceEventId: rewardResult.sourceEventId,
-      snapshot: after,
-      appliedRewards: clone(rewardResult.rewards)
-    });
-  } catch (error) {
-    authority.replaceSnapshot(before);
-    throw error;
+    try {
+      if (typeof authority.dispatchBatch === "function") {
+        const transaction = authority.dispatchBatch(actions);
+        if (!transaction.ok) {
+          throw new Error(transaction.reason || "PLAYER_META_ACTION_REJECTED");
+        }
+      } else {
+        for (const action of actions) {
+          const result = authority.dispatch(action);
+          if (!result.ok) throw new Error(result.reason || "PLAYER_META_ACTION_REJECTED");
+        }
+      }
+
+      const after = authority.getSnapshot();
+      if (persistenceAdapter) {
+        if (typeof persistenceAdapter.save !== "function") throw new TypeError("Invalid persistence adapter");
+        persistenceAdapter.save(after);
+      }
+
+      return Object.freeze({
+        ok: true,
+        duplicate: false,
+        sourceEventId: rewardResult.sourceEventId,
+        snapshot: after,
+        appliedRewards: clone(rewardResult.rewards)
+      });
+    } catch (error) {
+      authority.replaceSnapshot(before);
+      if (persistenceAdapter && isStaleWriteError(error) && attempt === 0) {
+        const latest = persistenceAdapter.load(before.identity);
+        authority.replaceSnapshot(latest);
+        continue;
+      }
+      throw error;
+    }
   }
+
+  throw new Error("PLAYER_META_CONCURRENCY_RETRY_EXHAUSTED");
 }

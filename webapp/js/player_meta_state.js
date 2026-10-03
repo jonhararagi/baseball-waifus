@@ -133,8 +133,29 @@ export function validatePlayerMetaState(state) {
   if (!isObject(state.roster) || !Array.isArray(state.roster.supports) || state.roster.supports.length !== 2) {
     throw new TypeError("Invalid roster");
   }
-  if (state.roster.activeBatter !== null) assertId(state.roster.activeBatter, "activeBatter");
-  for (const support of state.roster.supports) if (support !== null) assertId(support, "support");
+  if (state.roster.activeBatter !== null) {
+    assertId(state.roster.activeBatter, "activeBatter");
+    const ownership = state.inventory.characters[state.roster.activeBatter];
+    if (!ownership?.unlocked || ownership.quantity <= 0) {
+      throw new TypeError("Roster activeBatter requires owned character");
+    }
+  }
+  const seenSupports = new Set();
+  for (const support of state.roster.supports) {
+    if (support === null) continue;
+    assertId(support, "support");
+    const ownership = state.inventory.characters[support];
+    if (!ownership?.unlocked || ownership.quantity <= 0) {
+      throw new TypeError("Roster support requires owned character");
+    }
+    if (support === state.roster.activeBatter) {
+      throw new TypeError("Active batter cannot be a support");
+    }
+    if (seenSupports.has(support)) {
+      throw new TypeError("Duplicate support");
+    }
+    seenSupports.add(support);
+  }
   return true;
 }
 
@@ -171,6 +192,16 @@ function nextStateForAction(state, action) {
     } else {
       if (current.quantity < action.quantity) return { ok: false, reason: "INSUFFICIENT_CHARACTER_QUANTITY" };
       current.quantity -= action.quantity;
+      if (current.quantity === 0) {
+        current.unlocked = false;
+        delete next.progression.characters[action.characterId];
+        if (next.roster.activeBatter === action.characterId) {
+          next.roster.activeBatter = null;
+        }
+        next.roster.supports = next.roster.supports.map((support) => (
+          support === action.characterId ? null : support
+        ));
+      }
     }
     next.inventory.characters[action.characterId] = current;
   }
@@ -213,7 +244,20 @@ function nextStateForAction(state, action) {
   if (type === "SET_ROSTER") {
     if (action.activeBatter !== null) assertId(action.activeBatter, "activeBatter");
     if (!Array.isArray(action.supports) || action.supports.length !== 2) return { ok: false, reason: "INVALID_SUPPORTS" };
-    for (const support of action.supports) if (support !== null) assertId(support, "support");
+    if (action.activeBatter !== null) {
+      const ownership = next.inventory.characters[action.activeBatter];
+      if (!ownership?.unlocked || ownership.quantity <= 0) return { ok: false, reason: "ACTIVE_BATTER_NOT_UNLOCKED" };
+    }
+    const seenSupports = new Set();
+    for (const support of action.supports) {
+      if (support === null) continue;
+      assertId(support, "support");
+      const ownership = next.inventory.characters[support];
+      if (!ownership?.unlocked || ownership.quantity <= 0) return { ok: false, reason: "SUPPORT_NOT_UNLOCKED" };
+      if (support === action.activeBatter) return { ok: false, reason: "ACTIVE_BATTER_CANNOT_BE_SUPPORT" };
+      if (seenSupports.has(support)) return { ok: false, reason: "DUPLICATE_SUPPORT" };
+      seenSupports.add(support);
+    }
     next.roster = { activeBatter: action.activeBatter, supports: [...action.supports] };
   }
 

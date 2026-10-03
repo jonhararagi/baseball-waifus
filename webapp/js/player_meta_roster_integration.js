@@ -28,19 +28,33 @@ function validateRosterSelection(snapshot, activeBatter, supports) {
   return { activeBatter: normalizedActive, supports: normalizedSupports };
 }
 
+import { isStaleWriteError } from "./player_meta_persistence_adapter.js";
+
 function persistRosterChange(integration, nextRoster) {
-  const before = integration.authority.getSnapshot();
-  try {
-    const result = integration.authority.dispatch({ type: "SET_ROSTER", activeBatter: nextRoster.activeBatter, supports: [...nextRoster.supports] });
-    if (!result.ok) throw new Error(result.reason || "PLAYER_META_ACTION_REJECTED");
-    const after = integration.authority.getSnapshot();
-    integration.persistenceAdapter.save(after);
-    return after;
-  } catch (error) {
-    integration.authority.replaceSnapshot(before);
-    try { integration.persistenceAdapter.save(before); } catch {}
-    throw error;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const before = integration.authority.getSnapshot();
+    try {
+      const result = integration.authority.dispatch({
+        type: "SET_ROSTER",
+        activeBatter: nextRoster.activeBatter,
+        supports: [...nextRoster.supports]
+      });
+      if (!result.ok) throw new Error(result.reason || "PLAYER_META_ACTION_REJECTED");
+      const after = integration.authority.getSnapshot();
+      integration.persistenceAdapter.save(after);
+      return after;
+    } catch (error) {
+      integration.authority.replaceSnapshot(before);
+      if (isStaleWriteError(error) && attempt === 0) {
+        const latest = integration.persistenceAdapter.load(before.identity);
+        validateRosterSelection(latest, nextRoster.activeBatter, nextRoster.supports);
+        integration.authority.replaceSnapshot(latest);
+        continue;
+      }
+      throw error;
+    }
   }
+  throw new Error("PLAYER_META_CONCURRENCY_RETRY_EXHAUSTED");
 }
 
 export class PlayerMetaRosterIntegration {

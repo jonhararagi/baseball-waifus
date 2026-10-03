@@ -3,7 +3,7 @@ import {
   createPlayerIdentity,
   PlayerMetaAuthority
 } from "./player_meta_state.js";
-import { PlayerMetaPersistenceAdapter } from "./player_meta_persistence_adapter.js";
+import { PlayerMetaPersistenceAdapter, isStaleWriteError } from "./player_meta_persistence_adapter.js";
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -18,20 +18,24 @@ function assertNonNegativeInteger(value, label) {
 }
 
 function transaction(authority, persistenceAdapter, actions) {
-  const before = authority.getSnapshot();
-  try {
-    for (const action of actions) {
-      const result = authority.dispatch(action);
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const before = authority.getSnapshot();
+    try {
+      const result = authority.dispatchBatch(actions);
       if (!result.ok) throw new Error(result.reason || "PLAYER_META_ACTION_REJECTED");
+      const after = authority.getSnapshot();
+      persistenceAdapter.save(after);
+      return after;
+    } catch (error) {
+      authority.replaceSnapshot(before);
+      if (isStaleWriteError(error) && attempt === 0) {
+        authority.replaceSnapshot(persistenceAdapter.load(before.identity));
+        continue;
+      }
+      throw error;
     }
-    const after = authority.getSnapshot();
-    persistenceAdapter.save(after);
-    return after;
-  } catch (error) {
-    authority.replaceSnapshot(before);
-    try { persistenceAdapter.save(before); } catch { /* preserve the original failure */ }
-    throw error;
   }
+  throw new Error("PLAYER_META_CONCURRENCY_RETRY_EXHAUSTED");
 }
 
 export class GachaPlayerMetaIntegration {
