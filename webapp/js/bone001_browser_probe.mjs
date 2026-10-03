@@ -120,6 +120,7 @@ try {
 
   const expression = `(async () => {
     const failures = [];
+    const observations = {};
     const loads = Number(sessionStorage.getItem("bone001.browser.loads") || "0") + 1;
     sessionStorage.setItem("bone001.browser.loads", String(loads));
     if (loads !== 1) failures.push("RELOAD_LOOP");
@@ -140,25 +141,73 @@ try {
 
     await caches.open("v16_capibara_core");
     await caches.open("baseball-waifus-v16");
+    await caches.open("foreign-site-cache");
+
+    const recordCaches = async (label) => {
+      observations[label] = await caches.keys();
+      return observations[label];
+    };
+
+    await recordCaches("ANTES_DE_REGISTER");
 
     const registration = await navigator.serviceWorker.register("./sw.js", { scope: "./" });
+    await recordCaches("DESPUES_DE_REGISTER");
+
     await navigator.serviceWorker.ready;
+    await recordCaches("DESPUES_DE_READY");
 
-    if (!registration.active) failures.push("SERVICE_WORKER_NOT_ACTIVE");
+    const active = registration.active;
+    if (!active) {
+      failures.push("SERVICE_WORKER_NOT_ACTIVE");
+    } else {
+      if (active.state !== "activated") failures.push("ACTIVE_STATE=" + active.state);
+      if (!new URL(active.scriptURL).pathname.endsWith("/sw.js")) failures.push("ACTIVE_SCRIPT=" + active.scriptURL);
+    }
 
-    const cacheNames = await caches.keys();
+    const controllerReady = navigator.serviceWorker.controller
+      ? Promise.resolve(true)
+      : new Promise((resolve) => {
+          let settled = false;
+          const finish = (value) => {
+            if (settled) return;
+            settled = true;
+            navigator.serviceWorker.removeEventListener("controllerchange", onControllerChange);
+            clearTimeout(timeout);
+            resolve(value);
+          };
+          const onControllerChange = () => finish(true);
+          const timeout = setTimeout(() => finish(false), 2000);
+          navigator.serviceWorker.addEventListener("controllerchange", onControllerChange, { once: true });
+        });
+
+    if (!(await controllerReady)) failures.push("CONTROLLER_TIMEOUT");
+    await recordCaches("DESPUES_DE_CONTROLLER");
+
+    if (navigator.serviceWorker.controller && !new URL(navigator.serviceWorker.controller.scriptURL).pathname.endsWith("/sw.js")) {
+      failures.push("CONTROLLER_SCRIPT=" + navigator.serviceWorker.controller.scriptURL);
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    await recordCaches("DESPUES_DE_SETTLE");
+
+    const cacheNames = observations.DESPUES_DE_SETTLE || [];
     if (!cacheNames.includes("baseball-waifus-v17")) failures.push("ACTIVE_CACHE_MISSING");
     if (cacheNames.includes("v16_capibara_core")) failures.push("LEGACY_CACHE_PRESENT");
     if (cacheNames.includes("baseball-waifus-v16")) failures.push("OLD_PRODUCT_CACHE_PRESENT");
+    if (!cacheNames.includes("foreign-site-cache")) failures.push("FOREIGN_CACHE_REMOVED");
 
     return {
       pass: failures.length === 0,
       version: version.version,
       cache: cacheNames.includes("baseball-waifus-v17") ? "baseball-waifus-v17" : "MISSING",
       legacy: cacheNames.includes("v16_capibara_core") ? "PRESENT" : "PURGED",
+      oldProduct: cacheNames.includes("baseball-waifus-v16") ? "PRESENT" : "PURGED",
+      foreign: cacheNames.includes("foreign-site-cache") ? "PRESENT" : "REMOVED",
       gate: gateResult.status,
-      serviceWorker: registration.active ? "READY" : "NOT_READY",
+      serviceWorker: active && active.state === "activated" ? "READY" : "NOT_READY",
       reloadLoop: failures.some((item) => item === "RELOAD_LOOP" || item === "UNEXPECTED_RELOAD") ? "DETECTED" : "NOT_DETECTED",
+      controller: navigator.serviceWorker.controller ? "READY" : "NOT_READY",
+      observations,
       failures
     };
   })()`;
@@ -177,9 +226,13 @@ try {
   console.log(`VERSION = ${value.version}`);
   console.log(`CACHE = ${value.cache}`);
   console.log(`LEGACY_CACHE = ${value.legacy}`);
+  console.log(`OLD_PRODUCT_CACHE = ${value.oldProduct}`);
+  console.log(`FOREIGN_CACHE = ${value.foreign}`);
   console.log(`VERSION_GATE = ${value.gate}`);
   console.log(`SERVICE_WORKER = ${value.serviceWorker}`);
+  console.log(`CONTROLLER = ${value.controller}`);
   console.log(`RELOAD_LOOP = ${value.reloadLoop}`);
+  console.log("CACHE_OBSERVATIONS = " + JSON.stringify(value.observations));
   if (value.failures?.length) console.log(`FAILURES = ${value.failures.join(",")}`);
 
   if (!value.pass) process.exitCode = 1;
