@@ -339,6 +339,26 @@ jobs:
           echo "BONE-002 BROWSER BIN = $BROWSER_BIN"
           SITE_DIR="$SITE_DIR" BROWSER_BIN="$BROWSER_BIN" node webapp/js/bone002_browser_probe.mjs
 
+      - name: BONE-003 Native Chromium Attacker Actor Validation
+        shell: bash
+        env:
+          SITE_DIR: site
+        run: |
+          set -euo pipefail
+          BROWSER_BIN=""
+          for candidate in google-chrome chromium chromium-browser; do
+            if command -v "$candidate" >/dev/null 2>&1; then
+              BROWSER_BIN="$(command -v "$candidate")"
+              break
+            fi
+          done
+          if [ -z "$BROWSER_BIN" ]; then
+            echo "BONE-003 BROWSER PROBE = NOT_RUN // no supported Chrome/Chromium binary on runner"
+            exit 1
+          fi
+          echo "BONE-003 BROWSER BIN = $BROWSER_BIN"
+          SITE_DIR="$SITE_DIR" BROWSER_BIN="$BROWSER_BIN" node webapp/js/bone003_browser_probe.mjs
+
       - name: T073 Character Presentation Browser QA
         shell: bash
         env:
