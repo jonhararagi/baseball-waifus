@@ -1,10 +1,13 @@
 // P17 combat loop: tactical card phase -> Meta Cell climax -> Timing Ring.
-const CACHE_NAME = 'v16_capibara_core';
+const CACHE_VERSION = 'v17';
+const CACHE_NAME = `baseball-waifus-${CACHE_VERSION}`;
+const LEGACY_CACHE_NAMES = new Set(['v16_capibara_core']);
 
 const PRECACHE_ASSETS = [
   "./",
   "./index.html",
   "./manifest.json",
+  "./js/version_gate.js",
   "./css/styles.css",
   "./data/waifus_config.json",
   "./js/app.js",
@@ -93,14 +96,27 @@ self.addEventListener("activate", (event) => {
     const names = await caches.keys();
     await Promise.all(
       names
-        .filter((name) => name.startsWith("baseball-waifus-") && name !== CACHE_NAME)
+        .filter((name) => (name.startsWith("baseball-waifus-") || LEGACY_CACHE_NAMES.has(name)) && name !== CACHE_NAME)
         .map((name) => caches.delete(name))
     );
     await self.clients.claim();
   })());
 });
 
+async function networkFirst(request) {
+  try {
+    return await fetch(request, { cache: "no-store" });
+  } catch {
+    return caches.match(request);
+  }
+}
+
 self.addEventListener("fetch", (event) => {
   if (!isLocalGet(event.request)) return;
+  const pathname = new URL(event.request.url).pathname;
+  if (pathname.endsWith("/version.json")) {
+    event.respondWith(networkFirst(event.request));
+    return;
+  }
   event.respondWith(cacheFirst(event.request));
 });
