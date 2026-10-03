@@ -226,3 +226,8 @@ Un nuevo agente puede recibir solamente:
 "Actúa como bot Obrero del proyecto. Lee `obrero/INSTRUCCIONES.md`. Luego ejecuta exclusivamente la orden de trabajo que te entregue el Cerebro."
 
 Después de leer este archivo, debe poder recuperar el contrato operativo sin que el usuario vuelva a pegarlo completo.
+
+
+## BONE GATE
+
+Before executing a new product feature task, verify problemas de huesos/README.md. If any critical P0/P1 bone is OPEN, IN_PROGRESS, BLOCKED or VERIFYING, execute only tasks explicitly dedicated to diagnosing, repairing, testing, observing or closing that bone gate. Do not implement unrelated product features.
