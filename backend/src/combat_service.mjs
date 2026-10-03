@@ -34,6 +34,7 @@ function normalizeBody(body) {
 function stateDTO(state) {
   return {
     match_id: state.matchId,
+    revision: state.revision ?? 0,
     turn_id: state.turnId,
     phase: state.phase,
     boss_hp: state.bossHp,
@@ -94,6 +95,7 @@ export class CombatService {
     }
 
     const processedTurnId = state.turnId;
+    const expectedRevision = Number.isSafeInteger(state.revision) ? state.revision : 0;
     let coreResult;
     let responseOutcome;
     if (state.phase === "TACTICAL") {
@@ -166,9 +168,20 @@ export class CombatService {
 
     state.turnNumber += 1;
     state.turnId = "turn-" + String(state.turnNumber).padStart(3, "0");
-    const saved = typeof this.store.saveMatch === "function"
-      ? this.store.saveMatch(state, { rewardId: rewardIdToPersist })
-      : this.store.saveMatch(state);
+    let saved;
+    try {
+      saved = typeof this.store.saveMatch === "function"
+        ? this.store.saveMatch(state, {
+          rewardId: rewardIdToPersist,
+          expectedRevision
+        })
+        : this.store.saveMatch(state);
+    } catch (error) {
+      if (error?.code === "STALE_WRITE") {
+        throw new AuthorityError(409, "STATE_CONFLICT", "Authoritative combat state changed before this turn could be persisted");
+      }
+      throw error;
+    }
     if (rewardIdToPersist && typeof this.store.saveMatch !== "function") {
       this.store.markRewardAuthorized(rewardIdToPersist);
     }

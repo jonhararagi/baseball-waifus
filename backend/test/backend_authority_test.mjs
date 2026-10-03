@@ -58,6 +58,7 @@ test("valid action is accepted and client result is rejected", async () => {
   const init = await initResponse.json();
   assert.equal(init.reward_authority.version, "SERVER_COMBAT_ATTESTATION_V1");
   assert.equal(init.reward_authority.public_key_jwk.kty, "EC");
+  assert.equal(init.state.revision, 0);
 
   const forged = await request("/v1/combat/match-001/turn", {
     method: "POST",
@@ -150,4 +151,21 @@ test("server terminal result creates an attestation without exposing the private
   assert.ok(body.reward_attestation);
   assert.equal(body.reward_attestation.player_id, "test-player-001");
   assert.equal(body.reward_attestation.private_key, undefined);
+});
+
+
+test("authoritative state conflict rejects stale concurrent turn", async () => {
+  const initA = await request("/v1/combat/concurrency-match/init");
+  assert.equal(initA.status, 200);
+  const first = await request("/v1/combat/concurrency-match/turn", {
+    method: "POST",
+    body: JSON.stringify({ action: { type: "BAT" }, timing_grade: "MISS", turn_id: "turn-001" })
+  });
+  assert.equal(first.status, 200);
+  const staleReplay = await request("/v1/combat/concurrency-match/turn", {
+    method: "POST",
+    body: JSON.stringify({ action: { type: "BAT" }, timing_grade: "MISS", turn_id: "turn-001" })
+  });
+  assert.equal(staleReplay.status, 409);
+  assert.equal((await staleReplay.json()).error, "TURN_OUT_OF_SEQUENCE");
 });

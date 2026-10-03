@@ -28,6 +28,7 @@ export class InMemoryCombatStore {
     const state = {
       matchId: id,
       playerId: String(playerId),
+      revision: 0,
       turnId: nextTurnId(1),
       turnNumber: 1,
       phase: "TACTICAL",
@@ -51,12 +52,28 @@ export class InMemoryCombatStore {
     return state ? clone(state) : null;
   }
 
-  saveMatch(state, { rewardId = null } = {}) {
+  saveMatch(state, { rewardId = null, expectedRevision = null } = {}) {
     const id = stableMatchId(state?.matchId);
     if (!state || state.matchId !== id) throw new TypeError("Invalid combat state");
-    this.matches.set(id, clone(state));
+    const current = this.matches.get(id);
+    if (!current) throw new TypeError("Combat match does not exist");
+    const currentRevision = Number.isSafeInteger(current.revision) ? current.revision : 0;
+    const expected = expectedRevision === null
+      ? (Number.isSafeInteger(state.revision) ? state.revision : currentRevision)
+      : expectedRevision;
+    if (!Number.isSafeInteger(expected) || expected < 0) throw new TypeError("Invalid expected revision");
+    if (expected !== currentRevision) {
+      const error = new Error("STALE_WRITE");
+      error.code = "STALE_WRITE";
+      error.currentRevision = currentRevision;
+      throw error;
+    }
+
+    const next = clone(state);
+    next.revision = currentRevision + 1;
+    this.matches.set(id, next);
     if (rewardId !== null) this.rewardLedger.add(String(rewardId));
-    return clone(state);
+    return clone(next);
   }
 
   markRewardAuthorized(rewardId) {

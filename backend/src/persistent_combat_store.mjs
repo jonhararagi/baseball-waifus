@@ -37,6 +37,7 @@ function validateMatchState(state) {
   const matchId = stableId(state.matchId, "matchId");
   const playerId = stableId(state.playerId, "playerId");
   if (state.matchId !== matchId || state.playerId !== playerId) throw new TypeError("Invalid combat identity");
+  if (!Number.isSafeInteger(state.revision) || state.revision < 0) throw new TypeError("Invalid revision");
   if (typeof state.turnId !== "string" || !/^turn-\d+$/.test(state.turnId)) throw new TypeError("Invalid turnId");
   nonNegativeInteger(state.turnNumber, "turnNumber");
   if (state.turnNumber < 1) throw new TypeError("turnNumber must start at 1");
@@ -78,8 +79,13 @@ function validateDocument(document) {
   for (const [matchId, state] of Object.entries(document.matches)) {
     const normalizedMatchId = stableId(matchId, "matchId");
     if (normalizedMatchId !== matchId) throw new TypeError("Invalid persisted match key");
-    validateMatchState(state);
-    if (state.matchId !== matchId) throw new TypeError("Persisted match identity mismatch");
+    const normalizedState = {
+      ...state,
+      revision: state.revision === undefined ? 0 : state.revision
+    };
+    validateMatchState(normalizedState);
+    if (normalizedState.matchId !== matchId) throw new TypeError("Persisted match identity mismatch");
+    document.matches[matchId] = normalizedState;
   }
   for (const [rewardId, applied] of Object.entries(document.rewardLedger)) {
     stableId(rewardId, "rewardId");
@@ -177,6 +183,7 @@ export class PersistentCombatStore {
     const state = {
       matchId: id,
       playerId: owner,
+      revision: 0,
       turnId: nextTurnId(1),
       turnNumber: 1,
       phase: "TACTICAL",
@@ -205,17 +212,41 @@ export class PersistentCombatStore {
     return state ? clone(state) : null;
   }
 
-  saveMatch(state, { rewardId = null } = {}) {
-    validateMatchState(state);
-    const id = stableId(state.matchId, "matchId");
+  saveMatch(state, { rewardId = null, expectedRevision = null } = {}) {
+    const id = stableId(state?.matchId, "matchId");
+    validateMatchState({
+      ...state,
+      revision: state?.revision === undefined ? 0 : state.revision
+    });
     if (state.matchId !== id) throw new TypeError("Invalid combat state identity");
     if (rewardId !== null) stableId(rewardId, "rewardId");
 
     const document = this._readDocument();
-    document.matches[id] = clone(state);
+    const current = document.matches[id];
+    if (!current) throw new PersistentCombatStoreError("Combat match does not exist");
+    const currentRevision = Number.isSafeInteger(current.revision) ? current.revision : 0;
+    const expected = expectedRevision === null
+      ? (Number.isSafeInteger(state.revision) ? state.revision : currentRevision)
+      : expectedRevision;
+    if (!Number.isSafeInteger(expected) || expected < 0) {
+      throw new PersistentCombatStoreError("Invalid expected revision");
+    }
+    if (expected !== currentRevision) {
+      const error = new PersistentCombatStoreError(
+        `STALE_WRITE: expected revision ${expected}, current revision ${currentRevision}`
+      );
+      error.code = "STALE_WRITE";
+      error.currentRevision = currentRevision;
+      throw error;
+    }
+
+    const next = clone(state);
+    next.revision = currentRevision + 1;
+    validateMatchState(next);
+    document.matches[id] = next;
     if (rewardId !== null) document.rewardLedger[rewardId] = true;
     this._writeDocument(document);
-    return clone(state);
+    return clone(next);
   }
 
   markRewardAuthorized(rewardId) {

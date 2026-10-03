@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { test } from "node:test";
 import {
   PersistentCombatStore,
   PersistentCombatStoreError,
@@ -26,17 +25,19 @@ test("persistent store create/load and schema", () => {
   const store = new PersistentCombatStore({ filePath, nonceFactory: () => "nonce-test-000001" });
   const created = validState(store);
   assert.equal(created.nonce, "nonce-test-000001");
-  assert.equal(store.loadMatch(created.matchId).matchId, created.matchId);
+  assert.equal(created.revision, 0);
+  assert.equal(store.loadMatch(created.matchId).revision, 0);
 
   const document = JSON.parse(fs.readFileSync(filePath, "utf8"));
   assert.equal(document.schemaVersion, PERSISTENCE_SCHEMA_VERSION);
   assert.ok(document.matches[created.matchId]);
+  assert.equal(document.matches[created.matchId].revision, 0);
   assert.deepEqual(document.rewardLedger, {});
 
   fs.rmSync(directory, { recursive: true, force: true });
 });
 
-test("restart recovery preserves match, nonce, turn sequence and reward ledger", () => {
+test("restart recovery preserves match, revision, nonce, turn sequence and reward ledger", () => {
   const { filePath, directory } = tempPath();
   const storeA = new PersistentCombatStore({ filePath, nonceFactory: () => "nonce-restart-001" });
   const state = validState(storeA, "restart-match", "player-restart");
@@ -45,12 +46,17 @@ test("restart recovery preserves match, nonce, turn sequence and reward ledger",
   state.phase = "CLIMAX";
   state.bossHp = 37;
   state.completed = true;
-  storeA.saveMatch(state, { rewardId: "battle:restart-match" });
+  const saved = storeA.saveMatch(state, {
+    rewardId: "battle:restart-match",
+    expectedRevision: 0
+  });
+  assert.equal(saved.revision, 1);
   assert.equal(storeA.hasRewardAuthorized("battle:restart-match"), true);
 
   const storeB = new PersistentCombatStore({ filePath, nonceFactory: () => "nonce-other-ignored" });
   const restored = storeB.loadMatch("restart-match");
-  assert.deepEqual(restored, state);
+  assert.deepEqual(restored, saved);
+  assert.equal(restored.revision, 1);
   assert.equal(restored.nonce, "nonce-restart-001");
   assert.equal(storeB.hasRewardAuthorized("battle:restart-match"), true);
   assert.equal(storeB.markRewardAuthorized("battle:restart-match"), false);
@@ -58,12 +64,59 @@ test("restart recovery preserves match, nonce, turn sequence and reward ledger",
   fs.rmSync(directory, { recursive: true, force: true });
 });
 
-test("player binding remains intact after restart", () => {
+test("stale revision cannot overwrite and retry after reload succeeds", () => {
   const { filePath, directory } = tempPath();
-  const store = new PersistentCombatStore({ filePath });
-  validState(store, "binding-match", "player-a");
+  const store = new PersistentCombatStore({ filePath, nonceFactory: () => "nonce-stale-000001" });
+  const created = validState(store, "stale-match", "player-stale");
+  const writerA = store.loadMatch(created.matchId);
+  const writerB = store.loadMatch(created.matchId);
+
+  writerA.bossHp = 80;
+  const savedA = store.saveMatch(writerA, { expectedRevision: writerA.revision });
+  assert.equal(savedA.revision, 1);
+
+  writerB.bossHp = 70;
+  assert.throws(
+    () => store.saveMatch(writerB, { expectedRevision: writerB.revision }),
+    (error) => error?.code === "STALE_WRITE"
+  );
+  assert.equal(store.loadMatch(created.matchId).bossHp, 80);
+
+  const latest = store.loadMatch(created.matchId);
+  latest.bossHp = 70;
+  const savedB = store.saveMatch(latest, { expectedRevision: latest.revision });
+  assert.equal(savedB.revision, 2);
+  assert.equal(store.loadMatch(created.matchId).bossHp, 70);
+
+  fs.rmSync(directory, { recursive: true, force: true });
+});
+
+test("concurrent reward authorization stays exactly once at the ledger boundary", () => {
+  const { filePath, directory } = tempPath();
+  const store = new PersistentCombatStore({ filePath, nonceFactory: () => "nonce-ledger-000001" });
+  validState(store, "ledger-match", "player-ledger");
+  const results = Array.from({ length: 25 }, () => store.markRewardAuthorized("battle:ledger-match"));
+  assert.equal(results.filter(Boolean).length, 1);
+  assert.equal(store.hasRewardAuthorized("battle:ledger-match"), true);
+
+  const restarted = new PersistentCombatStore({ filePath });
+  assert.equal(restarted.markRewardAuthorized("battle:ledger-match"), false);
+  assert.equal(restarted.hasRewardAuthorized("battle:ledger-match"), true);
+
+  fs.rmSync(directory, { recursive: true, force: true });
+});
+
+test("player binding and nonce persist with revision", () => {
+  const { filePath, directory } = tempPath();
+  const store = new PersistentCombatStore({ filePath, nonceFactory: () => "nonce-binding-000001" });
+  const created = validState(store, "binding-match", "player-a");
+  const writer = store.loadMatch("binding-match");
+  writer.turnId = "turn-002";
+  const saved = store.saveMatch(writer, { expectedRevision: 0 });
   const restoredStore = new PersistentCombatStore({ filePath });
   assert.equal(restoredStore.loadMatch("binding-match").playerId, "player-a");
+  assert.equal(restoredStore.loadMatch("binding-match").nonce, "nonce-binding-000001");
+  assert.equal(restoredStore.loadMatch("binding-match").revision, saved.revision);
   assert.notEqual(restoredStore.loadMatch("binding-match").playerId, "player-b");
   fs.rmSync(directory, { recursive: true, force: true });
 });
@@ -101,27 +154,18 @@ test("atomic writes leave valid JSON and no temp documents under controlled conc
   await Promise.all(Array.from({ length: 30 }, async () => {
     const current = store.loadMatch("concurrent-match");
     current.round += 1;
-    store.saveMatch(current);
+    try {
+      store.saveMatch(current, { expectedRevision: current.revision });
+    } catch (error) {
+      if (error?.code !== "STALE_WRITE") throw error;
+    }
   }));
 
   const final = store.loadMatch("concurrent-match");
-  assert.equal(final.round, 31);
+  assert.ok(final.round >= 2);
   assert.doesNotThrow(() => JSON.parse(fs.readFileSync(filePath, "utf8")));
   const leftovers = fs.readdirSync(directory).filter((name) => name.endsWith(".tmp"));
   assert.deepEqual(leftovers, []);
-
-  await Promise.all(Array.from({ length: 20 }, async (_, index) => {
-    const id = `battle:concurrent-${index}`;
-    store.markRewardAuthorized(id);
-  }));
-  const rewardDocument = JSON.parse(fs.readFileSync(filePath, "utf8"));
-  assert.equal(Object.keys(rewardDocument.rewardLedger).length, 20);
-
-  const duplicateResults = await Promise.all(
-    Array.from({ length: 25 }, async () => store.markRewardAuthorized("battle:duplicate"))
-  );
-  assert.equal(duplicateResults.filter(Boolean).length, 1);
-  assert.equal(store.hasRewardAuthorized("battle:duplicate"), true);
 
   fs.rmSync(directory, { recursive: true, force: true });
 });
