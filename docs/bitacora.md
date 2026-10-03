@@ -9552,3 +9552,58 @@ No se modificaron reward amounts, gacha rates, pity, damage formulas ni webapp/j
 El workflow amplio Player Meta Persistence Tests (Run 37149896256) sigue rojo por un assert de reward_pipeline_test.mjs perteneciente a la regresión de BONE-004. Ese workflow ya había mostrado fallo antes de BONE-005 (Run 37142700526 sobre fd832040...). No se modificó ese pipeline dentro de esta task para evitar ampliar el scope.
 
 STATUS: CLOSED.
+
+
+---
+
+## BONE-006-CONCURRENCY-AUTH-001 · ROSTER / INVENTORY / REWARD CONCURRENCY
+
+Fecha: 2026-10-03
+BASE SHA: 26136b3b81678a254b1060c3cb7fc964c4cc2b6e
+FINAL SHA: c84781b8b589149e3a01665aaaebbc27ff58844d
+TIMER: 90–120 minutos
+RESULT: PASS / BONE-006 CLOSED
+
+Se implementó control de concurrencia optimistic revision/CAS sobre la persistencia Player Meta y la frontera de estado autoritativo backend.
+
+### Player Meta
+
+- persistence envelope schemaVersion + revision + state;
+- revision monotónica por identidad;
+- STALE_WRITE fail-closed;
+- reload + reapply después de conflicto;
+- rollback de autoridad ante fallo de persistencia;
+- reward + RECORD_REWARD en dispatchBatch + una sola persistencia;
+- reward duplicate race = exactly one grant;
+- roster writes con retry después de stale y validación contra el snapshot nuevo;
+- inventory removal a cero repara roster de forma atómica;
+- invariantes ACTIVE_BATTER_NOT_UNLOCKED, SUPPORT_NOT_UNLOCKED, ACTIVE_BATTER_CANNOT_BE_SUPPORT y DUPLICATE_SUPPORT preservadas.
+
+### Backend
+
+- InMemoryCombatStore y PersistentCombatStore ahora mantienen revision de match;
+- saveMatch acepta expectedRevision;
+- stale authoritative combat writes son rechazadas;
+- revision incrementa junto al estado persistido;
+- reward ledger conserva battle:<matchId>;
+- restart recovery mantiene revision, nonce, turn sequence y reward ledger.
+
+### Evidence
+
+- Backend authority Run 37150898637 = SUCCESS.
+- Targeted Gacha / Player Meta concurrency Run 37151168170 = SUCCESS.
+- player_meta_concurrency_test.mjs = PASS.
+- persistence_authority_test.mjs = PASS.
+- player_meta_persistence_adapter_test.mjs = PASS.
+- canonical_character_availability_test.mjs y roster integration/rehydration = PASS en el targeted workflow.
+- reward_pipeline_test.mjs permanece idéntico entre BASE SHA y FINAL HEAD; su fallo de terminal combat outcome ya existía antes de BONE-006.
+- BONE-001/002/003 permanecen CLOSED.
+- BONE-005 permanece CLOSED.
+- BONE-004 permanece BLOCKED.
+- BONE-011 permanece OPEN y sin cambios.
+
+### Scope
+
+No se modificó gameplay, balance, Timing Ring, fórmulas de daño, gacha rates, pity, reward amount ni combat_core.js.
+
+STATUS: CLOSED.
