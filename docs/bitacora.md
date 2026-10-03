@@ -9455,3 +9455,44 @@ La infraestructura del combat slice está bastante avanzada, pero no corresponde
 **BONE-004:** BLOCKED.  
 **BONE-005:** OPEN / UNCHANGED.  
 **BONE-011:** OPEN / UNCHANGED.
+
+
+---
+
+## BONE-004-PROD-AUTH-002 · IMPLEMENTACIÓN DEL BACKEND DE AUTORIDAD
+
+**Fecha:** 2026-10-03  
+**HEAD BEFORE:** `988745f073df9a21f87ed7d2f79d3d4b3bed8057`  
+**CURRENT VALIDATED HEAD:** `6d67d0577d2e96e01d98218eb996efc49f101f79`  
+**TIMER:** 90–120 minutos
+
+**RESULT:** PASS para la implementación y validación local/CI del backend. BONE-004 permanece BLOCKED por infraestructura productiva pendiente.
+
+**BACKEND:** Node.js ESM provider-neutral en `backend/`, separado de GitHub Pages y `tools/web_host`.
+
+**SERVER GAMEPLAY AUTHORITY:** PASS. El servidor reutiliza directamente `webapp/js/combat_core.js` para tactical/climax/timing y no duplica fórmulas.
+
+**SECURITY:** el cliente no puede dictar `outcome`, `result`, `damage`, `victory`, `defeat`, `reward`, `scrap` ni `boss_hp_after`. Match ownership, turn sequencing y nonce son server-side.
+
+**ATTESTATION:** PASS. `SERVER_COMBAT_ATTESTATION_V1` con `ECDSA_P256_SHA256`; firma IEEE P1363 compatible con el verificador Web Crypto existente.
+
+**AUTH:** PASS como frontera de producción-capable code. `x-telegram-init-data` se valida server-side; `initDataUnsafe` no es autoridad. El Bot Token queda fuera del repositorio.
+
+**PERSISTENCE:** DEVELOPMENT ONLY. `InMemoryCombatStore` deja la interfaz `createMatch/loadMatch/saveMatch` preparada para BONE-005.
+
+**HTTP / QA:** GitHub Actions Run `37147971145` = SUCCESS. Syntax, health, readiness fail-closed, forged-result rejection, wrong player/match/turn, replay rejection, terminal attestation y Web Crypto compatibility = PASS.
+
+**DEPLOYMENT:** NOT CONFIGURED. No se desplegó ningún backend ni se seleccionó proveedor.
+
+**PRIVATE KEY:** no se comprometió ninguna clave privada; tests usan keypair efímero.
+
+**GAMEPLAY:** UNCHANGED.  
+**BALANCE:** UNCHANGED.  
+**BONE-005:** OPEN / dependencia.  
+**BONE-011:** OPEN / unchanged.  
+**BONE-004:** BLOCKED.
+
+**REMAINING BLOCKER:** durable production persistence/reward ledger, external production secret/key configuration, Telegram Bot Token/environment configuration and deployed HTTPS backend origin.
+
+**FILES:** `backend/**`, `.github/workflows/backend-authority-tests.yml`, documentación BONE-004 y arquitectura.
+
