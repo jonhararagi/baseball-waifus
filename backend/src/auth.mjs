@@ -1,7 +1,14 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { AuthorityError } from "./errors.mjs";
 
-function getHeader(request, name) {\n  const headers = request?.headers || {};\n  return typeof headers.get === "function" ? headers.get(name) : headers[String(name).toLowerCase()] || null;\n}\n\nfunction parseTelegramInitData(raw) {
+function getHeader(request, name) {
+  const headers = request?.headers || {};
+  return typeof headers.get === "function"
+    ? headers.get(name)
+    : headers[String(name).toLowerCase()] || null;
+}
+
+function parseTelegramInitData(raw) {
   const params = new URLSearchParams(String(raw || ""));
   const hash = params.get("hash");
   if (!hash) throw new AuthorityError(401, "TELEGRAM_HASH_MISSING", "Telegram init data hash is required");
