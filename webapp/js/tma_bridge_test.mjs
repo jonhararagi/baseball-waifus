@@ -108,13 +108,15 @@ const playerMetaKey = controller.playerMetaIntegration.persistenceAdapter.keyFor
   controller.playerMetaIntegration.identity
 );
 const migratedMeta = JSON.parse(local.getItem(playerMetaKey));
-assert.equal(migratedMeta.gacha.pullsSinceUR, 7);
-assert.equal(migratedMeta.currencies.SCRAP, 900);
-assert.equal(migratedMeta.roster.activeBatter, "bw024");
+assert.equal(migratedMeta.schemaVersion, 1);
+assert.ok(Number.isSafeInteger(migratedMeta.revision) && migratedMeta.revision > 0);
+assert.equal(migratedMeta.state.gacha.pullsSinceUR, 7);
+assert.equal(migratedMeta.state.currencies.SCRAP, 900);
+assert.equal(migratedMeta.state.roster.activeBatter, "bw024");
 
 controller.addScrap(100);
 await controller.flushPersistence();
-assert.equal(JSON.parse(local.getItem(playerMetaKey)).currencies.SCRAP, 1000);
+assert.equal(JSON.parse(local.getItem(playerMetaKey)).state.currencies.SCRAP, 1000);
 
 // CloudStorage remains legacy-only. Modern mutations persist through Player Meta.
 assert.equal(JSON.parse(cloud.value).scavenger_scrap, 900);
