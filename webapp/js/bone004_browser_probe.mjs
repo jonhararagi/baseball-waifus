@@ -22,8 +22,8 @@ const mime = {
 
 const server = createServer((req, res) => {
   try {
-    const path = decodeURIComponent(req.url.split("?")[0]);
-    const relative = path === "/" ? "index.html" : path.replace(/^\/+/, "");
+    const requestPath = decodeURIComponent(req.url.split("?")[0]);
+    const relative = requestPath === "/" ? "index.html" : requestPath.replace(/^\/+/, "");
     const file = normalize(join(root, relative));
     if (!file.startsWith(root + "/") && file !== root) throw new Error("Path traversal");
     const size = statSync(file).size;
@@ -66,7 +66,7 @@ async function waitForTarget() {
   throw new Error("Chromium CDP target unavailable");
 }
 
-let nextId = 10;
+let nextId = 1;
 async function cdp(method, params = {}) {
   const id = nextId++;
   ws.send(JSON.stringify({ id, method, params }));
@@ -89,7 +89,7 @@ async function evaluate(expression) {
     returnByValue: true
   });
   if (result.exceptionDetails) {
-    throw new Error(result.exceptionDetails.exception?.description || "Browser evaluation failed");
+    throw new Error(result.exceptionDetails.exception?.description || result.exceptionDetails.text || "Browser evaluation failed");
   }
   return result.result?.value;
 }
@@ -109,11 +109,15 @@ try {
     "--disable-dev-shm-usage",
     "--no-first-run",
     "--no-default-browser-check",
-    "--user-data-dir=" + profile,
+    "--disable-background-networking",
+    "--disable-component-update",
+    "--disable-sync",
+    "--remote-debugging-address=127.0.0.1",
     "--remote-debugging-port=" + debugPort,
     "--remote-allow-origins=*",
+    "--user-data-dir=" + profile,
     "about:blank"
-  ], { stdio: ["ignore", "ignore", "inherit"] });
+  ], { stdio: ["ignore", "ignore", "ignore"] });
 
   const page = await waitForTarget();
   ws = new WebSocket(page.webSocketDebuggerUrl);
@@ -124,113 +128,135 @@ try {
   await cdp("Runtime.enable");
   await cdp("Page.enable");
   await cdp("Page.navigate", { url });
-  await sleep(7000);
 
-  if (!await evaluate("Boolean(window.__BW_BONE004_TEST__)")) {
-    throw new Error("BONE-004 QA hooks unavailable");
+  for (let attempt = 0; attempt < 120; attempt += 1) {
+    const ready = await evaluate("Boolean(window.__BW_BONE004_TEST__ && window.__BW_BONE004_TEST__.getPlayerId && window.__BW_BONE004_TEST__.getPlayerId())");
+    if (ready) break;
+    if (attempt === 119) throw new Error("BONE-004 QA hooks/player identity did not become ready");
+    await sleep(250);
   }
 
   const initialScrap = await evaluate("window.__BW_BONE004_TEST__.getPlayerMetaScrap()");
   if (initialScrap !== 0) throw new Error("Expected zero initial Scrap");
 
-  const localResult = await evaluate(
-    "window.__BW_BONE004_TEST__.localTerminalResult(" + JSON.stringify({
-      type: "TurnResultDTO",
-      match_id: "bone004-match-001",
-      turn_id: "local-turn-001",
-      result: "VICTORY",
-      outcome: "VICTORY",
-      match_end: true,
-      state: { match_complete: true, outcome: "VICTORY" }
-    }) + ")"
-  );
+  const localResult = await evaluate("window.__BW_BONE004_TEST__.localTerminalResult(" + JSON.stringify({
+    type: "TurnResultDTO",
+    match_id: "bone004-local-match",
+    turn_id: "bone004-local-turn",
+    result: "VICTORY",
+    outcome: "VICTORY",
+    match_end: true,
+    state: { match_complete: true, outcome: "VICTORY" }
+  }) + ")");
   const localScrap = await evaluate("window.__BW_BONE004_TEST__.getPlayerMetaScrap()");
   if (localResult?.economicRewardGranted !== false || localScrap !== 0) throw new Error("Local demo reward boundary failed");
   console.log("LOCAL_RESULT = DEMO_ONLY");
   console.log("LOCAL_REWARD = BLOCKED");
 
-  const browserSetup = await evaluate("(async () => {" +
-    "const module = await import('/js/reward_authority.js');" +
-    "const keys = await crypto.subtle.generateKey({name:'ECDSA', namedCurve:'P-256'}, true, ['sign','verify']);" +
-    "const publicKeyJwk = await crypto.subtle.exportKey('jwk', keys.publicKey);" +
-    "const playerId = window.__BW_BONE004_TEST__.getPlayerId();" +
-    "const matchId = 'bone004-match-browser';" +
-    "const nonce = 'bone004-browser-nonce';" +
-    "const turnId = 'turn-browser-001';" +
-    "const outcome = 'VICTORY';" +
-    "const result = 'VICTORY';" +
-    "const canonical = module.canonicalizeServerCombatAttestationPayload({matchId, playerId, turnId, outcome, result, nonce});" +
-    "const signatureBuffer = await crypto.subtle.sign({name:'ECDSA', hash:'SHA-256'}, keys.privateKey, new TextEncoder().encode(canonical));" +
-    "let binary = ''; for (const byte of new Uint8Array(signatureBuffer)) binary += String.fromCharCode(byte);" +
-    "const signature = btoa(binary).split("=").shift().replaceAll("+","-").replaceAll("/","_");" +
-    "const turnResult = {type:'TurnResultDTO', match_id:matchId, turn_id:turnId, result, outcome, match_end:true, state:{match_complete:true, outcome}};" +
-    "const attestation = {version:module.SERVER_COMBAT_ATTESTATION_V1, algorithm:'ECDSA_P256_SHA256', match_id:matchId, player_id:playerId, turn_id:turnId, outcome, result, nonce, signature};" +
-    "const context = {version:module.SERVER_COMBAT_ATTESTATION_V1, matchId, playerId, nonce, publicKeyJwk};" +
-    "return {turnResult, attestation, context};" +
-  "})()");
+  const serverExpression = String.raw`(async () => {
+    const authority = await import("./js/reward_authority.js");
+    const playerId = window.__BW_BONE004_TEST__.getPlayerId();
+    const matchId = "bone004-browser-match";
+    const turnId = "bone004-browser-turn";
+    const nonce = "bone004-browser-nonce";
+    const outcome = "VICTORY";
+    const result = "VICTORY";
+    const keys = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+    const publicKeyJwk = await crypto.subtle.exportKey("jwk", keys.publicKey);
+    const canonical = authority.canonicalizeServerCombatAttestationPayload({ matchId, playerId, turnId, outcome, result, nonce });
+    const signatureBuffer = await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, keys.privateKey, new TextEncoder().encode(canonical));
+    let binary = "";
+    for (const byte of new Uint8Array(signatureBuffer)) binary += String.fromCharCode(byte);
+    const signature = btoa(binary).split("=")[0].split("+").join("-").split("/").join("_");
+    const attestation = {
+      version: authority.SERVER_COMBAT_ATTESTATION_V1,
+      algorithm: "ECDSA_P256_SHA256",
+      match_id: matchId,
+      player_id: playerId,
+      turn_id: turnId,
+      outcome,
+      result,
+      nonce,
+      signature
+    };
+    const context = {
+      version: authority.SERVER_COMBAT_ATTESTATION_V1,
+      matchId,
+      playerId,
+      nonce,
+      publicKeyJwk
+    };
+    const turnResult = {
+      type: "TurnResultDTO",
+      match_id: matchId,
+      turn_id: turnId,
+      result,
+      outcome,
+      match_end: true,
+      state: { match_complete: true, outcome }
+    };
 
-  const validRun = await evaluate("(async () => {" +
-    "const s = " + JSON.stringify(browserSetup) + ";" +
-    "const result = await window.__BW_BONE004_TEST__.serverTerminalResult({...s.turnResult, reward_attestation:s.attestation}, s.context);" +
-    "return {ok:Boolean(result?.applied?.ok), scrap:window.__BW_BONE004_TEST__.getPlayerMetaScrap()};" +
-  "})()");
-  if (!validRun.ok || validRun.scrap !== 100) throw new Error("Valid server attestation did not grant expected reward");
-  console.log("VALID_SERVER_ATTESTATION = ACCEPTED");
+    const forgedResult = await window.__BW_BONE004_TEST__.serverTerminalResult({
+      ...turnResult,
+      reward_attestation: { ...attestation, signature: "" }
+    }, context);
+    const forgedScrap = window.__BW_BONE004_TEST__.getPlayerMetaScrap();
+    if (forgedScrap !== 0 || forgedResult !== null) throw new Error("Forged server result changed economy");
 
-  const forged = await evaluate("(async () => {" +
-    "const s = " + JSON.stringify(browserSetup) + ";" +
-    "const result = await window.__BW_BONE004_TEST__.serverTerminalResult({...s.turnResult, reward_attestation:{...s.attestation, signature:''}}, s.context);" +
-    "return {result, scrap:window.__BW_BONE004_TEST__.getPlayerMetaScrap()};" +
-  "})()");
-  if (forged.scrap !== 100) throw new Error("Forged result changed economy");
+    const tamperedResult = await window.__BW_BONE004_TEST__.serverTerminalResult({
+      ...turnResult,
+      outcome: "DEFEAT",
+      result: "DEFEAT",
+      state: { match_complete: true, outcome: "DEFEAT" },
+      reward_attestation: attestation
+    }, context);
+    const tamperedScrap = window.__BW_BONE004_TEST__.getPlayerMetaScrap();
+    if (tamperedScrap !== 0 || tamperedResult !== null) throw new Error("Tampered result changed economy");
+
+    const validPipeline = await window.__BW_BONE004_TEST__.serverTerminalResult({
+      ...turnResult,
+      reward_attestation: attestation
+    }, context);
+    const validScrap = window.__BW_BONE004_TEST__.getPlayerMetaScrap();
+    if (!validPipeline?.applied?.ok || validPipeline.applied.duplicate || validScrap !== 100) throw new Error("Valid server attestation did not grant canonical reward");
+
+    const duplicatePipeline = await window.__BW_BONE004_TEST__.serverTerminalResult({
+      ...turnResult,
+      reward_attestation: attestation
+    }, context);
+    const duplicateScrap = window.__BW_BONE004_TEST__.getPlayerMetaScrap();
+    if (!duplicatePipeline?.applied?.duplicate || duplicateScrap !== 100) throw new Error("Duplicate reward was not a no-op");
+
+    return {
+      forged: true,
+      tampered: true,
+      validAttestation: true,
+      validReward: true,
+      scrapAfterValid: validScrap,
+      duplicate: true,
+      scrapAfterDuplicate: duplicateScrap,
+      playerMetaConsistent: duplicateScrap === 100
+    };
+  })()`;
+  const serverResult = await evaluate(serverExpression);
+
+  if (!serverResult?.forged || !serverResult?.tampered) throw new Error("Forgery/tamper cases incomplete");
   console.log("FORGED_SERVER_RESULT = REJECTED");
-
-  const tampered = await evaluate("(async () => {" +
-    "const s = " + JSON.stringify(browserSetup) + ";" +
-    "const result = await window.__BW_BONE004_TEST__.serverTerminalResult({...s.turnResult, result:'DEFEAT', outcome:'DEFEAT', state:{match_complete:true,outcome:'DEFEAT'}, reward_attestation:s.attestation}, s.context);" +
-    "return {result, scrap:window.__BW_BONE004_TEST__.getPlayerMetaScrap()};" +
-  "})()");
-  if (tampered.scrap !== 100) throw new Error("Tampered result changed economy");
   console.log("TAMPERED_RESULT = REJECTED");
-
-  const wrongMatch = await evaluate("(async () => {" +
-    "const s = " + JSON.stringify(browserSetup) + ";" +
-    "const result = await window.__BW_BONE004_TEST__.serverTerminalResult({...s.turnResult, match_id:'bone004-other-match', reward_attestation:s.attestation}, s.context);" +
-    "return {result, scrap:window.__BW_BONE004_TEST__.getPlayerMetaScrap()};" +
-  "})()");
-  if (wrongMatch.scrap !== 100) throw new Error("Wrong match changed economy");
-  console.log("MATCH_BINDING = PASS");
-
-  const wrongPlayer = await evaluate("(async () => {" +
-    "const s = " + JSON.stringify(browserSetup) + ";" +
-    "s.context = {...s.context, playerId:'bone004-other-player'};" +
-    "const result = await window.__BW_BONE004_TEST__.serverTerminalResult(s.turnResult, s.context);" +
-    "return {result, scrap:window.__BW_BONE004_TEST__.getPlayerMetaScrap()};" +
-  "})()");
-  if (wrongPlayer.scrap !== 100) throw new Error("Wrong player changed economy");
-  console.log("PLAYER_BINDING = PASS");
-
-  const wrongNonce = await evaluate("(async () => {" +
-    "const s = " + JSON.stringify(browserSetup) + ";" +
-    "s.context = {...s.context, nonce:'bone004-other-nonce'};" +
-    "const result = await window.__BW_BONE004_TEST__.serverTerminalResult(s.turnResult, s.context);" +
-    "return {result, scrap:window.__BW_BONE004_TEST__.getPlayerMetaScrap()};" +
-  "})()");
-  if (wrongNonce.scrap !== 100) throw new Error("Wrong nonce changed economy");
-  console.log("NONCE_BINDING = PASS");
-
-  const duplicate = await evaluate("(async () => {" +
-    "const s = " + JSON.stringify(browserSetup) + ";" +
-    "const result = await window.__BW_BONE004_TEST__.serverTerminalResult({...s.turnResult, reward_attestation:s.attestation}, s.context);" +
-    "return {duplicate:Boolean(result?.applied?.duplicate), scrap:window.__BW_BONE004_TEST__.getPlayerMetaScrap()};" +
-  "})()");
-  if (!duplicate.duplicate || duplicate.scrap !== 100) throw new Error("Duplicate reward not idempotent");
+  console.log("VALID_SERVER_ATTESTATION = ACCEPTED");
+  console.log("VALID_REWARD = ACCEPTED");
+  console.log("SCRAP_AFTER_VALID = " + serverResult.scrapAfterValid);
   console.log("DUPLICATE_REWARD = NO_OP");
-  console.log("PLAYER_META = CONSISTENT");
+  console.log("SCRAP_AFTER_DUPLICATE = " + serverResult.scrapAfterDuplicate);
+  console.log("PLAYER_META = " + (serverResult.playerMetaConsistent ? "CONSISTENT" : "INCONSISTENT"));
   console.log("BONE-004 BROWSER PROBE = PASS");
+} catch (error) {
+  console.error("BONE-004 BROWSER PROBE = FAIL");
+  console.error(String(error?.stack || error));
+  process.exitCode = 1;
 } finally {
-  try { chrome?.kill("SIGKILL"); } catch {}
-  try { ws?.close?.(); } catch {}
+  try { ws?.close(); } catch {}
+  try { chrome?.kill("SIGTERM"); } catch {}
   try { server.close(); } catch {}
   try { rmSync(profile, { recursive: true, force: true }); } catch {}
 }
