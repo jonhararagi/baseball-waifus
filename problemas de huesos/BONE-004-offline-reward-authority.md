@@ -85,3 +85,86 @@ Cierre: local demo safe PASS, server validation PASS, forged result rejection PA
 **OTHER BONES:** NO CHANGES.
 
 **STATUS:** BONE-004 permanece BLOCKED únicamente por la ausencia real del backend productivo emisor de atestaciones. El blocker browser quedó resuelto.
+
+## Production Authority Diagnostic
+
+**Task:** `BONE-004-PROD-AUTH-001 · BACKEND AUTHORITY INFRASTRUCTURE DIAGNOSTIC`  
+**HEAD BEFORE:** `c4b0368fe6ea4121c858e21175b912a0d180b4bc`  
+**Diagnostic document:** `docs/architecture/reward-authority-backend-v1.md`  
+**RESULT:** PASS / DIAGNOSTIC COMPLETE
+
+### Infrastructure status
+
+- **STATIC HOST:** GitHub Pages / static WebApp.
+- **GAMEPLAY API:** contract only. `webapp/js/api.js` defines `GET /v1/combat/:matchId/init` and `POST /v1/combat/:matchId/turn`, but no server implementation exists.
+- **REWARD_ATTESTATION_ISSUER:** absent.
+- **PRODUCTION_SECRET_STORAGE:** absent from the repository and no production key-management boundary is configured here.
+- **BACKEND_DEPLOYMENT:** absent.
+- **PLAYER_IDENTITY_VERIFICATION:** absent on the server.
+- **COMBAT_STATE_AUTHORITY:** local/client gameplay exists; authoritative server combat service is absent.
+- **PERSISTENCE_AUTHORITY:** local Player Meta/persistence exists; authoritative backend persistence is absent.
+
+### Authority map
+
+`GAMEPLAY AUTHORITY` = current local/client gameplay implementation; future production server authority not implemented.
+
+`REWARD AUTHORITY` = client-side attestation verifier is implemented; production issuer is absent.
+
+`PERSISTENCE AUTHORITY` = local Player Meta + browser persistence exist; durable backend authority is not implemented and is explicitly dependent on BONE-005.
+
+### Contract
+
+`SERVER_COMBAT_ATTESTATION_V1` with `ECDSA_P256_SHA256` remains the verified client contract.
+
+Canonical payload fields are:
+
+`version`, `match_id`, `player_id`, `turn_id`, `outcome`, `result`, `nonce`.
+
+The diagnostic found no demonstrated incompatibility, so the contract was not changed.
+
+### Secret boundary
+
+The production signing private key must live in a managed secret/key facility belonging to the future backend deployment environment and must never be stored in repository files, client JavaScript, HTML, localStorage or Telegram CloudStorage.
+
+No provider or secret store was selected or configured in this task.
+
+### Telegram identity boundary
+
+The client currently forwards `x-telegram-init-data`. `initDataUnsafe` is not sufficient as production authentication proof. Server-side Telegram init-data verification is required before binding the trusted Telegram user identity to `player_id`.
+
+No server-side validation exists today.
+
+### Persistence dependency
+
+BONE-004 requires durable idempotency for reward identity, nonce/replay state and reward transaction/audit state.
+
+`BONE-004 backend reward authority`
+`→` `BONE-005 persistence authority`
+
+BONE-005 remains OPEN and was not implemented here.
+
+### BONE-011 dependency
+
+BONE-011 remains a separate paid-transaction/monetization authority boundary. Shared future interfaces include transaction identity, idempotency, server secrets, authenticated identity, durable persistence and audit trail.
+
+BONE-011 was not implemented here.
+
+### Infrastructure choice
+
+Provider selection remains **NOT SELECTED**. The diagnostic documents three compatible categories:
+
+- serverless functions;
+- containerized API;
+- managed application backend.
+
+The required technical boundary is provider-neutral: separate HTTPS API, protected server secrets, authoritative combat state, durable persistence and idempotent reward authority.
+
+### Scope safety
+
+No production backend was created. No private key was created. No BONE-005 or BONE-011 implementation was started.
+
+**RUNTIME:** UNCHANGED.  
+**GAMEPLAY:** UNCHANGED.  
+**BALANCE:** UNCHANGED.  
+**BONE-004:** BLOCKED.
+
