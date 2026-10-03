@@ -169,7 +169,7 @@ export class PlayerMetaPersistenceAdapter {
         }
       } else {
         const verification = this._readCurrentRecord(identity);
-        if (verification.revision !== expectedRevision) {
+        if (verification.revision !== resolvedExpectedRevision) {
           this._revisions.set(verification.key, verification.revision);
           this._lastKey = verification.key;
           throw new StalePlayerMetaWriteError(resolvedExpectedRevision, verification.revision);
