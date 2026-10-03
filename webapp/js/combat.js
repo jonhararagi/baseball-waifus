@@ -50,6 +50,14 @@ const SCRAP_REWARDS = Object.freeze({
 export function getScrapRewardForResult(result) {
   return Number(SCRAP_REWARDS[String(result || "").toUpperCase()]) || 0;
 }
+
+export function resolvePresentationAttackerId(result, fallback = "", selectedActorId = "") {
+  for (const value of [result?.attackerId, result?.attacker_id, fallback, selectedActorId]) {
+    const attackerId = String(value ?? "").trim();
+    if (attackerId) return attackerId;
+  }
+  return "";
+}
 function cloneDTO(value) {
   return JSON.parse(JSON.stringify(value));
 }
@@ -1406,6 +1414,11 @@ export class CombatRenderer {
   _drawCombatStageActor(ctx, actor, transform, w, h) {
     const color = actor.team === "ENEMY" ? "#ff007f" : "#00f3ff";
     const presentation = this.combatPresentation.getState();
+    const attackerId = resolvePresentationAttackerId(
+      presentation.active ? presentation.result : null,
+      "",
+      this.combatStage.selectedActorId
+    );
     const motion = this.combatStage.resolveCinematicActorFrame(actor.actorId, {
       phase: presentation.phase,
       progress: presentation.progress,
@@ -1413,7 +1426,7 @@ export class CombatRenderer {
       height: h
     }) || transform;
 
-    if (actor.actorId === this.combatStage.selectedActorId) {
+    if (actor.actorId === attackerId) {
       this.batterRenderer.draw(ctx, w, h, {
         accentColor: color,
         scale: clamp(motion.scale * 0.82, 0.62, 0.98),
