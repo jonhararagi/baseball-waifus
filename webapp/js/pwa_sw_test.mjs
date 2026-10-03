@@ -26,8 +26,8 @@ assert.ok(fs.existsSync(swPath), 'El archivo webapp/sw.js debe existir');
 
 const swContent = fs.readFileSync(swPath, 'utf8');
 assert.ok(
-  swContent.includes("CACHE_NAME = 'v16_capibara_core'"),
-  'El SW debe definir la versión de caché v16_capibara_core'
+  swContent.includes("CACHE_VERSION = 'v17'") && swContent.includes("baseball-waifus-${CACHE_VERSION}"),
+  'El SW debe definir cacheVersion v17 y el nombre unificado baseball-waifus-v17'
 );
 assert.ok(swContent.includes('PRECACHE_ASSETS'), 'El SW debe contener la lista de precaché');
 assert.ok(swContent.includes('caches.delete'), 'El SW debe purgar cachés antiguas en la activación');
@@ -66,3 +66,14 @@ if ('serviceWorker' in mockNavigator) {
 }
 
 console.log('✅ P16: Pruebas de PWA, Manifest y Service Worker completadas con éxito.');
+
+const versionPath = path.resolve('webapp/version.json');
+assert.ok(fs.existsSync(versionPath), 'Debe existir webapp/version.json');
+const versionManifest = JSON.parse(fs.readFileSync(versionPath, 'utf8'));
+assert.equal(versionManifest.version, 'v17');
+assert.equal(versionManifest.cacheVersion, 'baseball-waifus-v17');
+assert.ok(swContent.includes('v16_capibara_core'), 'La migración debe contemplar la cache legacy v16_capibara_core');
+assert.ok(swContent.includes('pathname.endsWith("/version.json")'), 'version.json debe usar estrategia network-first');
+assert.ok(swContent.includes('LEGACY_CACHE_NAMES'), 'El SW debe declarar explícitamente caches legacy');
+
+console.log('✅ BONE-001: cache/version consistency checks passed.');
