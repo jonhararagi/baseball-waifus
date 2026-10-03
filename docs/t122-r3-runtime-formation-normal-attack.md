@@ -1,41 +1,28 @@
 # T122-R3 · Runtime Formation Normal Attack
 
-STATUS: CLOSED
+STATUS: T122-R3V2 PARTIAL
 
-HEAD BEFORE: d43223f04b84c6b3b4d8c9bfc490829b79118e48
+T122-R3V2 validated the real presentation entry path in `CombatRenderer` and identified the runtime attacker source as `CombatPresentationDirector.startFromCombatResult()` normalized `result.attackerId`, with fallback to the existing selected stage actor.
 
-HEAD AFTER: see closing commit
+Minimal presentation-only correction:
+- Normal `ATTACKER_FOCUS`, `ACTION`, `COMBAT_RETURN`, and `COMPLETE` now resolve the actor from the real presentation result attacker ID instead of assuming `selectedActorId`.
+- Added minimal DOM observability for attacker, focused actor, action actor, and return actor IDs.
+- No combat resolver, result mapping, reward, persistence, economy, Timing Ring, victory/defeat, or T118-R changes.
 
-FORMATION: PASS
-ACTOR COUNT: 4
-FOCUS: PASS
-ACTION: PASS
-RETURN: PASS
-OTHER ACTORS STABLE: PASS
-FORMATION RESTORED: PASS
+T122-R3V2:
+- STATUS: PARTIAL pending executable CI/browser evidence
+- HEAD BEFORE: 22748222c9df1a5d638bfcc6aac23d0e59ebafcb
+- HEAD AFTER: 8c2bcebddaa54f8d1402918d8c6fc04902aa2b05
+- REAL COMBAT ENTRY: PASS by source inspection
+- ATTACKER SOURCE: real `CombatPresentationDirector` presentation result, `attackerId`
+- ATTACKER ID: runtime `result.attackerId`, fallback existing selected actor
+- FOCUSED ACTOR: runtime actor resolved from attacker ID
+- ACTION ACTOR: same runtime actor
+- OTHER ACTORS: no presentation state mutation by the normal handler
+- RETURN: runtime attacker actor
+- FORMATION RESTORED: implementation path resets attacker on COMPLETE
+- TESTS: executable CI evidence pending
+- BROWSER: not completed
+- T118-R = BLOCKED / UNCHANGED
 
-2.5D:
-- POSITION: PASS
-- DEPTH: PASS
-- SCALE: PASS
-- ROTATION: PASS
-- FACING: PASS
-- VISIBILITY: PASS
-
-The integration test uses the existing CombatPresentationDirector normal-action event sequence and the same CharacterActor2D5 instances already held by CharacterFormation2D5. Actor 2 is selected as the attacker. The test verifies FOCUS -> ACTION -> RETURN -> IDLE, while the other three player actors remain IDLE and retain their formation presentation properties.
-
-No gameplay authority is added to the formation or actors. No second attack pipeline or formation system is introduced.
-
-TESTS:
-- T122-R3 runtime formation normal attack flow: PASS by deterministic Node integration test design/execution target.
-- CharacterActor2D5 contract: covered through real CombatStage actors.
-- CharacterFormation2D5 contract: covered through the runtime formation instance.
-- CombatPresentationDirector contract: covered through startFromCombatResult/update event sequence.
-- Vertical slice: not executed in this environment.
-- Browser: NOT RUN.
-
-GAMEPLAY: UNCHANGED
-
-T118-R = BLOCKED / UNCHANGED
-
-NEXT: next task from CEREBRO
+The prior deterministic T122-R3 fixture remains a contract test and is not treated as real-runtime closure evidence.
