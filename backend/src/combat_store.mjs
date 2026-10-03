@@ -19,6 +19,7 @@ export class InMemoryCombatStore {
     this.matches = new Map();
     this.rewardLedger = new Set();
     this.nonceFactory = nonceFactory;
+    this.isDurable = false;
   }
 
   createMatch({ matchId, playerId }) {
@@ -50,15 +51,19 @@ export class InMemoryCombatStore {
     return state ? clone(state) : null;
   }
 
-  saveMatch(state) {
+  saveMatch(state, { rewardId = null } = {}) {
     const id = stableMatchId(state?.matchId);
     if (!state || state.matchId !== id) throw new TypeError("Invalid combat state");
     this.matches.set(id, clone(state));
+    if (rewardId !== null) this.rewardLedger.add(String(rewardId));
     return clone(state);
   }
 
   markRewardAuthorized(rewardId) {
-    this.rewardLedger.add(String(rewardId));
+    const id = String(rewardId);
+    if (this.rewardLedger.has(id)) return false;
+    this.rewardLedger.add(id);
+    return true;
   }
 
   hasRewardAuthorized(rewardId) {

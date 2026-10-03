@@ -5,6 +5,7 @@ import { authenticateRequest, authenticationConfigured } from "./auth.mjs";
 import { createAttestationSigner } from "./attestation_signer.mjs";
 import { CombatService } from "./combat_service.mjs";
 import { InMemoryCombatStore } from "./combat_store.mjs";
+import { PersistentCombatStore } from "./persistent_combat_store.mjs";
 import { AuthorityError, isAuthorityError } from "./errors.mjs";
 
 const JSON_HEADERS = {
@@ -45,22 +46,30 @@ async function readJson(request, limitBytes = 64 * 1024) {
   }
 }
 
-function readiness(config, signer) {
+function readiness(config, signer, store) {
+  const persistence = Boolean(config.persistenceConfigured || store?.isDurable);
   return {
-    ready: Boolean(signer && authenticationConfigured(config) && config.persistenceConfigured),
+    ready: Boolean(signer && authenticationConfigured(config) && persistence),
     signing_key: Boolean(signer),
     authentication: authenticationConfigured(config),
-    persistence: Boolean(config.persistenceConfigured),
+    persistence,
     deployment: false
   };
 }
 
-export function createAuthorityServer({ config = loadConfig(), store = new InMemoryCombatStore(), signer = null } = {}) {
+export function createAuthorityServer({ config = loadConfig(), store = null, signer = null } = {}) {
+  let activeStore = store;
+  if (!activeStore) {
+    activeStore = config.persistenceConfigured
+      ? new PersistentCombatStore({ filePath: config.persistenceFilePath })
+      : new InMemoryCombatStore();
+  }
+
   let activeSigner = signer;
   if (!activeSigner && config.rewardSigningPrivateKeyPem) {
     activeSigner = createAttestationSigner({ privateKeyPem: config.rewardSigningPrivateKeyPem });
   }
-  const service = new CombatService({ store, signer: activeSigner });
+  const service = new CombatService({ store: activeStore, signer: activeSigner });
 
   const server = http.createServer(async (request, response) => {
     const origin = corsOrigin(request, config);
@@ -81,7 +90,7 @@ export function createAuthorityServer({ config = loadConfig(), store = new InMem
         return jsonResponse(response, 200, { ok: true, service: "basewarriors-authority" }, origin);
       }
       if (request.method === "GET" && url.pathname === "/ready") {
-        const status = readiness(config, activeSigner);
+        const status = readiness(config, activeSigner, activeStore);
         return jsonResponse(response, status.ready ? 200 : 503, status, origin);
       }
 
@@ -116,12 +125,15 @@ export function createAuthorityServer({ config = loadConfig(), store = new InMem
     }
   });
 
-  return Object.freeze({ server, store, service, signer: activeSigner });
+  return Object.freeze({ server, store: activeStore, service, signer: activeSigner });
 }
 
 export async function startServer(config = loadConfig()) {
   if (config.production && !config.rewardSigningPrivateKeyPem) {
     throw new Error("Production server cannot start without REWARD_SIGNING_PRIVATE_KEY");
+  }
+  if (config.production && !config.persistenceConfigured) {
+    throw new Error("Production server cannot start without AUTHORITY_PERSISTENCE_FILE");
   }
   const created = createAuthorityServer({ config });
   await new Promise((resolve) => created.server.listen(config.port, resolve));

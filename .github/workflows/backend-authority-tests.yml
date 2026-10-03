@@ -32,6 +32,7 @@ jobs:
           node --check src/errors.mjs
           node --check src/auth.mjs
           node --check src/combat_store.mjs
+          node --check src/persistent_combat_store.mjs
           node --check src/combat_service.mjs
           node --check src/attestation_signer.mjs
           node --check src/server.mjs

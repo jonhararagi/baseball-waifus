@@ -1,5 +1,8 @@
 export function loadConfig(env = process.env) {
   const nodeEnv = String(env.NODE_ENV || "development");
+  const persistenceFilePath = env.AUTHORITY_PERSISTENCE_FILE
+    ? String(env.AUTHORITY_PERSISTENCE_FILE)
+    : "";
   return Object.freeze({
     nodeEnv,
     production: nodeEnv === "production",
@@ -10,6 +13,7 @@ export function loadConfig(env = process.env) {
     telegramBotToken: String(env.TELEGRAM_BOT_TOKEN || ""),
     telegramInitDataMaxAgeSeconds: Number(env.TELEGRAM_INIT_DATA_MAX_AGE_SECONDS || 3600),
     allowedOrigins: String(env.ALLOWED_ORIGINS || "*").split(",").map((value) => value.trim()).filter(Boolean),
-    persistenceConfigured: false
+    persistenceFilePath,
+    persistenceConfigured: Boolean(persistenceFilePath)
   });
 }

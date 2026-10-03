@@ -96,7 +96,6 @@ export class CombatService {
     const processedTurnId = state.turnId;
     let coreResult;
     let responseOutcome;
-
     if (state.phase === "TACTICAL") {
       coreResult = resolveTacticalTurn({
         turn: state.tacticalTurn,
@@ -146,6 +145,7 @@ export class CombatService {
     }
 
     let rewardAttestation = null;
+    let rewardIdToPersist = null;
     if (coreResult.victory) {
       if (!this.signer) {
         throw new AuthorityError(503, "REWARD_SIGNER_NOT_CONFIGURED", "Terminal reward authority is not configured");
@@ -160,13 +160,18 @@ export class CombatService {
           result: coreResult.result || "VICTORY",
           nonce: state.nonce
         });
-        this.store.markRewardAuthorized(rewardId);
+        rewardIdToPersist = rewardId;
       }
     }
 
     state.turnNumber += 1;
     state.turnId = "turn-" + String(state.turnNumber).padStart(3, "0");
-    const saved = this.store.saveMatch(state);
+    const saved = typeof this.store.saveMatch === "function"
+      ? this.store.saveMatch(state, { rewardId: rewardIdToPersist })
+      : this.store.saveMatch(state);
+    if (rewardIdToPersist && typeof this.store.saveMatch !== "function") {
+      this.store.markRewardAuthorized(rewardIdToPersist);
+    }
 
     return {
       type: "TurnResultDTO",
