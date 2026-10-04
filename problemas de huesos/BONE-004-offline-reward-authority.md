@@ -254,3 +254,28 @@ BONE-004 permanece BLOCKED mientras falten:
 - persistence provider y operación productiva.
 
 No se modificó BONE-011.
+
+
+## BONE-004-PROD-AUTH-003
+
+HEAD BEFORE: `72cb94c89f64c445b458df1191523a508f462c0e`
+HEAD AFTER: `ff25a6049f8d96f6498536b0ea368a0af3e2dd9a`
+TIMER: 90–120 minutos
+RESULT: PASS / BONE-004 remains BLOCKED.
+
+Container PASS. Production config PASS. Fail-closed production validation PASS. Secret boundary PASS. Explicit non-wildcard CORS PASS. Telegram server authentication boundary PASS. Existing ECDSA P-256 / IEEE P1363 signer PASS. Persistence provider boundary PASS.
+
+`backend/src/persistence_provider.mjs` makes memory/filesystem/managed boundaries explicit. Filesystem remains development/integration only. Managed persistence is the production contract and is intentionally not implemented/configured in this repository.
+
+Health PASS. Readiness PASS. Readiness exposes only booleans and deployment mode. Public API configuration remains runtime-based through `window.BASEBALL_WAIFUS_API_BASE_URL`; no production URL is hardcoded.
+
+The manual `.github/workflows/backend-authority-deploy.yml` validates backend tests, external secrets/configuration, non-wildcard origins and reproducible image construction, then stops at an explicit provider-neutral handoff.
+
+PRODUCTION DEPLOYMENT: NOT CONFIGURED.
+PRODUCTION SMOKE TEST: NOT RUN.
+
+IMPLEMENTED != CONFIGURED != DEPLOYED.
+
+BONE-004 STATUS: BLOCKED.
+
+REMAINING BLOCKER: external managed durable persistence, production signing key, Telegram Bot Token, HTTPS deployment and a real smoke test/client verification against the deployed backend.
