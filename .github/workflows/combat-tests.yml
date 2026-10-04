@@ -7,6 +7,8 @@ on:
     paths:
       - "webapp/js/combat*.js"
       - "webapp/js/combat_lifecycle_test.mjs"
+      - "webapp/js/combat_session_authority.js"
+      - "webapp/js/combat_session_authority_test.mjs"
       - "webapp/js/combat_presentation_director_test.mjs"
       - "webapp/js/kytos_combat_vertical_slice.js"
       - "webapp/js/kytos_combat_vertical_slice_test.mjs"
@@ -96,6 +98,7 @@ jobs:
           node --experimental-default-type=module webapp/js/kytos_combat_demo_test.mjs
           node --experimental-default-type=module webapp/js/kytos_tactical_decision_test.mjs
           node --experimental-default-type=module webapp/js/combat_core_test.mjs
+          node --experimental-default-type=module webapp/js/combat_session_authority_test.mjs
           node --experimental-default-type=module webapp/js/combat_lifecycle_test.mjs
           node --experimental-default-type=module webapp/js/combat_presentation_director_test.mjs
           node --experimental-default-type=module webapp/js/combat_effects_test.mjs
@@ -125,6 +128,8 @@ jobs:
           node --experimental-default-type=module --check webapp/js/combat.js
           node --experimental-default-type=module --check webapp/js/combat_lifecycle_test.mjs
           node --experimental-default-type=module --check webapp/js/combat_core.js
+          node --experimental-default-type=module --check webapp/js/combat_session_authority.js
+          node --experimental-default-type=module --check webapp/js/combat_session_authority_test.mjs
           node --experimental-default-type=module --check webapp/js/combat_presentation_director.js
           node --experimental-default-type=module --check webapp/js/timing_ring.js
           node --experimental-default-type=module --check webapp/js/kytos_combat_demo.js
