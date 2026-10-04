@@ -365,11 +365,11 @@ async function run() {
         async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#home-view') && !document.querySelector('#home-view').hidden)"),
         { timeoutMs: 30000, label: "BONE-008 Home visible" }
       );
-      const home = await cdpEvaluate(cdp, "(() => ({
+      const home = await cdpEvaluate(cdp, `(() => ({
         visible: Boolean(document.querySelector('#home-view') && !document.querySelector('#home-view').hidden),
         name: document.querySelector('#home-character-name')?.textContent?.trim() || '',
         activeBatter: window.BaseballWaifusGacha?.getState?.()?.active_batter || null
-      }))()");
+      }))()`);
       requireCondition(home.visible, "BONE-008 Home is not visible", home);
       requireCondition(home.name === "Aiko Hanamori", "BONE-008 Home Aiko mismatch", home);
       requireCondition(home.activeBatter === "bw001", "BONE-008 Home active batter mismatch", home);
