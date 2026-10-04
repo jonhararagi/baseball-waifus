@@ -122,3 +122,22 @@ assert.equal(defeat.state.phase, "DEFEAT");
 console.log("BONE-008-002 STATIC = PASS_STATIC");
 console.log("TACTICAL/CLIMAX EQUIVALENCE = PASS");
 console.log("TERMINAL AUTHORITY = PASS");
+
+import { CombatPresentationDirector } from "./combat_presentation_director.js";
+
+const isolationAuthority = new CombatSessionAuthority();
+isolationAuthority.startSession(base);
+const gameplayBeforePresentation = isolationAuthority.getState();
+const presentationDirector = new CombatPresentationDirector();
+presentationDirector.startFromPresentationEvent?.({
+  result: {
+    result: "HOME_RUN",
+    damage: 100,
+    attackerId: "bw001",
+    targetId: "enemy001",
+    actionType: "CLIMAX_ACTION",
+    terminal: true
+  }
+});
+assert.deepEqual(isolationAuthority.getState(), gameplayBeforePresentation);
+console.log("PRESENTATION OWNERSHIP ISOLATION = PASS");

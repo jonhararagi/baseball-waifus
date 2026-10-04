@@ -15,12 +15,12 @@ import { PerformanceAdapter } from "./performance_adapter.js";
 import { AssetLoader, isHttpsUrl } from "./asset_loader.js";
 import { getWaifuAssets, getWaifu } from "./waifu_database.js";
 import {
-  classifyTimingDelta,
   timingRingRadius,
   TIMING_RING_DURATION_MS,
   TIMING_RING_TARGET_MS,
   TIMING_RING_TARGET_RADIUS
 } from "./timing_ring.js";
+import { resolveTiming } from "./combat_timing_authority.js";
 
 const RESULT_COLORS = {
   STRIKE: "#8ca8ff",
@@ -490,33 +490,22 @@ export class CombatRenderer {
     if (!this.timingState?.active) return null;
     const current = this.timingState;
     const elapsedMs = performance.now() - current.startedAt;
-    const rawDeltaMs = elapsedMs - current.targetMs;
     const timingGraceMs = Math.max(0, Number(this.getEconomyBoosts()?.timingGraceMs) || 0);
-    const deltaMs = Math.sign(rawDeltaMs) * Math.max(0, Math.abs(rawDeltaMs) - timingGraceMs);
-    const greatWindowMs = Number.isFinite(current.greatWindowMs) ? current.greatWindowMs : 55;
-    const hitWindowMs = Number.isFinite(current.hitWindowMs) ? current.hitWindowMs : 135;
-    const absoluteDelta = Math.abs(deltaMs);
-    const grade = absoluteDelta <= greatWindowMs
-      ? "GREAT"
-      : absoluteDelta <= hitWindowMs
-        ? "HIT"
-        : "MISS";
     window.clearTimeout(this.timingTimeout);
     this.timingTimeout = 0;
     this.timingState = null;
 
-    const timing = {
-      grade,
-      delta_ms: Math.round(deltaMs),
-      elapsed_ms: Math.round(elapsedMs),
-      target_ms: current.targetMs,
-      great_window_ms: Math.round(current.greatWindowMs),
-      hit_window_ms: Math.round(current.hitWindowMs),
+    const timing = resolveTiming({
+      elapsedMs,
+      targetMs: current.targetMs,
+      greatWindowMs: current.greatWindowMs,
+      hitWindowMs: current.hitWindowMs,
+      timingGraceMs,
       source,
       round: this.round,
-      tactical_effectiveness: Math.round(this.tacticalEffectiveness),
-      boss_hp_before: Math.round(this.bossHp)
-    };
+      tacticalEffectiveness: this.tacticalEffectiveness,
+      bossHpBefore: this.bossHp
+    });
 
     this._resolveClimaxDamage(grade);
 

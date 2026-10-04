@@ -9,6 +9,8 @@ on:
       - "webapp/js/combat_lifecycle_test.mjs"
       - "webapp/js/combat_session_authority.js"
       - "webapp/js/combat_session_authority_test.mjs"
+      - "webapp/js/combat_timing_authority.js"
+      - "webapp/js/combat_timing_authority_test.mjs"
       - "webapp/js/bone008_authority_browser_test.mjs"
       - "webapp/js/combat_presentation_director_test.mjs"
       - "webapp/js/combat_result_to_presentation.js"
@@ -102,6 +104,7 @@ jobs:
           node --experimental-default-type=module webapp/js/kytos_tactical_decision_test.mjs
           node --experimental-default-type=module webapp/js/combat_core_test.mjs
           node --experimental-default-type=module webapp/js/combat_session_authority_test.mjs
+          node --experimental-default-type=module webapp/js/combat_timing_authority_test.mjs
           node --experimental-default-type=module webapp/js/combat_lifecycle_test.mjs
           node --experimental-default-type=module webapp/js/combat_presentation_director_test.mjs
           node --experimental-default-type=module webapp/js/combat_result_to_presentation_test.mjs
@@ -159,6 +162,8 @@ jobs:
           node --experimental-default-type=module --check webapp/js/combat_lifecycle_test.mjs
           node --experimental-default-type=module --check webapp/js/combat_core.js
           node --experimental-default-type=module --check webapp/js/combat_session_authority.js
+          node --experimental-default-type=module --check webapp/js/combat_timing_authority.js
+          node --experimental-default-type=module --check webapp/js/combat_timing_authority_test.mjs
           node --experimental-default-type=module --check webapp/js/combat_session_authority_test.mjs
           node --experimental-default-type=module --check webapp/js/combat_presentation_director.js
           node --experimental-default-type=module --check webapp/js/combat_result_to_presentation.js
