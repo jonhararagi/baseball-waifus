@@ -1,81 +1,58 @@
 # BaseWarriors Authority Backend
 
-Provider-neutral Node.js ESM backend for the BONE-004 production authority boundary.
+Provider-neutral Node.js ESM backend for the BONE-004 authority boundary.
 
-## Purpose
+## Production configuration contract
 
-This service separates the static WebApp from the server authority required for authenticated combat state, server-calculated results and SERVER_COMBAT_ATTESTATION_V1.
-
-The client requests actions. The server owns combat state and computes the result. Only the server-side signer can emit a reward attestation.
-
-## Endpoints
-
-- GET /health
-- GET /ready
-- GET /v1/combat/:matchId/init
-- POST /v1/combat/:matchId/turn
-
-The current authoritative combat boundary supports BAT. STEAL remains outside this first backend implementation because no compatible server-side steal resolver exists in combat_core.js.
-
-## Local development
-
-Requirements: Node.js 20+.
-
-Run tests:
-
-    cd backend
-    npm test
-
-For a manually started local process, provide an externally managed P-256 private key through REWARD_SIGNING_PRIVATE_KEY. The repository must not contain that key.
-
-In tests, the suite generates an ephemeral P-256 keypair in memory. The x-test-player-id bypass exists only when NODE_ENV=test.
-
-## Production configuration
-
-Required production configuration includes:
-
+Required runtime configuration:
+- NODE_ENV=production
+- PORT
 - REWARD_SIGNING_PRIVATE_KEY
 - TELEGRAM_BOT_TOKEN
+- TELEGRAM_INIT_DATA_MAX_AGE_SECONDS
 - ALLOWED_ORIGINS
-- durable persistence replacing InMemoryCombatStore
+- AUTHORITY_PERSISTENCE_PROVIDER=managed
+- AUTHORITY_PERSISTENCE_DSN
 
-Production startup refuses to start without REWARD_SIGNING_PRIVATE_KEY.
+Production rejects wildcard CORS and never accepts the filesystem provider as a production authority.
 
-The /ready endpoint remains false until signing, authentication and durable persistence are configured.
-
-## Security boundary
-
-Production requests use x-telegram-init-data. The backend verifies Telegram WebApp init data server-side and derives playerId from the verified Telegram user id.
-
-initDataUnsafe is never used by the backend as authentication.
-
-Client result fields are rejected. Match ownership and turn sequencing are server-owned. A server-generated match nonce is bound into SERVER_COMBAT_ATTESTATION_V1.
-
-The private signing key is never returned or stored in the repository. Test keys are ephemeral.
+The repository intentionally contains no managed-database adapter. External provider wiring must be supplied before a production process can start.
 
 ## Persistence boundary
 
-InMemoryCombatStore is development/test only. Its reward ledger is not durable and does not make BONE-005 complete.
+src/persistence_provider.mjs isolates provider selection:
+- memory: development/test
+- filesystem: development/integration
+- managed: production contract only, no provider implementation bundled
 
-The store interface is isolated behind createMatch, loadMatch and saveMatch.
+## Health/readiness
 
-## Not production-ready
+/health is unauthenticated and reports only basic availability.
+/ready reports only boolean signing_key, authentication, persistence, deployment_mode and deployment. It never returns secret values.
 
-- durable persistence / reward ledger;
-- production secret/key manager configuration;
-- deployed backend origin;
-- production deployment/operations;
-- client-side turn-id/idempotency integration.
+## Container
 
-PRODUCTION BACKEND STATUS
+Build with:
+docker build --ignorefile backend/.dockerignore -f backend/Dockerfile .
 
-IMPLEMENTED LOCALLY / NOT DEPLOYED
+The image copies only backend/src, backend/package.json, webapp/js/combat_core.js and webapp/js/reward_authority.js. Secrets arrive only at runtime.
 
+## Deployment workflow
 
-## BONE-005 durable persistence
+.github/workflows/backend-authority-deploy.yml is workflow_dispatch only. It verifies backend tests, required external production configuration, container build and basic image secret safety. It does not deploy to any cloud provider because none is configured.
 
-The backend now includes PersistentCombatStore as a provider-neutral filesystem implementation for development/integration.
+## Frontend API boundary
 
-It persists combat matches and battle:<matchId> reward authorization in one versioned document and writes through a temporary file followed by fsync and atomic rename.
+webapp/js/api.js reads window.BASEBALL_WAIFUS_API_BASE_URL:
+- empty: API not configured, local demo/QA can continue;
+- configured: server authority path is available.
 
-Production deployment remains disabled. InMemoryCombatStore is still available for fast tests, while PersistentCombatStore can be replaced by a future managed database implementation without changing CombatService.
+No production URL is hardcoded by this task.
+
+## Status
+
+IMPLEMENTED: backend authority, Telegram server auth, ECDSA attestation, durable development persistence, concurrency, production config contract, Docker and deployment contract.
+CONFIGURED: no external production secrets/provider in repository.
+DEPLOYED: no.
+
+BONE-004 remains BLOCKED until an external environment provides secrets, managed persistence, HTTPS deployment and a real smoke test.

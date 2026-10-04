@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test test/*.mjs"
+    "test": "node --test test/*.mjs",
+    "validate:production-config": "node test/production_config_test.mjs"
   }
 }

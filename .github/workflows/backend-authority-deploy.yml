@@ -1,0 +1,59 @@
+name: BaseWarriors Authority Production Deployment Contract
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: Type DEPLOY_AUTHORITY to validate the production deployment contract
+        required: true
+        type: string
+      image_tag:
+        description: Container image tag for the external deployment provider
+        required: true
+        default: basewarriors-authority
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  production-contract:
+    runs-on: ubuntu-22.04
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Validate manual confirmation
+        run: test "${{ inputs.confirmation }}" = "DEPLOY_AUTHORITY"
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Backend tests
+        working-directory: backend
+        run: npm test
+      - name: Production secrets/configuration gate
+        env:
+          REWARD_SIGNING_PRIVATE_KEY: ${{ secrets.REWARD_SIGNING_PRIVATE_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          ALLOWED_ORIGINS: ${{ vars.AUTHORITY_ALLOWED_ORIGINS }}
+          AUTHORITY_PERSISTENCE_PROVIDER: ${{ vars.AUTHORITY_PERSISTENCE_PROVIDER }}
+          AUTHORITY_PERSISTENCE_DSN: ${{ secrets.AUTHORITY_PERSISTENCE_DSN }}
+        run: |
+          test -n "$REWARD_SIGNING_PRIVATE_KEY"
+          test -n "$TELEGRAM_BOT_TOKEN"
+          test -n "$ALLOWED_ORIGINS"
+          test "$ALLOWED_ORIGINS" != "*"
+          test "$AUTHORITY_PERSISTENCE_PROVIDER" = "managed"
+          test -n "$AUTHORITY_PERSISTENCE_DSN"
+      - name: Build reproducible backend image
+        run: |
+          docker buildx build --ignorefile backend/.dockerignore --platform linux/amd64 --load --tag "${{ inputs.image_tag }}" --file backend/Dockerfile .
+      - name: Verify image secret safety
+        run: |
+          docker run --rm "${{ inputs.image_tag }}" sh -c 'test ! -e /app/.env && test ! -e /app/.env.production && test ! -e /app/private.key'
+      - name: Deployment handoff boundary
+        run: |
+          echo "No external provider is configured in this repository."
+          echo "Container build and production configuration validation passed."
+          echo "External deployment is intentionally not executed by this provider-neutral workflow."
