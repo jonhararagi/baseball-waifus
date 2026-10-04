@@ -30,7 +30,12 @@ const input = Object.freeze({
   actionType: "SWING"
 });
 
-const replacementStage = new CombatStage();
+const replacementStage = new CombatStage({
+  actors: createCombatStageActors({
+    batter: { id: "bw001", name: "Replacement Attacker" },
+    enemy: { id: "bw002", name: "Replacement Target" }
+  })
+});
 const replacementActor = replacementStage.getActor("bw001");
 const replacementDirector = new CombatPresentationDirector({
   stage: replacementStage,
