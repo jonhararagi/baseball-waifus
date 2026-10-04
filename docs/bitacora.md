@@ -9978,3 +9978,36 @@ BONE-007 = CLOSED.
 BONE-011 = OPEN / unchanged.
 
 **NEEDS:** una corrección específica de la máquina de estados de presentación que permita reemplazar/cerrar una secuencia activa sin violar `CharacterActor2D5` transitions, seguida por un único nuevo browser proof.
+
+
+---
+
+## BONE-008-003-R4 · EXECUTED PLAYER META FIXTURE & REAL PRESENTATION PROOF
+
+Fecha: 2026-10-04
+HEAD BEFORE: 6d83f31d1c95ca0c0c2a0ada0a8712ef66091b79
+HEAD AFTER: 00eee7b04ef4a624f17d71f7a5781f28264b01b6
+TIMER: 60–90 minutos
+RESULT: BLOCKED
+
+Se corrigió el script de `Page.addScriptToEvaluateOnNewDocument` del harness para ejecutar realmente el fixture Player Meta antes de la navegación.
+
+Static: PASS_STATIC.
+
+El único browser proof real de la task fue T094 Run 37192007128. El fixture persistido fue leído correctamente con schemaVersion=1/revision=1, identidad local-player/local, bw001 unlocked+quantity y activeBatter=bw001. El runtime rehidrató activeBatter=bw001 y `inventory.bw001.duplicate_count=1`.
+
+El browser proof falló por una assertion del harness que esperaba `inventory.bw001.quantity` en el estado Gacha runtime. Esa propiedad no pertenece a la forma observada; el runtime devuelve ownership mediante `duplicate_count=1`.
+
+No se ejecutó un segundo browser proof.
+
+BONE-008-003-R4: BLOCKED.
+BONE-008-003: BLOCKED.
+BONE-008: OPEN / PARTIAL PROGRESS.
+BONE-004: BLOCKED / UNCHANGED.
+BONE-005: CLOSED.
+BONE-006: CLOSED.
+BONE-007: CLOSED.
+BONE-011: OPEN / UNCHANGED.
+
+CAUSE: harness ownership assertion incompatible con runtime inventory shape.
+NEEDS: future checkpoint must correct the assertion, then run the mandated single real browser proof.

@@ -223,3 +223,99 @@ Se mantienen además los dos ciclos anteriores de tactical ×5 → CLIMAX/timing
 
 **BONE-008-002 remains CLOSED.**  
 **BONE-008 remains OPEN / PARTIAL PROGRESS.**
+
+
+## BONE-008-003-R4 · EXECUTED PLAYER META FIXTURE & REAL PRESENTATION PROOF
+
+**Fecha:** 2026-10-04  
+**HEAD BEFORE:** `6d83f31d1c95ca0c0c2a0ada0a8712ef66091b79`  
+**HEAD AFTER:** `00eee7b04ef4a624f17d71f7a5781f28264b01b6`  
+**TIMER:** 60–90 minutos  
+**RESULT:** BLOCKED
+
+### Fixture execution
+
+Se corrigió en `webapp/js/character_journey_browser_probe.mjs` el script registrado mediante `Page.addScriptToEvaluateOnNewDocument` para que la función se ejecute inmediatamente mediante IIFE antes de `Page.navigate`.
+
+Static validation posterior: **PASS_STATIC**.
+
+Browser evidence antes del fallo:
+
+- Player Meta persisted envelope leído después de navegación: schemaVersion=1, revision=1.
+- identity = local-player / local.
+- bw001 unlocked=true, quantity=1.
+- roster.activeBatter=bw001.
+- runtime activeBatter=bw001.
+- runtime inventory de Gacha contiene bw001 con `duplicate_count=1`.
+
+### Browser proof
+
+Workflow: **T094 Deterministic Normal Combat CDP QA**, Run **37192007128**.
+
+El único browser proof real de esta task ejecutó Chromium real con el WebApp servido por CI. El workflow alcanzó el navegador y el harness empezó a validar el runtime real.
+
+El proof falló antes de Home/presentation/combat porque una assertion introducida por este checkpoint asumió incorrectamente que la estructura de `window.BaseballWaifusGacha.getState().inventory.bw001` tendría `quantity`.
+
+La evidencia real devuelta por el runtime fue:
+
+```
+activeBatter: "bw001"
+inventory.bw001 = {
+  character_id: "bw001",
+  display_name: "Aiko Hanamori",
+  rarity: "R",
+  obtained_at: ...,
+  duplicate_count: 1,
+  last_obtained_at: ...
+}
+```
+
+Por tanto el runtime sí expuso ownership canónico mediante `duplicate_count=1`, pero la assertion del harness produjo:
+
+`T072 ASSERTION FAILED: BONE-008 runtime bw001 ownership missing`
+
+### Retry rule
+
+**ATTEMPTS:** 1 browser proof real.
+
+No se ejecuta segundo browser proof, conforme a la orden de trabajo.
+
+### Not reached
+
+Por el fallo anterior quedaron **NOT_RUN**:
+
+- HOME AIKO
+- REAL DIRECTOR
+- NORMAL SEQUENCE
+- SAFE REPLACEMENT
+- ACTION_TO_FOCUS
+- FOCUS_TO_RETURN
+- INVALID TRANSITIONS
+- FINAL ACTOR STATE
+- DIRECTOR ACTIVE
+- COMBAT INTEGRATION
+- LIFECYCLE
+
+### Scope
+
+**GAMEPLAY CHANGED:** NO.  
+**BALANCE CHANGED:** NO.  
+**COMBAT CORE:** no modificado.  
+**PLAYER META runtime:** no modificado.  
+**HOME:** no modificado.  
+**PRESENTATION:** no modificado.  
+**BONE-004:** BLOCKED / UNCHANGED.  
+**BONE-005:** CLOSED.  
+**BONE-006:** CLOSED.  
+**BONE-007:** CLOSED.  
+**BONE-011:** OPEN / UNCHANGED.
+
+### Final state
+
+**BONE-008-003-R4 = BLOCKED.**  
+**BONE-008-003 = BLOCKED.**  
+**BONE-008 = OPEN / PARTIAL PROGRESS.**
+
+**CAUSE:** assertion del harness incompatible con la forma real de ownership del Gacha runtime (`duplicate_count` en lugar de `quantity`).
+
+**NEEDS:** corregir la assertion del harness y ejecutar un nuevo checkpoint/browser proof según una futura orden del Cerebro. No se realiza ese retry dentro de R4.
