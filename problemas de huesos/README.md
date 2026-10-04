@@ -67,6 +67,9 @@ Esta carpeta es una deuda controlada del producto, no una lista decorativa.
 - **BONE-008:** OPEN.
 - **BONE-008-001:** CLOSED.
 - **BONE-008-002:** CLOSED.
-- **BONE-008-003:** CLOSED.
-- **Resultado:** se creó la frontera explícita `CombatResult → COMBAT_RESULT Presentation Event → CombatPresentationDirector` mediante `combat_result_to_presentation.js`.
-- **Evidence:** Combat Vertical Slice Tests Run `37189079503` = SUCCESS; static PASS_STATIC, negative presentation isolation PASS_STATIC, equivalence PASS y Chromium real `PASS_REAL` con `console_errors=[]`.
+- **BONE-008-003:** BLOCKED.
+- **Resultado:** existe el contrato y adapter `CombatResult → COMBAT_RESULT Presentation Event → CombatPresentationDirector`, pero el browser proof con el director real encontró una incompatibilidad de estados visuales al reemplazar secuencias activas.
+- **Static:** PASS_STATIC; negative presentation isolation PASS_STATIC; equivalence PASS.
+- **Browser attempts:** Run `37189204507` y Run `37189292162` = FAIL_REAL por transiciones `ACTION → FOCUS` y `FOCUS → RETURN`, respectivamente.
+- **CAUSE:** reemplazo de una secuencia de presentación activa no compatible con la máquina `IDLE → FOCUS → ACTION → RETURN → IDLE`.
+- **RULE:** dos fallos por la misma causa; no se realizan retries adicionales en esta task.

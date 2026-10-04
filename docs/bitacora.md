@@ -9931,3 +9931,50 @@ Compare BASE → HEAD mostró únicamente:
 - `webapp/js/combat_result_to_presentation_test.mjs`.
 
 STATUS: CLOSED FOR CHECKPOINT BONE-008-003.
+
+
+---
+
+## BONE-008-003 · RESULT TO PRESENTATION EVENT BOUNDARY · BLOCKED
+
+**Fecha:** 2026-10-04  
+**BASE SHA:** `42225f81a5c9a3035e18c5640af72aaae033d203`  
+**LATEST IMPLEMENTATION HEAD:** `bc9d34b7cc202fff967acc5d6b501b23323bc791`  
+**TIMER:** 60–90 minutos  
+**RESULT:** BLOCKED
+
+### Implementado
+
+- `webapp/js/combat_result_to_presentation.js`;
+- presentation event inmutable mediante `createDomainEvent`;
+- `CombatRenderer` entrega tactical, climax y TurnResultDTO al adapter;
+- `CombatPresentationDirector` consume `startFromPresentationEvent`;
+- `combat_core.js` sin cambios;
+- static negative/equivalence tests PASS.
+
+### Browser evidence
+
+Primer proof con director real: **FAIL_REAL**, Run `37189204507`.
+
+- causa observada: `Invalid CharacterActor2D5 transition: ACTION -> FOCUS`;
+- interpretación: una nueva secuencia comenzaba antes de que la secuencia visual anterior terminara.
+
+Segundo proof con corrección de replacement: **FAIL_REAL**, Run `37189292162`.
+
+- causa observada: `Invalid CharacterActor2D5 transition: FOCUS -> RETURN`;
+- la corrección intentó reutilizar `cancel()`, que no es válida desde cualquier estado visual.
+
+La tercera corrección quedó guardada para continuidad, pero **NO se ejecuta un tercer retry** porque la misma causa raíz de transición de presentación ya falló dos veces.
+
+### Estado
+
+BONE-008-003 = BLOCKED.  
+BONE-008 = OPEN / PARTIAL PROGRESS.
+
+BONE-004 = BLOCKED / unchanged.  
+BONE-005 = CLOSED.  
+BONE-006 = CLOSED.  
+BONE-007 = CLOSED.  
+BONE-011 = OPEN / unchanged.
+
+**NEEDS:** una corrección específica de la máquina de estados de presentación que permita reemplazar/cerrar una secuencia activa sin violar `CharacterActor2D5` transitions, seguida por un único nuevo browser proof.
