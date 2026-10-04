@@ -51,13 +51,13 @@ const runCycle = async () => page.evaluate(async () => {
       boss_hp: renderer.bossHp
     });
     if (i < 4) {
-      assert.equal(result, true);
+      if (result !== true) throw new Error("TACTICAL_AUTHORITY_DID_NOT_ADVANCE");
     }
   }
 
   await new Promise((resolve) => setTimeout(resolve, 320));
-  assert.equal(renderer.battlePhase, "CLIMAX");
-  assert.equal(renderer.isTimingWindowActive(), true);
+  if (renderer.battlePhase !== "CLIMAX") throw new Error("CLIMAX_PHASE_NOT_REACHED");
+  if (!renderer.isTimingWindowActive()) throw new Error("TIMING_WINDOW_NOT_ACTIVE");
 
   renderer.resolveTimingInput("browser-test");
   await new Promise((resolve) => requestAnimationFrame(() => resolve()));
