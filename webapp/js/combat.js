@@ -260,6 +260,11 @@ export class CombatRenderer {
     this.lastTurn = null;
     this.matchReady = false;
     this.frameHandle = 0;
+    this.paused = false;
+    this.disposed = false;
+    this.mountCount = 1;
+    this.disposeCount = 0;
+    this._ownedTimeouts = new Set();
     this.cutInStartedAt = 0;
     this.cutInDurationMs = 880;
     this.resultPulse = 0;
@@ -274,6 +279,7 @@ export class CombatRenderer {
     this.zanDuration = 0.34;
     this.timingState = null;
     this.timingTimeout = 0;
+    this.phaseTransitionTimeout = 0;
     this.battlePhase = "TACTICAL";
     this.tacticalTurn = 0;
     this.tacticalMaxTurns = 5;
@@ -298,9 +304,13 @@ export class CombatRenderer {
 
     this.handleViewportResize = () => this.resize();
     this.handleTimingPointer = (event) => {
-      if (!this.timingState?.active) return;
+      if (this.disposed || this.paused || !this.timingState?.active) return;
       event.preventDefault();
       this.resolveTimingInput("pointer");
+    };
+    this.handleDocumentVisibility = () => {
+      if (document.visibilityState === "hidden") this.pause();
+      else this.resume();
     };
 
     this.resizeObserver = typeof ResizeObserver === "function"
@@ -315,9 +325,91 @@ export class CombatRenderer {
     this.canvas.addEventListener("pointerdown", this.handleTimingPointer, { passive: false });
     window.visualViewport?.addEventListener("resize", this.handleViewportResize, { passive: true });
     window.visualViewport?.addEventListener("scroll", this.handleViewportResize, { passive: true });
+    document.addEventListener("visibilitychange", this.handleDocumentVisibility);
 
     this.resize();
     this.frameHandle = requestAnimationFrame((time) => this.frame(time));
+  }
+
+  _setOwnedTimeout(callback, delayMs) {
+    if (this.disposed || this.paused) return 0;
+    let timerId = 0;
+    timerId = window.setTimeout(() => {
+      this._ownedTimeouts.delete(timerId);
+      callback();
+    }, Math.max(0, Number(delayMs) || 0));
+    this._ownedTimeouts.add(timerId);
+    return timerId;
+  }
+
+  _clearOwnedTimeout(timerId) {
+    if (!timerId) return;
+    window.clearTimeout(timerId);
+    this._ownedTimeouts.delete(timerId);
+  }
+
+  _clearOwnedTimeouts() {
+    for (const timerId of this._ownedTimeouts) {
+      window.clearTimeout(timerId);
+    }
+    this._ownedTimeouts.clear();
+  }
+
+  getLifecycleDebugSnapshot() {
+    return Object.freeze({
+      active: !this.paused && !this.disposed,
+      paused: this.paused,
+      disposed: this.disposed,
+      frameHandle: this.frameHandle,
+      ownedTimeouts: this._ownedTimeouts.size,
+      resizeObserver: Boolean(this.resizeObserver),
+      mountCount: this.mountCount,
+      disposeCount: this.disposeCount
+    });
+  }
+
+  pause() {
+    if (this.disposed || this.paused) return this.getLifecycleDebugSnapshot();
+    this.paused = true;
+    cancelAnimationFrame(this.frameHandle);
+    this.frameHandle = 0;
+    this._clearOwnedTimeout(this.timingTimeout);
+    this.timingTimeout = 0;
+    this._clearOwnedTimeout(this.phaseTransitionTimeout);
+    this.phaseTransitionTimeout = 0;
+    this._clearOwnedTimeouts();
+    return this.getLifecycleDebugSnapshot();
+  }
+
+  resume() {
+    if (this.disposed || !this.paused) return this.getLifecycleDebugSnapshot();
+    this.paused = false;
+
+    if (this.timingState?.active) {
+      const remaining = Math.max(0, this.timingState.startedAt + this.timingState.durationMs - performance.now());
+      this.timingTimeout = this._setOwnedTimeout(() => {
+        this.timingTimeout = 0;
+        this.resolveTimingInput("timeout");
+      }, remaining);
+    } else if (
+      this.matchReady
+      && this.battlePhase === "CLIMAX"
+      && this.tacticalTurn >= this.tacticalMaxTurns
+      && !this.timingState?.active
+    ) {
+      this.timingTimeout = this._setOwnedTimeout(() => {
+        this.timingTimeout = 0;
+        if (this.matchReady && this.battlePhase === "CLIMAX" && !this.timingState?.active) {
+          this.beginTimingWindow();
+        }
+      }, 0);
+    }
+
+    this.lastFrame = performance.now();
+    if (!this.frameHandle) {
+      this.frameHandle = requestAnimationFrame((time) => this.frame(time));
+    }
+    return this.getLifecycleDebugSnapshot();
   }
 
   setHapticsBridge(hapticsBridge) {
@@ -351,7 +443,7 @@ export class CombatRenderer {
   }
 
   beginTimingWindow() {
-    if (!this.matchReady || this.timingState?.active || ["VICTORY", "DEFEAT"].includes(this.battlePhase)) return false;
+    if (this.disposed || this.paused || !this.matchReady || this.timingState?.active || ["VICTORY", "DEFEAT"].includes(this.battlePhase)) return false;
 
     if (this.battlePhase === "TACTICAL") {
       this._playTacticalTurn();
@@ -378,8 +470,9 @@ export class CombatRenderer {
       effectiveness: this.tacticalEffectiveness
     });
     this.audioBridge?.playClimaxWarning?.();
-    window.clearTimeout(this.timingTimeout);
-    this.timingTimeout = window.setTimeout(() => {
+    this._clearOwnedTimeout(this.timingTimeout);
+    this.timingTimeout = this._setOwnedTimeout(() => {
+      this.timingTimeout = 0;
       this.resolveTimingInput("timeout");
     }, TIMING_RING_DURATION_MS);
     return true;
@@ -429,7 +522,7 @@ export class CombatRenderer {
   }
 
   _playTacticalTurn() {
-    if (!this.matchReady || this.timingState?.active || ["VICTORY", "DEFEAT"].includes(this.battlePhase)) return null;
+    if (this.disposed || this.paused || !this.matchReady || this.timingState?.active || ["VICTORY", "DEFEAT"].includes(this.battlePhase)) return null;
     if (this.tacticalTurn >= this.tacticalMaxTurns) {
       this.battlePhase = "CLIMAX";
       return this.beginTimingWindow();
@@ -475,8 +568,8 @@ export class CombatRenderer {
 
     if (this.tacticalTurn >= this.tacticalMaxTurns) {
       this.battlePhase = "CLIMAX";
-      window.clearTimeout(this.phaseTransitionTimeout);
-      this.phaseTransitionTimeout = window.setTimeout(() => {
+      this._clearOwnedTimeout(this.phaseTransitionTimeout);
+      this.phaseTransitionTimeout = this._setOwnedTimeout(() => {
         this.phaseTransitionTimeout = 0;
         if (this.matchReady && this.battlePhase === "CLIMAX" && !this.timingState?.active) {
           this.beginTimingWindow();
@@ -630,7 +723,7 @@ export class CombatRenderer {
     const avatar = document.querySelector("#waifu-avatar-img");
     if (avatar?.src && this.eyeFocusImage) this.eyeFocusImage.src = avatar.src;
     this.eyeFocusOverlay?.classList.add("is-active");
-    window.setTimeout(() => {
+    this._setOwnedTimeout(() => {
       if (token === this.eyeFocusToken) this.eyeFocusOverlay?.classList.remove("is-active");
     }, durationMs);
   }
@@ -641,7 +734,7 @@ export class CombatRenderer {
       this.eyeFocusOverlay?.classList.remove("is-active");
       return;
     }
-    await new Promise((resolve) => window.setTimeout(resolve, remaining));
+    await new Promise((resolve) => this._setOwnedTimeout(resolve, remaining));
     this.eyeFocusOverlay?.classList.remove("is-active");
   }
 
@@ -663,7 +756,7 @@ export class CombatRenderer {
       if (className) {
         void this.activeWaifuCard.offsetWidth;
         this.activeWaifuCard.classList.add(className);
-        window.setTimeout(() => this.activeWaifuCard?.classList.remove(className), 900);
+        this._setOwnedTimeout(() => this.activeWaifuCard?.classList.remove(className), 900);
       }
     }
     if (this.timingFeedback) {
@@ -672,7 +765,7 @@ export class CombatRenderer {
       this.timingFeedback.classList.remove("is-visible");
       void this.timingFeedback.offsetWidth;
       if (label && !cinematicActive) this.timingFeedback.classList.add("is-visible");
-      window.setTimeout(() => this.timingFeedback?.classList.remove("is-visible"), 900);
+      this._setOwnedTimeout(() => this.timingFeedback?.classList.remove("is-visible"), 900);
     }
   }
 
@@ -1043,21 +1136,35 @@ export class CombatRenderer {
   }
 
   dispose() {
+    if (this.disposed) return this.getLifecycleDebugSnapshot();
+    this.disposed = true;
+    this.paused = true;
+    this.disposeCount += 1;
     cancelAnimationFrame(this.frameHandle);
+    this.frameHandle = 0;
     this.resizeObserver?.disconnect();
+    this.resizeObserver = null;
     window.removeEventListener("resize", this.handleViewportResize);
     this.canvas.removeEventListener("pointerdown", this.handleTimingPointer);
     window.visualViewport?.removeEventListener("resize", this.handleViewportResize);
     window.visualViewport?.removeEventListener("scroll", this.handleViewportResize);
-    window.clearTimeout(this.timingTimeout);
-    window.clearTimeout(this.phaseTransitionTimeout);
+    document.removeEventListener("visibilitychange", this.handleDocumentVisibility);
+    this.timingState = null;
+    this._clearOwnedTimeouts();
+    this.timingTimeout = 0;
+    this.phaseTransitionTimeout = 0;
     this.staticCanvas.width = 1;
     this.staticCanvas.height = 1;
     this.frameCanvas.width = 1;
     this.frameCanvas.height = 1;
+    return this.getLifecycleDebugSnapshot();
   }
 
   frame(time) {
+    if (this.disposed || this.paused) {
+      this.frameHandle = 0;
+      return;
+    }
     const delta = clamp((time - this.lastFrame) / 1000, 0, 0.05);
     this.lastFrame = time;
 
@@ -1066,7 +1173,11 @@ export class CombatRenderer {
       this._render(time);
     }
 
-    this.frameHandle = requestAnimationFrame((next) => this.frame(next));
+    if (!this.disposed && !this.paused) {
+      this.frameHandle = requestAnimationFrame((next) => this.frame(next));
+    } else {
+      this.frameHandle = 0;
+    }
   }
 
   _update(delta) {
