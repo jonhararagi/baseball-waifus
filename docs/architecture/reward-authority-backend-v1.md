@@ -417,3 +417,29 @@ Legacy Gacha/local/Telegram data is migration/cache input only. Existing Player 
 This is still NOT A PRODUCTION DEPLOYMENT.
 
 The durable filesystem adapter is a development/integration provider. BONE-004 remains blocked until production secrets, Telegram bot configuration, deployment and production persistence operations are configured outside this repository.
+
+
+## Production readiness matrix · BONE-004-PROD-AUTH-003
+
+| Component | Status |
+|---|---|
+| Server authority | PASS |
+| Telegram auth code | PASS |
+| ECDSA signer code | PASS |
+| Durable development persistence | PASS |
+| Concurrency | PASS |
+| Container | PASS |
+| Production env contract | PASS |
+| Secret boundary | PASS |
+| Production database provider | NOT CONFIGURED |
+| HTTPS deployment | NOT CONFIGURED |
+| Production secrets | NOT CONFIGURED |
+| Production smoke test | NOT RUN |
+
+IMPLEMENTED means the repository contains and validates the code/contract.
+CONFIGURED means external runtime secrets and provider settings exist. They do not exist here.
+DEPLOYED means a real HTTPS backend exists and passes an authenticated smoke test. This has not occurred.
+
+The manual `.github/workflows/backend-authority-deploy.yml` is a provider-neutral deployment contract, not deployment evidence.
+
+Earlier BONE-004 diagnostics that state the production backend was absent are historical records. The repository now contains the local/server authority implementation and deployment boundary, while production infrastructure remains unconfigured.
