@@ -443,3 +443,11 @@ DEPLOYED means a real HTTPS backend exists and passes an authenticated smoke tes
 The manual `.github/workflows/backend-authority-deploy.yml` is a provider-neutral deployment contract, not deployment evidence.
 
 Earlier BONE-004 diagnostics that state the production backend was absent are historical records. The repository now contains the local/server authority implementation and deployment boundary, while production infrastructure remains unconfigured.
+
+
+
+## Container smoke validation · 2026-10-04
+
+GitHub Actions Run `37175529956` on HEAD `4f5155e683c7ba593e17da1ac1ca977132b132b4` passed backend syntax, all 27 backend tests, container image build and container health smoke in test mode.
+
+The deployment contract remains provider-neutral and is not evidence of external production deployment.
