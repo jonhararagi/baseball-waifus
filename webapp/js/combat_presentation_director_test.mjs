@@ -30,6 +30,52 @@ const input = Object.freeze({
   actionType: "SWING"
 });
 
+const replacementStage = new CombatStage();
+const replacementActor = replacementStage.getActor("bw001");
+const replacementDirector = new CombatPresentationDirector({
+  stage: replacementStage,
+  onStep: (event) => {
+    const actor = replacementStage.getActor(event.result?.attackerId || "bw001");
+    if (!actor) return;
+    if (event.phase === "ATTACKER_FOCUS") actor.setPresentationState("FOCUS");
+    if (event.phase === "ACTION") actor.setPresentationState("ACTION");
+    if (event.phase === "COMBAT_RETURN") actor.setPresentationState("RETURN");
+    if (event.phase === "COMPLETE") actor.resetPresentationState();
+  }
+});
+replacementDirector.startFromPresentationEvent({
+  type: "COMBAT_RESULT",
+  eventId: "replacement:first",
+  payload: {
+    attacker_id: "bw001",
+    target_id: "bw002",
+    result: "HIT",
+    outcome: "HIT",
+    damage: 10,
+    action_type: "SWING",
+    terminal: false
+  }
+});
+replacementDirector.update(0.3);
+assert.equal(replacementActor.getPresentationState(), "ACTION");
+assert.doesNotThrow(() => replacementDirector.startFromPresentationEvent({
+  type: "COMBAT_RESULT",
+  eventId: "replacement:second",
+  payload: {
+    attacker_id: "bw001",
+    target_id: "bw002",
+    result: "MISS",
+    outcome: "MISS",
+    damage: 0,
+    action_type: "SWING",
+    terminal: false
+  }
+}));
+assert.equal(replacementActor.getPresentationState(), "FOCUS");
+replacementDirector.update(2);
+assert.equal(replacementActor.getPresentationState(), "IDLE");
+
+
 const snapshot = director.startFromCombatResult(input);
 assert.equal(snapshot.phase, COMBAT_PRESENTATION_PHASE.ATTACKER_FOCUS);
 assert.equal(snapshot.active, true);
