@@ -18,7 +18,7 @@ Estados: OPEN, IN_PROGRESS, BLOCKED, VERIFYING, CLOSED.
 | BONE-004 | Autoridad de recompensa offline/local | P0 | OPEN |
 | BONE-005 | Persistencia dual Player Meta/local/Telegram | P0 | CLOSED |
 | BONE-006 | Concurrencia roster/inventario/recompensa | P0 | CLOSED |
-| BONE-007 | Lifecycle, RAF, timers y listeners | P1 | OPEN |
+| BONE-007 | Lifecycle, RAF, timers y listeners | P1 | CLOSED |
 | BONE-008 | Separacion CombatRenderer/gameplay/presentation | P1 | OPEN |
 | BONE-009 | Multiples runtimes de gameplay | P1 | OPEN |
 | BONE-010 | Duplicacion de bridges Telegram | P1 | OPEN |

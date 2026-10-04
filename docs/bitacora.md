@@ -9676,3 +9676,58 @@ Se verificó la realidad externa sin modificar implementación.
 **GAMEPLAY:** NO CHANGE.  
 **BALANCE:** NO CHANGE.  
 **STATUS:** BONE-004 permanece BLOCKED.
+
+
+---
+
+## BONE-007-001 · COMBAT RENDERER LIFECYCLE & MEMORY LEAK VALIDATION
+
+**Fecha:** 2026-10-04  
+**BASE SHA:** `3e157806e97b4e2b4b48ea803ad4f3ef38658ef2`  
+**FINAL SHA:** `32150d7cda635881e9c29c12b39a6cbf6e3c1fec`  
+**TIMER:** 60–90 minutos  
+**RESULT:** PASS / BONE-007 CLOSED
+
+Se endureció el lifecycle de `CombatRenderer` sin modificar gameplay.
+
+### Implementación
+
+- `dispose()` ahora es idempotente.
+- RAF queda cancelado y bloqueado después de pause/dispose.
+- Timers propios quedan registrados y limpiados de forma centralizada.
+- `ResizeObserver`, resize de window, visualViewport, pointerdown y visibilitychange se desconectan/remueven.
+- `pause()` y `resume()` permiten el ciclo SPA ACTIVE ↔ HIDE.
+- Se añadió `getLifecycleDebugSnapshot()` para QA.
+- `app.js` pausa/reanuda el renderer al cambiar de vista.
+- Se añadió un test estático y un harness Chromium real de 5 ciclos.
+
+### Evidence
+
+- Static: Combat Vertical Slice Tests Run `37183172046` = SUCCESS.
+- Real Chromium: BONE-007 Browser QA Run `37183441077` = SUCCESS.
+- Resultado browser: **5 cycles PASS_REAL**.
+- Console/page errors: **0**.
+- Listener count: sin delta entre baseline y final.
+- RAF count: sin delta entre baseline y final.
+- dispose idempotent: PASS.
+- owned timers after dispose: 0.
+- ResizeObserver after dispose: disconnected.
+
+### CI note
+
+El workflow amplio `Baseball Waifus Telegram Mini App` Run `37183441145` quedó rojo por fallo preexistente de BONE-002:
+
+`GACHA_NOT_READY`, `GACHA_READY`, `PLAYER_META_STARTER`, `PLAYER_META_ACTIVE_BATTER`.
+
+Ese fallo no fue introducido por BONE-007.
+
+### Scope
+
+No se modificó `webapp/js/combat_core.js`, gameplay, damage, HP, timing result, rewards, economy, Gacha ni balance.
+
+**BONE-004:** BLOCKED / UNCHANGED.  
+**BONE-005:** CLOSED.  
+**BONE-006:** CLOSED.  
+**BONE-011:** OPEN / unchanged.
+
+**STATUS:** CLOSED.
