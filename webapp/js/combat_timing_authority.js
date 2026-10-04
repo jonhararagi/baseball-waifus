@@ -20,7 +20,10 @@ export function resolveTiming({
   const target = Number(targetMs);
   const rawDeltaMs = elapsed - target;
   const graceMs = Math.max(0, Number(timingGraceMs) || 0);
-  const deltaMs = Math.sign(rawDeltaMs) * Math.max(0, Math.abs(rawDeltaMs) - graceMs);
+  const effectiveDeltaMs = Math.max(0, Math.abs(rawDeltaMs) - graceMs);
+  const deltaMs = effectiveDeltaMs === 0
+    ? 0
+    : Math.sign(rawDeltaMs) * effectiveDeltaMs;
   const greatWindow = safeWindow(greatWindowMs, DEFAULT_GREAT_WINDOW_MS);
   const hitWindow = safeWindow(hitWindowMs, DEFAULT_HIT_WINDOW_MS);
   const absoluteDelta = Math.abs(deltaMs);
