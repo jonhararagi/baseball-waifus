@@ -119,6 +119,65 @@ assert.equal(second.tacticalResults.length, 5);
 assert.equal(second.tacticalResults[4].tactical_turn_after, 5);
 assert.equal(second.lifecycle.disposed, true);
 
+const terminalCycle = await page.evaluate(async () => {
+  const { CombatRenderer } = await import("./js/combat.js");
+  const canvas = document.querySelector("#gameCanvas");
+  const presentationDirector = {
+    setStage() {},
+    startFromCombatResult() {},
+    startUltimateStaging() { return false; },
+    continueUltimateAction() { return false; },
+    update() {},
+    getState() { return { active: false, phase: "COMPLETE", sequenceKind: "COMBAT", result: null }; },
+    isActive() { return false; },
+    applyCamera() {},
+    getCameraTransform() { return { x: 0, y: 0, zoom: 1, rotationDeg: 0 }; }
+  };
+  const renderer = new CombatRenderer(canvas, { presentationDirector });
+  await renderer.setCombatInit({
+    type: "CombatInitDTO",
+    match_id: "bone008-browser-terminal",
+    home_team: { id: "home", name: "BASEWARRIORS" },
+    away_team: { id: "away", name: "RIVAL" },
+    batter: {
+      id: "bw001",
+      card_id: "bw001",
+      faction: "cyber_tech",
+      stats: { power: 90, contact: 90, speed: 90, eye: 90 }
+    },
+    pitcher: {
+      id: "enemy001",
+      card_id: "bw002",
+      faction: "tactical_milspec"
+    },
+    state: { match_id: "bone008-browser-terminal", boss_hp: 1 }
+  });
+
+  renderer.combatAuthority.startSession({
+    ...renderer.combatAuthority.getState(),
+    bossHp: 1,
+    tacticalTurn: 5,
+    phase: "CLIMAX"
+  });
+  renderer._syncAuthorityState();
+  renderer.beginTimingWindow();
+  renderer.timingState.startedAt = performance.now() - renderer.timingState.targetMs;
+  renderer.resolveTimingInput("browser-terminal-test");
+  await new Promise((resolve) => requestAnimationFrame(() => resolve()));
+
+  const result = {
+    phase: renderer.battlePhase,
+    terminal: renderer.combatAuthority.getState().terminal,
+    bossHp: renderer.bossHp
+  };
+  renderer.dispose();
+  return result;
+});
+
+assert.equal(terminalCycle.phase, "VICTORY");
+assert.equal(terminalCycle.terminal, "VICTORY");
+assert.equal(terminalCycle.bossHp, 0);
+
 if (consoleErrors.length) {
   throw new Error("Browser console/page errors: " + JSON.stringify(consoleErrors));
 }
@@ -127,6 +186,7 @@ console.log(JSON.stringify({
   status: "PASS_REAL",
   first_cycle: first,
   second_cycle: second,
+  terminal_cycle: terminalCycle,
   console_errors: consoleErrors
 }, null, 2));
 
