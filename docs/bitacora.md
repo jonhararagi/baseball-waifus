@@ -9859,3 +9859,75 @@ El browser proof se amplió para cubrir una terminal real. Chromium confirmó:
 Se preservan los dos ciclos tactical ×5 → CLIMAX/timing → resultado → dispose/remount y la suite de lifecycle/combat.
 
 No hubo cambios de gameplay, balance ni `combat_core.js`.
+
+
+---
+
+## BONE-008-003 · COMBAT RESULT TO PRESENTATION EVENT BOUNDARY
+
+**Fecha:** 2026-10-04  
+**BASE SHA:** `42225f81a5c9a3035e18c5640af72aaae033d203`  
+**IMPLEMENTATION HEAD:** `584f7c5edfb5bb53d79f9f196eb9a71a7824c1eb`  
+**BROWSER HARNESS UPDATE HEAD:** `db8cedc8927c8a72a9d529903f9a134c025eff11`  
+**TIMER:** 60–90 minutos  
+**RESULT:** PASS / BONE-008-003 CLOSED / BONE-008 OPEN
+
+Se creó una frontera explícita entre resultado autoritativo y presentación.
+
+### Implementation
+
+- nuevo `webapp/js/combat_result_to_presentation.js`;
+- adapter puro que normaliza `CombatResult + actor context → COMBAT_RESULT` presentation event;
+- payload deep-frozen mediante `createDomainEvent`;
+- evento contiene únicamente attacker, target, action type, outcome, result, damage y terminal;
+- `CombatRenderer` usa `createCombatPresentationEvent` y `startFromPresentationEvent` para tactical, climax y TurnResultDTO;
+- `CombatPresentationDirector` consume el nuevo contrato sin importar gameplay authority ni `combat_core.js`;
+- se conserva `startFromCombatResult` únicamente como wrapper de compatibilidad legacy del director;
+- `combat_core.js` no fue modificado.
+
+### Validation
+
+**Static:** PASS_STATIC.
+
+- adapter sin DOM/window/canvas/combat.js/authority/reward pipeline/persistence;
+- director sin combat_core.js/combat_session_authority/reward authority;
+- renderer no contiene llamadas a `startFromCombatResult`.
+
+**Negative isolation:** PASS_STATIC.
+
+La mutación de `presentationEvent.payload.damage` falla y el estado de `CombatSessionAuthority` permanece sin cambios.
+
+**Equivalence:** PASS.
+
+Tactical y GREAT/HIT/MISS conservan outcome/result/damage/terminal en el presentation event.
+
+**Browser:** Run `37189079503` = SUCCESS.
+- vertical slice suite = PASS;
+- BONE-008 real Chromium proof = PASS_REAL;
+- terminal VICTORY cycle = PASS_REAL;
+- `console_errors=[]`;
+- dispose/remount continúa operativo mediante el harness existente.
+
+### Scope
+
+GAMEPLAY CHANGED: NO.  
+BALANCE CHANGED: NO.  
+`webapp/js/combat_core.js`: NO CHANGE.  
+BONE-004: BLOCKED / UNCHANGED.  
+BONE-005: CLOSED.  
+BONE-006: CLOSED.  
+BONE-007: CLOSED.  
+BONE-008: OPEN / PARTIAL PROGRESS.  
+BONE-011: OPEN / unchanged.
+
+### Evidence scope
+
+Compare BASE → HEAD mostró únicamente:
+- `.github/workflows/combat-tests.yml`;
+- `webapp/js/bone008_authority_browser_test.mjs`;
+- `webapp/js/combat.js`;
+- `webapp/js/combat_presentation_director.js`;
+- `webapp/js/combat_result_to_presentation.js`;
+- `webapp/js/combat_result_to_presentation_test.mjs`.
+
+STATUS: CLOSED FOR CHECKPOINT BONE-008-003.

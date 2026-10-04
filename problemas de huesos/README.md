@@ -60,3 +60,13 @@ Esta carpeta es una deuda controlada del producto, no una lista decorativa.
 - **Evidence:** Static/equivalence PASS y Chromium PASS_REAL en Combat Vertical Slice Tests Run `37186817864`.
 
 - **BONE-008-002 browser update:** Chromium Run `37186981284` = SUCCESS; terminal VICTORY proof = PASS_REAL.
+
+
+### Checkpoint parcial BONE-008-003
+
+- **BONE-008:** OPEN.
+- **BONE-008-001:** CLOSED.
+- **BONE-008-002:** CLOSED.
+- **BONE-008-003:** CLOSED.
+- **Resultado:** se creó la frontera explícita `CombatResult → COMBAT_RESULT Presentation Event → CombatPresentationDirector` mediante `combat_result_to_presentation.js`.
+- **Evidence:** Combat Vertical Slice Tests Run `37189079503` = SUCCESS; static PASS_STATIC, negative presentation isolation PASS_STATIC, equivalence PASS y Chromium real `PASS_REAL` con `console_errors=[]`.
