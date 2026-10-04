@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { CombatSessionAuthority } from "./combat_session_authority.js";
 import {
   COMBAT_STAMINA_ROUND_COST,
-  resolveTacticalTurn,
-  resolveClimaxTurn
+  resolveClimaxTurn,
+  resolveTacticalTurn
 } from "./combat_core.js";
+import { CombatSessionAuthority } from "./combat_session_authority.js";
 
 const combat = fs.readFileSync(new URL("./combat.js", import.meta.url), "utf8");
 const authoritySource = fs.readFileSync(new URL("./combat_session_authority.js", import.meta.url), "utf8");
@@ -14,63 +14,103 @@ assert.ok(authoritySource.includes('from "./combat_core.js"'));
 assert.equal(authoritySource.includes("./combat.js"), false);
 assert.doesNotMatch(authoritySource, /CombatPresentationDirector|document\.|window\.|HTMLCanvasElement|canvas/);
 
-assert.equal(combat.includes("./combat_core.js"), false);
-assert.match(combat, /CombatSessionAuthority/);
-assert.match(combat, /this\.combatAuthority\.resolveTacticalTurn/);
-assert.match(combat, /this\.combatAuthority\.resolveClimaxTurn/);
-assert.equal(combat.includes("const result = resolveTacticalTurn"), false);
-assert.equal(combat.includes("const result = resolveClimaxTurn"), false);
+const gameplayAssignments = /^(?:\s*)this\.(battlePhase|tacticalTurn|tacticalMaxTurns|bossMaxHp|bossHp|bossConcentration|playerStaminaMax|playerStamina|playerStaminaRoundCost|internalEnergy|tacticalEffectiveness|round)\s*=/m;
+assert.equal(gameplayAssignments.test(combat), false);
+assert.match(combat, /this\.combatAuthority\.startSession\(/);
+assert.match(combat, /this\.combatAuthority\.resolveTacticalTurn\(\)/);
+assert.match(combat, /this\.combatAuthority\.resolveClimaxTurn\(grade\)/);
+assert.match(combat, /authoritative\.terminal/);
 
-const authority = new CombatSessionAuthority();
-const snapshot = {
+const base = {
   tacticalTurn: 0,
+  tacticalMaxTurns: 5,
   bossHp: 100,
   bossMaxHp: 100,
   internalEnergy: 0,
   tacticalEffectiveness: 0,
-  tacticalMaxTurns: 5,
   round: 1,
   playerStamina: 70,
   playerStaminaMax: 70,
   playerStaminaRoundCost: COMBAT_STAMINA_ROUND_COST,
-  batter: {
-    stats: { power: 90, contact: 85, speed: 80, eye: 88 }
-  }
+  phase: "TACTICAL",
+  batter: { stats: { power: 90, contact: 85, speed: 80, eye: 88 } }
 };
 
-const tacticalExpected = resolveTacticalTurn({
-  turn: snapshot.tacticalTurn + 1,
-  power: snapshot.batter.stats.power,
-  contact: snapshot.batter.stats.contact,
-  speed: snapshot.batter.stats.speed,
-  eye: snapshot.batter.stats.eye,
-  bossHp: snapshot.bossHp,
-  bossMaxHp: snapshot.bossMaxHp,
-  internalEnergy: snapshot.internalEnergy,
-  tacticalEffectiveness: snapshot.tacticalEffectiveness,
-  tacticalMaxTurns: snapshot.tacticalMaxTurns
+const authority = new CombatSessionAuthority();
+const initial = authority.startSession(base);
+assert.equal(initial.phase, "TACTICAL");
+assert.equal(initial.tacticalTurn, 0);
+
+for (let turn = 1; turn <= 5; turn += 1) {
+  const before = authority.getState();
+  const expected = resolveTacticalTurn({
+    turn,
+    power: base.batter.stats.power,
+    contact: base.batter.stats.contact,
+    speed: base.batter.stats.speed,
+    eye: base.batter.stats.eye,
+    bossHp: before.bossHp,
+    bossMaxHp: before.bossMaxHp,
+    internalEnergy: before.internalEnergy,
+    tacticalEffectiveness: before.tacticalEffectiveness,
+    tacticalMaxTurns: before.tacticalMaxTurns
+  });
+  const actual = authority.resolveTacticalTurn();
+  assert.deepEqual(actual.result, expected);
+  assert.equal(actual.state.bossHp, expected.boss_hp_after);
+  assert.equal(actual.state.internalEnergy, expected.energy_after);
+  assert.equal(actual.state.tacticalEffectiveness, expected.effectiveness_after);
+  assert.equal(actual.state.tacticalTurn, expected.tactical_turn_after);
+}
+
+assert.equal(authority.getState().phase, "CLIMAX");
+
+for (const grade of ["GREAT", "HIT", "MISS"]) {
+  const testAuthority = new CombatSessionAuthority();
+  testAuthority.startSession(base);
+  for (let turn = 1; turn <= 5; turn += 1) testAuthority.resolveTacticalTurn();
+
+  const before = testAuthority.getState();
+  const expected = resolveClimaxTurn({
+    grade,
+    bossHp: before.bossHp,
+    bossMaxHp: before.bossMaxHp,
+    internalEnergy: before.internalEnergy,
+    tacticalEffectiveness: before.tacticalEffectiveness,
+    round: before.round,
+    playerStamina: before.playerStamina,
+    playerStaminaMax: before.playerStaminaMax,
+    staminaRoundCost: before.playerStaminaRoundCost
+  });
+  const actual = testAuthority.resolveClimaxTurn(grade);
+  assert.deepEqual(actual.result, expected);
+  assert.equal(actual.state.phase, expected.phase);
+  assert.equal(actual.state.playerStamina, expected.player_stamina_after);
+}
+
+const victoryAuthority = new CombatSessionAuthority();
+victoryAuthority.startSession({
+  ...base,
+  bossHp: 1,
+  tacticalTurn: 5,
+  phase: "CLIMAX"
 });
-const tacticalActual = authority.resolveTacticalTurn(snapshot);
-assert.deepEqual(tacticalActual, tacticalExpected);
+const victory = victoryAuthority.resolveClimaxTurn("GREAT");
+assert.equal(victory.state.terminal, "VICTORY");
+assert.equal(victory.state.phase, "VICTORY");
 
-const afterTactical = {
-  ...snapshot,
-  tacticalTurn: tacticalActual.tactical_turn_after,
-  bossHp: tacticalActual.boss_hp_after,
-  internalEnergy: tacticalActual.energy_after,
-  tacticalEffectiveness: tacticalActual.effectiveness_after
-};
-
-const climaxExpected = resolveClimaxTurn({
-  ...afterTactical,
-  grade: "GREAT"
+const defeatAuthority = new CombatSessionAuthority();
+defeatAuthority.startSession({
+  ...base,
+  bossHp: 100,
+  tacticalTurn: 5,
+  phase: "CLIMAX",
+  playerStamina: 25
 });
-const climaxActual = authority.resolveClimaxTurn(afterTactical, "GREAT");
-assert.deepEqual(climaxActual, climaxExpected);
+const defeat = defeatAuthority.resolveClimaxTurn("MISS");
+assert.equal(defeat.state.terminal, "DEFEAT");
+assert.equal(defeat.state.phase, "DEFEAT");
 
-assert.equal(Object.prototype.hasOwnProperty.call(authority, "canvas"), false);
-assert.equal(Object.prototype.hasOwnProperty.call(authority, "presentation"), false);
-
-console.log("BONE-008-001 static/authority seam = PASS_STATIC");
-console.log("TACTICAL authority equivalence = PASS");
-console.log("CLIMAX authority equivalence = PASS");
+console.log("BONE-008-002 STATIC = PASS_STATIC");
+console.log("TACTICAL/CLIMAX EQUIVALENCE = PASS");
+console.log("TERMINAL AUTHORITY = PASS");
