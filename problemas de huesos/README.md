@@ -43,3 +43,9 @@ La estimacion de progreso del proyecto no puede abrir este gate.
 PLAYER DATA -> GAMEPLAY AUTHORITY -> COMBAT RESULT -> DOMAIN EVENTS -> REWARD AUTHORITY -> PERSISTENCE -> PRESENTATION -> PLATFORM ADAPTER.
 
 Esta carpeta es una deuda controlada del producto, no una lista decorativa.
+
+## Checkpoint parcial BONE-008
+
+- **BONE-008:** OPEN.
+- **BONE-008-001:** CLOSED.
+- **Resultado:** primer seam real `CombatRenderer → CombatSessionAuthority → combat_core.js`, validado con static PASS_STATIC y Chromium PASS_REAL.
