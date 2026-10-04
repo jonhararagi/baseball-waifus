@@ -535,6 +535,7 @@ renderer.onEconomyRewardConsumed = () => shopUI.consumeRewardTurn?.();
 
 if (new URLSearchParams(window.location.search).get("qa") === "bone007") {
   window.__BW_BONE007_LIFECYCLE__ = () => renderer.getLifecycleDebugSnapshot();
+  window.__BW_BONE007_NAVIGATE__ = (view) => mainMenu.navigate(String(view || "home"));
 }
 if (new URLSearchParams(window.location.search).get("qa") === "t081") {
   window.__BW_T081_TRIGGER_ULTIMATE__ = () => renderer.triggerUltimateCinematicStaging();
