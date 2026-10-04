@@ -48,7 +48,14 @@ jobs:
           test -n "$AUTHORITY_PERSISTENCE_DSN"
       - name: Build reproducible backend image
         run: |
-          docker buildx build --ignorefile backend/.dockerignore --platform linux/amd64 --load --tag "${{ inputs.image_tag }}" --file backend/Dockerfile .
+          CONTEXT="$RUNNER_TEMP/basewarriors-authority-context"
+          rm -rf "$CONTEXT"
+          mkdir -p "$CONTEXT/backend" "$CONTEXT/webapp/js"
+          cp backend/Dockerfile backend/package.json "$CONTEXT/backend/"
+          cp backend/.dockerignore "$CONTEXT/.dockerignore"
+          cp -R backend/src "$CONTEXT/backend/src"
+          cp webapp/js/combat_core.js webapp/js/reward_authority.js "$CONTEXT/webapp/js/"
+          docker buildx build --platform linux/amd64 --load --tag "${{ inputs.image_tag }}" --file "$CONTEXT/backend/Dockerfile" "$CONTEXT"
       - name: Verify image secret safety
         run: |
           docker run --rm "${{ inputs.image_tag }}" sh -c 'test ! -e /app/.env && test ! -e /app/.env.production && test ! -e /app/private.key'
