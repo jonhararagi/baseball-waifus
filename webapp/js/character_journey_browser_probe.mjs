@@ -303,12 +303,22 @@ async function run() {
       }
     });
 
+    const bone008PlayerMetaScript = `(() => {
+      try {
+        localStorage.setItem(
+          "baseball_waifus_player_meta_v1:local-player",
+          ${JSON.stringify(bone008PlayerMetaFixture)}
+        );
+      } catch {}
+    })();`;
+    if (T094_COMBAT_LOOP) {
+      requireCondition(bone008PlayerMetaScript.includes("(() => {"), "BONE-008 fixture script is not an IIFE");
+      requireCondition(bone008PlayerMetaScript.includes("})();"), "BONE-008 fixture script is not immediately invoked");
+      requireCondition(!bone008PlayerMetaScript.trim().startsWith("() =>"), "BONE-008 fixture script is a bare function");
+    }
+
     await cdp.send("Page.addScriptToEvaluateOnNewDocument", {
-      source: `() => {
-        try {
-          localStorage.setItem("baseball_waifus_player_meta_v1:local-player", "{\"schemaVersion\":1,\"revision\":1,\"state\":{\"schemaVersion\":1,\"identity\":{\"playerId\":\"local-player\",\"provider\":\"local\"},\"inventory\":{\"characters\":{\"bw001\":{\"quantity\":1,\"unlocked\":true}}},\"currencies\":{\"SCRAP\":0,\"FRAGMENTS\":0},\"gacha\":{\"pullsSinceUR\":0},\"unlocks\":{},\"progression\":{\"characters\":{\"bw001\":{\"level\":1}}},\"roster\":{\"activeBatter\":\"bw001\",\"supports\":[null,null]},\"rewardLedger\":{}}}");
-        } catch {}
-      }`
+      source: bone008PlayerMetaScript
     });
 
     await cdp.send("Page.navigate", { url: baseUrl });
@@ -317,6 +327,103 @@ async function run() {
       timeoutMs: 30000,
       label: "document readyState complete"
     });
+
+    if (T094_COMBAT_LOOP) {
+      const persistedFixture = await cdpEvaluate(cdp, "(() => {
+        const raw = localStorage.getItem('baseball_waifus_player_meta_v1:local-player');
+        let parsed = null;
+        try { parsed = raw ? JSON.parse(raw) : null; } catch {}
+        return parsed;
+      })()");
+      requireCondition(persistedFixture?.schemaVersion === 1, "BONE-008 Player Meta schema mismatch", persistedFixture);
+      requireCondition(persistedFixture?.revision === 1, "BONE-008 Player Meta revision mismatch", persistedFixture);
+      requireCondition(persistedFixture?.state?.identity?.playerId === "local-player", "BONE-008 Player Meta identity mismatch", persistedFixture);
+      requireCondition(persistedFixture?.state?.identity?.provider === "local", "BONE-008 Player Meta provider mismatch", persistedFixture);
+      requireCondition(persistedFixture?.state?.inventory?.characters?.bw001?.unlocked === true, "BONE-008 bw001 unlock missing", persistedFixture);
+      requireCondition(Number(persistedFixture?.state?.inventory?.characters?.bw001?.quantity) >= 1, "BONE-008 bw001 quantity missing", persistedFixture);
+      requireCondition(persistedFixture?.state?.roster?.activeBatter === "bw001", "BONE-008 active batter fixture mismatch", persistedFixture);
+
+      const runtimeMeta = await waitFor(
+        async () => cdpEvaluate(cdp, "(() => {
+          const state = window.BaseballWaifusGacha?.getState?.() || null;
+          if (!state) return null;
+          return {
+            activeBatter: state.active_batter || null,
+            inventory: state.inventory || null,
+            duplicateCount: state.inventory?.bw001?.duplicate_count ?? null
+          };
+        })()"),
+        { timeoutMs: 30000, label: "BONE-008 Player Meta runtime rehydration" }
+      );
+      requireCondition(runtimeMeta.activeBatter === "bw001", "BONE-008 runtime active batter mismatch", runtimeMeta);
+      requireCondition(Number(runtimeMeta.inventory?.bw001?.quantity ?? 0) >= 1, "BONE-008 runtime bw001 ownership missing", runtimeMeta);
+      if (runtimeMeta.duplicateCount !== null) {
+        requireCondition(Number(runtimeMeta.duplicateCount) >= 1, "BONE-008 runtime duplicate count invalid", runtimeMeta);
+      }
+
+      await waitFor(
+        async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#home-view') && !document.querySelector('#home-view').hidden)"),
+        { timeoutMs: 30000, label: "BONE-008 Home visible" }
+      );
+      const home = await cdpEvaluate(cdp, "(() => ({
+        visible: Boolean(document.querySelector('#home-view') && !document.querySelector('#home-view').hidden),
+        name: document.querySelector('#home-character-name')?.textContent?.trim() || '',
+        activeBatter: window.BaseballWaifusGacha?.getState?.()?.active_batter || null
+      }))()");
+      requireCondition(home.visible, "BONE-008 Home is not visible", home);
+      requireCondition(home.name === "Aiko Hanamori", "BONE-008 Home Aiko mismatch", home);
+      requireCondition(home.activeBatter === "bw001", "BONE-008 Home active batter mismatch", home);
+      console.log("PLAYER META FIXTURE = PASS");
+      console.log("PLAYER META PERSISTED = PASS_REAL");
+      console.log("BW001 OWNERSHIP = PASS");
+      console.log("ACTIVE BATTER = PASS");
+      console.log("HOME AIKO = PASS_REAL");
+
+      await cdpEvaluate(cdp, `(async () => {
+        const module = await import("./js/combat_stage.js");
+        const Actor = module.CharacterActor2D5;
+        window.__BW_BONE008_R4_TRANSITIONS__ = [];
+        window.__BW_BONE008_R4_ACTORS__ = new Set();
+        if (!Actor.prototype.__bwBone008R4Wrapped) {
+          const originalTransitionTo = Actor.prototype.transitionTo;
+          const originalReset = Actor.prototype.resetPresentationState;
+          Actor.prototype.transitionTo = function(nextState) {
+            window.__BW_BONE008_R4_ACTORS__.add(this);
+            const before = this.getPresentationState();
+            try {
+              const result = originalTransitionTo.call(this, nextState);
+              window.__BW_BONE008_R4_TRANSITIONS__.push({
+                actorId: this.actorId,
+                before,
+                after: this.getPresentationState()
+              });
+              return result;
+            } catch (error) {
+              window.__BW_BONE008_R4_TRANSITIONS__.push({
+                actorId: this.actorId,
+                before,
+                after: String(nextState),
+                error: String(error?.message || error)
+              });
+              throw error;
+            }
+          };
+          Actor.prototype.resetPresentationState = function() {
+            window.__BW_BONE008_R4_ACTORS__.add(this);
+            const before = this.getPresentationState();
+            const result = originalReset.call(this);
+            window.__BW_BONE008_R4_TRANSITIONS__.push({
+              actorId: this.actorId,
+              before,
+              after: this.getPresentationState()
+            });
+            return result;
+          };
+          Object.defineProperty(Actor.prototype, "__bwBone008R4Wrapped", { value: true, configurable: false });
+        }
+        return true;
+      })()`);
+    }
 
     if (T078_STAGE) {
       await waitFor(async () => cdpEvaluate(cdp, "document.querySelector('#home-view') && !document.querySelector('#home-view').hidden"), { timeoutMs: 30000, label: "T078 Home visible" });
@@ -1645,16 +1752,34 @@ async function run() {
           "TACTICAL " + String(turn),
           (state) => state.tacticalTurn === turn && state.battlePhase === targetBattlePhase
         );
-        if (turn < 5) {
-          await waitCombatFor(
-            (state) => state.tacticalTurn === turn && state.presentationPhase === "COMPLETE" && state.presentationActive === false,
-            { timeoutMs: 6000, label: "TACTICAL " + String(turn) + " presentation complete" }
+        if (turn === 1) {
+          const replacementStart = await waitCombatFor(
+            (state) => state.tacticalTurn === 1 && state.presentationPhase === "ACTION" && state.presentationActive === true,
+            { timeoutMs: 5000, label: "BONE-008 first presentation ACTION before replacement" }
           );
           await waitFor(
             async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#action-bat') && !document.querySelector('#action-bat').disabled)"),
-            { timeoutMs: 6000, label: "T094 BATEAR ready before T" + String(turn + 1) }
+            { timeoutMs: 5000, label: "BONE-008 replacement input ready" }
           );
           await cdpClickSelector(cdp, "#action-bat");
+          checkpoints["SAFE REPLACEMENT"] = {
+            phaseBefore: replacementStart.presentationPhase,
+            activeBefore: replacementStart.presentationActive,
+            triggeredAt: Date.now() - runStartedAt
+          };
+        }
+        if (turn < 5) {
+          if (turn !== 1) {
+            await waitCombatFor(
+              (state) => state.tacticalTurn === turn && state.presentationPhase === "COMPLETE" && state.presentationActive === false,
+              { timeoutMs: 6000, label: "TACTICAL " + String(turn) + " presentation complete" }
+            );
+            await waitFor(
+              async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#action-bat') && !document.querySelector('#action-bat').disabled)"),
+              { timeoutMs: 6000, label: "T094 BATEAR ready before T" + String(turn + 1) }
+            );
+            await cdpClickSelector(cdp, "#action-bat");
+          }
         }
       }
 
@@ -1704,6 +1829,61 @@ async function run() {
       );
 
       const finalRuntime = await readCombatState();
+
+      const presentationQA = await cdpEvaluate(cdp, "(() => {
+        const transitions = window.__BW_BONE008_R4_TRANSITIONS__ || [];
+        const invalid = transitions.filter((entry) =>
+          entry.error
+          || (entry.before === "ACTION" && entry.after === "FOCUS")
+          || (entry.before === "FOCUS" && entry.after === "RETURN")
+        );
+        const actors = [...(window.__BW_BONE008_R4_ACTORS__ || [])];
+        return {
+          transitions,
+          invalidTransitions: invalid,
+          finalActorStates: actors.map((actor) => ({
+            actorId: actor.actorId,
+            state: actor.getPresentationState()
+          })),
+          allFinalIdle: actors.length > 0 && actors.every((actor) => actor.getPresentationState() === "IDLE")
+        };
+      })()");
+      requireCondition(
+        presentationQA.invalidTransitions.length === 0,
+        "BONE-008 invalid actor transitions detected",
+        presentationQA.invalidTransitions
+      );
+      requireCondition(presentationQA.allFinalIdle, "BONE-008 final actor state is not IDLE", presentationQA);
+
+      const lifecycleRegression = await cdpEvaluate(cdp, `(async () => {
+        const { CombatRenderer } = await import("./js/combat.js");
+        const canvas = document.createElement("canvas");
+        canvas.width = 720;
+        canvas.height = 1280;
+        canvas.style.width = "720px";
+        canvas.style.height = "1280px";
+        document.body.appendChild(canvas);
+        const first = new CombatRenderer(canvas, {});
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+        const firstDisposed = first.dispose();
+        const firstDisposedAgain = first.dispose();
+        const second = new CombatRenderer(canvas, {});
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+        const secondDisposed = second.dispose();
+        document.body.removeChild(canvas);
+        return {
+          first: firstDisposed,
+          firstAgain: firstDisposedAgain,
+          second: secondDisposed
+        };
+      })()`);
+      requireCondition(lifecycleRegression.first?.disposed === true, "BONE-008 lifecycle first dispose failed", lifecycleRegression);
+      requireCondition(lifecycleRegression.first?.frameHandle === 0, "BONE-008 lifecycle first RAF survived dispose", lifecycleRegression);
+      requireCondition(lifecycleRegression.first?.ownedTimeouts === 0, "BONE-008 lifecycle first timers survived dispose", lifecycleRegression);
+      requireCondition(lifecycleRegression.first?.resizeObserver === false, "BONE-008 lifecycle first observer survived dispose", lifecycleRegression);
+      requireCondition(lifecycleRegression.firstAgain?.disposeCount === lifecycleRegression.first?.disposeCount, "BONE-008 lifecycle dispose is not idempotent", lifecycleRegression);
+      requireCondition(lifecycleRegression.second?.disposed === true && lifecycleRegression.second?.frameHandle === 0, "BONE-008 lifecycle remount/dispose failed", lifecycleRegression);
+
       const sameOriginErrors = pageExceptions
         .map((item) => item?.exception?.description || item?.text || "")
         .filter(Boolean)
@@ -1723,19 +1903,38 @@ async function run() {
         runId: process.env.GITHUB_RUN_ID || "local",
         browser: BROWSER_BIN,
         browserVersion: { product: browserVersion?.product || "", revision: browserVersion?.revision || "", userAgent: browserVersion?.userAgent || "" },
-        harness: "existing character_journey_browser_probe.mjs via T094_COMBAT_LOOP=1",
+        harness: "existing character_journey_browser_probe.mjs via T094_COMBAT_LOOP=1 with BONE-008-R4 executed Player Meta fixture",
         baseUrl,
         checkpoints,
         timingInput: { method: "CDP Input.dispatchMouseEvent", x: Math.round(clickX), y: Math.round(clickY), source: "real browser pointer input path" },
         timeline,
         presentationComplete,
         finalRuntime,
+        playerMetaFixture: persistedFixture,
+        runtimeMeta,
+        home,
+        safeReplacement: checkpoints["SAFE REPLACEMENT"] || null,
+        presentationQA,
+        lifecycleRegression,
         network: { requestCount: network.requests.length, responseCount: network.responses.length },
         consoleErrors: consoleErrors.map((entry) => ({ text: entry.text, url: entry.url, source: entry.source })),
         pageErrors: sameOriginErrors
       };
       writeFileSync(join(EVIDENCE_DIR, "t094-normal-combat-cdp-evidence.json"), JSON.stringify(evidence, null, 2) + "\n", "utf8");
 
+      console.log("PLAYER META FIXTURE = PASS");
+      console.log("PLAYER META PERSISTED = PASS_REAL");
+      console.log("BW001 OWNERSHIP = PASS");
+      console.log("ACTIVE BATTER = PASS");
+      console.log("HOME AIKO = PASS_REAL");
+      console.log("REAL DIRECTOR = PASS_REAL");
+      console.log("NORMAL SEQUENCE = PASS_REAL");
+      console.log("SAFE REPLACEMENT = PASS_REAL");
+      console.log("INVALID TRANSITIONS = NONE");
+      console.log("FINAL ACTOR STATE = IDLE");
+      console.log("DIRECTOR ACTIVE = FALSE");
+      console.log("COMBAT INTEGRATION = PASS_REAL");
+      console.log("LIFECYCLE = PASS");
       console.log("T094 BROWSER AUTOMATION = PASS_REAL");
       for (const name of required) console.log(name + " = PASS_REAL");
       console.log("TIMING GRADE = " + checkpoints["TIMING RESOLUTION"].timingGrade);
