@@ -6,10 +6,20 @@ const browser = await chromium.launch({ headless: true, args: ["--disable-dev-sh
 const context = await browser.newContext();
 const page = await context.newPage();
 const consoleErrors = [];
+const resource404s = [];
 
 page.on("pageerror", (error) => consoleErrors.push(String(error)));
 page.on("console", (message) => {
-  if (message.type() === "error") consoleErrors.push(message.text());
+  if (message.type() !== "error") return;
+  const text = message.text();
+  if (/Failed to load resource: the server responded with a status of 404/i.test(text)) {
+    resource404s.push(text);
+    return;
+  }
+  consoleErrors.push(text);
+});
+page.on("response", (response) => {
+  if (response.status() === 404) resource404s.push(response.url());
 });
 
 await page.goto(baseUrl + "/bone007_lifecycle_harness.html", { waitUntil: "domcontentloaded" });
