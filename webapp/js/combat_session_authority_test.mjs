@@ -129,13 +129,16 @@ const isolationAuthority = new CombatSessionAuthority();
 isolationAuthority.startSession(base);
 const gameplayBeforePresentation = isolationAuthority.getState();
 const presentationDirector = new CombatPresentationDirector();
-presentationDirector.startFromPresentationEvent?.({
-  result: {
+presentationDirector.startFromPresentationEvent({
+  type: "COMBAT_RESULT",
+  eventId: "test:presentation-isolation",
+  payload: {
     result: "HOME_RUN",
+    outcome: "HOME_RUN",
     damage: 100,
-    attackerId: "bw001",
-    targetId: "enemy001",
-    actionType: "CLIMAX_ACTION",
+    attacker_id: "bw001",
+    target_id: "enemy001",
+    action_type: "CLIMAX_ACTION",
     terminal: true
   }
 });

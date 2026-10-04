@@ -507,7 +507,7 @@ export class CombatRenderer {
       bossHpBefore: this.bossHp
     });
 
-    this._resolveClimaxDamage(grade);
+    this._resolveClimaxDamage(timing.grade);
 
     this.lastTiming = timing;
     this.audioBridge?.playTimingResult?.(grade);
