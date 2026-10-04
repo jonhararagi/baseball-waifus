@@ -1765,10 +1765,10 @@ export class CombatRenderer {
     const loopState = this.getBattleLoopState();
     const combatPresentationState = this.combatPresentation.getState();
     this.canvas.dataset.combatBattlePhase = String(loopState.phase || "");
-    this.canvas.dataset.combatTacticalTurn = String(loopState.tactical_turn ?? "");
-    this.canvas.dataset.combatTacticalMaxTurns = String(loopState.tactical_max_turns ?? "");
-    this.canvas.dataset.combatPlayerStamina = String(loopState.player_stamina ?? "");
-    this.canvas.dataset.combatPlayerStaminaMax = String(loopState.player_stamina_max ?? "");
+    this.canvas.dataset.combatTacticalTurn = String(loopState.tacticalTurn ?? "");
+    this.canvas.dataset.combatTacticalMaxTurns = String(loopState.tacticalMaxTurns ?? "");
+    this.canvas.dataset.combatPlayerStamina = String(loopState.playerStamina ?? "");
+    this.canvas.dataset.combatPlayerStaminaMax = String(loopState.playerStaminaMax ?? "");
     this.canvas.dataset.combatTimingActive = String(Boolean(this.timingState?.active));
     this.canvas.dataset.combatTimingGrade = String(loopState.last_timing?.grade || "");
     this.canvas.dataset.combatResult = String(combatPresentationState.result?.result || "");
