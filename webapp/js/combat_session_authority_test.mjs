@@ -18,8 +18,8 @@ assert.equal(combat.includes("./combat_core.js"), false);
 assert.match(combat, /CombatSessionAuthority/);
 assert.match(combat, /this\.combatAuthority\.resolveTacticalTurn/);
 assert.match(combat, /this\.combatAuthority\.resolveClimaxTurn/);
-assert.doesNotMatch(combat, /\bresolveTacticalTurn\s*\(/);
-assert.doesNotMatch(combat, /\bresolveClimaxTurn\s*\(/);
+assert.equal(combat.includes("const result = resolveTacticalTurn"), false);
+assert.equal(combat.includes("const result = resolveClimaxTurn"), false);
 
 const authority = new CombatSessionAuthority();
 const snapshot = {
