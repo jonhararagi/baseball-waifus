@@ -29,7 +29,7 @@ assert.ok(ownedTimerCalls >= 4, "renderer timers should go through owned timeout
 const rawWindowTimeouts = (source.match(/window\.setTimeout\(/g) || []).length;
 assert.equal(rawWindowTimeouts, 1, "only the owned-timeout helper should call window.setTimeout");
 
-const frameScheduleGuards = source.match(/!this\.disposed && !this\.paused/g) || [];
-assert.ok(frameScheduleGuards.length >= 2, "RAF startup/scheduling must be lifecycle guarded");
+assert.match(source, /if \(this\.disposed \|\| this\.paused\)/);
+assert.match(source, /if \(!this\.disposed && !this\.paused\)/);
 
 console.log("BONE-007 lifecycle static proof: PASS_STATIC");
