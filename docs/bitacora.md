@@ -9607,3 +9607,32 @@ Se implementó control de concurrencia optimistic revision/CAS sobre la persiste
 No se modificó gameplay, balance, Timing Ring, fórmulas de daño, gacha rates, pity, reward amount ni combat_core.js.
 
 STATUS: CLOSED.
+
+
+---
+
+## BONE-004-PROD-AUTH-003 · PRODUCTION DEPLOYMENT AUTHORITY
+
+Fecha: 2026-10-04
+BASE SHA: `72cb94c89f64c445b458df1191523a508f462c0e`
+HEAD: `ff25a6049f8d96f6498536b0ea368a0af3e2dd9a`
+TIMER: 90–120 minutos
+RESULT: PASS / BONE-004 BLOCKED
+
+Production config fail-closed: PASS.
+Explicit CORS: PASS.
+Telegram Bot Token external boundary: PASS.
+Signing key external boundary: PASS.
+Persistence provider boundary: PASS.
+Container contract: PASS.
+Manual/provider-neutral deployment workflow: PASS.
+Health/readiness: PASS.
+Public API base URL remains runtime configurable; no production URL hardcoded.
+
+BONE-005 remains CLOSED.
+BONE-006 remains CLOSED.
+BONE-011 remains OPEN.
+
+No gameplay, balance, gacha, pity, reward amounts or `webapp/js/combat_core.js` changes were made.
+
+BONE-004 remains BLOCKED because managed production persistence, production secrets, deployed HTTPS backend and a real deployed-backend smoke test are not configured.
