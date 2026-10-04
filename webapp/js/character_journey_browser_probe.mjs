@@ -278,6 +278,9 @@ async function run() {
     await cdp.send("Network.enable");
 
     const bone008PlayerMetaFixture = "{\"schemaVersion\":1,\"revision\":1,\"state\":{\"schemaVersion\":1,\"identity\":{\"playerId\":\"local-player\",\"provider\":\"local\"},\"inventory\":{\"characters\":{\"bw001\":{\"quantity\":1,\"unlocked\":true}}},\"currencies\":{\"SCRAP\":0,\"FRAGMENTS\":0},\"gacha\":{\"pullsSinceUR\":0},\"unlocks\":{},\"progression\":{\"characters\":{\"bw001\":{\"level\":1}}},\"roster\":{\"activeBatter\":\"bw001\",\"supports\":[null,null]},\"rewardLedger\":{}}}";
+    let persistedFixture = null;
+    let runtimeMeta = null;
+    let home = null;
 
     cdp.ws.addEventListener("message", (event) => {
       let payload;
@@ -330,7 +333,7 @@ async function run() {
     });
 
     if (T094_COMBAT_LOOP) {
-      const persistedFixture = await cdpEvaluate(cdp, `(() => {
+      persistedFixture = await cdpEvaluate(cdp, `(() => {
         const raw = localStorage.getItem('baseball_waifus_player_meta_v1:local-player');
         let parsed = null;
         try { parsed = raw ? JSON.parse(raw) : null; } catch {}
@@ -344,7 +347,7 @@ async function run() {
       requireCondition(Number(persistedFixture?.state?.inventory?.characters?.bw001?.quantity) >= 1, "BONE-008 bw001 quantity missing", persistedFixture);
       requireCondition(persistedFixture?.state?.roster?.activeBatter === "bw001", "BONE-008 active batter fixture mismatch", persistedFixture);
 
-      const runtimeMeta = await waitFor(
+      runtimeMeta = await waitFor(
         async () => cdpEvaluate(cdp, `(() => {
           const state = window.BaseballWaifusGacha?.getState?.() || null;
           if (!state) return null;
@@ -364,7 +367,7 @@ async function run() {
         async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#home-view') && !document.querySelector('#home-view').hidden)"),
         { timeoutMs: 30000, label: "BONE-008 Home visible" }
       );
-      const home = await cdpEvaluate(cdp, `(() => ({
+      home = await cdpEvaluate(cdp, `(() => ({
         visible: Boolean(document.querySelector('#home-view') && !document.querySelector('#home-view').hidden),
         name: document.querySelector('#home-character-name')?.textContent?.trim() || '',
         activeBatter: window.BaseballWaifusGacha?.getState?.()?.active_batter || null
@@ -597,7 +600,7 @@ async function run() {
       return;
     }
 
-    const home = await waitFor(
+    const defaultHome = await waitFor(
       async () => cdpEvaluate(cdp, `(() => {
         const root = document.querySelector("#home-view");
         const name = document.querySelector("#home-character-name")?.textContent?.trim() || "";
@@ -606,8 +609,8 @@ async function run() {
       { timeoutMs: 30000, label: "fresh starter Home initialization" }
     );
 
-    requireCondition(home.visible, "Home is not visible", home);
-    requireCondition(home.name === "Aiko Hanamori", "Home active character is not Aiko", home);
+    requireCondition(defaultHome.visible, "Home is not visible", defaultHome);
+    requireCondition(defaultHome.name === "Aiko Hanamori", "Home active character is not Aiko", defaultHome);
 
     const initialRuntime = await cdpEvaluate(cdp, `(() => {
       const state = window.BaseballWaifusGacha?.getState?.() || null;
