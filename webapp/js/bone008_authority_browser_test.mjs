@@ -30,7 +30,7 @@ const runCycle = async () => page.evaluate(async () => {
   const canvas = document.querySelector("#gameCanvas");
   const presentationDirector = {
     setStage() {},
-    startFromCombatResult() {},
+    startFromPresentationEvent() {},
     startUltimateStaging() { return false; },
     continueUltimateAction() { return false; },
     update() {},
@@ -124,7 +124,7 @@ const terminalCycle = await page.evaluate(async () => {
   const canvas = document.querySelector("#gameCanvas");
   const presentationDirector = {
     setStage() {},
-    startFromCombatResult() {},
+    startFromPresentationEvent() {},
     startUltimateStaging() { return false; },
     continueUltimateAction() { return false; },
     update() {},
