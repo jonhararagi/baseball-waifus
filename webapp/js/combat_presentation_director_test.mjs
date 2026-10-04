@@ -79,6 +79,8 @@ assert.doesNotThrow(() => replacementDirector.startFromPresentationEvent({
 assert.equal(replacementActor.getPresentationState(), "FOCUS");
 replacementDirector.update(0.5);
 replacementDirector.update(0.5);
+replacementDirector.update(0.3);
+assert.equal(replacementDirector.getState().active, false);
 assert.equal(replacementActor.getPresentationState(), "IDLE");
 
 

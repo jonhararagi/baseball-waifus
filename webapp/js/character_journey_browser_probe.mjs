@@ -276,6 +276,23 @@ async function run() {
     await cdp.send("Log.enable");
     await cdp.send("Network.enable");
 
+    const bone008AikoLegacyFixture = JSON.stringify({
+      pulls_since_UR: 0,
+      inventory: {
+        bw001: {
+          character_id: "bw001",
+          display_name: "Aiko Hanamori",
+          rarity: "R",
+          obtained_at: 1,
+          duplicate_count: 1,
+          last_obtained_at: 1
+        }
+      },
+      active_batter: "bw001",
+      scavenger_scrap: 0,
+      fragment_bank: 0
+    });
+
     cdp.ws.addEventListener("message", (event) => {
       let payload;
       try { payload = JSON.parse(String(event.data)); } catch { return; }
@@ -299,6 +316,14 @@ async function run() {
           mimeType: payload.params?.response?.mimeType
         });
       }
+    });
+
+    await cdp.send("Page.addScriptToEvaluateOnNewDocument", {
+      source: `() => {
+        try {
+          localStorage.setItem("baseball_waifus_gacha_v1", ${JSON.stringify(bone008AikoLegacyFixture)});
+        } catch {}
+      }`
     });
 
     await cdp.send("Page.navigate", { url: baseUrl });
@@ -1706,6 +1731,101 @@ async function run() {
     }
 
     if (T077_COMBAT) {
+      const replacementProof = await cdpEvaluate(cdp, `(async () => {
+        const [{ CombatPresentationDirector }, { CombatStage, createCombatStageActors }] = await Promise.all([
+          import("./js/combat_presentation_director.js"),
+          import("./js/combat_stage.js")
+        ]);
+        const stage = new CombatStage({
+          actors: createCombatStageActors({
+            batter: { id: "bw001", name: "Aiko Hanamori" },
+            enemy: { id: "bw002", name: "Enemy Fixture" }
+          })
+        });
+        const actor = stage.getActor("bw001");
+        const phases = [];
+        const invalidTransitions = [];
+        const transitionActor = (phase) => {
+          const before = actor.getPresentationState();
+          try {
+            if (phase === "ATTACKER_FOCUS") actor.setPresentationState("FOCUS");
+            if (phase === "ACTION") actor.setPresentationState("ACTION");
+            if (phase === "COMBAT_RETURN") actor.setPresentationState("RETURN");
+            if (phase === "COMPLETE") actor.resetPresentationState();
+          } catch (error) {
+            invalidTransitions.push({
+              phase,
+              before,
+              error: String(error?.message || error)
+            });
+          }
+        };
+        const director = new CombatPresentationDirector({
+          stage,
+          onStep: (event) => {
+            phases.push(event.phase);
+            transitionActor(event.phase);
+          }
+        });
+        const eventA = {
+          type: "COMBAT_RESULT",
+          eventId: "bone008-003-r2:sequence-a",
+          payload: {
+            attacker_id: "bw001",
+            target_id: "bw002",
+            result: "HIT",
+            outcome: "HIT",
+            damage: 10,
+            action_type: "SWING",
+            terminal: false
+          }
+        };
+        const eventB = {
+          ...eventA,
+          eventId: "bone008-003-r2:sequence-b",
+          payload: {
+            ...eventA.payload,
+            result: "MISS",
+            outcome: "MISS",
+            damage: 0
+          }
+        };
+        director.startFromPresentationEvent(eventA);
+        director.update(0.3);
+        const actorDuringAction = actor.getPresentationState();
+        director.startFromPresentationEvent(eventB);
+        const actorAfterReplacement = actor.getPresentationState();
+        director.update(1.3);
+        const finalState = director.getState();
+        return {
+          actorDuringAction,
+          actorAfterReplacement,
+          finalActor: actor.getPresentationState(),
+          directorActive: finalState.active,
+          directorPhase: finalState.phase,
+          phases,
+          invalidTransitions
+        };
+      })()`);
+      if (!replacementProof || replacementProof.actorDuringAction !== "ACTION") {
+        throw new Error("T077 replacement fixture did not reach ACTION");
+      }
+      if (replacementProof.actorAfterReplacement !== "FOCUS") {
+        throw new Error("T077 safe replacement did not restart at FOCUS");
+      }
+      if (replacementProof.finalActor !== "IDLE" || replacementProof.directorActive !== false) {
+        throw new Error("T077 safe replacement did not finish cleanly");
+      }
+      if (replacementProof.invalidTransitions.length > 0) {
+        throw new Error("T077 invalid actor transitions: " + JSON.stringify(replacementProof.invalidTransitions));
+      }
+      const invalidPairs = replacementProof.phases
+        .filter((phase, index, list) => index > 0 && phase === "ATTACKER_FOCUS" && list[index - 1] === "ACTION");
+      if (invalidPairs.length > 0) {
+        throw new Error("T077 illegal ACTION -> FOCUS replacement observed");
+      }
+      if (T077_COMBAT) console.log("T077 SAFE REPLACEMENT = PASS_REAL");
+
       await cdpClickSelector(cdp, ".home-action-play");
       await waitFor(
         async () => cdpEvaluate(cdp, "(() => { const canvas = document.querySelector('#gameCanvas'); if (!canvas) return false; const rect = canvas.getBoundingClientRect(); return rect.width > 0 && rect.height > 0; })()"),
