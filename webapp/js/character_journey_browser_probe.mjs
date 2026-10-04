@@ -276,22 +276,7 @@ async function run() {
     await cdp.send("Log.enable");
     await cdp.send("Network.enable");
 
-    const bone008AikoLegacyFixture = JSON.stringify({
-      pulls_since_UR: 0,
-      inventory: {
-        bw001: {
-          character_id: "bw001",
-          display_name: "Aiko Hanamori",
-          rarity: "R",
-          obtained_at: 1,
-          duplicate_count: 1,
-          last_obtained_at: 1
-        }
-      },
-      active_batter: "bw001",
-      scavenger_scrap: 0,
-      fragment_bank: 0
-    });
+    const bone008PlayerMetaFixture = "{\"schemaVersion\":1,\"revision\":1,\"state\":{\"schemaVersion\":1,\"identity\":{\"playerId\":\"local-player\",\"provider\":\"local\"},\"inventory\":{\"characters\":{\"bw001\":{\"quantity\":1,\"unlocked\":true}}},\"currencies\":{\"SCRAP\":0,\"FRAGMENTS\":0},\"gacha\":{\"pullsSinceUR\":0},\"unlocks\":{},\"progression\":{\"characters\":{\"bw001\":{\"level\":1}}},\"roster\":{\"activeBatter\":\"bw001\",\"supports\":[null,null]},\"rewardLedger\":{}}}";
 
     cdp.ws.addEventListener("message", (event) => {
       let payload;
@@ -321,7 +306,7 @@ async function run() {
     await cdp.send("Page.addScriptToEvaluateOnNewDocument", {
       source: `() => {
         try {
-          localStorage.setItem("baseball_waifus_gacha_v1", ${JSON.stringify(bone008AikoLegacyFixture)});
+          localStorage.setItem("baseball_waifus_player_meta_v1:local-player", "{\"schemaVersion\":1,\"revision\":1,\"state\":{\"schemaVersion\":1,\"identity\":{\"playerId\":\"local-player\",\"provider\":\"local\"},\"inventory\":{\"characters\":{\"bw001\":{\"quantity\":1,\"unlocked\":true}}},\"currencies\":{\"SCRAP\":0,\"FRAGMENTS\":0},\"gacha\":{\"pullsSinceUR\":0},\"unlocks\":{},\"progression\":{\"characters\":{\"bw001\":{\"level\":1}}},\"roster\":{\"activeBatter\":\"bw001\",\"supports\":[null,null]},\"rewardLedger\":{}}}");
         } catch {}
       }`
     });
@@ -522,6 +507,9 @@ async function run() {
       const state = window.BaseballWaifusGacha?.getState?.() || null;
       const status = window.BaseballWaifusGacha?.getStatus?.() || null;
       const chars = window.BaseballWaifusGacha?.getCharacters?.() || [];
+      const rawPlayerMeta = localStorage.getItem("baseball_waifus_player_meta_v1:local-player");
+      let playerMeta = null;
+      try { playerMeta = rawPlayerMeta ? JSON.parse(rawPlayerMeta) : null; } catch {}
       const counts = { R: 0, SR: 0, SSR: 0, UR: 0 };
       for (const unit of chars) {
         if (unit?.acquisition?.pool_eligible === false) continue;
@@ -533,12 +521,38 @@ async function run() {
         status,
         aiko: chars.find((unit) => unit.character_id === "bw001") || null,
         poolCounts: counts,
+        activeBatterPublicApi: window.BaseballWaifusGacha?.getActiveBatter?.() || null,
+        playerMeta,
         storageKeys: Object.keys(localStorage).filter((key) => key.startsWith("baseball_waifus_player_meta_v1:"))
       };
     })()`);
 
-    requireCondition(initialRuntime?.state?.active_batter === "bw001", "active batter is not bw001", initialRuntime);
-    requireCondition(Boolean(initialRuntime?.state?.inventory?.bw001) && Number(initialRuntime?.state?.inventory?.bw001?.duplicate_count) === 1, "Aiko starter ownership entry is invalid", initialRuntime);
+    requireCondition(initialRuntime?.activeBatterPublicApi === "bw001", "public Gacha active batter is not bw001", initialRuntime);
+    requireCondition(initialRuntime?.state?.active_batter === "bw001", "derived active batter is not bw001", initialRuntime);
+    requireCondition(
+      initialRuntime?.playerMeta?.schemaVersion === 1
+      && initialRuntime?.playerMeta?.revision === 1
+      && initialRuntime?.playerMeta?.state?.identity?.playerId === "local-player"
+      && initialRuntime?.playerMeta?.state?.identity?.provider === "local",
+      "modern Player Meta fixture is not active for local-player",
+      initialRuntime?.playerMeta
+    );
+    requireCondition(
+      Boolean(initialRuntime?.playerMeta?.state?.inventory?.characters?.bw001?.unlocked)
+      && Number(initialRuntime?.playerMeta?.state?.inventory?.characters?.bw001?.quantity) >= 1,
+      "Aiko Player Meta ownership entry is invalid",
+      initialRuntime?.playerMeta
+    );
+    requireCondition(
+      initialRuntime?.playerMeta?.state?.roster?.activeBatter === "bw001",
+      "modern Player Meta active batter is not bw001",
+      initialRuntime?.playerMeta
+    );
+    requireCondition(
+      initialRuntime?.state?.inventory?.bw001?.duplicate_count === 1,
+      "derived Aiko ownership entry is invalid",
+      initialRuntime
+    );
     requireCondition(initialRuntime?.aiko?.canonical?.display_name === "Aiko Hanamori", "canonical Aiko name mismatch", initialRuntime?.aiko);
     requireCondition(initialRuntime?.aiko?.acquisition?.mode === "STARTER", "Aiko acquisition mode is not STARTER", initialRuntime?.aiko);
     requireCondition(initialRuntime?.aiko?.acquisition?.pool_eligible === false, "Aiko is still Gacha eligible", initialRuntime?.aiko);
