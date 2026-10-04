@@ -28,27 +28,7 @@ await page.waitForSelector("#gameCanvas");
 const runCycle = async () => page.evaluate(async () => {
   const { CombatRenderer } = await import("./js/combat.js");
   const canvas = document.querySelector("#gameCanvas");
-  const presentationDirector = {
-    setStage() {},
-    startFromPresentationEvent() {},
-    startUltimateStaging() { return false; },
-    continueUltimateAction() { return false; },
-    update() {},
-    getState() {
-      return {
-        active: false,
-        phase: "COMPLETE",
-        sequenceKind: "COMBAT",
-        result: null
-      };
-    },
-    isActive() { return false; },
-    applyCamera() {},
-    getCameraTransform() {
-      return { x: 0, y: 0, zoom: 1, rotationDeg: 0 };
-    }
-  };
-  const renderer = new CombatRenderer(canvas, { presentationDirector });
+  const renderer = new CombatRenderer(canvas);
 
   await renderer.setCombatInit({
     type: "CombatInitDTO",
@@ -76,10 +56,19 @@ const runCycle = async () => page.evaluate(async () => {
   for (let i = 0; i < 5; i += 1) {
     const result = renderer.beginTimingWindow();
     if (i < 4 && result !== true) throw new Error("TACTICAL_AUTHORITY_DID_NOT_ADVANCE");
+    const presentationState = renderer.getPresentationState();
+    if (result?.outcome && presentationState.result?.result) {
+      if (String(presentationState.result.result).toUpperCase() !== String(result.result || result.outcome).toUpperCase()) {
+        throw new Error("PRESENTATION_RESULT_MISMATCH");
+      }
+    }
     tacticalResults.push({
       outcome: result?.outcome || null,
       tactical_turn_after: renderer.tacticalTurn,
-      boss_hp: renderer.bossHp
+      boss_hp: renderer.bossHp,
+      presentation_phase: presentationState.phase,
+      presentation_active: presentationState.active,
+      presentation_damage: presentationState.result?.damage ?? null
     });
   }
 
@@ -90,11 +79,22 @@ const runCycle = async () => page.evaluate(async () => {
   renderer.resolveTimingInput("browser-test");
   await new Promise((resolve) => requestAnimationFrame(() => resolve()));
 
+  const presentation = renderer.getPresentationState();
+  if (!presentation.result) throw new Error("TERMINAL_PRESENTATION_RESULT_MISSING");
+  if (!presentation.result.terminal && ["VICTORY", "DEFEAT"].includes(renderer.battlePhase)) {
+    throw new Error("TERMINAL_PRESENTATION_FLAG_MISSING");
+  }
   const terminal = {
     phase: renderer.battlePhase,
     timingActive: renderer.isTimingWindowActive(),
     bossHp: renderer.bossHp,
-    tacticalTurn: renderer.tacticalTurn
+    tacticalTurn: renderer.tacticalTurn,
+    presentation_phase: presentation.phase,
+    presentation_active: presentation.active,
+    presentation_result: presentation.result.result,
+    presentation_outcome: presentation.result.outcome,
+    presentation_damage: presentation.result.damage,
+    presentation_terminal: presentation.result.terminal
   };
 
   renderer.dispose();
@@ -122,18 +122,7 @@ assert.equal(second.lifecycle.disposed, true);
 const terminalCycle = await page.evaluate(async () => {
   const { CombatRenderer } = await import("./js/combat.js");
   const canvas = document.querySelector("#gameCanvas");
-  const presentationDirector = {
-    setStage() {},
-    startFromPresentationEvent() {},
-    startUltimateStaging() { return false; },
-    continueUltimateAction() { return false; },
-    update() {},
-    getState() { return { active: false, phase: "COMPLETE", sequenceKind: "COMBAT", result: null }; },
-    isActive() { return false; },
-    applyCamera() {},
-    getCameraTransform() { return { x: 0, y: 0, zoom: 1, rotationDeg: 0 }; }
-  };
-  const renderer = new CombatRenderer(canvas, { presentationDirector });
+  const renderer = new CombatRenderer(canvas);
   await renderer.setCombatInit({
     type: "CombatInitDTO",
     match_id: "bone008-browser-terminal",
@@ -165,10 +154,14 @@ const terminalCycle = await page.evaluate(async () => {
   renderer.resolveTimingInput("browser-terminal-test");
   await new Promise((resolve) => requestAnimationFrame(() => resolve()));
 
+  const presentation = renderer.getPresentationState();
   const result = {
     phase: renderer.battlePhase,
     terminal: renderer.combatAuthority.getState().terminal,
-    bossHp: renderer.bossHp
+    bossHp: renderer.bossHp,
+    presentation_result: presentation.result?.result || null,
+    presentation_outcome: presentation.result?.outcome || null,
+    presentation_terminal: Boolean(presentation.result?.terminal)
   };
   renderer.dispose();
   return result;
