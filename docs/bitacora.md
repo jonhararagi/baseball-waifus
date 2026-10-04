@@ -9731,3 +9731,62 @@ No se modificó `webapp/js/combat_core.js`, gameplay, damage, HP, timing result,
 **BONE-011:** OPEN / unchanged.
 
 **STATUS:** CLOSED.
+
+
+---
+
+## BONE-008-001 · COMBAT AUTHORITY SEAM EXTRACTION
+
+**Fecha:** 2026-10-04  
+**BASE SHA:** `48e0238eab6a9912d9f785056829f77f7d6fb513`  
+**FINAL DOCUMENTED HEAD:** `30dd50ccdbf2bbfe71dd2e44684fcc1248258338`  
+**TIMER:** 60–90 minutos  
+**RESULT:** PASS / BONE-008-001 CLOSED / BONE-008 OPEN
+
+Se extrajo el primer seam real de autoridad de combate sin modificar gameplay.
+
+### Implementación
+
+- nuevo `webapp/js/combat_session_authority.js`;
+- tactical y climax resueltos únicamente mediante `combat_core.js`;
+- `combat.js` dejó de importar directamente los resolvers;
+- `COMBAT_STAMINA_ROUND_COST` se preserva sin cambios mediante el seam;
+- authority sin dependencia de DOM, window, Canvas o presentation.
+
+### Evidence
+
+**GitHub Actions Run `37184933599` = SUCCESS.**
+
+Static:
+- authority imports `combat_core.js`;
+- no import de `combat.js`;
+- no dependencia de presentation/DOM/window/canvas;
+- renderer sin llamadas directas a los resolvers;
+- tactical equivalence PASS;
+- climax equivalence PASS.
+
+Combat regression:
+- vertical slice suite PASS;
+- syntax PASS.
+
+Browser:
+- Chromium real `PASS_REAL`;
+- 2 ciclos renderer completos;
+- tactical ×5 → CLIMAX/timing → resultado → dispose;
+- console/page errors = 0;
+- lifecycle after dispose: no RAF, no owned timers, no ResizeObserver.
+
+Nota de harness: algunos assets opcionales responden 404 durante la prueba local, pero esos 404 se registran separadamente y no generan page errors ni alteran el runtime authority proof.
+
+### Scope
+
+**GAMEPLAY:** NO CHANGE.  
+**BALANCE:** NO CHANGE.  
+**COMBAT CORE:** NO CHANGE.  
+**BONE-004:** BLOCKED / UNCHANGED.  
+**BONE-005:** CLOSED.  
+**BONE-006:** CLOSED.  
+**BONE-007:** CLOSED.  
+**BONE-011:** OPEN / unchanged.
+
+**STATUS:** BONE-008-001 CLOSED. BONE-008 remains OPEN for later authority/presentation extraction checkpoints.
