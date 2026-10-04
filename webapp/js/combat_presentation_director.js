@@ -183,7 +183,13 @@ export class CombatPresentationDirector {
   }
 
   startFromPresentationEvent(event) {
-    if (this.active) this.cancel();
+    if (this.active) {
+      this.active = false;
+      this.phase = COMBAT_PRESENTATION_PHASE.COMPLETE;
+      this.stepIndex = this.activeStepDefinitions.length;
+      this.stepElapsedMs = 0;
+      this._emitStep("REPLACED");
+    }
     this._ensureRuntimeFormation();
     if (
       !event
