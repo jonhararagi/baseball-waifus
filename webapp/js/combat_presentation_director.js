@@ -182,20 +182,61 @@ export class CombatPresentationDirector {
     return this.getState();
   }
 
-  startFromCombatResult(result, fallback = {}) {
+  startFromPresentationEvent(event) {
     this._ensureRuntimeFormation();
-    const normalized = normalizePresentationInput(result, fallback);
-    this.sequenceId = "combat-presentation:" + normalized.attackerId + ":" + normalized.targetId + ":" + normalized.result;
+    if (
+      !event
+      || typeof event !== "object"
+      || event.type !== "COMBAT_RESULT"
+      || !event.payload
+      || typeof event.payload !== "object"
+    ) {
+      throw new TypeError("COMBAT_RESULT presentation event is required");
+    }
+
+    const payload = event.payload;
+    const normalized = normalizePresentationInput({
+      attacker_id: payload.attacker_id,
+      target_id: payload.target_id,
+      result: payload.result,
+      outcome: payload.outcome,
+      damage: payload.damage,
+      action_type: payload.action_type
+    });
+
+    this.sequenceId = String(event.eventId);
     this.sequenceKind = "NORMAL_ACTION";
     this.activeStepDefinitions = this.stepDefinitions;
-    this.result = normalized;
-    this.commands = buildCommands(this.sequenceId, normalized, this.activeStepDefinitions, this.stage);
+    this.result = Object.freeze({
+      ...normalized,
+      outcome: safeString(payload.outcome ?? normalized.result, normalized.result).toUpperCase(),
+      terminal: Boolean(payload.terminal),
+      eventId: String(event.eventId)
+    });
+    this.commands = buildCommands(this.sequenceId, this.result, this.activeStepDefinitions, this.stage);
     this.stepIndex = 0;
     this.stepElapsedMs = 0;
     this.phase = this.activeStepDefinitions[0].phase;
     this.active = true;
     this._emitStep("START");
     return this.getState();
+  }
+
+  startFromCombatResult(result, fallback = {}) {
+    const event = {
+      type: "COMBAT_RESULT",
+      eventId: "legacy-combat-presentation:" + String(result?.result ?? result?.outcome ?? "RESULT"),
+      payload: {
+        attacker_id: fallback.attackerId ?? result?.attackerId ?? result?.attacker_id,
+        target_id: fallback.targetId ?? result?.targetId ?? result?.target_id,
+        action_type: fallback.actionType ?? result?.actionType ?? result?.action_type,
+        outcome: result?.outcome,
+        result: result?.result ?? result?.outcome,
+        damage: result?.damage,
+        terminal: Boolean(result?.match_end || result?.victory || result?.defeat)
+      }
+    };
+    return this.startFromPresentationEvent(event);
   }
 
   update(deltaSeconds = 0) {

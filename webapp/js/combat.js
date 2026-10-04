@@ -8,6 +8,7 @@ import { CombatStage, createCombatStageActors, renderCombatStageForeground, rend
 import { BatterRenderer } from "./batter_renderer.js";
 import { CombatEffects } from "./combat_effects.js";
 import { CombatPresentationDirector } from "./combat_presentation_director.js";
+import { createCombatPresentationEvent } from "./combat_result_to_presentation.js";
 import { CombatHUD } from "./combat_hud.js";
 import { KytosCombatPresentation } from "./kytos_combat_presentation.js";
 import { PerformanceAdapter } from "./performance_adapter.js";
@@ -539,11 +540,14 @@ export class CombatRenderer {
     const authoritative = transition.state;
     this._syncAuthorityState();
     this.lastTacticalEvent = result;
-    this.combatPresentation.startFromCombatResult(result, {
+    const presentationEvent = createCombatPresentationEvent({
+      result,
       attackerId: this.state?.batter?.id,
       targetId: this.state?.pitcher?.id,
-      actionType: "TACTICAL_HIT"
+      actionType: "TACTICAL_HIT",
+      terminal: false
     });
+    this.combatPresentation.startFromPresentationEvent(presentationEvent);
 
     this.audioBridge?.playTacticalCard?.();
     this.audioBridge?.playTacticalCharge?.();
@@ -574,11 +578,14 @@ export class CombatRenderer {
     const authoritative = transition.state;
     this._syncAuthorityState();
 
-    this.combatPresentation.startFromCombatResult(result, {
+    const presentationEvent = createCombatPresentationEvent({
+      result,
       attackerId: this.state?.batter?.id,
       targetId: this.state?.pitcher?.id,
-      actionType: result.outcome || "CLIMAX_ACTION"
+      actionType: result.outcome || "CLIMAX_ACTION",
+      terminal: Boolean(authoritative.terminal)
     });
+    this.combatPresentation.startFromPresentationEvent(presentationEvent);
 
     this.impactTimer = result.outcome === "HOME_RUN" ? 0.42 : result.outcome === "HIT" ? 0.28 : 0.18;
     this.cameraShakeTimer = result.outcome === "HOME_RUN" ? 0.32 : result.outcome === "HIT" ? 0.18 : 0.12;
@@ -1036,11 +1043,14 @@ export class CombatRenderer {
     };
     this._syncCombatStageActors();
 
-    this.combatPresentation.startFromCombatResult(dto, {
+    const presentationEvent = createCombatPresentationEvent({
+      result: dto,
       attackerId: this.state?.batter?.id,
       targetId: this.state?.pitcher?.id,
-      actionType: dto?.event || dto?.action || dto?.animation?.event || "COMBAT_ACTION"
+      actionType: dto?.event || dto?.action || dto?.animation?.event || "COMBAT_ACTION",
+      terminal: Boolean(dto.match_end || dto.outcome === "VICTORY" || dto.outcome === "DEFEAT")
     });
+    this.combatPresentation.startFromPresentationEvent(presentationEvent);
 
     this._awardScrap(dto);
 
