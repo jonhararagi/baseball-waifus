@@ -1,5 +1,8 @@
 import { isCombatInitDTO, isTurnResultDTO } from "./api.js";
-import { CombatSessionAuthority } from "./combat_session_authority.js";
+import {
+  COMBAT_STAMINA_ROUND_COST,
+  CombatSessionAuthority
+} from "./combat_session_authority.js";
 import { AreaThemeManager } from "./area_theme_manager.js";
 import { CombatStage, createCombatStageActors, renderCombatStageForeground, renderCombatStageWorld } from "./combat_stage.js";
 import { BatterRenderer } from "./batter_renderer.js";
