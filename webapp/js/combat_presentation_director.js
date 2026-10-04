@@ -184,11 +184,17 @@ export class CombatPresentationDirector {
 
   startFromPresentationEvent(event) {
     if (this.active) {
+      const formation = this._ensureRuntimeFormation();
+      const actors = formation?.actors ? [...formation.actors.values()] : [];
+      for (const actor of actors) {
+        const presentationState = actor.getPresentationState?.();
+        if (presentationState === "FOCUS") actor.transitionTo?.("ACTION");
+        if (presentationState === "ACTION") actor.transitionTo?.("RETURN");
+      }
       this.active = false;
       this.phase = COMBAT_PRESENTATION_PHASE.COMPLETE;
       this.stepIndex = this.activeStepDefinitions.length;
       this.stepElapsedMs = 0;
-      this._emitStep("REPLACED");
     }
     this._ensureRuntimeFormation();
     if (
