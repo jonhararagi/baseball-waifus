@@ -8,6 +8,7 @@ on:
       - "webapp/js/app.js"
       - "webapp/js/combat_lifecycle_test.mjs"
       - "webapp/js/bone007_lifecycle_browser_test.mjs"
+      - "webapp/bone007_lifecycle_harness.html"
       - ".github/workflows/bone007-lifecycle-browser.yml"
   workflow_dispatch:
 

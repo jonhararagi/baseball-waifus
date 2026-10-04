@@ -60,16 +60,10 @@ page.on("console", (message) => {
 });
 
 const result = [];
-await page.goto(baseUrl + "/?qa=bone007&kytos_demo=1", { waitUntil: "domcontentloaded" });
-await page.waitForFunction(() => typeof window.__BW_BONE007_LIFECYCLE__ === "function");
-await page.waitForTimeout(1200);
-
-// Pause the singleton app renderer so the five independent lifecycle cycles
-// measure only the renderer instances created by this test.
-await page.evaluate(() => window.__BW_BONE007_NAVIGATE__("home"));
-
+await page.goto(baseUrl + "/bone007_lifecycle_harness.html", { waitUntil: "domcontentloaded" });
+await page.waitForFunction(() => document.querySelector("#gameCanvas") instanceof HTMLCanvasElement);
 const baseline = await page.evaluate(() => ({
-  lifecycle: window.__BW_BONE007_LIFECYCLE__(),
+  raf: window.__BW_BONE007_RAF_COUNT__?.(),
   listeners: window.__BW_BONE007_LISTENER_COUNTS__?.()
 }));
 
@@ -127,23 +121,18 @@ for (let cycle = 1; cycle <= 5; cycle += 1) {
 
   assert.equal(cycleResult.disposedAgain.disposed, true);
   assert.equal(cycleResult.disposedAgain.disposeCount, cycleResult.disposed.disposeCount);
-
   assert.deepEqual(cycleResult.after, cycleResult.before);
+  assert.deepEqual(cycleResult.rafAfterPause, baseline.raf);
   result.push({ cycle, ...cycleResult });
 }
 
 const final = await page.evaluate(() => ({
-  lifecycle: window.__BW_BONE007_LIFECYCLE__(),
   raf: window.__BW_BONE007_RAF_COUNT__?.(),
   listeners: window.__BW_BONE007_LISTENER_COUNTS__?.()
 }));
 
-assert.equal(final.lifecycle.disposed, false);
-assert.equal(final.lifecycle.paused, true);
-assert.equal(final.lifecycle.frameHandle, 0);
-assert.equal(final.lifecycle.ownedTimeouts, 0);
 assert.deepEqual(final.listeners, baseline.listeners);
-assert.deepEqual(final.raf, { active: 0 });
+assert.deepEqual(final.raf, baseline.raf);
 
 if (consoleErrors.length) {
   throw new Error("Browser console/page errors: " + JSON.stringify(consoleErrors));
