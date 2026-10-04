@@ -10011,3 +10011,36 @@ BONE-011: OPEN / UNCHANGED.
 
 CAUSE: harness ownership assertion incompatible con runtime inventory shape.
 NEEDS: future checkpoint must correct the assertion, then run the mandated single real browser proof.
+
+
+---
+
+## BONE-008-003-R6 · COMBAT AUTHORITY OBSERVABILITY SEAM REPAIR
+
+Fecha: 2026-10-04
+HEAD BEFORE: dccd720ee439658c02bf1fdba9c806766018a0e6
+HEAD AFTER: 0665a6751a10564c74e7ef673ab48ed54f1dfdcb
+TIMER: 60–90 minutos
+RESULT: CLOSED
+
+Root cause confirmado: `CombatSessionAuthority` expone `tacticalTurn`, `tacticalMaxTurns`, `playerStamina` y `playerStaminaMax` en camelCase, mientras el bloque de observabilidad de `CombatRenderer` consultaba nombres snake_case inexistentes. T094 Run 37192809415 quedó detenido en FORMATION por este mismatch.
+
+Fix aplicado únicamente en `webapp/js/combat.js`:
+- tacticalTurn → combatTacticalTurn
+- tacticalMaxTurns → combatTacticalMaxTurns
+- playerStamina → combatPlayerStamina
+- playerStaminaMax → combatPlayerStaminaMax
+- last_timing.grade → combatTimingGrade
+
+Se añadió assertion estática en `combat_session_authority_test.mjs` para los mappings y para la ausencia de los accesos snake_case.
+
+No se modificó `combat_session_authority.js`, `combat_core.js`, gameplay, balance ni autoridad de combate.
+
+STATIC: PASS_STATIC.
+BROWSER PROOF R6: NOT_RUN como prueba dirigida. El push activó automáticamente el workflow histórico de combat, pero R6 no ejecutó manualmente un nuevo T094.
+
+BONE-004: BLOCKED / unchanged.
+BONE-005: CLOSED.
+BONE-006: CLOSED.
+BONE-007: CLOSED.
+BONE-008: OPEN / partial progress.

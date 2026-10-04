@@ -319,3 +319,65 @@ Por el fallo anterior quedaron **NOT_RUN**:
 **CAUSE:** assertion del harness incompatible con la forma real de ownership del Gacha runtime (`duplicate_count` en lugar de `quantity`).
 
 **NEEDS:** corregir la assertion del harness y ejecutar un nuevo checkpoint/browser proof según una futura orden del Cerebro. No se realiza ese retry dentro de R4.
+
+
+## BONE-008-003-R6 · COMBAT AUTHORITY OBSERVABILITY SEAM REPAIR
+
+**Fecha:** 2026-10-04  
+**HEAD BEFORE:** `dccd720ee439658c02bf1fdba9c806766018a0e6`  
+**HEAD AFTER:** `0665a6751a10564c74e7ef673ab48ed54f1dfdcb`  
+**TIMER:** 60–90 minutos  
+**RESULT:** CLOSED
+
+### Root cause confirmado
+
+T094 Run `37192809415` alcanzó `COMBAT_STAGE_2_5D`, pero el probe quedó bloqueado en FORMATION porque `CombatSessionAuthority.getState()` expone camelCase y el seam de observabilidad de `CombatRenderer` consultaba propiedades snake_case inexistentes.
+
+La discrepancia era:
+
+`tacticalTurn` → lectura previa `tactical_turn`  
+`tacticalMaxTurns` → lectura previa `tactical_max_turns`  
+`playerStamina` → lectura previa `player_stamina`  
+`playerStaminaMax` → lectura previa `player_stamina_max`
+
+### Reparación
+
+Se corrigió exclusivamente `webapp/js/combat.js` para mapear el snapshot autoritativo hacia `canvas.dataset.*`:
+
+`tacticalTurn` → `combatTacticalTurn`  
+`tacticalMaxTurns` → `combatTacticalMaxTurns`  
+`playerStamina` → `combatPlayerStamina`  
+`playerStaminaMax` → `combatPlayerStaminaMax`
+
+`last_timing.grade` permanece como fuente del atributo `combatTimingGrade`.
+
+No se agregaron aliases legacy en `CombatSessionAuthority` y no se creó un segundo estado de QA.
+
+### Static validation
+
+**PASS_STATIC.**
+
+`webapp/js/combat_session_authority_test.mjs` fue ampliado para comprobar explícitamente el mapping camelCase → `data-*` y rechazar las lecturas snake_case antiguas.
+
+La suite de combate ejecutó correctamente su bloque de pruebas verticales antes de entrar en la etapa Chromium.
+
+### Browser proof
+
+**NOT_RUN como prueba dirigida de R6.**
+
+R6 no inició ni solicitó un nuevo T094. El push a `main` activó automáticamente el workflow histórico `Combat Vertical Slice Tests`, cuyo job contiene posteriormente una etapa Chromium. Esa ejecución automática no se utiliza como evidencia de R6.
+
+### Scope
+
+`combat_session_authority.js`: NO CHANGE.  
+`combat_core.js`: NO CHANGE.  
+Gameplay: NO CHANGE.  
+Balance: NO CHANGE.  
+Combat authority semantics: NO CHANGE.  
+BONE-004: BLOCKED / UNCHANGED.  
+BONE-005: CLOSED.  
+BONE-006: CLOSED.  
+BONE-007: CLOSED.  
+BONE-008: OPEN / PARTIAL PROGRESS.
+
+**CHECKPOINT STATUS:** BONE-008-003-R6 CLOSED.
