@@ -329,12 +329,12 @@ async function run() {
     });
 
     if (T094_COMBAT_LOOP) {
-      const persistedFixture = await cdpEvaluate(cdp, "(() => {
+      const persistedFixture = await cdpEvaluate(cdp, `(() => {
         const raw = localStorage.getItem('baseball_waifus_player_meta_v1:local-player');
         let parsed = null;
         try { parsed = raw ? JSON.parse(raw) : null; } catch {}
         return parsed;
-      })()");
+      })()`);
       requireCondition(persistedFixture?.schemaVersion === 1, "BONE-008 Player Meta schema mismatch", persistedFixture);
       requireCondition(persistedFixture?.revision === 1, "BONE-008 Player Meta revision mismatch", persistedFixture);
       requireCondition(persistedFixture?.state?.identity?.playerId === "local-player", "BONE-008 Player Meta identity mismatch", persistedFixture);
@@ -344,7 +344,7 @@ async function run() {
       requireCondition(persistedFixture?.state?.roster?.activeBatter === "bw001", "BONE-008 active batter fixture mismatch", persistedFixture);
 
       const runtimeMeta = await waitFor(
-        async () => cdpEvaluate(cdp, "(() => {
+        async () => cdpEvaluate(cdp, `(() => {
           const state = window.BaseballWaifusGacha?.getState?.() || null;
           if (!state) return null;
           return {
@@ -352,7 +352,7 @@ async function run() {
             inventory: state.inventory || null,
             duplicateCount: state.inventory?.bw001?.duplicate_count ?? null
           };
-        })()"),
+        })()`),
         { timeoutMs: 30000, label: "BONE-008 Player Meta runtime rehydration" }
       );
       requireCondition(runtimeMeta.activeBatter === "bw001", "BONE-008 runtime active batter mismatch", runtimeMeta);
