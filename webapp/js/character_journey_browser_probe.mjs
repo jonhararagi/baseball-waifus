@@ -356,10 +356,8 @@ async function run() {
         { timeoutMs: 30000, label: "BONE-008 Player Meta runtime rehydration" }
       );
       requireCondition(runtimeMeta.activeBatter === "bw001", "BONE-008 runtime active batter mismatch", runtimeMeta);
-      requireCondition(Number(runtimeMeta.inventory?.bw001?.quantity ?? 0) >= 1, "BONE-008 runtime bw001 ownership missing", runtimeMeta);
-      if (runtimeMeta.duplicateCount !== null) {
-        requireCondition(Number(runtimeMeta.duplicateCount) >= 1, "BONE-008 runtime duplicate count invalid", runtimeMeta);
-      }
+      requireCondition(runtimeMeta.inventory?.bw001?.character_id === "bw001", "BONE-008 runtime bw001 identity missing", runtimeMeta);
+      requireCondition(Number(runtimeMeta.inventory?.bw001?.duplicate_count ?? 0) >= 1, "BONE-008 runtime bw001 ownership missing", runtimeMeta);
 
       await waitFor(
         async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#home-view') && !document.querySelector('#home-view').hidden)"),
