@@ -29,8 +29,11 @@ assert.equal(make(911).grade, "MISS");
 
 assert.equal(make(815, 25).delta_ms, 70);
 assert.equal(make(815, 25).grade, "GREAT");
-assert.equal(make(695, 30).delta_ms, -5);
+assert.equal(make(695, 30).delta_ms, 0);
+assert.equal(Object.is(make(695, 30).delta_ms, -0), false);
 assert.equal(make(695, 30).grade, "GREAT");
+assert.equal(make(745, 30).delta_ms, 0);
+assert.equal(Object.is(make(745, 30).delta_ms, -0), false);
 
 const dto = make(750);
 assert.deepEqual(dto, {
