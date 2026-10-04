@@ -9842,3 +9842,20 @@ El fallo está fuera del scope de BONE-008-002 y no se modificó.
 **BONE-007:** CLOSED.  
 **BONE-008:** OPEN / PARTIAL PROGRESS.  
 **BONE-011:** OPEN / unchanged.
+
+
+### BONE-008-002 · Browser proof update
+
+**Validated HEAD:** `49fda47c1a346ddbf40d3d6adedebd2f7a698247`  
+**Run:** `37186981284` = SUCCESS.
+
+El browser proof se amplió para cubrir una terminal real. Chromium confirmó:
+
+`terminal_cycle.phase = VICTORY`  
+`terminal_cycle.terminal = VICTORY`  
+`terminal_cycle.bossHp = 0`  
+`console_errors = []`
+
+Se preservan los dos ciclos tactical ×5 → CLIMAX/timing → resultado → dispose/remount y la suite de lifecycle/combat.
+
+No hubo cambios de gameplay, balance ni `combat_core.js`.

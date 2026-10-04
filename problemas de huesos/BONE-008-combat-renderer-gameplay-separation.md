@@ -205,3 +205,21 @@ Ese fallo no fue modificado ni causado por este checkpoint y permanece fuera de 
 **BONE-008-002 = CLOSED.**  
 **BONE-008 = OPEN / PARTIAL PROGRESS.**
 
+
+
+### BONE-008-002 browser validation update
+
+**Validated code HEAD:** `49fda47c1a346ddbf40d3d6adedebd2f7a698247`  
+**Browser workflow:** Run `37186981284` = SUCCESS.
+
+El proof Chromium actualizado añadió una ruta terminal real:
+
+- terminal phase = `VICTORY`;
+- terminal authority = `VICTORY`;
+- boss HP = `0`;
+- console/page errors = `[]`.
+
+Se mantienen además los dos ciclos anteriores de tactical ×5 → CLIMAX/timing → resultado → dispose/remount.
+
+**BONE-008-002 remains CLOSED.**  
+**BONE-008 remains OPEN / PARTIAL PROGRESS.**

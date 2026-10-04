@@ -58,3 +58,5 @@ Esta carpeta es una deuda controlada del producto, no una lista decorativa.
 - **BONE-008-002:** CLOSED.
 - **Resultado:** `CombatSessionAuthority` ahora posee el session state y determina las transiciones tactical/climax/terminal; `CombatRenderer` consume el snapshot y no muta la fuente de verdad de gameplay.
 - **Evidence:** Static/equivalence PASS y Chromium PASS_REAL en Combat Vertical Slice Tests Run `37186817864`.
+
+- **BONE-008-002 browser update:** Chromium Run `37186981284` = SUCCESS; terminal VICTORY proof = PASS_REAL.
