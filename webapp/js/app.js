@@ -533,6 +533,9 @@ gachaController.setCutInRenderer(renderer);
 renderer.onEconomyTimingConsumed = () => shopUI.consumeTimingTurn?.();
 renderer.onEconomyRewardConsumed = () => shopUI.consumeRewardTurn?.();
 
+if (new URLSearchParams(window.location.search).get("qa") === "bone007") {
+  window.__BW_BONE007_LIFECYCLE__ = () => renderer.getLifecycleDebugSnapshot();
+}
 if (new URLSearchParams(window.location.search).get("qa") === "t081") {
   window.__BW_T081_TRIGGER_ULTIMATE__ = () => renderer.triggerUltimateCinematicStaging();
   window.__BW_T081B_CONTINUE_ULTIMATE__ = (result = {}) => renderer.continueUltimateCinematicAction(result);
@@ -1361,6 +1364,8 @@ function setMainMenuView(view) {
   for (const element of combatViewPieces) {
     element.hidden = !showCombat;
   }
+  if (showCombat) renderer.resume?.();
+  else renderer.pause?.();
   if (active === "gacha") {
     const target = document.querySelector("#action-gacha");
     target?.scrollIntoView?.({ behavior: "smooth", block: "center" });
