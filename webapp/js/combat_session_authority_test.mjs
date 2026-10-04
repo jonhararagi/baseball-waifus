@@ -38,7 +38,18 @@ const snapshot = {
   }
 };
 
-const tacticalExpected = resolveTacticalTurn(snapshot);
+const tacticalExpected = resolveTacticalTurn({
+  turn: snapshot.tacticalTurn + 1,
+  power: snapshot.batter.stats.power,
+  contact: snapshot.batter.stats.contact,
+  speed: snapshot.batter.stats.speed,
+  eye: snapshot.batter.stats.eye,
+  bossHp: snapshot.bossHp,
+  bossMaxHp: snapshot.bossMaxHp,
+  internalEnergy: snapshot.internalEnergy,
+  tacticalEffectiveness: snapshot.tacticalEffectiveness,
+  tacticalMaxTurns: snapshot.tacticalMaxTurns
+});
 const tacticalActual = authority.resolveTacticalTurn(snapshot);
 assert.deepEqual(tacticalActual, tacticalExpected);
 
