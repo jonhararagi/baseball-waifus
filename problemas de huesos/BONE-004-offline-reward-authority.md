@@ -295,3 +295,45 @@ Evidence:
 - image secret-safety checks PASS.
 
 This proves the container artifact and local smoke contract only. It is not evidence of external HTTPS deployment or managed production persistence.
+
+
+## BONE-004-PROD-AUTH-004 · EXTERNAL PRODUCTION PROVIDER ACTIVATION CHECKPOINT
+
+**Fecha:** 2026-10-04  
+**HEAD BEFORE:** `4636b32dc4dd2baf6aecfb060905184593dfa0bf`  
+**RESULT:** BLOCKED / EXTERNAL PROVIDER NOT CONFIGURED  
+**TIMER:** 60–90 minutos
+
+### Verificación
+
+- **Provider real:** NOT CONFIGURED. No aparece proveedor seleccionado ni configuración vendor-specific en el árbol del repositorio.
+- **Production persistence:** NOT CONFIGURED. Solo existe el boundary `managed` y el filesystem provider de desarrollo/integration; no existe adapter gestionado externo.
+- **Production secrets:** NOT VERIFIABLE DIRECTLY. La conexión GitHub disponible no expone la API de Secrets/Environment values. No se imprimió ni se creó ningún secreto.
+- **Telegram Bot config:** NOT VERIFIABLE DIRECTLY por la misma restricción de acceso; el repositorio solo define el contrato externo `TELEGRAM_BOT_TOKEN`.
+- **HTTPS backend:** NOT CONFIGURED. No existe URL productiva documentada ni endpoint externo candidato en el repositorio.
+- **Production deployment workflow:** NO RUNS. La workflow `backend-authority-deploy.yml` es manual/provider-neutral y el historial de Actions no contiene ejecuciones de esa workflow.
+- **Production smoke test:** NOT RUN porque no existe endpoint HTTPS productivo verificable.
+- **Repository secret files:** no aparecen `.env`, `*.pem`, `*.key`, `*.p12`, `*.pfx` ni `*.jwk` como archivos de producción en el árbol auditado.
+
+### Estado de Bones relacionados
+
+- BONE-005: CLOSED.
+- BONE-006: CLOSED.
+- BONE-001: CLOSED.
+- BONE-002: CLOSED.
+- BONE-003: CLOSED.
+- BONE-011: OPEN, sin cambios.
+
+### Causa / Attempts / Needs
+
+**CAUSE:** External production provider not configured.
+
+**ATTEMPTS:** Single verification checkpoint against repository HEAD, deployment workflow history, provider/configuration search and production documentation.
+
+**EVIDENCE:** No configured production provider, no documented HTTPS endpoint and no deployment workflow execution. GitHub Secrets/Environment secret values are not queryable through the available repository connector, so their contents were not inspected or inferred.
+
+**NEEDS:** Provider + production persistence + externally managed `REWARD_SIGNING_PRIVATE_KEY` + `TELEGRAM_BOT_TOKEN` + HTTPS backend deployment + real production smoke test.
+
+**STATUS:** BONE-004 remains BLOCKED.
+
+No code, gameplay, balance, reward, Gacha, persistence contract or frontend API configuration was changed.

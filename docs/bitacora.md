@@ -9647,3 +9647,32 @@ Container build PASS.
 Container smoke PASS.
 Backend tests PASS: 27/27.
 Production deployment remains NOT CONFIGURED and no real HTTPS smoke test was run.
+
+
+---
+
+## BONE-004-PROD-AUTH-004 · EXTERNAL PRODUCTION PROVIDER ACTIVATION CHECKPOINT
+
+**Fecha:** 2026-10-04  
+**HEAD BEFORE:** `4636b32dc4dd2baf6aecfb060905184593dfa0bf`  
+**TIMER:** 60–90 minutos  
+**RESULT:** BLOCKED
+
+Se verificó la realidad externa sin modificar implementación.
+
+- Provider real: NOT CONFIGURED.
+- Production persistence: NOT CONFIGURED.
+- HTTPS backend: NOT CONFIGURED.
+- Production deployment workflow: sin ejecuciones.
+- Production smoke test: NOT RUN.
+- El conector GitHub disponible no permite consultar directamente Secrets/Environment secret values; no se expusieron ni se infirieron secretos.
+- El repositorio no contiene archivos de secretos ni configuración vendor-specific.
+- BONE-005 CLOSED, BONE-006 CLOSED, BONE-011 OPEN sin cambios.
+
+**CAUSE:** External production provider not configured.
+
+**NEEDS:** proveedor real + persistence productiva + REWARD_SIGNING_PRIVATE_KEY + TELEGRAM_BOT_TOKEN externos + HTTPS backend + smoke test autenticado.
+
+**GAMEPLAY:** NO CHANGE.  
+**BALANCE:** NO CHANGE.  
+**STATUS:** BONE-004 permanece BLOCKED.

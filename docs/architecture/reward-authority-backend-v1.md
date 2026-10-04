@@ -451,3 +451,14 @@ Earlier BONE-004 diagnostics that state the production backend was absent are hi
 GitHub Actions Run `37175529956` on HEAD `4f5155e683c7ba593e17da1ac1ca977132b132b4` passed backend syntax, all 27 backend tests, container image build and container health smoke in test mode.
 
 The deployment contract remains provider-neutral and is not evidence of external production deployment.
+
+
+## External activation checkpoint · 2026-10-04
+
+The repository was re-audited at HEAD `4636b32dc4dd2baf6aecfb060905184593dfa0bf`.
+
+No real production provider, managed persistence adapter, documented HTTPS authority endpoint or executed production deployment workflow is present. The available GitHub repository connector does not expose Secrets/Environment secret values, so secret contents were neither read nor inferred.
+
+Result: **EXTERNAL PRODUCTION PROVIDER NOT CONFIGURED**.
+
+The local/container deployment contract remains implemented, but it is not deployment evidence. BONE-004 remains BLOCKED until an external provider supplies production persistence, signing/authentication secrets and HTTPS deployment, followed by a real authenticated smoke test.
