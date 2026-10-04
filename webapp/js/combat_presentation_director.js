@@ -182,15 +182,29 @@ export class CombatPresentationDirector {
     return this.getState();
   }
 
+  _finishFormationActorsForReplacement() {
+    const formation = this._ensureRuntimeFormation();
+    const actors = formation?.actors ? [...formation.actors.values()] : [];
+    for (const actor of actors) {
+      const state = actor.getPresentationState?.();
+      if (state === "FOCUS") {
+        actor.transitionTo?.("ACTION");
+      }
+      if (actor.getPresentationState?.() === "ACTION") {
+        actor.transitionTo?.("RETURN");
+      }
+      if (actor.getPresentationState?.() === "RETURN") {
+        actor.resetPresentationState?.();
+      }
+      if (actor.getPresentationState?.() !== "IDLE") {
+        throw new Error("CharacterActor2D5 replacement did not reach IDLE");
+      }
+    }
+  }
+
   startFromPresentationEvent(event) {
     if (this.active) {
-      const formation = this._ensureRuntimeFormation();
-      const actors = formation?.actors ? [...formation.actors.values()] : [];
-      for (const actor of actors) {
-        const presentationState = actor.getPresentationState?.();
-        if (presentationState === "FOCUS") actor.transitionTo?.("ACTION");
-        if (presentationState === "ACTION") actor.transitionTo?.("RETURN");
-      }
+      this._finishFormationActorsForReplacement();
       this.active = false;
       this.phase = COMBAT_PRESENTATION_PHASE.COMPLETE;
       this.stepIndex = this.activeStepDefinitions.length;
