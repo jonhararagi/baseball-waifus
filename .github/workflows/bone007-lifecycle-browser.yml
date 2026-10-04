@@ -1,0 +1,53 @@
+name: BONE-007 Combat Renderer Lifecycle Browser QA
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "webapp/js/combat.js"
+      - "webapp/js/app.js"
+      - "webapp/js/combat_lifecycle_test.mjs"
+      - "webapp/js/bone007_lifecycle_browser_test.mjs"
+      - ".github/workflows/bone007-lifecycle-browser.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lifecycle-browser:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Playwright
+        run: |
+          mkdir -p /tmp/bw-bone007
+          cd /tmp/bw-bone007
+          npm init -y
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+
+      - name: Start local WebApp server
+        run: |
+          nohup python3 -m http.server 4173 --directory webapp >/tmp/bone007-http.log 2>&1 &
+          echo $! >/tmp/bone007-http.pid
+          sleep 2
+          curl --fail http://127.0.0.1:4173/index.html >/dev/null
+
+      - name: Run 5-cycle Chromium lifecycle proof
+        run: |
+          cp webapp/js/bone007_lifecycle_browser_test.mjs /tmp/bw-bone007/
+          cd /tmp/bw-bone007
+          node bone007_lifecycle_browser_test.mjs http://127.0.0.1:4173
+
+      - name: Cleanup local WebApp server
+        if: always()
+        run: |
+          if test -f /tmp/bone007-http.pid; then kill "$(cat /tmp/bone007-http.pid)" || true; fi

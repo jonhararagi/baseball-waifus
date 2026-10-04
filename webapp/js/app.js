@@ -536,6 +536,8 @@ renderer.onEconomyRewardConsumed = () => shopUI.consumeRewardTurn?.();
 if (new URLSearchParams(window.location.search).get("qa") === "bone007") {
   window.__BW_BONE007_LIFECYCLE__ = () => renderer.getLifecycleDebugSnapshot();
   window.__BW_BONE007_NAVIGATE__ = (view) => mainMenu.navigate(String(view || "home"));
+  window.__BW_BONE007_LISTENER_COUNTS__ = () => window.__BW_BONE007_LISTENER_COUNTS_SNAPSHOT__?.() || {};
+  window.__BW_BONE007_RAF_COUNT__ = () => ({ active: Number(window.__BW_BONE007_ACTIVE_RAFS__?.size || 0) });
 }
 if (new URLSearchParams(window.location.search).get("qa") === "t081") {
   window.__BW_T081_TRIGGER_ULTIMATE__ = () => renderer.triggerUltimateCinematicStaging();
