@@ -9790,3 +9790,55 @@ Nota de harness: algunos assets opcionales responden 404 durante la prueba local
 **BONE-011:** OPEN / unchanged.
 
 **STATUS:** BONE-008-001 CLOSED. BONE-008 remains OPEN for later authority/presentation extraction checkpoints.
+
+
+---
+
+## BONE-008-002 · COMBAT SESSION STATE TRANSITION OWNERSHIP
+
+**Fecha:** 2026-10-04  
+**BASE SHA:** `74b259557a001f7d0a9ac504d4a71ef0583afa65`  
+**HEAD FINAL:** `5976dab4c02a55b3b89261091e02b3eb845610b9`  
+**TIMER:** 60–90 minutos  
+**RESULT:** PASS / BONE-008-002 CLOSED / BONE-008 OPEN
+
+Se movió la ownership del estado de sesión de combate desde `CombatRenderer` a `CombatSessionAuthority`.
+
+### Cambios
+
+- `CombatSessionAuthority.startSession(snapshot)`;
+- snapshot autoritativo persistido en memoria del authority;
+- tactical/climax aplican transición de estado usando `combat_core.js`;
+- terminal phase/terminal result determinados por authority;
+- renderer deja de asignar HP, stamina, energy, effectiveness, round, tactical turn y phase;
+- renderer consume snapshot y reacciona a `authoritative.terminal`.
+
+No se modificó `combat_core.js`, gameplay, balance, rewards, Gacha, pity ni backend.
+
+### Evidence
+
+- Combat Vertical Slice Tests Run **37186817864** = **SUCCESS**.
+- `combat_session_authority_test.mjs`: static/equivalence PASS.
+- 5 tactical turns equivalence PASS.
+- GREAT/HIT/MISS equivalence PASS.
+- VICTORY/DEFEAT terminal authority PASS.
+- `combat_lifecycle_test.mjs` PASS.
+- Chromium real BONE-008 proof PASS_REAL.
+- Browser observed tactical HP: 100 → 81 → 60 → 38 → 14 → 1.
+- `console_errors=[]`.
+- dispose: `disposed=true`, `frameHandle=0`, `ownedTimeouts=0`, `resizeObserver=false`.
+
+### CI note
+
+El workflow amplio **37186817878** quedó rojo por los asserts históricos de BONE-002:
+
+`GACHA_NOT_READY`, `GACHA_READY`, `PLAYER_META_STARTER`, `PLAYER_META_ACTIVE_BATTER`.
+
+El fallo está fuera del scope de BONE-008-002 y no se modificó.
+
+**BONE-004:** BLOCKED / unchanged.  
+**BONE-005:** CLOSED.  
+**BONE-006:** CLOSED.  
+**BONE-007:** CLOSED.  
+**BONE-008:** OPEN / PARTIAL PROGRESS.  
+**BONE-011:** OPEN / unchanged.

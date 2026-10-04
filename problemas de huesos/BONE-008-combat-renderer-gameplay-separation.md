@@ -89,3 +89,119 @@ El browser proof inyecta un director de presentation mínimo para aislar especí
 Quedan fuera de este checkpoint otras superficies todavía mezcladas en `CombatRenderer` y la extracción completa de toda la autoridad/presentation boundary. Este checkpoint establece el primer seam real sin reescribir el renderer.
 
 **NEXT CHECKPOINT:** queda para planificación posterior del Cerebro; el Obrero no emite una nueva tarea.
+
+
+## BONE-008-002 · COMBAT SESSION STATE TRANSITION OWNERSHIP
+
+**Fecha:** 2026-10-04  
+**BASE SHA:** `74b259557a001f7d0a9ac504d4a71ef0583afa65`  
+**HEAD FINAL:** `5976dab4c02a55b3b89261091e02b3eb845610b9`  
+**TIMER:** 60–90 minutos  
+**RESULT:** PASS / CHECKPOINT CLOSED / BONE-008 OPEN
+
+### Authority state
+
+`webapp/js/combat_session_authority.js` ahora mantiene un snapshot interno de sesión y es responsable de:
+
+- inicialización explícita mediante `startSession(snapshot)`;
+- estado round/tacticalTurn/tacticalMaxTurns;
+- boss HP/concentration;
+- player stamina;
+- energy/effectiveness;
+- phase;
+- terminal state.
+
+Tactical y climax siguen reutilizando exclusivamente `webapp/js/combat_core.js`.
+
+### Renderer ownership
+
+`CombatRenderer` ya no asigna como fuente de verdad los campos:
+
+- HP;
+- stamina;
+- energy;
+- effectiveness;
+- round;
+- tactical turn;
+- phase;
+- victory/defeat.
+
+El renderer consume el estado devuelto por `CombatSessionAuthority` mediante su snapshot y solo reacciona visualmente al resultado/phase.
+
+No se creó EventBus ni se reescribió el renderer completo.
+
+### Terminal authority
+
+La terminalidad se determina en el authority:
+
+`state.phase = VICTORY` o `DEFEAT`  
+`state.terminal = VICTORY | DEFEAT | null`
+
+El renderer utiliza `authoritative.terminal` únicamente como condición de presentación/callback, sin recalcular victory/defeat.
+
+### Static / equivalence evidence
+
+GitHub Actions Run **`37186817864`** = SUCCESS.
+
+La suite ejecutó:
+
+- `combat_session_authority_test.mjs` = PASS;
+- equivalencia de 5 tactical turns = PASS;
+- equivalencia GREAT/HIT/MISS = PASS;
+- terminal VICTORY = PASS;
+- terminal DEFEAT = PASS;
+- `combat_lifecycle_test.mjs` = PASS;
+- syntax validation = PASS.
+
+### Browser evidence
+
+El mismo Run **`37186817864`** ejecutó Chromium real con `bone008_authority_browser_test.mjs`:
+
+**PASS_REAL**
+
+Se verificaron dos ciclos reales:
+
+`create → tactical ×5 → CLIMAX → timing → result → dispose`
+
+con valores tácticos observados:
+
+`boss HP: 100 → 81 → 60 → 38 → 14 → 1`
+
+y sin errores de consola/page:
+
+`console_errors = []`
+
+El browser proof confirmó además dispose idempotente y recursos lifecycle limpios:
+
+- `disposed=true`;
+- `frameHandle=0`;
+- `ownedTimeouts=0`;
+- `resizeObserver=false`.
+
+### Workflow status
+
+`Combat Vertical Slice Tests` Run **`37186817864`** = SUCCESS.
+
+El workflow amplio `Baseball Waifus Telegram Mini App` Run **`37186817878`** quedó rojo por la regresión preexistente de BONE-002:
+
+`GACHA_NOT_READY`, `GACHA_READY`, `PLAYER_META_STARTER`, `PLAYER_META_ACTIVE_BATTER`.
+
+Ese fallo no fue modificado ni causado por este checkpoint y permanece fuera de scope.
+
+### Scope
+
+**GAMEPLAY CHANGED:** NO.  
+**BALANCE CHANGED:** NO.  
+**COMBAT CORE:** NO se modificó.  
+**REWARDS/GACHA/PITY:** NO.  
+**BONE-004:** BLOCKED / UNCHANGED.  
+**BONE-005:** CLOSED.  
+**BONE-006:** CLOSED.  
+**BONE-007:** CLOSED.  
+**BONE-011:** OPEN / UNCHANGED.
+
+### Estado
+
+**BONE-008-002 = CLOSED.**  
+**BONE-008 = OPEN / PARTIAL PROGRESS.**
+

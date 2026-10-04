@@ -49,3 +49,12 @@ Esta carpeta es una deuda controlada del producto, no una lista decorativa.
 - **BONE-008:** OPEN.
 - **BONE-008-001:** CLOSED.
 - **Resultado:** primer seam real `CombatRenderer → CombatSessionAuthority → combat_core.js`, validado con static PASS_STATIC y Chromium PASS_REAL.
+
+
+### Checkpoint parcial BONE-008-002
+
+- **BONE-008:** OPEN.
+- **BONE-008-001:** CLOSED.
+- **BONE-008-002:** CLOSED.
+- **Resultado:** `CombatSessionAuthority` ahora posee el session state y determina las transiciones tactical/climax/terminal; `CombatRenderer` consume el snapshot y no muta la fuente de verdad de gameplay.
+- **Evidence:** Static/equivalence PASS y Chromium PASS_REAL en Combat Vertical Slice Tests Run `37186817864`.
