@@ -9,6 +9,7 @@ on:
       - "webapp/js/combat_lifecycle_test.mjs"
       - "webapp/js/combat_session_authority.js"
       - "webapp/js/combat_session_authority_test.mjs"
+      - "webapp/js/bone008_authority_browser_test.mjs"
       - "webapp/js/combat_presentation_director_test.mjs"
       - "webapp/js/kytos_combat_vertical_slice.js"
       - "webapp/js/kytos_combat_vertical_slice_test.mjs"
@@ -118,6 +119,32 @@ jobs:
           node --experimental-default-type=module webapp/js/student_4v4_batter_input_test.mjs
           node --experimental-default-type=module webapp/js/student_4v4_full_resolution_test.mjs
           node --experimental-default-type=module webapp/js/student_4v4_production_gate_test.mjs
+
+      - name: Install Playwright Chromium for BONE-008
+        run: |
+          mkdir -p /tmp/bw-bone008
+          cd /tmp/bw-bone008
+          npm init -y
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+
+      - name: Start local WebApp server for BONE-008
+        run: |
+          nohup python3 -m http.server 4173 --directory webapp >/tmp/bone008-http.log 2>&1 &
+          echo $! >/tmp/bone008-http.pid
+          sleep 2
+          curl --fail http://127.0.0.1:4173/bone007_lifecycle_harness.html >/dev/null
+
+      - name: BONE-008 real Chromium combat authority proof
+        run: |
+          cp webapp/js/bone008_authority_browser_test.mjs /tmp/bw-bone008/
+          cd /tmp/bw-bone008
+          node bone008_authority_browser_test.mjs http://127.0.0.1:4173
+
+      - name: Cleanup BONE-008 local server
+        if: always()
+        run: |
+          if test -f /tmp/bone008-http.pid; then kill "$(cat /tmp/bone008-http.pid)" || true; fi
 
       - name: Validate combat syntax
         shell: bash
