@@ -11,10 +11,10 @@ const combat = fs.readFileSync(new URL("./combat.js", import.meta.url), "utf8");
 const authoritySource = fs.readFileSync(new URL("./combat_session_authority.js", import.meta.url), "utf8");
 
 assert.ok(authoritySource.includes('from "./combat_core.js"'));
-assert.doesNotMatch(authoritySource, /from ["']./combat.js["']/);
+assert.equal(authoritySource.includes("./combat.js"), false);
 assert.doesNotMatch(authoritySource, /CombatPresentationDirector|document\.|window\.|HTMLCanvasElement|canvas/);
 
-assert.doesNotMatch(combat, /from ["']./combat_core.js["']/);
+assert.equal(combat.includes("./combat_core.js"), false);
 assert.match(combat, /CombatSessionAuthority/);
 assert.match(combat, /this\.combatAuthority\.resolveTacticalTurn/);
 assert.match(combat, /this\.combatAuthority\.resolveClimaxTurn/);
