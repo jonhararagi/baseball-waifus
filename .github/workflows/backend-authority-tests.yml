@@ -38,3 +38,19 @@ jobs:
           node --check src/server.mjs
       - name: Backend authority tests
         run: npm test
+
+      - name: Build backend container smoke image
+        run: |
+          docker buildx build             --ignorefile backend/.dockerignore             --platform linux/amd64             --load             --tag basewarriors-authority:test             --file backend/Dockerfile             .
+      - name: Run backend container smoke check
+        run: |
+          docker run -d --rm             --name basewarriors-authority-smoke             -e NODE_ENV=test             -p 8787:8787             basewarriors-authority:test
+          trap 'docker rm -f basewarriors-authority-smoke >/dev/null 2>&1 || true' EXIT
+          for attempt in $(seq 1 20); do
+            if curl --fail --silent http://127.0.0.1:8787/health >/tmp/basewarriors-health.json; then
+              break
+            fi
+            sleep 1
+          done
+          grep -q '"ok":true' /tmp/basewarriors-health.json
+          docker exec basewarriors-authority-smoke sh -c 'test ! -e /app/.env && test ! -e /app/.env.production && test ! -e /app/private.key'
