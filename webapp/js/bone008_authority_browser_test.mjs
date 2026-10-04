@@ -18,7 +18,27 @@ await page.waitForSelector("#gameCanvas");
 const runCycle = async () => page.evaluate(async () => {
   const { CombatRenderer } = await import("./js/combat.js");
   const canvas = document.querySelector("#gameCanvas");
-  const renderer = new CombatRenderer(canvas, {});
+  const presentationDirector = {
+    setStage() {},
+    startFromCombatResult() {},
+    startUltimateStaging() { return false; },
+    continueUltimateAction() { return false; },
+    update() {},
+    getState() {
+      return {
+        active: false,
+        phase: "COMPLETE",
+        sequenceKind: "COMBAT",
+        result: null
+      };
+    },
+    isActive() { return false; },
+    applyCamera() {},
+    getCameraTransform() {
+      return { x: 0, y: 0, zoom: 1, rotationDeg: 0 };
+    }
+  };
+  const renderer = new CombatRenderer(canvas, { presentationDirector });
 
   await renderer.setCombatInit({
     type: "CombatInitDTO",
@@ -42,30 +62,18 @@ const runCycle = async () => page.evaluate(async () => {
     }
   });
 
-  const waitForPresentationIdle = async () => {
-    for (let frame = 0; frame < 90; frame += 1) {
-      if (!renderer.getPresentationState()?.active) return;
-      await new Promise((resolve) => requestAnimationFrame(resolve));
-    }
-    throw new Error("PRESENTATION_DID_NOT_SETTLE");
-  };
-
   const tacticalResults = [];
   for (let i = 0; i < 5; i += 1) {
     const result = renderer.beginTimingWindow();
+    if (i < 4 && result !== true) throw new Error("TACTICAL_AUTHORITY_DID_NOT_ADVANCE");
     tacticalResults.push({
       outcome: result?.outcome || null,
       tactical_turn_after: renderer.tacticalTurn,
       boss_hp: renderer.bossHp
     });
-    if (i < 4) {
-      if (result !== true) throw new Error("TACTICAL_AUTHORITY_DID_NOT_ADVANCE");
-      await waitForPresentationIdle();
-    }
   }
 
   await new Promise((resolve) => setTimeout(resolve, 320));
-  await waitForPresentationIdle();
   if (renderer.battlePhase !== "CLIMAX") throw new Error("CLIMAX_PHASE_NOT_REACHED");
   if (!renderer.isTimingWindowActive()) throw new Error("TIMING_WINDOW_NOT_ACTIVE");
 
