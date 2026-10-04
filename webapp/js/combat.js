@@ -1,9 +1,5 @@
 import { isCombatInitDTO, isTurnResultDTO } from "./api.js";
-import {
-  COMBAT_STAMINA_ROUND_COST,
-  resolveClimaxTurn,
-  resolveTacticalTurn
-} from "./combat_core.js";
+import { CombatSessionAuthority } from "./combat_session_authority.js";
 import { AreaThemeManager } from "./area_theme_manager.js";
 import { CombatStage, createCombatStageActors, renderCombatStageForeground, renderCombatStageWorld } from "./combat_stage.js";
 import { BatterRenderer } from "./batter_renderer.js";
@@ -244,6 +240,7 @@ export class CombatRenderer {
       getSpritePath: (batter) => this._spritePathForCharacter(batter)
     });
     this.combatEffects = new CombatEffects();
+    this.combatAuthority = new CombatSessionAuthority();
     this.combatPresentation = presentationDirector || new CombatPresentationDirector({
       stage: this.combatStage,
       onStep: (event) => {
@@ -528,14 +525,9 @@ export class CombatRenderer {
       return this.beginTimingWindow();
     }
 
-    const batter = this.state?.batter || {};
-    const stats = batter.stats || batter.base_stats || {};
-    const result = resolveTacticalTurn({
-      turn: this.tacticalTurn + 1,
-      power: stats.power ?? batter.power ?? 70,
-      contact: stats.contact ?? batter.contact ?? 70,
-      speed: stats.speed ?? batter.speed ?? 70,
-      eye: stats.eye ?? batter.eye ?? 70,
+    const result = this.combatAuthority.resolveTacticalTurn({
+      ...this.state,
+      tacticalTurn: this.tacticalTurn,
       bossHp: this.bossHp,
       bossMaxHp: this.bossMaxHp,
       internalEnergy: this.internalEnergy,
@@ -580,8 +572,8 @@ export class CombatRenderer {
   }
 
   _resolveClimaxDamage(grade) {
-    const result = resolveClimaxTurn({
-      grade,
+    const result = this.combatAuthority.resolveClimaxTurn({
+      ...this.state,
       bossHp: this.bossHp,
       bossMaxHp: this.bossMaxHp,
       internalEnergy: this.internalEnergy,
@@ -589,8 +581,8 @@ export class CombatRenderer {
       round: this.round,
       playerStamina: this.playerStamina,
       playerStaminaMax: this.playerStaminaMax,
-      staminaRoundCost: this.playerStaminaRoundCost
-    });
+      playerStaminaRoundCost: this.playerStaminaRoundCost
+    }, grade);
 
     this.combatPresentation.startFromCombatResult(result, {
       attackerId: this.state?.batter?.id,
