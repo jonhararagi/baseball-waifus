@@ -183,6 +183,7 @@ export class CombatPresentationDirector {
   }
 
   startFromPresentationEvent(event) {
+    if (this.active) this.cancel();
     this._ensureRuntimeFormation();
     if (
       !event
