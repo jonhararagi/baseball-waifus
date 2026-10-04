@@ -1830,7 +1830,7 @@ async function run() {
 
       const finalRuntime = await readCombatState();
 
-      const presentationQA = await cdpEvaluate(cdp, "(() => {
+      const presentationQA = await cdpEvaluate(cdp, `(() => {
         const transitions = window.__BW_BONE008_R4_TRANSITIONS__ || [];
         const invalid = transitions.filter((entry) =>
           entry.error
@@ -1847,7 +1847,7 @@ async function run() {
           })),
           allFinalIdle: actors.length > 0 && actors.every((actor) => actor.getPresentationState() === "IDLE")
         };
-      })()");
+      })()`);
       requireCondition(
         presentationQA.invalidTransitions.length === 0,
         "BONE-008 invalid actor transitions detected",
