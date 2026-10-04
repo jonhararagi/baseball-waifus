@@ -4,6 +4,8 @@ import {
   resolveTacticalTurn
 } from "./combat_core.js";
 
+export { COMBAT_STAMINA_ROUND_COST };
+
 function cloneSnapshot(snapshot) {
   return snapshot && typeof snapshot === "object"
     ? JSON.parse(JSON.stringify(snapshot))
