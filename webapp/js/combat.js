@@ -510,7 +510,7 @@ export class CombatRenderer {
     this._resolveClimaxDamage(timing.grade);
 
     this.lastTiming = timing;
-    this.audioBridge?.playTimingResult?.(grade);
+    this.audioBridge?.playTimingResult?.(timing.grade);
     this._activateEyeFocus(200);
     this._triggerTimingPreview(timing);
     this.onTimingResult?.(timing);

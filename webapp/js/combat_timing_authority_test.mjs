@@ -65,6 +65,8 @@ assert.doesNotMatch(combatSource, /absoluteDelta\s*<=\s*greatWindowMs/);
 assert.doesNotMatch(combatSource, /absoluteDelta\s*<=\s*hitWindowMs/);
 assert.doesNotMatch(combatSource, /\?\s*"GREAT"\s*:\s*absoluteDelta/);
 assert.match(combatSource, /resolveTiming\(/);
+assert.match(combatSource, /playTimingResult\?\.\(timing\.grade\)/);
+assert.doesNotMatch(combatSource, /playTimingResult\?\.\(grade\)/);
 
 const previousLogic = ({ elapsedMs, targetMs, greatWindowMs, hitWindowMs, timingGraceMs }) => {
   const rawDeltaMs = elapsedMs - targetMs;
