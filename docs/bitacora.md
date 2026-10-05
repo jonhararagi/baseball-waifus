@@ -10100,3 +10100,56 @@ BONE-006: CLOSED.
 BONE-007: CLOSED.
 BONE-008: OPEN / PARTIAL.
 BONE-011: OPEN / unchanged.
+
+---
+
+## BONE-008-007 / BONE-008 · CIERRE FINAL DEL SEAM DE COMBATE
+
+Fecha: 2026-10-05
+BASE SHA: `8f441ad7e43ca9114174678b5bfb19169ca68914`
+FINAL SHA: `dd3135b6c9e1aed7ddbe0843c66d3fcec3ef1386`
+TIMER: 20–40 minutos
+RESULT: CLOSED
+
+R1: boundary checks deterministas.
+R2: recuperación de detector global/local.
+R3: root cause de regex escapadas.
+R4: corrección de regex.
+R5: stale timing authority assertion.
+R6: stale climax authority assertion.
+
+CombatRenderer
+→ CombatRuntimeController
+→ CombatSessionAuthority
+→ combat_core.js
+
+CombatRenderer
+→ CombatRuntimeController
+→ CombatTimingAuthority
+
+Run 37290899872 = SUCCESS.
+Runtime controller regression = PASS.
+Existing authority suites = PASS.
+
+Run 37290899887 = SUCCESS.
+Combat vertical slice = PASS.
+BONE-008 real Chromium = PASS_REAL.
+Terminal VICTORY = PASS_REAL.
+
+GAMEPLAY CHANGED: NO.
+BALANCE CHANGED: NO.
+PRODUCTION CHANGED: NO.
+
+BONE-004: BLOCKED.
+BONE-005: CLOSED.
+BONE-006: CLOSED.
+BONE-007: CLOSED.
+BONE-008: CLOSED.
+BONE-009: OPEN.
+BONE-010: OPEN.
+BONE-011: OPEN.
+
+BONE-008 queda CLOSED con evidencia reproducible.
+
+El GLOBAL GATE permanece CLOSED debido a los BONE P0/P1 restantes.
+No se habilita desarrollo normal ni nuevas features de producto.

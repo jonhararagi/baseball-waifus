@@ -19,7 +19,7 @@ Estados: OPEN, IN_PROGRESS, BLOCKED, VERIFYING, CLOSED.
 | BONE-005 | Persistencia dual Player Meta/local/Telegram | P0 | CLOSED |
 | BONE-006 | Concurrencia roster/inventario/recompensa | P0 | CLOSED |
 | BONE-007 | Lifecycle, RAF, timers y listeners | P1 | CLOSED |
-| BONE-008 | Separacion CombatRenderer/gameplay/presentation | P1 | OPEN |
+| BONE-008 | Separacion CombatRenderer/gameplay/presentation | P1 | CLOSED |
 | BONE-009 | Multiples runtimes de gameplay | P1 | OPEN |
 | BONE-010 | Duplicacion de bridges Telegram | P1 | OPEN |
 | BONE-011 | Monetizacion y autoridad backend | P0 | OPEN |
@@ -97,3 +97,32 @@ Esta carpeta es una deuda controlada del producto, no una lista decorativa.
 - **Browser:** T094/T095 PASS_REAL.
 - **Gameplay:** sin cambios.
 - **Balance:** sin cambios.
+
+### Checkpoint final BONE-008
+
+- **BONE-008-001:** CLOSED.
+- **BONE-008-002:** CLOSED.
+- **BONE-008-003:** CLOSED.
+- **BONE-008-004:** CLOSED.
+- **BONE-008-005:** CLOSED.
+- **BONE-008-006:** CLOSED.
+- **BONE-008-007:** CLOSED.
+- **BONE-008:** CLOSED.
+
+**Arquitectura final:** `CombatRenderer → CombatRuntimeController → CombatSessionAuthority → combat_core.js`.
+
+**Timing:** `CombatRenderer → CombatRuntimeController → CombatTimingAuthority`.
+
+**CI:** Run `37290899872` = SUCCESS.
+
+**Combat Vertical Slice:** Run `37290899887` = SUCCESS.
+
+**Browser:** `PASS_REAL`, terminal `VICTORY`.
+
+**GAMEPLAY:** NO CHANGE.
+
+**BALANCE:** NO CHANGE.
+
+**PRODUCTION:** NO CHANGE.
+
+**Gate:** GLOBAL GATE remains CLOSED because BONE-004, BONE-009, BONE-010 and BONE-011 remain open.
