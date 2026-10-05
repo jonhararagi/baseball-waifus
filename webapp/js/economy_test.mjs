@@ -1,16 +1,21 @@
 import assert from "node:assert/strict";
-import { getScrapRewardForResult } from "./combat.js";
+import { resolveStandardBattleRewards } from "./reward_resolver.js";
 import { GachaController, SCAVENGER_SCRAP_COST } from "./gacha_controller.js";
 import { requestScrapPurchase, resolveScrapInvoiceUrl } from "./economy.js";
 
-assert.equal(getScrapRewardForResult("HOME_RUN"), 100);
-assert.equal(getScrapRewardForResult("SINGLE"), 10);
-assert.equal(getScrapRewardForResult("DOUBLE"), 10);
-assert.equal(getScrapRewardForResult("TRIPLE"), 10);
-assert.equal(getScrapRewardForResult("HIT"), 10);
-assert.equal(getScrapRewardForResult("OUT"), 0);
-assert.equal(getScrapRewardForResult("FOUL"), 0);
-assert.equal(getScrapRewardForResult("STRIKE"), 0);
+const victoryRewards = resolveStandardBattleRewards({
+  battleResult: { type: "BATTLE_RESULT", outcome: "VICTORY", battleId: "economy-test-victory" },
+  sourceEventId: "economy-test-victory"
+});
+assert.equal(victoryRewards.reason, "BATTLE_VICTORY_BASELINE");
+assert.deepEqual(victoryRewards.rewards, [{ kind: "CURRENCY", currency: "SCRAP", amount: 100 }]);
+
+const defeatRewards = resolveStandardBattleRewards({
+  battleResult: { type: "BATTLE_RESULT", outcome: "DEFEAT", battleId: "economy-test-defeat" },
+  sourceEventId: "economy-test-defeat"
+});
+assert.equal(defeatRewards.reason, "NO_REWARD_ON_DEFEAT");
+assert.deepEqual(defeatRewards.rewards, []);
 
 const schema = { gacha: { rates: { status: "active_canonical_game_table_v1", R: 80, SR: 15, SSR: 4, UR: 1 }, pity: { model: "per_banner_counter", soft_pity: { enabled: true, start_pull: 61, increment_per_pull_percent: 0.5 }, hard_pity: { enabled: true, pull_limit: 80, guaranteed_rarity: "UR" } } } };
 const queue = { character_id: "bw015", canonical: { display_name: "Momo Hoshino", rarity: "SSR" }, batch_units: [ { character_id: "bw016", canonical: { display_name: "Fuyuki Aono", rarity: "SR" } }, { character_id: "bw017", canonical: { display_name: "Yuzu Takahashi", rarity: "R" } }, { character_id: "bw024", canonical: { display_name: "Nene Kagetsu", rarity: "UR" } } ] };
