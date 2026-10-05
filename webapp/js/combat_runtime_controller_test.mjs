@@ -8,6 +8,99 @@ const runtimeSource = fs.readFileSync(new URL("./combat_runtime_controller.js", 
 const rendererSource = fs.readFileSync(new URL("./combat.js", import.meta.url), "utf8");
 const coreSource = fs.readFileSync(new URL("./combat_core.js", import.meta.url), "utf8");
 
+function stripLineComments(line, state) {
+  let output = "";
+  let quote = null;
+  for (let i = 0; i < line.length; i += 1) {
+    const char = line[i];
+    const next = line[i + 1] || "";
+    if (state.blockComment) {
+      if (char === "*" && next === "/") {
+        state.blockComment = false;
+        i += 1;
+      }
+      continue;
+    }
+    if (quote) {
+      output += char;
+      if (char === "\\") {
+        output += next;
+        i += 1;
+      } else if (char === quote) {
+        quote = null;
+      }
+      continue;
+    }
+    if (char === "/" && next === "*") {
+      state.blockComment = true;
+      i += 1;
+      continue;
+    }
+    if (char === "/" && next === "/") break;
+    if (char === "'" || char === '"' || char === "`") {
+      quote = char;
+      output += char;
+      continue;
+    }
+    output += char;
+  }
+  return output;
+}
+
+function collectImportSpecifiers(source) {
+  const imports = [];
+  const state = { blockComment: false };
+  let pending = "";
+  for (const rawLine of source.split(/\r?\n/)) {
+    const line = stripLineComments(rawLine, state);
+    const trimmed = line.trim();
+    if (!pending && /^import\b/.test(trimmed) && !/^import\s*\(/.test(trimmed)) {
+      pending = trimmed;
+    } else if (pending) {
+      pending += ` ${trimmed}`;
+    } else {
+      continue;
+    }
+
+    const sideEffect = pending.match(/^import\s+["']([^"']+)["']\s*;?$/);
+    const fromImport = pending.match(/\bfrom\s+["']([^"']+)["']\s*;?$/);
+    if (sideEffect) {
+      imports.push(sideEffect[1]);
+      pending = "";
+      continue;
+    }
+    if (fromImport) {
+      imports.push(fromImport[1]);
+      pending = "";
+      continue;
+    }
+    if (pending.endsWith(";")) pending = "";
+  }
+  return imports;
+}
+
+function hasApiCall(source, expression) {
+  const escaped = expression.replace(/[.*+?^$()|[\]{}]/g, "\\$&");
+  return new RegExp(`(?:^|[^\\w$])${escaped}\\s*\\(`).test(source);
+}
+
+function hasIdentifier(source, identifier) {
+  const escaped = identifier.replace(/[.*+?^$()|[\]{}]/g, "\\$&");
+  const cleaned = source.replace(/(?:\/\\*[\\s\\S]*?\\*\/|\/\/[^\\n\\r]*)/g, " ");
+  return new RegExp(`(?:^|[^\\w$])${escaped}(?:$|[^\\w$])`).test(cleaned);
+}
+
+function assertImportBoundary(source, expected, label) {
+  const imports = collectImportSpecifiers(source);
+  for (const specifier of expected.present || []) {
+    assert.equal(imports.includes(specifier), true, `${label}: missing import ${specifier}`);
+  }
+  for (const specifier of expected.absent || []) {
+    assert.equal(imports.includes(specifier), false, `${label}: forbidden import ${specifier}`);
+  }
+  return imports;
+}
+
 const makeSnapshot = (stamina = 70) => ({
   batter: {
     id: "bw001",
@@ -21,42 +114,70 @@ const makeSnapshot = (stamina = 70) => ({
   }
 });
 
-test("runtime controller has no presentation or DOM dependencies", () => {
-  assert.match(runtimeSource, /combat_session_authority\.js/);
-  assert.match(runtimeSource, /combat_timing_authority\.js/);
-  assert.doesNotMatch(runtimeSource, /from ["']\.\/combat\.js["']/);
-  assert.doesNotMatch(runtimeSource, /CombatPresentationDirector/);
-  for (const forbidden of [
-    "document.",
-    "window.",
+test("runtime controller has deterministic import and API boundaries", () => {
+  const imports = assertImportBoundary(runtimeSource, {
+    present: ["./combat_session_authority.js", "./combat_timing_authority.js"],
+    absent: ["./combat.js"]
+  }, "RUNTIME CONTROLLER IMPORT BOUNDARY");
+
+  assert.equal(hasApiCall(runtimeSource, "resolveTiming"), true);
+  assert.equal(hasApiCall(runtimeSource, "resolveClimaxTurn"), true);
+  assert.equal(hasApiCall(runtimeSource, "resolveTacticalTurn"), true);
+
+  assert.equal(imports.includes("./combat_presentation_director.js"), false);
+  for (const forbiddenIdentifier of [
+    "document",
+    "window",
     "HTMLCanvasElement",
     "CanvasRenderingContext2D",
-    "querySelector(",
-    "getContext(",
-    "requestAnimationFrame",
-    "addEventListener",
+    "CombatPresentationDirector",
     "reward_pipeline",
     "reward_authority",
     "localStorage",
     "sessionStorage"
   ]) {
-    assert.equal(runtimeSource.includes(forbidden), false, `forbidden runtime dependency: ${forbidden}`);
+    assert.equal(hasIdentifier(runtimeSource, forbiddenIdentifier), false, `forbidden runtime identifier: ${forbiddenIdentifier}`);
   }
-  assert.match(runtimeSource, /resolveTiming\(/);
-  assert.match(runtimeSource, /resolveClimaxTurn\(/);
+
+  for (const forbiddenApi of [
+    "querySelector",
+    "getContext",
+    "requestAnimationFrame",
+    "addEventListener"
+  ]) {
+    assert.equal(hasApiCall(runtimeSource, forbiddenApi), false, `forbidden runtime API: ${forbiddenApi}`);
+  }
+
+  console.log("RUNTIME CONTROLLER IMPORT BOUNDARY = PASS");
+  console.log("RUNTIME CONTROLLER API BOUNDARY = PASS");
 });
 
-test("renderer delegates tactical and timing resolution to runtime without direct gameplay resolvers", () => {
-  assert.match(rendererSource, /CombatRuntimeController/);
-  assert.match(rendererSource, /this\.combatRuntime\.startSession/);
-  assert.match(rendererSource, /this\.combatRuntime\.resolveTacticalTurn/);
-  assert.match(rendererSource, /this\.combatRuntime\.resolveTimingInput/);
-  assert.doesNotMatch(rendererSource, /from "\.\/combat_timing_authority\.js"/);
-  assert.doesNotMatch(rendererSource, /\bresolveTiming\s*\(/);
-  assert.doesNotMatch(rendererSource, /this\.combatRuntime\.resolveClimaxTurn\(/);
-  assert.doesNotMatch(rendererSource, /function _resolveClimaxDamage|_resolveClimaxDamage\(/);
-  assert.match(rendererSource, /_presentClimaxTransition\(/);
-  assert.match(rendererSource, /CombatPresentationDirector/);
+test("renderer delegates tactical and timing resolution through exact gameplay APIs", () => {
+  assertImportBoundary(rendererSource, {
+    present: ["./combat_runtime_controller.js"],
+    absent: ["./combat_timing_authority.js"]
+  }, "RENDERER IMPORT BOUNDARY");
+
+  assert.equal(hasApiCall(rendererSource, "this.combatRuntime.startSession"), true);
+  assert.equal(hasApiCall(rendererSource, "this.combatRuntime.resolveTacticalTurn"), true);
+  assert.equal(hasApiCall(rendererSource, "this.combatRuntime.resolveTimingInput"), true);
+
+  for (const forbiddenApi of [
+    "this.combatAuthority.startSession",
+    "this.combatAuthority.resolveTacticalTurn",
+    "this.combatAuthority.resolveClimaxTurn",
+    "this.combatRuntime.resolveClimaxTurn",
+    "resolveTiming"
+  ]) {
+    assert.equal(hasApiCall(rendererSource, forbiddenApi), false, `forbidden renderer gameplay API: ${forbiddenApi}`);
+  }
+
+  assert.equal(hasIdentifier(rendererSource, "_resolveClimaxDamage"), false);
+  assert.equal(hasIdentifier(rendererSource, "CombatPresentationDirector"), true);
+  assert.equal(hasApiCall(rendererSource, "_presentClimaxTransition"), true);
+
+  console.log("RENDERER IMPORT BOUNDARY = PASS");
+  console.log("RENDERER GAMEPLAY API BOUNDARY = PASS");
 });
 
 test("timing windows preserve the existing zero and maximum effectiveness balance", () => {
