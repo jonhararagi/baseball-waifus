@@ -39,9 +39,9 @@ assert.equal(new URL(sharePayload.telegram_url).searchParams.get("text"), expect
 
 const shareCalls = [];
 const telegramShare = {
-  switchInlineQuery(query) { shareCalls.push(query); }
+  switchInlineQuery(query) { shareCalls.push(query); return true; }
 };
-const shareResult = await shareWaifu(sharePayload, { webApp: telegramShare });
+const shareResult = await shareWaifu(sharePayload, { telegramBridge: telegramShare });
 assert.equal(shareResult.ok, true);
 assert.equal(shareResult.mode, "telegram_inline_query");
 assert.deepEqual(shareCalls, [expectedShareMessage]);
