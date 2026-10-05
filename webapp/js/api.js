@@ -65,26 +65,32 @@ export class TelegramBridge {
     return this.webApp !== null;
   }
 
-  init() {
-    if (!this.webApp) {
-      return null;
-    }
-
-    this.webApp.ready();
-    this.webApp.expand();
-    return this.webApp;
-  }
+  init() { if (!this.webApp) return false; this.ready(); this.expand(); this.setHeaderColor("#0b0b0f"); this.setBackgroundColor("#0b0b0f"); this.setBottomBarColor("#0b0b0f"); return true; }
 
   getUser() {
     return this.webApp?.initDataUnsafe?.user || null;
   }
 
-  getStartParam() {
-    return this.webApp?.initDataUnsafe?.start_param || "";
-  }
+  getStartParam() { return this.webApp?.initDataUnsafe?.start_param || ""; }
+  getUserId() { const id=this.getUser()?.id; return id == null ? null : String(id); }
+  getUserName() { const user=this.getUser(); return user?.first_name || user?.username || "PLAYER"; }
+  getInitData() { return typeof this.webApp?.initData === "string" ? this.webApp.initData : ""; }
+  getThemeParams() { return { ...(this.webApp?.themeParams || {}) }; }
+  getHapticFeedback() { return this.webApp?.HapticFeedback || null; }
+  getBackButton() { return this.webApp?.BackButton || null; }
+  getIsExpanded() { return this.webApp?.isExpanded !== false; }
+  ready() { try { this.webApp?.ready?.(); } catch {} return Boolean(this.webApp); }
+  expand() { try { this.webApp?.expand?.(); } catch {} return Boolean(this.webApp); }
+  setHeaderColor(c) { try { this.webApp?.setHeaderColor?.(String(c)); } catch {} return Boolean(this.webApp?.setHeaderColor); }
+  setBackgroundColor(c) { try { this.webApp?.setBackgroundColor?.(String(c)); } catch {} return Boolean(this.webApp?.setBackgroundColor); }
+  setBottomBarColor(c) { try { this.webApp?.setBottomBarColor?.(String(c)); } catch {} return Boolean(this.webApp?.setBottomBarColor); }
+  onEvent(n,h) { try { this.webApp?.onEvent?.(String(n),h); } catch {} return Boolean(this.webApp?.onEvent); }
+  openInvoice(u,cb) { if(!this.webApp?.openInvoice||!u)return false; try{this.webApp.openInvoice(String(u),cb);return true;}catch{return false;} }
+  switchInlineQuery(q) { if(!this.webApp?.switchInlineQuery)return false; try{this.webApp.switchInlineQuery(String(q||""));return true;}catch{return false;} }
+  openTelegramLink(u) { if(!this.webApp?.openTelegramLink||!u)return false; try{this.webApp.openTelegramLink(String(u));return true;}catch{return false;} }
 
   isNativeRuntime() {
-    const initData = this.webApp?.initData;
+    const initData = this.getInitData();
     return typeof initData === "string" && initData.trim().length > 0;
   }
 
@@ -166,7 +172,7 @@ export class BaseballWaifusApi {
       accept: "application/json"
     };
 
-    const initData = this.telegramBridge?.webApp?.initData;
+    const initData = this.telegramBridge?.getInitData?.();
     if (initData) {
       headers["x-telegram-init-data"] = initData;
     }
