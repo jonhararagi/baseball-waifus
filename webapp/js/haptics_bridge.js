@@ -1,13 +1,14 @@
 import { MobileHaptics } from "./mobile_haptics.js";
 
-function resolveWebApp(webApp = null) {
-  return webApp || globalThis?.window?.Telegram?.WebApp || null;
+function resolveHaptics(platform = null) {
+  if (platform?.getHapticFeedback) return platform.getHapticFeedback();
+  return platform?.HapticFeedback || platform || null;
 }
 
 export class TelegramHapticsBridge {
   constructor(webApp = null, { mobileHaptics = null } = {}) {
-    this.webApp = resolveWebApp(webApp);
-    this.haptics = this.webApp?.HapticFeedback || null;
+    this.platform = webApp || null;
+    this.haptics = resolveHaptics(webApp);
     this.mobileHaptics = mobileHaptics || new MobileHaptics();
   }
 
