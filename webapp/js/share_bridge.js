@@ -1,8 +1,6 @@
 const TELEGRAM_SHARE_PATH = "https://t.me/share/url";
 
-function resolveWebApp(webApp = null) {
-  return webApp || globalThis?.window?.Telegram?.WebApp || null;
-}
+function resolveTelegramPlatform(platform = null) { return platform || null; }
 
 function resolveNavigator(navigatorRef = null) {
   return navigatorRef || globalThis?.navigator || null;
@@ -54,6 +52,7 @@ export function buildSharePayload(character = {}, rarityOverride = null, shareUr
 
 export async function shareWaifu(payloadOrCharacter, {
   webApp = null,
+  telegramBridge = null,
   navigatorRef = null,
   shareUrl = null,
   clipboardFallback = true
@@ -61,13 +60,12 @@ export async function shareWaifu(payloadOrCharacter, {
   const payload = payloadOrCharacter?.message
     ? payloadOrCharacter
     : buildSharePayload(payloadOrCharacter, null, shareUrl);
-  const telegram = resolveWebApp(webApp);
+  const telegram = resolveTelegramPlatform(telegramBridge || webApp);
   const navigatorObject = resolveNavigator(navigatorRef);
 
   if (telegram?.switchInlineQuery) {
     try {
-      telegram.switchInlineQuery(payload.message);
-      return { ok: true, mode: "telegram_inline_query", payload };
+      if (telegram.switchInlineQuery(payload.message)) return { ok: true, mode: "telegram_inline_query", payload };
     } catch {
       // Fall through to Telegram share URL or browser APIs.
     }
@@ -75,8 +73,7 @@ export async function shareWaifu(payloadOrCharacter, {
 
   if (telegram?.openTelegramLink) {
     try {
-      telegram.openTelegramLink(payload.telegram_url);
-      return { ok: true, mode: "telegram_share_url", payload };
+      if (telegram.openTelegramLink(payload.telegram_url)) return { ok: true, mode: "telegram_share_url", payload };
     } catch {
       // Fall through to browser APIs.
     }
