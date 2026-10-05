@@ -1,7 +1,7 @@
 # BONE-010 - TELEGRAM BRIDGE DUPLICATION
 
 PRIORIDAD: P1
-ESTADO: CLOSED
+ESTADO: OPEN
 
 Existen TelegramBridge, TelegramNativeBridge e initializeTelegramNativeShell().
 
@@ -14,3 +14,7 @@ Cierre: single platform contract PASS, Web fallback PASS, TMA fallback PASS, no 
 La autoridad única de plataforma Telegram es `webapp/js/api.js::TelegramBridge`. App, haptics, shop, sharing e identidad consumen el bridge. `TelegramNativeBridge` e `initializeTelegramNativeShell()` fueron eliminados del flujo productivo y `webapp/js/telegramBridge.js` fue eliminado. CloudStorage conserva el fallback de BONE-002: navegador normal sin capacidad; runtime nativo con capacidad; métodos no soportados quedan como fallback del consumidor. Las superficies Telegram parciales son tolerantes.
 
 BONE-002 permanece CLOSED. BONE-009 permanece CLOSED. BONE-004 permanece OPEN/BLOCKED.
+
+## BONE-010-CLOSE-001 DIAGNOSTIC
+
+El contrato estático y la suite Gacha/Player Meta están en verde. La validación Chromium del workflow Telegram Mini App sigue en ejecución en el job 111765510265, actualmente detenida en BONE-001 Native Chromium Validation; por ello no se declara BONE-010 CLOSED ni se inventa browser PASS.
