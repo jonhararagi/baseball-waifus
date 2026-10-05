@@ -57,6 +57,7 @@ jobs:
           node --experimental-default-type=module webapp/js/canonical_character_availability_test.mjs
           node --experimental-default-type=module webapp/js/player_meta_roster_rehydration_test.mjs
           node --experimental-default-type=module webapp/js/player_meta_roster_integration_test.mjs
+          node --experimental-default-type=module webapp/js/tma_bridge_test.mjs
 
       - name: Validate integration syntax
         shell: bash
@@ -76,3 +77,5 @@ jobs:
           node --experimental-default-type=module --check webapp/js/player_meta_roster_rehydration_test.mjs
           node --experimental-default-type=module --check webapp/js/gacha_player_meta_migration_test.mjs
           node --experimental-default-type=module --check webapp/js/team_manager.js
+          node --experimental-default-type=module --check webapp/js/api.js
+          node --experimental-default-type=module --check webapp/js/tma_bridge_test.mjs
