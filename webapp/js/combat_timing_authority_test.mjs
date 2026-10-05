@@ -64,7 +64,7 @@ assert.equal(resolveTiming({
 assert.doesNotMatch(combatSource, /absoluteDelta\s*<=\s*greatWindowMs/);
 assert.doesNotMatch(combatSource, /absoluteDelta\s*<=\s*hitWindowMs/);
 assert.doesNotMatch(combatSource, /\?\s*"GREAT"\s*:\s*absoluteDelta/);
-assert.match(combatSource, /resolveTiming\(/);
+assert.doesNotMatch(combatSource, /resolveTiming\(/);
 assert.match(combatSource, /playTimingResult\?\.\(timing\.grade\)/);
 assert.doesNotMatch(combatSource, /playTimingResult\?\.\(grade\)/);
 assert.doesNotMatch(combatSource, /SCRAP_REWARDS/);
