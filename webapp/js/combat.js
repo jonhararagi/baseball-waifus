@@ -43,13 +43,6 @@ const TIMING_COLORS = {
 
 const MAX_DPR = 2.5;
 
-const SCRAP_REWARDS = Object.freeze({
-  HOME_RUN: 100, SINGLE: 10, DOUBLE: 10, TRIPLE: 10, HIT: 10, OUT: 0, FOUL: 0
-});
-
-export function getScrapRewardForResult(result) {
-  return Number(SCRAP_REWARDS[String(result || "").toUpperCase()]) || 0;
-}
 
 export function resolvePresentationAttackerId(result, fallback = "", selectedActorId = "") {
   for (const value of [result?.attackerId, result?.attacker_id, fallback, selectedActorId]) {
@@ -185,7 +178,6 @@ export class CombatRenderer {
     manifestUrl = null,
     onState = null,
     audioBridge = null,
-    onScrapEarned = null,
     hapticsBridge = null,
     getHudResources = null,
     performanceAdapter = null,
@@ -226,17 +218,15 @@ export class CombatRenderer {
     this.manifestUrl = manifestUrl;
     this.onState = onState;
     this.audioBridge = audioBridge;
-    this.onScrapEarned = onScrapEarned;
     this.hapticsBridge = hapticsBridge || null;
     this.performanceAdapter = performanceAdapter || new PerformanceAdapter();
     this.onTimingResult = typeof onTimingResult === "function" ? onTimingResult : null;
     this.onTacticalTurn = typeof onTacticalTurn === "function" ? onTacticalTurn : null;
     this.onClimaxStart = typeof onClimaxStart === "function" ? onClimaxStart : null;
     this.onLocalCombatResult = typeof onLocalCombatResult === "function" ? onLocalCombatResult : null;
-    this.getEconomyBoosts = typeof getEconomyBoosts === "function" ? getEconomyBoosts : () => ({ scrapMultiplier: 1, timingGraceMs: 0 });
+    this.getEconomyBoosts = typeof getEconomyBoosts === "function" ? getEconomyBoosts : () => ({ timingGraceMs: 0 });
     this.onPresentationStep = typeof onPresentationStep === "function" ? onPresentationStep : null;
     this.onEconomyTimingConsumed = null;
-    this.onEconomyRewardConsumed = null;
     this.themeManager = new AreaThemeManager("cyberpunk");
     this.combatStage = new CombatStage();
     this.batterRenderer = new BatterRenderer({
@@ -275,7 +265,6 @@ export class CombatRenderer {
     this.cameraShakeDuration = 0.15;
     this.impactParticles = [];
     this.maxImpactParticles = this.performanceAdapter.getParticleBudget(28);
-    this.scrapTurnIds = new Set();
     this.zanTimer = 0;
     this.zanDuration = 0.34;
     this.timingState = null;
@@ -1040,8 +1029,6 @@ export class CombatRenderer {
       terminal: Boolean(dto.match_end || dto.outcome === "VICTORY" || dto.outcome === "DEFEAT")
     });
     this.combatPresentation.startFromPresentationEvent(presentationEvent);
-
-    this._awardScrap(dto);
 
     await this.assetBank.preload([
       ...(dto.assets?.sprites || []).map((asset) => ({ ...asset, kind: "sprite" })),
@@ -2446,23 +2433,6 @@ export class CombatRenderer {
     if (["MISS", "STRIKE", "OUT", "FOUL"].includes(normalized) || String(timing || "").toUpperCase() === "BAD") {
       this._applyWaifuFeedback("feedback-miss", "MISS");
     }
-  }
-
-  _awardScrap(dto) {
-    const amount = getScrapRewardForResult(dto?.result);
-    if (amount <= 0 || typeof this.onScrapEarned !== "function") return;
-    const turnId = String(dto?.turn_id || "");
-    if (turnId && this.scrapTurnIds.has(turnId)) return;
-    if (turnId) {
-      this.scrapTurnIds.add(turnId);
-      if (this.scrapTurnIds.size > 128) {
-        const oldest = this.scrapTurnIds.values().next().value;
-        this.scrapTurnIds.delete(oldest);
-      }
-    }
-    const multiplier = Math.max(1, Number(this.getEconomyBoosts()?.scrapMultiplier) || 1);
-    this.onScrapEarned({ amount: amount * multiplier, base_amount: amount, multiplier, result: String(dto.result || ""), turn_id: turnId || null });
-    this.onEconomyRewardConsumed?.();
   }
 
   _triggerCutIn(dto) {

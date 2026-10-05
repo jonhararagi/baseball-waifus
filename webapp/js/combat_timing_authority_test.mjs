@@ -67,6 +67,14 @@ assert.doesNotMatch(combatSource, /\?\s*"GREAT"\s*:\s*absoluteDelta/);
 assert.match(combatSource, /resolveTiming\(/);
 assert.match(combatSource, /playTimingResult\?\.\(timing\.grade\)/);
 assert.doesNotMatch(combatSource, /playTimingResult\?\.\(grade\)/);
+assert.doesNotMatch(combatSource, /SCRAP_REWARDS/);
+assert.doesNotMatch(combatSource, /getScrapRewardForResult/);
+assert.doesNotMatch(combatSource, /_awardScrap/);
+assert.doesNotMatch(combatSource, /scrapTurnIds/);
+assert.doesNotMatch(combatSource, /onScrapEarned/);
+assert.doesNotMatch(combatSource, /onEconomyRewardConsumed/);
+assert.doesNotMatch(combatSource, /scrapMultiplier/);
+assert.match(combatSource, /timingGraceMs/);
 
 const previousLogic = ({ elapsedMs, targetMs, greatWindowMs, hitWindowMs, timingGraceMs }) => {
   const rawDeltaMs = elapsedMs - targetMs;
@@ -88,6 +96,6 @@ for (const input of [
   assert.equal(resolveTiming(input).grade, previousLogic(input));
 }
 
-console.log("BONE-008-004 STATIC = PASS_STATIC");
+console.log("BONE-008-005 LEGACY REWARD REMOVAL = PASS_STATIC");
 console.log("TIMING AUTHORITY = PASS");
 console.log("LEGACY TIMING EQUIVALENCE = PASS");
