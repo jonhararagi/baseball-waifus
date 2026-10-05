@@ -40,7 +40,6 @@ import { AdminPanel, INFINITE_SCRAP_VALUE } from "./admin_panel.js";
 import { resolveTimingGrade } from "./combat_core.js";
 import { GachaRecruitmentUI } from "./gacha_recruitment.js";
 import { RosterPanel } from "./roster_panel.js";
-import { createTelegramNativeBridge } from "./telegramBridge.js";
 import { ShopManager } from "./shopManager.js";
 import { ShopUI } from "./shop_ui.js";
 import { NarrativePresentation } from "./narrative_presentation.js";
@@ -53,25 +52,10 @@ import { applyCombatRewardPipeline, createCombatResultFromTurnResult } from "./r
 import { SERVER_COMBAT_ATTESTATION_V1, RewardAuthorityError, authorizeServerCombatResult } from "./reward_authority.js";
 import { runClientVersionGate } from "./version_gate.js";
 
-function initializeTelegramNativeShell() {
-  const webApp = window.Telegram?.WebApp || null;
-  if (!webApp) return null;
-  try {
-    webApp.ready?.();
-    webApp.expand?.();
-    webApp.setHeaderColor?.("#0b0b0f");
-    webApp.setBackgroundColor?.("#0b0b0f");
-  } catch {
-    // Partial Telegram WebApp surfaces remain a supported fallback.
-  }
-  return webApp;
-}
-
-const telegramWebApp = initializeTelegramNativeShell();
 const telegram = new TelegramBridge(window.Telegram);
 telegram.init();
 const api = new BaseballWaifusApi({ telegramBridge: telegram });
-const hapticsBridge = createHapticsBridge(telegramWebApp);
+const hapticsBridge = createHapticsBridge(telegram);
 const cloudStorage = telegram.getCloudStorage();
 const audioBridge = new AudioManager();
 const mobileHaptics = new MobileHaptics();
@@ -170,11 +154,9 @@ let finiteScrapBeforeInfinite = null;
 const leaderboard = new Leaderboard({
   storage: window.localStorage,
   cloudStorage,
-  playerId: telegramWebApp?.initDataUnsafe?.user?.id || "local-player",
-  playerName: telegramWebApp?.initDataUnsafe?.user?.first_name || "PLAYER"
+  playerId: telegram.getUserId() || "local-player",
+  playerName: telegram.getUserName()
 });
-const telegramNativeBridge = createTelegramNativeBridge({ leaderboard });
-
 const gachaController = new GachaController({
   audioBridge,
   hapticsBridge,
@@ -193,12 +175,12 @@ const gachaRecruitment = new GachaRecruitmentUI({
   }
 });
 
-const shopManager = new ShopManager({ webApp: telegramNativeBridge.webApp });
+const shopManager = new ShopManager({ telegramBridge: telegram });
 
 const shopUI = new ShopUI({
   root: shopRoot,
   controller: gachaController,
-  webApp: telegramWebApp,
+  telegramBridge: telegram,
   shopManager,
   onBalanceChange: () => updateGachaHud(gachaController.getStatus())
 });
@@ -838,7 +820,7 @@ const gallery = new GalleryController({
     const payload = buildSharePayload(unit, null, window.location.href);
     sharePayload = payload;
     if (shareButton) shareButton.hidden = false;
-    void shareWaifu(payload, { webApp: telegramWebApp });
+    void shareWaifu(payload, { telegramBridge: telegram });
   },
   onActiveBatterChange: (characterId) => {
     hapticsBridge.handleGameEvent("ui_confirm");
@@ -1340,7 +1322,7 @@ gachaController.subscribe((status, result) => {
 });
 
 function setTelegramBackButton(visible) {
-  const backButton = telegramWebApp?.BackButton;
+  const backButton = telegram.getBackButton();
   if (!backButton) return;
   try {
     if (visible) backButton.show?.();
@@ -1398,11 +1380,11 @@ dexInspectorClose?.addEventListener("click", () => {
   cardRenderer.unmount();
 });
 
-telegramWebApp?.BackButton?.onClick?.(handleTelegramBackButton);
+telegram.getBackButton()?.onClick?.(handleTelegramBackButton);
 
 shareButton?.addEventListener("click", async () => {
   if (!sharePayload) return;
-  const result = await shareWaifu(sharePayload, { webApp: telegramWebApp });
+  const result = await shareWaifu(sharePayload, { telegramBridge: telegram });
   if (gachaStatusValue) {
     gachaStatusValue.textContent = result.ok
       ? "SHARED // " + sharePayload.rarity
@@ -1549,11 +1531,7 @@ function installMobileGestures() {
 
 function syncAudioLifecycle() {
   const hidden = document.visibilityState === "hidden";
-  const telegramCollapsed = Boolean(
-    telegramWebApp
-    && "isExpanded" in telegramWebApp
-    && telegramWebApp.isExpanded === false
-  );
+  const telegramCollapsed = telegram.isAvailable() && !telegram.getIsExpanded();
   if (hidden || telegramCollapsed) {
     void audioBridge.suspend?.();
   } else {
@@ -1562,11 +1540,11 @@ function syncAudioLifecycle() {
 }
 
 document.addEventListener("visibilitychange", syncAudioLifecycle);
-telegramWebApp?.onEvent?.("viewportChanged", syncAudioLifecycle);
+telegram.onEvent("viewportChanged", syncAudioLifecycle);
 syncAudioLifecycle();
 
 window.requestScrapPurchase = (amount, options = {}) => requestScrapPurchase(amount, {
-  webApp: telegramWebApp,
+  telegramBridge: telegram,
   ...options
 });
 
