@@ -15,7 +15,7 @@ import { student4v4ResultToCombatResult } from "./student_4v4_combat_adapter.js"
 import { applyCombatRewardPipeline } from "./reward_pipeline.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const read = (name) => fs.readFileSync(path.join(here, name), "utf8"));
+const read = (name) => fs.readFileSync(path.join(here, name), "utf8");
 
 const runtime = new CombatRuntimeController();
 assert.ok(runtime.authority instanceof CombatSessionAuthority, "Web runtime must own CombatSessionAuthority");
