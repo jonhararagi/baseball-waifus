@@ -21,6 +21,13 @@ on:
       - "webapp/js/persistence_authority_test.mjs"
       - "webapp/js/player_meta_concurrency_test.mjs"
       - "webapp/js/team_manager.js"
+      - "webapp/js/tma_bridge_test.mjs"
+      - "webapp/js/api.js"
+      - "webapp/js/haptics_bridge.js"
+      - "webapp/js/shopManager.js"
+      - "webapp/js/share_bridge.js"
+      - "webapp/js/app.js"
+      - "tests/telegram_shop_integration_test.mjs"
       - ".github/workflows/gacha-player-meta-tests.yml"
   workflow_dispatch:
 
