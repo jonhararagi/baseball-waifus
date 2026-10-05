@@ -84,12 +84,138 @@ function hasApiCall(source, expression) {
   return new RegExp(`(?:^|[^\\w$])${escaped}\\s*\\(`).test(source);
 }
 
-function hasIdentifier(source, identifier) {
-  const escaped = identifier.replace(/[.*+?^$()|[\]{}]/g, "\\$&");
-  const cleaned = source.replace(/(?:\/\\*[\\s\\S]*?\\*\/|\/\/[^\\n\\r]*)/g, " ");
-  return new RegExp(`(?:^|[^\\w$])${escaped}(?:$|[^\\w$])`).test(cleaned);
+function stripCommentsAndStrings(source) {
+  let output = "";
+  let quote = null;
+  let blockComment = false;
+
+  for (let index = 0; index < source.length; index += 1) {
+    const char = source[index];
+    const next = source[index + 1] || "";
+
+    if (blockComment) {
+      if (char === "*" && next === "/") {
+        blockComment = false;
+        output += "  ";
+        index += 1;
+      } else {
+        output += char === "\n" || char === "\r" ? char : " ";
+      }
+      continue;
+    }
+
+    if (quote) {
+      if (char === "\\") {
+        output += "  ";
+        if (index + 1 < source.length) {
+          output += source[index + 1] === "\n" || source[index + 1] === "\r"
+            ? source[index + 1]
+            : " ";
+          index += 1;
+        }
+      } else if (char === quote) {
+        output += " ";
+        quote = null;
+      } else {
+        output += char === "\n" || char === "\r" ? char : " ";
+      }
+      continue;
+    }
+
+    if (char === "/" && next === "*") {
+      blockComment = true;
+      output += "  ";
+      index += 1;
+      continue;
+    }
+
+    if (char === "/" && next === "/") {
+      while (index < source.length && source[index] !== "\n" && source[index] !== "\r") {
+        output += " ";
+        index += 1;
+      }
+      index -= 1;
+      continue;
+    }
+
+    if (char === "'" || char === '"' || char === "`") {
+      quote = char;
+      output += " ";
+      continue;
+    }
+
+    output += char;
+  }
+
+  return output;
 }
 
+function collectDeclaredIdentifiers(source) {
+  const declared = new Set();
+  const declarationPattern = /\\b(?:const|let|var|class|function)\\s+([A-Za-z_$][\\w$]*)\\b/g;
+  for (const match of source.matchAll(declarationPattern)) {
+    declared.add(match[1]);
+  }
+
+  const catchPattern = /\\bcatch\\s*\\(\\s*([A-Za-z_$][\\w$]*)\\s*\\)/g;
+  for (const match of source.matchAll(catchPattern)) {
+    declared.add(match[1]);
+  }
+
+  const functionParameterPattern = /\\bfunction(?:\\s+[A-Za-z_$][\\w$]*)?\\s*\\(([^)]*)\\)/g;
+  for (const match of source.matchAll(functionParameterPattern)) {
+    for (const parameter of match[1].split(",")) {
+      const name = parameter.trim().match(/^([A-Za-z_$][\\w$]*)\\b/);
+      if (name) declared.add(name[1]);
+    }
+  }
+
+  const arrowParameterPattern = /(?:\\(([A-Za-z_$][\\w$]*)[^)]*\\)|\\b([A-Za-z_$][\\w$]*)\\b)\\s*=>/g;
+  for (const match of source.matchAll(arrowParameterPattern)) {
+    declared.add(match[1] || match[2]);
+  }
+
+  return declared;
+}
+
+function hasIdentifier(source, identifier) {
+  const escaped = identifier.replace(/[.*+?^$()|[\\]{}]/g, "\\$&");
+  const cleaned = stripCommentsAndStrings(source);
+  const declared = collectDeclaredIdentifiers(cleaned);
+
+  if (new RegExp("\\bglobalThis\\s*\\.\\s*" + escaped + "\\b").test(cleaned)) {
+    return true;
+  }
+
+  if (declared.has(identifier)) {
+    return false;
+  }
+
+  const identifierPattern = new RegExp("\\b" + escaped + "\\b", "g");
+  for (const match of cleaned.matchAll(identifierPattern)) {
+    const startIndex = match.index;
+    const endIndex = startIndex + identifier.length;
+    const previous = cleaned[startIndex - 1] || "";
+    const next = cleaned[endIndex] || "";
+
+    if (previous === ".") {
+      continue;
+    }
+
+    let lookahead = endIndex;
+    while (/\\s/.test(cleaned[lookahead] || "")) {
+      lookahead += 1;
+    }
+
+    if (cleaned[lookahead] === ":") {
+      continue;
+    }
+
+    return true;
+  }
+
+  return false;
+}
 function assertImportBoundary(source, expected, label) {
   const imports = collectImportSpecifiers(source);
   for (const specifier of expected.present || []) {
@@ -112,6 +238,25 @@ const makeSnapshot = (stamina = 70) => ({
       stamina
     }
   }
+});
+
+test("forbidden global detector distinguishes local identifiers from real globals", () => {
+  assert.equal(
+    hasIdentifier("const window = timingWindow || this.getTimingWindow(); window.targetMs;", "window"),
+    false
+  );
+  assert.equal(
+    hasIdentifier('window.addEventListener("resize", handler);', "window"),
+    true
+  );
+  assert.equal(
+    hasIdentifier("const document = localDocument; document.body;", "document"),
+    false
+  );
+  assert.equal(
+    hasIdentifier("globalThis.document.body;", "document"),
+    true
+  );
 });
 
 test("runtime controller has deterministic import and API boundaries", () => {
