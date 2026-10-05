@@ -18,7 +18,7 @@ const gameplayAssignments = /^(?:\s*)this\.(battlePhase|tacticalTurn|tacticalMax
 assert.equal(gameplayAssignments.test(combat), false);
 assert.match(combat, /this\.combatRuntime\.startSession\(/);
 assert.match(combat, /this\.combatRuntime\.resolveTacticalTurn\(\)/);
-assert.match(combat, /this\.combatRuntime\.resolveClimaxTurn\(grade\)/);
+assert.doesNotMatch(combat, /this\.combatRuntime\.resolveClimaxTurn\(grade\)/);
 assert.match(combat, /this\.canvas\.dataset\.combatTacticalTurn = String\(loopState\.tacticalTurn/);
 assert.match(combat, /this\.canvas\.dataset\.combatTacticalMaxTurns = String\(loopState\.tacticalMaxTurns/);
 assert.match(combat, /this\.canvas\.dataset\.combatPlayerStamina = String\(loopState\.playerStamina/);
