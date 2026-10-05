@@ -73,3 +73,17 @@ Esta carpeta es una deuda controlada del producto, no una lista decorativa.
 - **Browser attempts:** Run `37189204507` y Run `37189292162` = FAIL_REAL por transiciones `ACTION → FOCUS` y `FOCUS → RETURN`, respectivamente.
 - **CAUSE:** reemplazo de una secuencia de presentación activa no compatible con la máquina `IDLE → FOCUS → ACTION → RETURN → IDLE`.
 - **RULE:** dos fallos por la misma causa; no se realizan retries adicionales en esta task.
+
+
+### Checkpoint parcial BONE-008-006
+
+- BONE-008: OPEN.
+- BONE-008-006: CLOSED.
+- Resultado: extracción real de la orquestación runtime de CombatRenderer hacia CombatRuntimeController.
+- Arquitectura: CombatRenderer → CombatRuntimeController → CombatSessionAuthority → combat_core.js; presentation permanece separado.
+- Static: PASS_STATIC.
+- Combat Vertical Slice CI: Run 37259281591 = SUCCESS.
+- Browser: PASS_REAL. Chromium alcanzó cinco tactical turns, CLIMAX, timing y terminal VICTORY.
+- Console: console_errors=[].
+- GAMEPLAY: NO CHANGE.
+- BALANCE: NO CHANGE.

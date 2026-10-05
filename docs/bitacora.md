@@ -10044,3 +10044,21 @@ BONE-005: CLOSED.
 BONE-006: CLOSED.
 BONE-007: CLOSED.
 BONE-008: OPEN / partial progress.
+
+
+---
+
+## BONE-008-006 · EXTRACT COMBAT RUNTIME ORCHESTRATION
+
+Fecha: 2026-10-04
+BASE SHA: cc47601d8746efe711dc0e23d858e84d2a059932
+HEAD: c1a6b8aa34720705c6721c496f4ed87e93054450
+TIMER: 60–90 minutos
+RESULT: CLOSED checkpoint / BONE-008 remains OPEN.
+
+Se extrajo la orquestación runtime de combate de CombatRenderer hacia CombatRuntimeController, preservando CombatSessionAuthority, combat_core.js, timing y presentation.
+
+Validation: runtime controller 4/4 PASS; Combat Vertical Slice Run 37259281591 SUCCESS; Chromium PASS_REAL; terminal VICTORY PASS_REAL; console_errors=[].
+
+No se modificó gameplay, balance ni combat_core.js.
+BONE-004 BLOCKED / unchanged. BONE-005 CLOSED. BONE-006 CLOSED. BONE-007 CLOSED. BONE-008-006 CLOSED. BONE-008 OPEN / partial progress. BONE-011 OPEN / unchanged.

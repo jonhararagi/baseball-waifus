@@ -39,7 +39,7 @@ const runCycle = async () => page.evaluate(async () => {
       id: "bw001",
       card_id: "bw001",
       faction: "cyber_tech",
-      stats: { power: 90, contact: 90, speed: 90, eye: 90 }
+      stats: { power: 100, contact: 100, speed: 100, eye: 100 }
     },
     pitcher: {
       id: "enemy001",
@@ -142,12 +142,9 @@ const terminalCycle = await page.evaluate(async () => {
     state: { match_id: "bone008-browser-terminal", boss_hp: 1 }
   });
 
-  renderer.combatAuthority.startSession({
-    ...renderer.combatAuthority.getState(),
-    bossHp: 1,
-    tacticalTurn: 5,
-    phase: "CLIMAX"
-  });
+  for (let turn = 0; turn < 5; turn += 1) {
+    renderer.combatRuntime.resolveTacticalTurn();
+  }
   renderer._syncAuthorityState();
   renderer.beginTimingWindow();
   renderer.timingState.startedAt = performance.now() - renderer.timingState.targetMs;
@@ -157,7 +154,7 @@ const terminalCycle = await page.evaluate(async () => {
   const presentation = renderer.getPresentationState();
   const result = {
     phase: renderer.battlePhase,
-    terminal: renderer.combatAuthority.getState().terminal,
+    terminal: renderer.combatRuntime.getState().terminal,
     bossHp: renderer.bossHp,
     presentation_result: presentation.result?.result || null,
     presentation_outcome: presentation.result?.outcome || null,

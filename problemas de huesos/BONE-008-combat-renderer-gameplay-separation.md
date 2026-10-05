@@ -381,3 +381,32 @@ BONE-007: CLOSED.
 BONE-008: OPEN / PARTIAL PROGRESS.
 
 **CHECKPOINT STATUS:** BONE-008-003-R6 CLOSED.
+
+
+---
+
+## BONE-008-006 · EXTRACT COMBAT RUNTIME ORCHESTRATION FROM COMBAT RENDERER
+
+Fecha: 2026-10-04
+HEAD BEFORE: cc47601d8746efe711dc0e23d858e84d2a059932
+HEAD AFTER: c1a6b8aa34720705c6721c496f4ed87e93054450
+TIMER: 60–90 minutos
+RESULT: CLOSED
+
+Se creó webapp/js/combat_runtime_controller.js para bootstrap de sesión, invocación tactical, invocación climax y acceso al snapshot. No importa renderer, presentation, DOM, window, Canvas, reward authority ni persistence.
+
+CombatRenderer delega startSession, resolveTacticalTurn y resolveClimaxTurn al controller. CombatSessionAuthority y combat_core.js continúan como autoridad normativa. No se duplicaron fórmulas.
+
+STATIC: PASS_STATIC. Runtime controller tests 4/4 PASS.
+COMBAT VERTICAL SLICE: Run 37259281591 = SUCCESS.
+BROWSER: PASS_REAL. Cinco tactical turns, CLIMAX/timing y terminal VICTORY, con console_errors=[].
+
+No hubo cambios de gameplay, balance, timing, rewards, Gacha, persistence ni combat_core.js.
+
+BONE-008-006 = CLOSED.
+BONE-008 = OPEN / PARTIAL PROGRESS.
+BONE-004 = BLOCKED / UNCHANGED.
+BONE-005 = CLOSED.
+BONE-006 = CLOSED.
+BONE-007 = CLOSED.
+BONE-011 = OPEN / UNCHANGED.

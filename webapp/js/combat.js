@@ -1,8 +1,5 @@
 import { isCombatInitDTO, isTurnResultDTO } from "./api.js";
-import {
-  COMBAT_STAMINA_ROUND_COST,
-  CombatSessionAuthority
-} from "./combat_session_authority.js";
+import { CombatRuntimeController } from "./combat_runtime_controller.js";
 import { AreaThemeManager } from "./area_theme_manager.js";
 import { CombatStage, createCombatStageActors, renderCombatStageForeground, renderCombatStageWorld } from "./combat_stage.js";
 import { BatterRenderer } from "./batter_renderer.js";
@@ -234,7 +231,7 @@ export class CombatRenderer {
       getSpritePath: (batter) => this._spritePathForCharacter(batter)
     });
     this.combatEffects = new CombatEffects();
-    this.combatAuthority = new CombatSessionAuthority();
+    this.combatRuntime = new CombatRuntimeController();
     this.combatPresentation = presentationDirector || new CombatPresentationDirector({
       stage: this.combatStage,
       onStep: (event) => {
@@ -309,21 +306,21 @@ export class CombatRenderer {
     this.frameHandle = requestAnimationFrame((time) => this.frame(time));
   }
 
-  get battlePhase() { return this.combatAuthority.getState().phase; }
-  get tacticalTurn() { return this.combatAuthority.getState().tacticalTurn; }
-  get tacticalMaxTurns() { return this.combatAuthority.getState().tacticalMaxTurns; }
-  get bossMaxHp() { return this.combatAuthority.getState().bossMaxHp; }
-  get bossHp() { return this.combatAuthority.getState().bossHp; }
-  get bossConcentration() { return this.combatAuthority.getState().bossConcentration; }
-  get playerStaminaMax() { return this.combatAuthority.getState().playerStaminaMax; }
-  get playerStamina() { return this.combatAuthority.getState().playerStamina; }
-  get playerStaminaRoundCost() { return this.combatAuthority.getState().playerStaminaRoundCost; }
-  get internalEnergy() { return this.combatAuthority.getState().internalEnergy; }
-  get tacticalEffectiveness() { return this.combatAuthority.getState().tacticalEffectiveness; }
-  get round() { return this.combatAuthority.getState().round; }
+  get battlePhase() { return this.combatRuntime.getState().phase; }
+  get tacticalTurn() { return this.combatRuntime.getState().tacticalTurn; }
+  get tacticalMaxTurns() { return this.combatRuntime.getState().tacticalMaxTurns; }
+  get bossMaxHp() { return this.combatRuntime.getState().bossMaxHp; }
+  get bossHp() { return this.combatRuntime.getState().bossHp; }
+  get bossConcentration() { return this.combatRuntime.getState().bossConcentration; }
+  get playerStaminaMax() { return this.combatRuntime.getState().playerStaminaMax; }
+  get playerStamina() { return this.combatRuntime.getState().playerStamina; }
+  get playerStaminaRoundCost() { return this.combatRuntime.getState().playerStaminaRoundCost; }
+  get internalEnergy() { return this.combatRuntime.getState().internalEnergy; }
+  get tacticalEffectiveness() { return this.combatRuntime.getState().tacticalEffectiveness; }
+  get round() { return this.combatRuntime.getState().round; }
 
   _syncAuthorityState() {
-    const authoritative = this.combatAuthority.getState();
+    const authoritative = this.combatRuntime.getState();
     this.state = { ...this.state, combat_state: authoritative };
     return authoritative;
   }
@@ -513,7 +510,7 @@ export class CombatRenderer {
       return this.beginTimingWindow();
     }
 
-    const transition = this.combatAuthority.resolveTacticalTurn();
+    const transition = this.combatRuntime.resolveTacticalTurn();
     const result = transition.result;
     const authoritative = transition.state;
     this._syncAuthorityState();
@@ -551,7 +548,7 @@ export class CombatRenderer {
   }
 
   _resolveClimaxDamage(grade) {
-    const transition = this.combatAuthority.resolveClimaxTurn(grade);
+    const transition = this.combatRuntime.resolveClimaxTurn(grade);
     const result = transition.result;
     const authoritative = transition.state;
     this._syncAuthorityState();
@@ -656,7 +653,7 @@ export class CombatRenderer {
 
   getBattleLoopState() {
     return {
-      ...this.combatAuthority.getState(),
+      ...this.combatRuntime.getState(),
       last_tactical_event: this.lastTacticalEvent,
       last_timing: this.lastTiming
     };
@@ -966,25 +963,7 @@ export class CombatRenderer {
     this.matchReady = true;
     this.resultPulse = 0;
     this.timingState = null;
-    const configuredStamina = safeNumber(
-      this.state?.batter?.stamina ?? this.state?.batter?.stats?.stamina,
-      70
-    );
-    this.combatAuthority.startSession({
-      ...this.state,
-      phase: "TACTICAL",
-      tacticalTurn: 0,
-      bossMaxHp: 100,
-      bossHp: 100,
-      bossConcentration: 100,
-      playerStaminaMax: clamp(Math.round(configuredStamina), 1, 100),
-      playerStamina: clamp(Math.round(configuredStamina), 1, 100),
-      playerStaminaRoundCost: COMBAT_STAMINA_ROUND_COST,
-      internalEnergy: 0,
-      tacticalEffectiveness: 0,
-      round: 1,
-      tacticalMaxTurns: 5
-    });
+    this.combatRuntime.startSession(this.state);
     this._syncAuthorityState();
     this.lastTacticalEvent = null;
 
