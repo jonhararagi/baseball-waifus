@@ -77,11 +77,12 @@ const submitCurrent = () => {
       throw new Error("UNEXPECTED_PHASE:" + battle.currentPhase);
   }
 };
-while (battle.currentPhase !== "RESOLUTION") {
-  const active = inputs[battle.currentPhase];
+for (const role of ["BUFFER", "HEALER", "DEBUFFER", "BATTER"]) {
+  const active = inputs[role];
   active.start();
-  while (battle.currentPhase === active.battle.currentPhase) submitCurrent();
+  while (battle.currentPhase === role) submitCurrent();
 }
+assert.equal(battle.currentPhase, "RESOLUTION");
 const resolved = battle.resolve();
 const studentCombatResult = student4v4ResultToCombatResult(resolved.student4v4Result);
 
