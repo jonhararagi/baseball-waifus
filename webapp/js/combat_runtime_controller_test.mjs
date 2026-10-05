@@ -152,17 +152,17 @@ function stripCommentsAndStrings(source) {
 
 function collectDeclaredIdentifiers(source) {
   const declared = new Set();
-  const declarationPattern = /\\b(?:const|let|var|class|function)\\s+([A-Za-z_$][\\w$]*)\\b/g;
+  const declarationPattern = /\b(?:const|let|var|class|function)\s+([A-Za-z_$][\w$]*)\b/g;
   for (const match of source.matchAll(declarationPattern)) {
     declared.add(match[1]);
   }
 
-  const catchPattern = /\\bcatch\\s*\\(\\s*([A-Za-z_$][\\w$]*)\\s*\\)/g;
+  const catchPattern = /\bcatch\s*\(\s*([A-Za-z_$][\w$]*)\s*\)/g;
   for (const match of source.matchAll(catchPattern)) {
     declared.add(match[1]);
   }
 
-  const functionParameterPattern = /\\bfunction(?:\\s+[A-Za-z_$][\\w$]*)?\\s*\\(([^)]*)\\)/g;
+  const functionParameterPattern = /\bfunction(?:\s+[A-Za-z_$][\w$]*)?\s*\(([^)]*)\)/g;
   for (const match of source.matchAll(functionParameterPattern)) {
     for (const parameter of match[1].split(",")) {
       const name = parameter.trim().match(/^([A-Za-z_$][\\w$]*)\\b/);
@@ -170,7 +170,7 @@ function collectDeclaredIdentifiers(source) {
     }
   }
 
-  const arrowParameterPattern = /(?:\\(([A-Za-z_$][\\w$]*)[^)]*\\)|\\b([A-Za-z_$][\\w$]*)\\b)\\s*=>/g;
+  const arrowParameterPattern = /(?:\(([A-Za-z_$][\w$]*)[^)]*\)|\b([A-Za-z_$][\w$]*)\b)\s*=>/g;
   for (const match of source.matchAll(arrowParameterPattern)) {
     declared.add(match[1] || match[2]);
   }
@@ -203,7 +203,7 @@ function hasIdentifier(source, identifier) {
     }
 
     let lookahead = endIndex;
-    while (/\\s/.test(cleaned[lookahead] || "")) {
+    while (/\s/.test(cleaned[lookahead] || "")) {
       lookahead += 1;
     }
 
