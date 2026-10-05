@@ -8,36 +8,176 @@ const runtimeSource = fs.readFileSync(new URL("./combat_runtime_controller.js", 
 const rendererSource = fs.readFileSync(new URL("./combat.js", import.meta.url), "utf8");
 const coreSource = fs.readFileSync(new URL("./combat_core.js", import.meta.url), "utf8");
 
-test("runtime controller has no presentation or DOM dependencies", () => {
-  assert.match(runtimeSource, /combat_session_authority\.js/);
-  assert.doesNotMatch(runtimeSource, /combat\.js|CombatPresentationDirector|document\.|window\.|HTMLCanvasElement|CanvasRenderingContext2D|canvas\b/);
-  assert.doesNotMatch(runtimeSource, /reward_pipeline|reward_authority|localStorage|sessionStorage/);
-  assert.match(runtimeSource, /resolveTacticalTurn/);
-  assert.match(runtimeSource, /resolveClimaxTurn/);
+const makeSnapshot = (stamina = 70) => ({
+  batter: {
+    id: "bw001",
+    stats: {
+      power: 90,
+      contact: 85,
+      speed: 80,
+      eye: 88,
+      stamina
+    }
+  }
 });
 
-test("renderer delegates session and gameplay resolution to runtime controller", () => {
+test("runtime controller has no presentation or DOM dependencies", () => {
+  assert.match(runtimeSource, /combat_session_authority\.js/);
+  assert.match(runtimeSource, /combat_timing_authority\.js/);
+  assert.doesNotMatch(runtimeSource, /from ["']\.\/combat\.js["']/);
+  assert.doesNotMatch(runtimeSource, /CombatPresentationDirector/);
+  for (const forbidden of [
+    "document.",
+    "window.",
+    "HTMLCanvasElement",
+    "CanvasRenderingContext2D",
+    "querySelector(",
+    "getContext(",
+    "requestAnimationFrame",
+    "addEventListener",
+    "reward_pipeline",
+    "reward_authority",
+    "localStorage",
+    "sessionStorage"
+  ]) {
+    assert.equal(runtimeSource.includes(forbidden), false, `forbidden runtime dependency: ${forbidden}`);
+  }
+  assert.match(runtimeSource, /resolveTiming\(/);
+  assert.match(runtimeSource, /resolveClimaxTurn\(/);
+});
+
+test("renderer delegates tactical and timing resolution to runtime without direct gameplay resolvers", () => {
   assert.match(rendererSource, /CombatRuntimeController/);
   assert.match(rendererSource, /this\.combatRuntime\.startSession/);
   assert.match(rendererSource, /this\.combatRuntime\.resolveTacticalTurn/);
-  assert.match(rendererSource, /this\.combatRuntime\.resolveClimaxTurn/);
-  assert.doesNotMatch(rendererSource, /this\.combatAuthority\.startSession/);
-  assert.doesNotMatch(rendererSource, /this\.combatAuthority\.resolveTacticalTurn/);
-  assert.doesNotMatch(rendererSource, /this\.combatAuthority\.resolveClimaxTurn/);
-  assert.match(rendererSource, /resolveTiming\(/);
-  assert.match(rendererSource, /playTimingResult\?\.\(timing\.grade\)/);
+  assert.match(rendererSource, /this\.combatRuntime\.resolveTimingInput/);
+  assert.doesNotMatch(rendererSource, /from "\.\/combat_timing_authority\.js"/);
+  assert.doesNotMatch(rendererSource, /\bresolveTiming\s*\(/);
+  assert.doesNotMatch(rendererSource, /this\.combatRuntime\.resolveClimaxTurn\(/);
+  assert.doesNotMatch(rendererSource, /function _resolveClimaxDamage|_resolveClimaxDamage\(/);
+  assert.match(rendererSource, /_presentClimaxTransition\(/);
   assert.match(rendererSource, /CombatPresentationDirector/);
 });
 
-test("runtime controller preserves authority outputs", () => {
+test("timing windows preserve the existing zero and maximum effectiveness balance", () => {
+  const zeroAuthority = {
+    state: {
+      tacticalEffectiveness: 0,
+      round: 1,
+      bossHp: 100
+    },
+    startSession(snapshot) { this.state = { ...this.state, ...snapshot }; return this.getState(); },
+    getState() { return { ...this.state }; },
+    resolveClimaxTurn() { return { result: {}, state: this.getState() }; },
+    resolveTacticalTurn() { return { result: {}, state: this.getState() }; }
+  };
+  const zeroRuntime = new CombatRuntimeController({ authority: zeroAuthority });
+  zeroRuntime.startSession(makeSnapshot());
+  assert.deepEqual(zeroRuntime.getTimingWindow(), {
+    targetMs: 720,
+    durationMs: 860,
+    greatWindowMs: 55,
+    hitWindowMs: 135
+  });
+
+  const maxAuthority = {
+    state: {
+      tacticalEffectiveness: 100,
+      round: 1,
+      bossHp: 100
+    },
+    startSession(snapshot) { this.state = { ...this.state, ...snapshot }; return this.getState(); },
+    getState() { return { ...this.state }; },
+    resolveClimaxTurn() { return { result: {}, state: this.getState() }; },
+    resolveTacticalTurn() { return { result: {}, state: this.getState() }; }
+  };
+  const maxRuntime = new CombatRuntimeController({ authority: maxAuthority });
+  maxRuntime.startSession(makeSnapshot());
+  maxAuthority.state.tacticalEffectiveness = 100;
+  assert.deepEqual(maxRuntime.getTimingWindow(), {
+    targetMs: 720,
+    durationMs: 860,
+    greatWindowMs: 90,
+    hitWindowMs: 190
+  });
+});
+
+test("timing grade uses the real CombatTimingAuthority and forwards grace", () => {
   const authority = new CombatSessionAuthority();
   const runtime = new CombatRuntimeController({ authority });
-  runtime.startSession({
-    batter: {
-      id: "bw001",
-      stats: { power: 90, contact: 90, speed: 90, eye: 90, stamina: 70 }
-    }
+  runtime.startSession(makeSnapshot());
+
+  let seenGrade = null;
+  const originalResolveClimaxTurn = authority.resolveClimaxTurn.bind(authority);
+  authority.resolveClimaxTurn = (grade) => {
+    seenGrade = grade;
+    return originalResolveClimaxTurn(grade);
+  };
+
+  for (let i = 0; i < 5; i += 1) {
+    runtime.resolveTacticalTurn();
+  }
+
+  const window = runtime.getTimingWindow();
+  const great = runtime.resolveTimingInput({
+    elapsedMs: window.targetMs + window.greatWindowMs + 5,
+    source: "test-grace",
+    timingGraceMs: 10,
+    timingWindow: window
   });
+
+  assert.equal(great.timing.grade, "GREAT");
+  assert.equal(great.timing.source, "test-grace");
+  assert.equal(great.timing.target_ms, 720);
+  assert.equal(great.timing.great_window_ms, Math.round(window.greatWindowMs));
+  assert.equal(seenGrade, "GREAT");
+  assert.equal(great.transition.result.victory, true);
+});
+
+test("timing controller covers HIT and MISS through the real timing authority", () => {
+  for (const [elapsedMs, expectedGrade] of [
+    [720 + 100, "HIT"],
+    [720 + 220, "MISS"]
+  ]) {
+    const authority = new CombatSessionAuthority();
+    const runtime = new CombatRuntimeController({ authority });
+    runtime.startSession(makeSnapshot());
+
+    for (let i = 0; i < 5; i += 1) runtime.resolveTacticalTurn();
+
+    const transition = runtime.resolveTimingInput({
+      elapsedMs,
+      source: expectedGrade.toLowerCase(),
+      timingGraceMs: 0
+    });
+
+    assert.equal(transition.timing.grade, expectedGrade);
+    assert.equal(transition.transition.result.victory, expectedGrade === "HIT" ? true : false);
+  }
+});
+
+test("terminal defeat remains authoritative through timing runtime", () => {
+  const authority = new CombatSessionAuthority();
+  const runtime = new CombatRuntimeController({ authority });
+  runtime.startSession(makeSnapshot(1));
+
+  for (let i = 0; i < 5; i += 1) runtime.resolveTacticalTurn();
+
+  const transition = runtime.resolveTimingInput({
+    elapsedMs: 720 + 220,
+    source: "timeout",
+    timingGraceMs: 0
+  });
+
+  assert.equal(transition.timing.grade, "MISS");
+  assert.equal(transition.transition.result.defeat, true);
+  assert.equal(transition.transition.state.terminal, "DEFEAT");
+});
+
+test("runtime controller preserves tactical and climax authority outputs", () => {
+  const authority = new CombatSessionAuthority();
+  const runtime = new CombatRuntimeController({ authority });
+  runtime.startSession(makeSnapshot());
 
   const tactical = runtime.resolveTacticalTurn();
   assert.equal(tactical.state.tacticalTurn, 1);
@@ -47,48 +187,18 @@ test("runtime controller preserves authority outputs", () => {
     runtime.resolveTacticalTurn();
   }
 
-  for (const grade of ["GREAT", "HIT", "MISS"]) {
-    const gradeAuthority = new CombatSessionAuthority();
-    const gradeRuntime = new CombatRuntimeController({ authority: gradeAuthority });
-    gradeRuntime.startSession({
-      batter: {
-        id: "bw001",
-        stats: { power: 90, contact: 90, speed: 90, eye: 90, stamina: 70 }
-      }
-    });
-    for (let turn = 0; turn < 5; turn += 1) gradeRuntime.resolveTacticalTurn();
-    const transition = gradeRuntime.resolveClimaxTurn(grade);
-    assert.ok(["HOME_RUN", "HIT", "STRIKE", "DEFEAT"].includes(transition.result.result));
-    assert.equal(typeof transition.result.victory, "boolean");
-    assert.equal(typeof transition.result.defeat, "boolean");
-  }
+  const climax = runtime.resolveClimaxTurn("MISS");
+  assert.ok(["HOME_RUN", "HIT", "STRIKE"].includes(climax.result.result));
 });
 
-test("runtime controller terminal outcomes remain authoritative", () => {
-  const authority = new CombatSessionAuthority();
-  const runtime = new CombatRuntimeController({ authority });
-  runtime.startSession({
-    batter: { id: "bw001", stats: { power: 100, contact: 100, speed: 100, eye: 100, stamina: 70 } }
-  });
-  for (let turn = 0; turn < 5; turn += 1) runtime.resolveTacticalTurn();
-  const victory = runtime.resolveClimaxTurn("GREAT");
-  assert.equal(victory.result.victory, true);
-  assert.equal(victory.state.terminal, "VICTORY");
-
-  const defeatAuthority = new CombatSessionAuthority();
-  const defeatRuntime = new CombatRuntimeController({ authority: defeatAuthority });
-  defeatRuntime.startSession({
-    batter: { id: "bw001", stats: { power: 50, contact: 50, speed: 50, eye: 50, stamina: 1 } }
-  });
-  for (let turn = 0; turn < 5; turn += 1) defeatRuntime.resolveTacticalTurn();
-  const defeat = defeatRuntime.resolveClimaxTurn("MISS");
-  assert.equal(defeat.result.defeat, true);
-  assert.equal(defeat.state.terminal, "DEFEAT");
+test("core remains the normative rules source", () => {
+  assert.match(coreSource, /export function resolveTacticalTurn/);
+  assert.match(coreSource, /export function resolveClimaxTurn/);
 });
 
-assert.match(coreSource, /export function resolveTacticalTurn/);
-assert.match(coreSource, /export function resolveClimaxTurn/);
-
-console.log("BONE-008-006 RUNTIME CONTROLLER = PASS_STATIC");
-console.log("AUTHORITY SEAM = PASS");
-console.log("COMBAT CORE SOURCE = PASS");
+console.log("BONE-008-007 TEST BUILD = 20261005-A");
+console.log("BONE-008-007 RUNTIME CONTROLLER = PASS_STATIC");
+console.log("TIMING WINDOW = PASS");
+console.log("TIMING RESOLUTION = PASS");
+console.log("CLIMAX AUTHORITY = PASS");
+console.log("PRESENTATION SEPARATION = PASS_STATIC");

@@ -90,6 +90,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Assert exact checkout revision
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --prune --depth=1 origin "${GITHUB_SHA}"
+          git reset --hard "${GITHUB_SHA}"
+          git clean -xfd
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          grep -F 'BONE-008-007 TEST BUILD = 20261005-A' webapp/js/combat_runtime_controller_test.mjs
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:

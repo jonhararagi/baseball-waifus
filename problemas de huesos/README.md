@@ -87,3 +87,13 @@ Esta carpeta es una deuda controlada del producto, no una lista decorativa.
 - Console: console_errors=[].
 - GAMEPLAY: NO CHANGE.
 - BALANCE: NO CHANGE.
+
+
+### Checkpoint parcial BONE-008-007
+
+- **BONE-008:** OPEN.
+- **BONE-008-007:** BLOCKED.
+- **Resultado:** la orquestación runtime de timing fue extraída a `CombatRuntimeController`, pero el cierre queda bloqueado por el detector negativo estático del test.
+- **Browser:** T094/T095 PASS_REAL.
+- **Gameplay:** sin cambios.
+- **Balance:** sin cambios.

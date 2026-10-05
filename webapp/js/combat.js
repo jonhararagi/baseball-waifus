@@ -13,11 +13,8 @@ import { AssetLoader, isHttpsUrl } from "./asset_loader.js";
 import { getWaifuAssets, getWaifu } from "./waifu_database.js";
 import {
   timingRingRadius,
-  TIMING_RING_DURATION_MS,
-  TIMING_RING_TARGET_MS,
   TIMING_RING_TARGET_RADIUS
 } from "./timing_ring.js";
-import { resolveTiming } from "./combat_timing_authority.js";
 
 const RESULT_COLORS = {
   STRIKE: "#8ca8ff",
@@ -445,15 +442,16 @@ export class CombatRenderer {
     }
 
     const startedAt = performance.now();
+    const timingWindow = this.combatRuntime.getTimingWindow();
     const advantage = clamp(this.tacticalEffectiveness / 100, 0, 1);
     this.batterRenderer.beginWindup();
     this.timingState = {
       active: true,
       startedAt,
-      targetMs: TIMING_RING_TARGET_MS,
-      durationMs: TIMING_RING_DURATION_MS,
-      greatWindowMs: 55 + advantage * 35,
-      hitWindowMs: 135 + advantage * 55,
+      targetMs: timingWindow.targetMs,
+      durationMs: timingWindow.durationMs,
+      greatWindowMs: timingWindow.greatWindowMs,
+      hitWindowMs: timingWindow.hitWindowMs,
       radiusScale: 1 + advantage * 0.42
     };
     this.onClimaxStart?.({
@@ -468,7 +466,7 @@ export class CombatRenderer {
     this.timingTimeout = this._setOwnedTimeout(() => {
       this.timingTimeout = 0;
       this.resolveTimingInput("timeout");
-    }, TIMING_RING_DURATION_MS);
+    }, timingWindow.durationMs);
     return true;
   }
 
@@ -481,19 +479,15 @@ export class CombatRenderer {
     this.timingTimeout = 0;
     this.timingState = null;
 
-    const timing = resolveTiming({
+    const resolution = this.combatRuntime.resolveTimingInput({
       elapsedMs,
-      targetMs: current.targetMs,
-      greatWindowMs: current.greatWindowMs,
-      hitWindowMs: current.hitWindowMs,
       timingGraceMs,
       source,
-      round: this.round,
-      tacticalEffectiveness: this.tacticalEffectiveness,
-      bossHpBefore: this.bossHp
+      timingWindow: current
     });
+    const timing = resolution.timing;
 
-    this._resolveClimaxDamage(timing.grade);
+    this._presentClimaxTransition(resolution.transition);
 
     this.lastTiming = timing;
     this.audioBridge?.playTimingResult?.(timing.grade);
@@ -547,8 +541,7 @@ export class CombatRenderer {
     return result;
   }
 
-  _resolveClimaxDamage(grade) {
-    const transition = this.combatRuntime.resolveClimaxTurn(grade);
+  _presentClimaxTransition(transition) {
     const result = transition.result;
     const authoritative = transition.state;
     this._syncAuthorityState();

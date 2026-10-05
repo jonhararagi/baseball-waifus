@@ -1,0 +1,58 @@
+name: BONE-008-007 Timing Runtime Controller
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "webapp/js/combat_runtime_controller.js"
+      - "webapp/js/combat_runtime_controller_test.mjs"
+      - "webapp/js/combat_timing_authority.js"
+      - "webapp/js/combat_timing_authority_test.mjs"
+      - "webapp/js/combat_session_authority.js"
+      - "webapp/js/combat_session_authority_test.mjs"
+      - "webapp/js/combat_result_to_presentation_test.mjs"
+      - "webapp/js/combat_presentation_director_test.mjs"
+      - ".github/workflows/bone008-007-timing-runtime.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  timing-runtime:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Assert exact checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          grep -F 'BONE-008-007 TEST BUILD = 20261005-A' webapp/js/combat_runtime_controller_test.mjs
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --experimental-default-type=module --check webapp/js/combat_runtime_controller.js
+          node --experimental-default-type=module --check webapp/js/combat.js
+          node --experimental-default-type=module --check webapp/js/combat_runtime_controller_test.mjs
+
+      - name: Runtime controller regression
+        run: node --experimental-default-type=module webapp/js/combat_runtime_controller_test.mjs
+
+      - name: Existing authority suites
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --experimental-default-type=module webapp/js/combat_timing_authority_test.mjs
+          node --experimental-default-type=module webapp/js/combat_session_authority_test.mjs
+          node --experimental-default-type=module webapp/js/combat_result_to_presentation_test.mjs
+          node --experimental-default-type=module webapp/js/combat_presentation_director_test.mjs

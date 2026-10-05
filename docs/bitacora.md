@@ -10062,3 +10062,41 @@ Validation: runtime controller 4/4 PASS; Combat Vertical Slice Run 37259281591 S
 
 No se modificó gameplay, balance ni combat_core.js.
 BONE-004 BLOCKED / unchanged. BONE-005 CLOSED. BONE-006 CLOSED. BONE-007 CLOSED. BONE-008-006 CLOSED. BONE-008 OPEN / partial progress. BONE-011 OPEN / unchanged.
+
+
+---
+
+## BONE-008-007 · EXTRACT TIMING WINDOW RUNTIME ORCHESTRATION
+
+Fecha: 2026-10-05
+BASE SHA: `7abee62f9f94edb56ac03c3f8d66118e58901432`
+HEAD AFTER: final checkpoint commit (see task report)
+TIMER: 60–90 minutos
+RESULT: BLOCKED / BONE-008 OPEN
+
+Se extrajo la orquestación runtime de timing desde CombatRenderer hacia CombatRuntimeController sin cambios de gameplay/balance.
+
+Runtime funcional:
+- timing window PASS;
+- timing resolution PASS;
+- climax authority PASS;
+- presentation separation PASS_STATIC.
+
+Browser:
+- T095 Run 37264111265 = SUCCESS, timing diagnostic PASS.
+- T094 Run 37264111398 = SUCCESS, FORMATION → TACTICAL 1–5 → CLIMAX → TIMING → RESULT → RETURN PASS_REAL.
+
+BLOQUEO:
+El workflow específico BONE-008-007 falló repetidamente en el detector estático negativo del test por matching textual frágil. Los asserts funcionales previos pasan, pero la suite no obtuvo PASS limpio de cierre. Se aplicó la regla de dos fallos por la misma causa y no se realiza otro retry.
+
+CAUSE: detector estático text-based.
+ATTEMPTS: múltiples ejecuciones del workflow específico.
+EVIDENCE: Runs 37264235856, 37264287859, 37264418710.
+NEEDS: reemplazar el detector frágil por una comprobación determinista de imports/APIs y ejecutar un nuevo checkpoint.
+
+BONE-004: BLOCKED.
+BONE-005: CLOSED.
+BONE-006: CLOSED.
+BONE-007: CLOSED.
+BONE-008: OPEN / PARTIAL.
+BONE-011: OPEN / unchanged.

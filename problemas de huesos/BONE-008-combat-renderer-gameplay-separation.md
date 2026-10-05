@@ -410,3 +410,80 @@ BONE-005 = CLOSED.
 BONE-006 = CLOSED.
 BONE-007 = CLOSED.
 BONE-011 = OPEN / UNCHANGED.
+
+
+## BONE-008-007 · EXTRACT TIMING WINDOW RUNTIME ORCHESTRATION
+
+Fecha: 2026-10-05
+BASE SHA: `7abee62f9f94edb56ac03c3f8d66118e58901432`
+HEAD AFTER: final checkpoint commit (see task report)
+TIMER: 60–90 minutos
+RESULT: BLOCKED / BONE-008 OPEN
+
+### Implementación completada
+
+`CombatRuntimeController` recibió la orquestación runtime de timing:
+
+- `getTimingWindow()`;
+- cálculo de GREAT/HIT windows desde `tacticalEffectiveness`;
+- `resolveTimingInput()`;
+- delegación a `CombatTimingAuthority`;
+- delegación del grade a `CombatSessionAuthority`.
+
+`CombatRenderer` conserva clock/input/timers y presentación. Ya no importa `combat_timing_authority.js`, no llama directamente a `resolveTiming()` y no llama directamente a `resolveClimaxTurn()`.
+
+No se modificaron `combat_core.js`, `combat_timing_authority.js` ni `combat_session_authority.js`.
+
+### Balance
+
+Se conservaron exactamente:
+
+- GREAT base = 55 ms;
+- GREAT advantage = +35 ms;
+- HIT base = 135 ms;
+- HIT advantage = +55 ms;
+- target = 720 ms;
+- duration = 860 ms.
+
+GAMEPLAY CHANGED: NO.
+BALANCE CHANGED: NO.
+
+### Evidence
+
+La parte funcional del controller imprime y alcanza:
+
+- `BONE-008-007 RUNTIME CONTROLLER = PASS_STATIC`;
+- `TIMING WINDOW = PASS`;
+- `TIMING RESOLUTION = PASS`;
+- `CLIMAX AUTHORITY = PASS`;
+- `PRESENTATION SEPARATION = PASS_STATIC`.
+
+Browser real, contra la misma implementación runtime/controller/renderer antes de las últimas correcciones del fixture estático:
+
+- T095 Run `37264111265` = SUCCESS, `T095 DIAGNOSTIC = PASS`.
+- T094 Run `37264111398` = SUCCESS.
+- T094 verificó `FORMATION = PASS_REAL`, tactical 1–5, CLIMAX, TIMING ACTIVE, TIMING RESOLUTION, COMBAT RESULT, RETURN, `HOME AIKO = PASS_REAL`, `REAL DIRECTOR = PASS_REAL`, `NORMAL SEQUENCE = PASS_REAL`, `SAFE REPLACEMENT = PASS_REAL`, `COMBAT INTEGRATION = PASS_REAL`, `LIFECYCLE = PASS`.
+
+### Blocker
+
+El workflow específico `BONE-008-007 Timing Runtime Controller` no alcanzó cierre porque el detector negativo del test estático produjo múltiples falsos positivos textuales sobre el source del controller mientras los asserts funcionales de timing/authority ya habían pasado.
+
+ATTEMPTS: múltiples ejecuciones del workflow específico con la misma causa de fixture/detector estático.
+
+CAUSE: static negative architecture test unstable against source-text matching; no failure demonstrated in the runtime implementation itself.
+
+EVIDENCE: Runs `37264235856`, `37264287859` y `37264418710` fallaron en el bloque estático después de mostrar PASS en los asserts funcionales del controller.
+
+NEEDS: future checkpoint must replace the fragile text-based negative detector with a deterministic import/API-level check, then execute one fresh static/regression validation.
+
+Per the failure rule, no further retry is performed in this task.
+
+### Scope
+
+BONE-004: BLOCKED / UNCHANGED.
+BONE-005: CLOSED.
+BONE-006: CLOSED.
+BONE-007: CLOSED.
+BONE-008-007: BLOCKED.
+BONE-008: OPEN / PARTIAL PROGRESS.
+BONE-011: OPEN / UNCHANGED.
