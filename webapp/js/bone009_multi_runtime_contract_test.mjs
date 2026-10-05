@@ -28,6 +28,15 @@ const rewardAuthoritySource = read("reward_authority.js");
 const rewardPipelineSource = read("reward_pipeline.js");
 const kytosSource = read("kytos_combat_vertical_slice.js");
 const studentSource = read("student_4v4_combat_adapter.js");
+const webRuntimeSource = read("combat_runtime_controller.js");
+const godotRewardService = fs.readFileSync(path.join(here, "../../game/systems/reward_service.gd"), "utf8");
+const godotRewardTransaction = fs.readFileSync(path.join(here, "../../game/progression/reward_transaction_service.gd"), "utf8");
+
+assert.doesNotMatch(webRuntimeSource, /res:\/\/game\//);
+assert.doesNotMatch(rewardPipelineSource, /res:\/\/game\//);
+assert.doesNotMatch(godotRewardService, /webapp\/js\/reward_(authority|pipeline)/);
+assert.doesNotMatch(godotRewardTransaction, /webapp\/js\/reward_(authority|pipeline)/);
+console.log("CROSS_RUNTIME_IMPORT_BOUNDARY = PASS_STATIC");
 
 assert.match(rewardPipelineSource, /assertRewardAuthorityMatchesCombatResult/);
 assert.match(rewardPipelineSource, /from "\.\/reward_authority\.js"/);
