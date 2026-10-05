@@ -115,6 +115,7 @@ jobs:
           node --experimental-default-type=module webapp/js/kytos_combat_demo_test.mjs
           node --experimental-default-type=module webapp/js/kytos_tactical_decision_test.mjs
           node --experimental-default-type=module webapp/js/combat_core_test.mjs
+          node --experimental-default-type=module webapp/js/bone009_multi_runtime_contract_test.mjs
           node --experimental-default-type=module webapp/js/combat_session_authority_test.mjs
           node --experimental-default-type=module webapp/js/combat_runtime_controller_test.mjs
           node --experimental-default-type=module webapp/js/combat_timing_authority_test.mjs
@@ -174,6 +175,7 @@ jobs:
           node --experimental-default-type=module --check webapp/js/combat.js
           node --experimental-default-type=module --check webapp/js/combat_lifecycle_test.mjs
           node --experimental-default-type=module --check webapp/js/combat_core.js
+          node --experimental-default-type=module --check webapp/js/bone009_multi_runtime_contract_test.mjs
           node --experimental-default-type=module --check webapp/js/combat_session_authority.js
           node --experimental-default-type=module --check webapp/js/combat_timing_authority.js
           node --experimental-default-type=module --check webapp/js/combat_timing_authority_test.mjs

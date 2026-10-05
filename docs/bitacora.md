@@ -10153,3 +10153,29 @@ BONE-008 queda CLOSED con evidencia reproducible.
 
 El GLOBAL GATE permanece CLOSED debido a los BONE P0/P1 restantes.
 No se habilita desarrollo normal ni nuevas features de producto.
+
+
+---
+
+## BONE-009-CLOSE-001 · AUTHORITY MAP & MULTI-RUNTIME CONTRACT
+
+Fecha: 2026-10-05
+BASE SHA: ed2daed8c3b544c7688cbafb2c6da7d48c014505
+RESULT: CLOSED
+
+Se inspeccionaron los runtimes reales. No existe un directorio top-level godot/, labs/, student/ o kytos/; el runtime Godot está bajo game/ y Kytos/Student 4v4 son slices dentro de webapp/js/.
+
+Mapa de autoridad persistido en docs/architecture/bone-009-authority-map.md.
+
+- Web/TMA = autoridad productiva actual para el producto Web/TMA: CombatRuntimeController → CombatSessionAuthority → combat_core.js.
+- Godot = runtime nativo/prototipo y plataforma futura; conserva resolvers locales, pero no es autoridad productiva simultánea del mismo flujo Web/TMA.
+- Kytos = lab/demo no autoritativo.
+- Student 4v4 = lab/demo no autoritativo.
+- Reward Pipeline Web exige SERVER_COMBAT_ATTESTATION_V1; los resultados de Kytos/Student no pueden conceder recompensa por sí solos.
+
+Contrato determinista añadido: webapp/js/bone009_multi_runtime_contract_test.mjs.
+La suite se conecta al workflow de combat para validar el boundary junto con las suites existentes de Combat Core, CombatSessionAuthority, CombatRuntimeController, Kytos y Student 4v4.
+
+No se modificaron combat_core.js, balance, damage, stamina, hit/miss, reward amounts, Player Meta ni BONE-004. No se inició BONE-010/BONE-011.
+
+BONE-004 permanece OPEN/BLOCKED.
