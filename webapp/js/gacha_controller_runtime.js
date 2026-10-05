@@ -34,9 +34,20 @@ function callCloudMethod(cloudStorage, methodName, args = []) {
   });
 }
 
+export function isCloudStorageUnsupportedError(error) {
+  return String(error?.message || error || "") === "WebAppMethodUnsupported";
+}
+
 export async function readLegacyGachaCloudState(cloudStorage) {
   if (!cloudStorage) return null;
-  const raw = await callCloudMethod(cloudStorage, "getItem", [TELEGRAM_CLOUD_KEY]);
+
+  let raw;
+  try {
+    raw = await callCloudMethod(cloudStorage, "getItem", [TELEGRAM_CLOUD_KEY]);
+  } catch (error) {
+    if (isCloudStorageUnsupportedError(error)) return null;
+    throw error;
+  }
   if (typeof raw !== "string" || raw.trim() === "") return null;
 
   let parsed;

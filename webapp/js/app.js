@@ -72,7 +72,7 @@ const telegram = new TelegramBridge(window.Telegram);
 telegram.init();
 const api = new BaseballWaifusApi({ telegramBridge: telegram });
 const hapticsBridge = createHapticsBridge(telegramWebApp);
-const cloudStorage = telegramWebApp?.CloudStorage || null;
+const cloudStorage = telegram.getCloudStorage();
 const audioBridge = new AudioManager();
 const mobileHaptics = new MobileHaptics();
 const performanceAdapter = new PerformanceAdapter();

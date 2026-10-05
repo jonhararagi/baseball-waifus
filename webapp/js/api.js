@@ -83,6 +83,16 @@ export class TelegramBridge {
     return this.webApp?.initDataUnsafe?.start_param || "";
   }
 
+  isNativeRuntime() {
+    const initData = this.webApp?.initData;
+    return typeof initData === "string" && initData.trim().length > 0;
+  }
+
+  getCloudStorage() {
+    if (!this.isNativeRuntime()) return null;
+    return this.webApp?.CloudStorage || null;
+  }
+
   sendData(payload) {
     if (!this.webApp || typeof this.webApp.sendData !== "function") {
       return false;

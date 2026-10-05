@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { TelegramBridge } from "./api.js";
 import { createHapticsBridge } from "./haptics_bridge.js";
 import { GachaController } from "./gacha_controller.js";
 import { buildShareMessage, buildSharePayload, shareWaifu } from "./share_bridge.js";
@@ -78,6 +79,14 @@ const queue = {
     { character_id: "bw024", canonical: { display_name: "Nene Kagetsu", rarity: "UR" } }
   ]
 };
+const browserLikeCloud = { getItem() { throw new Error("must not be called"); } };
+const browserLikeBridge = new TelegramBridge({ WebApp: { initData: "", CloudStorage: browserLikeCloud } });
+assert.equal(browserLikeBridge.getCloudStorage(), null);
+
+const nativeCloud = { getItem(_key, callback) { callback(null, null); } };
+const nativeBridge = new TelegramBridge({ WebApp: { initData: "query_id=native-test", CloudStorage: nativeCloud } });
+assert.equal(nativeBridge.getCloudStorage(), nativeCloud);
+
 const response = (payload) => ({ ok: true, async json() { return payload; } });
 class MemoryStorage {
   constructor(value) {
@@ -92,6 +101,18 @@ class MockCloudStorage {
   getItem(_key, cb) { cb(null, this.value); }
   setItem(key, value, cb) { this.writes.push([key, value]); this.value = value; cb(null, true); }
 }
+class UnsupportedCloudStorage {
+  getItem() { throw new Error("WebAppMethodUnsupported"); }
+}
+const unsupportedController = new GachaController({
+  fetchImpl: async (url) => response(url.includes("schema") ? schema : queue),
+  storage: new MemoryStorage(),
+  cloudStorage: new UnsupportedCloudStorage()
+});
+await unsupportedController.initialize();
+assert.equal(unsupportedController.ready, true);
+assert.equal(unsupportedController.playerMetaIntegration.hasPersistedState(), true);
+
 const local = new MemoryStorage(JSON.stringify({ pulls_since_UR: 3, inventory: { bw017: { duplicate_count: 2 } }, active_batter: "bw017", scavenger_scrap: 50 }));
 const cloud = new MockCloudStorage(JSON.stringify({ pulls_since_UR: 7, inventory: { bw024: { duplicate_count: 1 } }, active_batter: "bw024", scavenger_scrap: 900 }));
 const controller = new GachaController({
