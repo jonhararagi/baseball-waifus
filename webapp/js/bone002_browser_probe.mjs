@@ -157,13 +157,22 @@ try {
       if (Object.values(pools).some((pool) => pool.includes(starter))) failures.push("STARTER_IN_POOL_" + starter);
     }
 
-    const appReady = await waitFor(() => Boolean(window.BaseballWaifusGacha?.getStatus?.()?.ready), 20000);
+    const hookReady = await waitFor(() => Boolean(window.__BW_BONE002_GACHA__), 20000);
+    if (!hookReady) {
+      failures.push("HOOK_NOT_INSTALLED");
+    }
+
+    const hook = window.__BW_BONE002_GACHA__ || null;
+    const bootstrapError = hook?.getBootstrapError?.() || null;
+    if (bootstrapError) failures.push("BOOTSTRAP_ERROR");
+
+    const appReady = hookReady && await waitFor(() => hook?.getReady?.() === true, 20000);
     if (!appReady) {
       failures.push("GACHA_NOT_READY");
     }
 
-    const status = window.BaseballWaifusGacha?.getStatus?.() || null;
-    const state = window.BaseballWaifusGacha?.getState?.() || null;
+    const status = hook?.getStatus?.() || null;
+    const state = hook?.getState?.() || null;
     if (status?.ready !== true) failures.push("GACHA_READY");
     if (!state || !starters.every((id) => Number(state.inventory?.[id]?.duplicate_count || 0) >= 1)) failures.push("PLAYER_META_STARTER");
     if (!state || !starters.includes(state.active_batter)) failures.push("PLAYER_META_ACTIVE_BATTER");
@@ -178,6 +187,7 @@ try {
       pools,
       gachaReady: status?.ready === true,
       playerMeta: Boolean(state && starters.every((id) => Number(state.inventory?.[id]?.duplicate_count || 0) >= 1) && starters.includes(state.active_batter)),
+      bootstrapError,
       failures
     };
   })()`;
@@ -201,6 +211,7 @@ try {
   console.log(`UR_POOL = ${value.pools.UR?.length > 0 ? "PASS" : "FAIL"}`);
   console.log(`GACHA_READY = ${value.gachaReady ? "PASS" : "FAIL"}`);
   console.log(`PLAYER_META = ${value.playerMeta ? "PASS" : "FAIL"}`);
+  console.log(`BOOTSTRAP_ERROR = ${value.bootstrapError || "NONE"}`);
   if (value.failures?.length) console.log(`FAILURES = ${value.failures.join(",")}`);
 
   if (!value.pass) process.exitCode = 1;

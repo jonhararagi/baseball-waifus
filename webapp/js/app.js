@@ -1607,12 +1607,27 @@ async function initializeGallery() {
   }
 }
 
+let bone002BootstrapError = null;
+
+function installBone002QaHooks(query) {
+  if (query.get("bone002") !== "1") return;
+  window.__BW_BONE002_GACHA__ = Object.freeze({
+    getStatus: () => gachaController.getStatus(),
+    getState: () => gachaController.getState(),
+    getReady: () => gachaController.ready === true,
+    getBootstrapError: () => bone002BootstrapError
+      ? String(bone002BootstrapError?.message || bone002BootstrapError)
+      : null
+  });
+}
+
 async function bootstrap() {
   const versionGate = await runClientVersionGate();
   if (versionGate.status === "recovering" || versionGate.status === "failed") return;
 
   const query = new URLSearchParams(window.location.search);
   matchId = query.get("match") || "";
+  installBone002QaHooks(query);
   installBone004QaHooks(query);
 
   if (query.get("kytos_demo") === "1") {
@@ -1659,7 +1674,10 @@ async function bootstrap() {
     rosterPanel.refresh();
     await initializeGallery();
     homeView.refresh();
-  } catch {
+  } catch (error) {
+    if (query.get("bone002") === "1") {
+      bone002BootstrapError = error;
+    }
     gachaButton.disabled = true;
     if (gachaStatusValue) gachaStatusValue.textContent = "OFFLINE";
     await initializeGallery();
