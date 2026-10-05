@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { TelegramNativeBridge } from "../webapp/js/telegramBridge.js";
+import { TelegramBridge } from "../webapp/js/api.js";
 import { ShopManager } from "../webapp/js/shopManager.js";
 
 const events=[];
@@ -12,15 +12,12 @@ const webApp={
   setBackgroundColor(v){events.push("background:"+v)},
   openInvoice(url,cb){events.push("invoice:"+url); cb("paid")}
 };
-const identity={id:null,name:null,setPlayerIdentity(id,name){this.id=id;this.name=name}};
-const bridge=new TelegramNativeBridge({telegram:{WebApp:webApp},leaderboard:identity});
+const bridge=new TelegramBridge({WebApp:webApp});
 bridge.init();
 assert.equal(bridge.getUserId(),"123456");
-assert.equal(identity.id,"123456");
-assert.equal(identity.name,"Jonh");
 assert.ok(events.includes("ready")&&events.includes("expand"));
 
-const shop=new ShopManager({webApp,invoiceUrls:{focus:"https://t.me/invoice/focus"}});
+const shop=new ShopManager({telegramBridge:bridge,invoiceUrls:{focus:"https://t.me/invoice/focus"}})
 const paid=await shop.buyBoost("focus");
 assert.equal(paid.ok,true);
 assert.equal(paid.status,"paid");
