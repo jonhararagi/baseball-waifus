@@ -1,8 +1,6 @@
 const DEFAULT_INVOICES_KEY = "__BASEBALL_WAIFUS_INVOICES__";
 
-function getTelegramWebApp(explicit) {
-  return explicit || globalThis?.window?.Telegram?.WebApp || null;
-}
+function getTelegramWebApp(explicit) { return explicit || null; }
 
 function resolveInvoiceUrl(id, explicitUrl = null, root = globalThis) {
   if (explicitUrl) return String(explicitUrl);
@@ -11,18 +9,24 @@ function resolveInvoiceUrl(id, explicitUrl = null, root = globalThis) {
 }
 
 export class ShopManager {
-  constructor({ webApp = null, invoiceUrls = {}, onStatus = null } = {}) {
+  constructor({ webApp = null, telegramBridge = null, invoiceUrls = {}, onStatus = null } = {}) {
+    this.telegramBridge = telegramBridge || null;
     this.webApp = getTelegramWebApp(webApp);
     this.invoiceUrls = { ...invoiceUrls };
     this.onStatus = onStatus;
   }
 
   setWebApp(webApp) { this.webApp = getTelegramWebApp(webApp); return this; }
+  setTelegramBridge(telegramBridge) { this.telegramBridge = telegramBridge || null; return this; }
 
   async openInvoice(id, { invoiceUrl = null, onPaid = null, onCancelled = null } = {}) {
     const url = invoiceUrl || this.invoiceUrls[id] || resolveInvoiceUrl(id);
-    const telegram = this.webApp;
-    if (!telegram?.openInvoice || !url) {
+    const openInvoice = this.telegramBridge?.openInvoice
+      ? (invoice, callback) => this.telegramBridge.openInvoice(invoice, callback)
+      : this.webApp?.openInvoice
+        ? (invoice, callback) => { try { this.webApp.openInvoice(invoice, callback); return true; } catch { return false; } }
+        : null;
+    if (!openInvoice || !url) {
       const result = { ok: false, status: "invoice_unavailable", id };
       this.onStatus?.(result);
       return result;
@@ -39,7 +43,7 @@ export class ShopManager {
         else onCancelled?.(result);
         resolve(result);
       };
-      try { telegram.openInvoice(url, finish); } catch { finish("failed"); }
+      try { if (!openInvoice(url, finish)) finish("failed"); } catch { finish("failed"); }
     });
   }
 
