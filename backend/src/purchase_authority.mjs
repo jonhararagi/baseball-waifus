@@ -96,7 +96,7 @@ function resultFromRecord(status, record) {
     grant_amount: record.grantAmount,
     currency: record.currency,
     provider: record.provider,
-    provider_transaction_id: record.providerTransactionId
+    provider_transaction_id: status === PURCHASE_AUTHORITY_RESULT.PENDING ? null : record.providerTransactionId
   };
 }
 
@@ -203,7 +203,9 @@ export class PurchaseAuthority {
     const id = stableId(purchaseId, "purchase_id");
     const record = this.store.loadPurchase(id);
     if (!record || record.playerId !== ownerId) return null;
-    if (record.authorizationStatus === "PENDING") return null;
+    if (record.authorizationStatus === "PENDING") {
+      return resultFromRecord(PURCHASE_AUTHORITY_RESULT.PENDING, record);
+    }
     const status = record.claimStatus === "GRANT_CLAIMED"
       ? PURCHASE_AUTHORITY_RESULT.GRANT_CLAIMED
       : PURCHASE_AUTHORITY_RESULT.AUTHORIZED_GRANT;
