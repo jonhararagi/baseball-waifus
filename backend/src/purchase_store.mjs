@@ -289,9 +289,14 @@ export class PersistentPurchaseStore {
 
   _insert(record, authorizationStatus = "AUTHORIZED") {
     const purchaseId = stableId(record?.purchaseId, "purchaseId");
-    const key = transactionKey(record?.provider, record?.providerTransactionId);
+    const effectiveTransactionId = authorizationStatus === "PENDING"
+      ? String(record?.providerTransactionId || pendingTransactionId(purchaseId))
+      : stableId(record?.providerTransactionId, "providerTransactionId");
+    const key = transactionKey(record?.provider, effectiveTransactionId);
     const next = clone({
       ...record,
+      providerTransactionId: effectiveTransactionId,
+      receiptFingerprint: record?.receiptFingerprint || pendingReceiptFingerprint(purchaseId),
       transactionKey: key,
       authorizationStatus,
       claimStatus: record.claimStatus || "UNCLAIMED"
