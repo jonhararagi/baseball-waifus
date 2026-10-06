@@ -113,6 +113,22 @@ export function createAuthorityServer({
         const body = await readJson(request);
         return jsonResponse(response, 200, await service.applyTurn({ matchId: decodeURIComponent(turnMatch[1]), playerId: auth.playerId, body }), origin);
       }
+      const purchaseStatusMatch = url.pathname.match(new RegExp("^/v1/purchases/([^/]+)$"));
+      if (request.method === "GET" && purchaseStatusMatch) {
+        const auth = await authenticateRequest(request, config);
+        const result = activePurchaseAuthority.getStatus({
+          purchaseId: decodeURIComponent(purchaseStatusMatch[1]),
+          playerId: auth.playerId
+        });
+        if (!result) {
+          return jsonResponse(response, 404, {
+            status: "NOT_FOUND",
+            error: "NOT_FOUND"
+          }, origin);
+        }
+        return jsonResponse(response, 200, result, origin);
+      }
+
       const purchaseMatch = url.pathname.match(new RegExp("^/v1/purchases/([^/]+)/authorize$"));
       if (request.method === "POST" && purchaseMatch) {
         const auth = await authenticateRequest(request, config);

@@ -87,6 +87,14 @@ export class PurchaseAuthority {
     this.production = Boolean(production);
   }
 
+  getStatus({ playerId, purchaseId } = {}) {
+    const ownerId = stableId(playerId, "player_id");
+    const id = stableId(purchaseId, "purchase_id");
+    const record = this.store.loadPurchase(id);
+    if (!record || record.playerId !== ownerId) return null;
+    return resultFromRecord(PURCHASE_AUTHORITY_RESULT.AUTHORIZED_GRANT, record);
+  }
+
   async authorize({ playerId, purchaseId, body }) {
     const request = normalizeRequest(playerId, purchaseId, body);
     const existingPurchase = this.store.loadPurchase(request.purchaseId);

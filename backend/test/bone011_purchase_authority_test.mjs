@@ -150,6 +150,7 @@ test("purchase_id cannot be reused with different identity data", async () => {
 });
 
 let httpInstance;
+let httpBaseUrl;
 
 test("HTTP endpoint authenticates player and returns an authorized grant", async () => {
   const config = loadConfig({ ...process.env, NODE_ENV: "test", PORT: "0" });
@@ -161,8 +162,8 @@ test("HTTP endpoint authenticates player and returns an authorized grant", async
     purchaseVerifier: verifierFor()
   });
   await new Promise((resolve) => httpInstance.server.listen(0, resolve));
-  const baseUrl = `http://127.0.0.1:${httpInstance.server.address().port}`;
-  const response = await fetch(`${baseUrl}/v1/purchases/purchase-001/authorize`, {
+  httpBaseUrl = `http://127.0.0.1:${httpInstance.server.address().port}`;
+  const response = await fetch(`${httpBaseUrl}/v1/purchases/purchase-001/authorize`, {
     method: "POST",
     headers: { "content-type": "application/json", "x-test-player-id": "player-001" },
     body: JSON.stringify(requestBody())
@@ -175,4 +176,195 @@ test("HTTP endpoint authenticates player and returns an authorized grant", async
 
 after(async () => {
   if (httpInstance) await new Promise((resolve) => httpInstance.server.close(resolve));
+});
+
+
+test("M · GET purchase status returns AUTHORIZED_GRANT without provider revalidation", async () => {
+  let verifierCalls = 0;
+  const countingVerifier = createPurchaseProviderVerifier({
+    verifyReceipt: async (input) => {
+      verifierCalls += 1;
+      return verifierFor().verifyReceipt(input);
+    }
+  });
+
+  const statusInstance = createAuthorityServer({
+    config: loadConfig({ ...process.env, NODE_ENV: "test", PORT: "0" }),
+    store: new InMemoryCombatStore(),
+    signer: createEphemeralTestSigner(),
+    purchaseStore: new InMemoryPurchaseStore(),
+    purchaseVerifier: countingVerifier
+  });
+  await new Promise((resolve) => statusInstance.server.listen(0, resolve));
+  const baseUrl = `http://127.0.0.1:${statusInstance.server.address().port}`;
+
+  try {
+    const authorize = await fetch(`${baseUrl}/v1/purchases/purchase-001/authorize`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-test-player-id": "player-001" },
+      body: JSON.stringify(requestBody())
+    });
+    assert.equal(authorize.status, 200);
+    assert.equal(verifierCalls, 1);
+
+    verifierCalls = 0;
+    const first = await fetch(`${baseUrl}/v1/purchases/purchase-001`, {
+      headers: { "x-test-player-id": "player-001" }
+    });
+    const second = await fetch(`${baseUrl}/v1/purchases/purchase-001`, {
+      headers: { "x-test-player-id": "player-001" }
+    });
+
+    assert.equal(first.status, 200);
+    assert.equal(second.status, 200);
+    assert.deepEqual(await first.json(), {
+      status: PURCHASE_AUTHORITY_RESULT.AUTHORIZED_GRANT,
+      purchase_id: "purchase-001",
+      player_id: "player-001",
+      product_id: "scrap_5000",
+      grant_kind: "scrap",
+      grant_amount: 5000,
+      currency: "XTR",
+      provider: "test-provider",
+      provider_transaction_id: "txn-001"
+    });
+    assert.deepEqual(await second.json(), {
+      status: PURCHASE_AUTHORITY_RESULT.AUTHORIZED_GRANT,
+      purchase_id: "purchase-001",
+      player_id: "player-001",
+      product_id: "scrap_5000",
+      grant_kind: "scrap",
+      grant_amount: 5000,
+      currency: "XTR",
+      provider: "test-provider",
+      provider_transaction_id: "txn-001"
+    });
+    assert.equal(verifierCalls, 0);
+  } finally {
+    await new Promise((resolve) => statusInstance.server.close(resolve));
+  }
+});
+
+test("N · GET purchase status returns 401 without authenticated identity", async () => {
+  const response = await fetch(`${httpBaseUrl}/v1/purchases/purchase-001`);
+  assert.equal(response.status, 401);
+});
+
+test("O · GET unknown and wrong-player purchase both return safe NOT_FOUND", async () => {
+  const unknown = await fetch(`${httpBaseUrl}/v1/purchases/unknown-purchase`, {
+    headers: { "x-test-player-id": "player-001" }
+  });
+  assert.equal(unknown.status, 404);
+  assert.deepEqual(await unknown.json(), { status: "NOT_FOUND", error: "NOT_FOUND" });
+
+  const otherPlayer = await fetch(`${httpBaseUrl}/v1/purchases/purchase-001`, {
+    headers: { "x-test-player-id": "player-999" }
+  });
+  assert.equal(otherPlayer.status, 404);
+  const body = await otherPlayer.json();
+  assert.deepEqual(body, { status: "NOT_FOUND", error: "NOT_FOUND" });
+  assert.equal(body.player_id, undefined);
+  assert.equal(body.product_id, undefined);
+  assert.equal(body.grant_amount, undefined);
+  assert.equal(body.provider_transaction_id, undefined);
+});
+
+test("P · persistent purchase status survives store restart", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "basewarriors-purchase-status-"));
+  const filePath = join(directory, "purchases.json");
+  let firstInstance;
+  let recoveredInstance;
+  try {
+    const config = loadConfig({ ...process.env, NODE_ENV: "test", PORT: "0" });
+    const firstStore = new PersistentPurchaseStore({ filePath });
+    firstInstance = createAuthorityServer({
+      config,
+      store: new InMemoryCombatStore(),
+      signer: createEphemeralTestSigner(),
+      purchaseStore: firstStore,
+      purchaseVerifier: verifierFor()
+    });
+    await new Promise((resolve) => firstInstance.server.listen(0, resolve));
+    const firstUrl = `http://127.0.0.1:${firstInstance.server.address().port}`;
+
+    const authorize = await fetch(`${firstUrl}/v1/purchases/purchase-001/authorize`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-test-player-id": "player-001" },
+      body: JSON.stringify(requestBody())
+    });
+    assert.equal(authorize.status, 200);
+    await new Promise((resolve) => firstInstance.server.close(resolve));
+    firstInstance = null;
+
+    const recoveredStore = new PersistentPurchaseStore({ filePath });
+    recoveredInstance = createAuthorityServer({
+      config,
+      store: new InMemoryCombatStore(),
+      signer: createEphemeralTestSigner(),
+      purchaseStore: recoveredStore,
+      purchaseVerifier: {
+        verifyReceipt: async () => {
+          throw new Error("provider verifier must not run during status recovery");
+        }
+      }
+    });
+    await new Promise((resolve) => recoveredInstance.server.listen(0, resolve));
+    const recoveredUrl = `http://127.0.0.1:${recoveredInstance.server.address().port}`;
+
+    const recovered = await fetch(`${recoveredUrl}/v1/purchases/purchase-001`, {
+      headers: { "x-test-player-id": "player-001" }
+    });
+    assert.equal(recovered.status, 200);
+    assert.deepEqual(await recovered.json(), {
+      status: PURCHASE_AUTHORITY_RESULT.AUTHORIZED_GRANT,
+      purchase_id: "purchase-001",
+      player_id: "player-001",
+      product_id: "scrap_5000",
+      grant_kind: "scrap",
+      grant_amount: 5000,
+      currency: "XTR",
+      provider: "test-provider",
+      provider_transaction_id: "txn-001"
+    });
+  } finally {
+    if (firstInstance) await new Promise((resolve) => firstInstance.server.close(resolve));
+    if (recoveredInstance) await new Promise((resolve) => recoveredInstance.server.close(resolve));
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("Q · repeated status lookup has no duplicate grant mutation", async () => {
+  const purchaseStore = new InMemoryPurchaseStore();
+  const verifier = verifierFor();
+  const instance = createAuthorityServer({
+    config: loadConfig({ ...process.env, NODE_ENV: "test", PORT: "0" }),
+    store: new InMemoryCombatStore(),
+    signer: createEphemeralTestSigner(),
+    purchaseStore,
+    purchaseVerifier: verifier
+  });
+  await new Promise((resolve) => instance.server.listen(0, resolve));
+  const url = `http://127.0.0.1:${instance.server.address().port}`;
+  try {
+    const authorize = await fetch(`${url}/v1/purchases/purchase-001/authorize`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-test-player-id": "player-001" },
+      body: JSON.stringify(requestBody())
+    });
+    assert.equal(authorize.status, 200);
+    const before = purchaseStore.loadPurchase("purchase-001");
+
+    for (let i = 0; i < 3; i += 1) {
+      const response = await fetch(`${url}/v1/purchases/purchase-001`, {
+        headers: { "x-test-player-id": "player-001" }
+      });
+      assert.equal(response.status, 200);
+      assert.equal((await response.json()).status, PURCHASE_AUTHORITY_RESULT.AUTHORIZED_GRANT);
+    }
+
+    const after = purchaseStore.loadPurchase("purchase-001");
+    assert.deepEqual(after, before);
+  } finally {
+    await new Promise((resolve) => instance.server.close(resolve));
+  }
 });

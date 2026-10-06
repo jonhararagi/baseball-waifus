@@ -136,3 +136,64 @@ CLOSED / UNCHANGED.
 
 GLOBAL GATE:
 CERRADO.
+
+
+## BONE-011-AUTH-003 · PURCHASE STATUS AND RECONNECT CONTRACT
+
+Estado del checkpoint: CLOSED.
+Estado de BONE-011: OPEN / IN_PROGRESS.
+
+**HEAD BEFORE:** `e3c8fe412fa12ac0734d4eac2ad3d1d966c9f284`
+**IMPLEMENTATION COMMIT:** `4e3e0dce0eacd917c33159fa73271add31d2c9c2`
+
+### Endpoint
+
+Se añadió:
+
+`GET /v1/purchases/:purchaseId`
+
+La lectura pasa por `PurchaseAuthority.getStatus()` y el `PurchaseStore` existente.
+
+- requiere la identidad autenticada existente;
+- devuelve únicamente una compra perteneciente al jugador autenticado;
+- una compra desconocida devuelve `404 NOT_FOUND`;
+- una compra de otro jugador devuelve la misma respuesta segura y no filtra campos de la compra;
+- la consulta no ejecuta nuevamente `providerVerifier`;
+- la consulta no crea grants ni muta estado económico.
+
+### Reconnect / persistence
+
+Se verificó el flujo:
+
+`authorize` → persistencia del purchase record → nueva instancia del store → `GET` → recuperación de `AUTHORIZED_GRANT`.
+
+La prueba usa `PersistentPurchaseStore` para demostrar recovery tras reinicio del proceso y `InMemoryPurchaseStore` para los casos HTTP rápidos.
+
+### Tests
+
+La suite BONE-011 cubre:
+
+- authorized purchase lookup;
+- repeated lookup;
+- reconnect recovery;
+- wrong-player isolation;
+- unknown purchase;
+- ausencia de provider revalidation durante GET;
+- no duplicate grant mutation;
+- HTTP authentication y status codes.
+
+El endpoint reutiliza el contrato y la identidad existentes; no modifica `POST /v1/purchases/:purchaseId/authorize`.
+
+### Producción
+
+No se implementó proveedor real de pagos ni deployment productivo.
+
+**PRODUCTION STATUS:** NOT CONFIGURED.
+
+BONE-011 permanece **OPEN / IN PROGRESS**.
+
+BONE-004 permanece **OPEN / BLOCKED**.
+
+BONE-010 permanece **CLOSED**.
+
+GLOBAL GATE permanece **CERRADO** por los Bones críticos restantes.
