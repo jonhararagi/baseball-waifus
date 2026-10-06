@@ -37,6 +37,9 @@ function validateRecord(record) {
   if (typeof record.receiptFingerprint !== "string" || !/^[a-f0-9]{64}$/.test(record.receiptFingerprint)) {
     throw new TypeError("Invalid receipt fingerprint");
   }
+  if (record.claimStatus !== "UNCLAIMED" && record.claimStatus !== "GRANT_CLAIMED") {
+    throw new TypeError("Invalid purchase claimStatus");
+  }
   return true;
 }
 
@@ -91,7 +94,7 @@ export class InMemoryPurchaseStore {
   savePurchase(record) {
     const purchaseId = stableId(record?.purchaseId, "purchaseId");
     const key = transactionKey(record?.provider, record?.providerTransactionId);
-    const next = clone({ ...record, transactionKey: key });
+    const next = clone({ ...record, transactionKey: key, claimStatus: record.claimStatus || "UNCLAIMED" });
     validateRecord(next);
     const existingPurchase = this.purchases.get(purchaseId);
     if (existingPurchase) return { created: false, record: clone(existingPurchase) };
@@ -102,6 +105,18 @@ export class InMemoryPurchaseStore {
     this.purchases.set(purchaseId, next);
     this.transactions.set(key, purchaseId);
     return { created: true, record: clone(next) };
+  }
+
+  claimPurchase(purchaseId, playerId) {
+    const id = stableId(purchaseId, "purchaseId");
+    const owner = stableId(playerId, "playerId");
+    const record = this.purchases.get(id);
+    if (!record || record.playerId !== owner) return { status: "NOT_FOUND" };
+    if (record.claimStatus === "GRANT_CLAIMED") {
+      return { status: "GRANT_ALREADY_CLAIMED", record: clone(record) };
+    }
+    record.claimStatus = "GRANT_CLAIMED";
+    return { status: "GRANT_CLAIMED", record: clone(record) };
   }
 }
 
@@ -172,5 +187,19 @@ export class PersistentPurchaseStore {
     document.transactions[key] = purchaseId;
     this._writeDocument(document);
     return { created: true, record: clone(next) };
+  }
+
+  claimPurchase(purchaseId, playerId) {
+    const id = stableId(purchaseId, "purchaseId");
+    const owner = stableId(playerId, "playerId");
+    const document = this._readDocument();
+    const record = document.purchases[id];
+    if (!record || record.playerId !== owner) return { status: "NOT_FOUND" };
+    if (record.claimStatus === "GRANT_CLAIMED") {
+      return { status: "GRANT_ALREADY_CLAIMED", record: clone(record) };
+    }
+    record.claimStatus = "GRANT_CLAIMED";
+    this._writeDocument(document);
+    return { status: "GRANT_CLAIMED", record: clone(record) };
   }
 }
