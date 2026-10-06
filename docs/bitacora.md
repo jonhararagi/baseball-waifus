@@ -10437,3 +10437,34 @@ GLOBAL GATE: CERRADO.
 
 GAMEPLAY: NO CHANGE.  
 BALANCE: NO CHANGE.
+
+
+---
+
+## BONE-011-AUTH-010-R · TELEGRAM STARS PENDING PROMOTION RECOVERY
+
+Fecha: 2026-10-06
+HEAD BEFORE: 100d92b042ce848678ee37afa22be2ba88023f04
+HEAD AFTER: 62922fea677600ba089896b3f52159417384372a
+TIMER: ~1–2.5 horas
+RESULT: PASS / RECOVERY COMPLETE
+
+Se corrigió la transición PENDING → AUTHORIZED_GRANT de Telegram Stars.
+
+La causa era la comparación prematura de PurchaseAuthority._persistVerifiedRecord() con samePurchase(), que incluía identidad de pago final todavía ausente del registro PENDING. La corrección delega la promoción al PurchaseStore y preserva el identificador pendiente sintético en PersistentPurchaseStore.
+
+Evidence:
+- Workflow 37528904073 = SUCCESS.
+- Backend suite = 110 PASS / 0 FAIL.
+- AUTH-010 A–G = PASS.
+- AUTH-009 purchase authority = PASS dentro de la suite completa.
+- Claim, Telegram Stars adapter, restart, idempotency e identity isolation = PASS.
+- Container smoke = PASS.
+
+No se modificó gameplay, balance, Gacha, Player Meta ni BONE-004.
+
+BONE-005 CLOSED.
+BONE-006 CLOSED.
+BONE-011 OPEN / IN PROGRESS.
+GLOBAL GATE CERRADO.
+PRODUCTION: NOT CONFIGURED.

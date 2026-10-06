@@ -667,3 +667,47 @@ GLOBAL GATE: CERRADO.
 GAMEPLAY: NO CHANGE.  
 BALANCE: NO CHANGE.  
 GACHA/PITY: NO CHANGE.
+
+
+## BONE-011-AUTH-010-R · TELEGRAM STARS PENDING PROMOTION RECOVERY
+
+Fecha: 2026-10-06
+HEAD BEFORE: 100d92b042ce848678ee37afa22be2ba88023f04
+HEAD AFTER IMPLEMENTATION: 62922fea677600ba089896b3f52159417384372a
+TIMER: ~1–2.5 horas
+STATUS: PASS / RECOVERY COMPLETE
+
+Causa reproducida en AUTH-010: la promoción PENDING → AUTHORIZED_GRANT estaba bloqueada porque PurchaseAuthority._persistVerifiedRecord() comparaba el registro pendiente con la identidad final de pago mediante samePurchase(), aunque la transacción Telegram definitiva todavía no existía en el estado PENDING.
+
+Corrección causal:
+- los registros PENDING se promueven mediante PurchaseStore.authorizePendingPurchase() sin exigir igualdad de identidad de pago final antes de la promoción;
+- PersistentPurchaseStore.createPendingPurchase() ahora conserva la identidad pendiente sintética pendiente:<purchaseId>, igual que InMemoryPurchaseStore.
+
+Evidencia:
+- GitHub Actions Run 37528904073 = SUCCESS.
+- Suite backend: 110 PASS / 0 FAIL.
+- AUTH-010 A–G = PASS.
+- AUTH-009 purchase authority tests = PASS dentro de la suite completa.
+- purchase_claim_authority_test = PASS.
+- telegram_stars_adapter_test = PASS.
+- Container smoke = PASS.
+- AUTH-010 restart claim/promotion = PASS.
+- duplicate callback = DUPLICATE_NO_OP.
+- identity isolation = PASS.
+- client injection protection = PASS.
+- no economic side effect in AUTH-010 = PASS.
+
+Scope:
+GAMEPLAY: NO CHANGE.
+BALANCE: NO CHANGE.
+GACHA: NO CHANGE.
+PLAYER META: NO CHANGE.
+BONE-004: unchanged / production still not configured.
+BONE-005: CLOSED.
+BONE-006: CLOSED.
+BONE-011: OPEN / IN PROGRESS.
+
+PRODUCTION:
+NOT CONFIGURED. No real provider credentials, Bot Token or production deployment were added.
+
+La recuperación queda persistida en main. 
