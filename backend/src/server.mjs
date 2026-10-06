@@ -5,6 +5,8 @@ import { authenticateRequest, authenticationConfigured } from "./auth.mjs";
 import { createAttestationSigner } from "./attestation_signer.mjs";
 import { CombatService } from "./combat_service.mjs";
 import { createPersistenceStore, persistenceReadiness } from "./persistence_provider.mjs";
+import { createPurchaseStore } from "./purchase_persistence_provider.mjs";
+import { PurchaseAuthority, PURCHASE_AUTHORITY_RESULT } from "./purchase_authority.mjs";
 import { AuthorityError, isAuthorityError } from "./errors.mjs";
 
 const JSON_HEADERS = {
@@ -56,10 +58,29 @@ function readiness(config, signer, store) {
   };
 }
 
-export function createAuthorityServer({ config = loadConfig(), store = null, signer = null } = {}) {
+function purchaseStatusCode(status) {
+  if (status === PURCHASE_AUTHORITY_RESULT.AUTHORIZED_GRANT || status === PURCHASE_AUTHORITY_RESULT.DUPLICATE_NO_OP) return 200;
+  if (status === PURCHASE_AUTHORITY_RESULT.UNAVAILABLE || status === PURCHASE_AUTHORITY_RESULT.BLOCKED) return 503;
+  return 409;
+}
+
+export function createAuthorityServer({
+  config = loadConfig(),
+  store = null,
+  signer = null,
+  purchaseStore = null,
+  purchaseVerifier = null,
+  purchaseAuthority = null
+} = {}) {
   const activeStore = store || createPersistenceStore(config);
   const activeSigner = signer || (config.rewardSigningPrivateKeyPem ? createAttestationSigner({ privateKeyPem: config.rewardSigningPrivateKeyPem }) : null);
   const service = new CombatService({ store: activeStore, signer: activeSigner });
+  const activePurchaseStore = purchaseStore || createPurchaseStore(config);
+  const activePurchaseAuthority = purchaseAuthority || new PurchaseAuthority({
+    store: activePurchaseStore,
+    providerVerifier: purchaseVerifier,
+    production: config.production
+  });
 
   const server = http.createServer(async (request, response) => {
     const origin = corsOrigin(request, config);
@@ -81,16 +102,27 @@ export function createAuthorityServer({ config = loadConfig(), store = null, sig
         const status = readiness(config, activeSigner, activeStore);
         return jsonResponse(response, status.ready ? 200 : 503, status, origin);
       }
-      const initMatch = url.pathname.match(/^\/v1\/combat\/([^/]+)\/init$/);
+      const initMatch = url.pathname.match(/^/v1/combat/([^/]+)/init$/);
       if (request.method === "GET" && initMatch) {
         const auth = await authenticateRequest(request, config);
         return jsonResponse(response, 200, await service.init(decodeURIComponent(initMatch[1]), auth.playerId), origin);
       }
-      const turnMatch = url.pathname.match(/^\/v1\/combat\/([^/]+)\/turn$/);
+      const turnMatch = url.pathname.match(/^/v1/combat/([^/]+)/turn$/);
       if (request.method === "POST" && turnMatch) {
         const auth = await authenticateRequest(request, config);
         const body = await readJson(request);
         return jsonResponse(response, 200, await service.applyTurn({ matchId: decodeURIComponent(turnMatch[1]), playerId: auth.playerId, body }), origin);
+      }
+      const purchaseMatch = url.pathname.match(/^/v1/purchases/([^/]+)/authorize$/);
+      if (request.method === "POST" && purchaseMatch) {
+        const auth = await authenticateRequest(request, config);
+        const body = await readJson(request);
+        const result = await activePurchaseAuthority.authorize({
+          purchaseId: decodeURIComponent(purchaseMatch[1]),
+          playerId: auth.playerId,
+          body
+        });
+        return jsonResponse(response, purchaseStatusCode(result.status), result, origin);
       }
       return jsonResponse(response, 404, { error: "NOT_FOUND", message: "Endpoint not found" }, origin);
     } catch (error) {
@@ -99,7 +131,7 @@ export function createAuthorityServer({ config = loadConfig(), store = null, sig
     }
   });
 
-  return Object.freeze({ server, store: activeStore, service, signer: activeSigner });
+  return Object.freeze({ server, store: activeStore, service, signer: activeSigner, purchaseStore: activePurchaseStore, purchaseAuthority: activePurchaseAuthority });
 }
 
 export async function startServer(config = loadConfig()) {

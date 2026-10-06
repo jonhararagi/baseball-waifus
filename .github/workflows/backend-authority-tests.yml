@@ -38,6 +38,10 @@ jobs:
           node --check src/persistence_provider.mjs
           node --check src/combat_service.mjs
           node --check src/attestation_signer.mjs
+          node --check src/purchase_provider_verifier.mjs
+          node --check src/purchase_store.mjs
+          node --check src/purchase_persistence_provider.mjs
+          node --check src/purchase_authority.mjs
           node --check src/server.mjs
 
       - name: Backend authority tests
@@ -53,12 +57,12 @@ jobs:
           cp backend/.dockerignore "$CONTEXT/.dockerignore"
           cp -R backend/src "$CONTEXT/backend/src"
           cp webapp/js/combat_core.js webapp/js/reward_authority.js "$CONTEXT/webapp/js/"
-          docker buildx build             --platform linux/amd64             --load             --tag basewarriors-authority:test             --file "$CONTEXT/backend/Dockerfile"             "$CONTEXT"
+          docker buildx build --platform linux/amd64 --load --tag basewarriors-authority:test --file "$CONTEXT/backend/Dockerfile" "$CONTEXT"
 
       - name: Run backend container smoke check
         working-directory: .
         run: |
-          docker run -d --rm             --name basewarriors-authority-smoke             -e NODE_ENV=test             -p 8787:8787             basewarriors-authority:test
+          docker run -d --rm --name basewarriors-authority-smoke -e NODE_ENV=test -p 8787:8787 basewarriors-authority:test
           trap 'docker rm -f basewarriors-authority-smoke >/dev/null 2>&1 || true' EXIT
           for attempt in $(seq 1 20); do
             if curl --fail --silent http://127.0.0.1:8787/health >/tmp/basewarriors-health.json; then
