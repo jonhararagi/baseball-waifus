@@ -24,6 +24,7 @@ const purchase = {
   currency: TELEGRAM_STARS_CURRENCY,
   provider: TELEGRAM_STARS_PROVIDER,
   transactionId: "auth010-tg-charge-001",
+  providerTransactionId: "auth010-tg-charge-001",
   grantKind: "scrap",
   grantAmount: 5000
 };
