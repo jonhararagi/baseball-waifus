@@ -144,7 +144,8 @@ Estado del checkpoint: CLOSED.
 Estado de BONE-011: OPEN / IN_PROGRESS.
 
 **HEAD BEFORE:** `e3c8fe412fa12ac0734d4eac2ad3d1d966c9f284`
-**IMPLEMENTATION COMMIT:** `4e3e0dce0eacd917c33159fa73271add31d2c9c2`
+**IMPLEMENTATION COMMIT:** `2b862ed9917a1d7fb1c2e952c4684ab92331f212`  
+**CI VALIDATION:** Run `37488381736` = SUCCESS on the identical tested tree `27615ad8673c1680b3201ef4839fd60bdd196c04`.
 
 ### Endpoint
 
