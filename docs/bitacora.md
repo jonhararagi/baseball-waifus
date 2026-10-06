@@ -10360,3 +10360,39 @@ BONE-011: OPEN / IN PROGRESS.
 GLOBAL GATE: CERRADO.
 
 Production provider/secrets/deployment: NOT CONFIGURED.
+
+
+---
+
+## BONE-011-AUTH-008 · PRODUCTION PROVIDER ADAPTER CONTRACT & CONFIGURATION SEAM
+
+Fecha: 2026-10-06  
+HEAD BEFORE: `65dddadb195273e6aef75103d40fcb871fb000ed`  
+IMPLEMENTATION VALIDATED HEAD: `a24f22426d9a2b99a4db731ad069f435cfcbdf94`  
+TIMER: ~1.5–2.5 horas  
+RESULT: PASS / CHECKPOINT CLOSED
+
+Se creó `backend/src/purchase_provider_adapter.mjs` con estados `NOT_CONFIGURED`, `CONFIGURED_UNAVAILABLE` y `READY`, sin conectar ningún proveedor real.
+
+La configuración de proveedor se mantiene externa mediante `PURCHASE_PROVIDER`, `PURCHASE_PROVIDER_ENDPOINT` y presencia de `PURCHASE_PROVIDER_CREDENTIAL`; el valor del credential no se persiste en el objeto de configuración.
+
+El readiness de compras distingue el estado del provider sin exponer secretos. El adapter fail-closed no permite grant cuando falta provider/verifier/availability. Respuestas de provider malformadas se clasifican como `REJECTED`.
+
+Evidence:
+- GitHub Actions Run `37523976239` = SUCCESS.
+- `npm test` = **89 PASS / 0 FAIL**.
+- backend syntax, authority, AUTH-007 claim y container smoke = PASS.
+- provider adapter/configuration tests = PASS.
+- AUTH-005 y AUTH-006 permanecen compatibles.
+
+Production:
+**NOT CONFIGURED.** No se seleccionó ni conectó Telegram Stars ni otro provider real. No se añadieron credentials, secrets, webhook secrets ni deployment externo.
+
+GAMEPLAY: NO CHANGE.  
+BALANCE: NO CHANGE.  
+BONE-004: OPEN / BLOCKED / unchanged.  
+BONE-005: CLOSED / unchanged.  
+BONE-006: CLOSED / unchanged.  
+BONE-010: CLOSED / unchanged.  
+BONE-011: OPEN / IN PROGRESS.  
+GLOBAL GATE: CERRADO.

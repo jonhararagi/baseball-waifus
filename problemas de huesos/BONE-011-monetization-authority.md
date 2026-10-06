@@ -494,3 +494,97 @@ No provider real de pagos fue creado ni configurado en AUTH-007.
 No se añadieron secrets, private keys, Bot Tokens ni deployment productivo.
 
 AUTH-007 cierra únicamente la frontera de claim durable; BONE-011 completo permanece abierto hasta la autoridad monetaria productiva y sus dependencias.
+
+
+## BONE-011-AUTH-008 · PRODUCTION PROVIDER ADAPTER CONTRACT & CONFIGURATION SEAM
+
+Fecha: 2026-10-06  
+HEAD BEFORE: `65dddadb195273e6aef75103d40fcb871fb000ed`  
+IMPLEMENTATION VALIDATED HEAD: `a24f22426d9a2b99a4db731ad069f435cfcbdf94`  
+TIMER: ~1.5–2.5 horas  
+RESULT: PASS / CHECKPOINT CLOSED
+
+### Provider adapter boundary
+
+Se añadió `backend/src/purchase_provider_adapter.mjs` como seam explícito para un proveedor futuro, sin seleccionar ni implementar un proveedor real.
+
+Estados definidos:
+
+- `NOT_CONFIGURED`
+- `CONFIGURED_UNAVAILABLE`
+- `READY`
+
+El adapter encapsula el acceso al `PurchaseProviderVerifier`; `PurchaseAuthority` continúa siendo la única autoridad del grant y `PurchaseStore` continúa siendo la fuente de verdad de la compra.
+
+### Configuration seam
+
+`backend/src/config.mjs` ahora reconoce externamente:
+
+- `PURCHASE_PROVIDER`
+- `PURCHASE_PROVIDER_ENDPOINT`
+- `PURCHASE_PROVIDER_CREDENTIAL`
+
+El contenido del credential no se copia al objeto de configuración: únicamente se conserva su estado de presencia.
+
+Con proveedor ausente, el estado es `NOT_CONFIGURED`.  
+Con proveedor declarado pero sin credential/verificador/availability real, el estado es `CONFIGURED_UNAVAILABLE`.  
+El estado `READY` solamente puede producirse mediante la inyección explícita de un adapter verificado y disponible.
+
+### Fail-closed
+
+Un adapter no configurado o no disponible devuelve `UNAVAILABLE` y nunca puede producir un grant.
+
+Una respuesta de provider malformada se clasifica como `REJECTED / INVALID_PROVIDER_RESPONSE`.
+
+No existe fallback a pago simulado dentro del boundary productivo.
+
+### Secret safety
+
+El status del adapter no contiene credenciales.  
+La configuración no almacena el valor de `PURCHASE_PROVIDER_CREDENTIAL`.  
+Los endpoints de readiness no exponen credenciales, receipts ni material criptográfico.
+
+No se añadieron secrets, Bot Tokens, API keys, webhook secrets ni credentials reales.
+
+### Compatibility / regressions
+
+AUTH-005 callback authority permanece operativo.  
+AUTH-006 raw-body transport permanece operativo.  
+AUTH-007 one-time claim permanece operativo, incluyendo exactly-once claim y recovery.
+
+### Validation
+
+GitHub Actions Run `37523976239` = SUCCESS.
+
+- backend syntax = PASS;
+- backend authority suite = PASS;
+- AUTH-007 claim tests = PASS;
+- provider adapter/configuration tests = PASS;
+- secret safety = PASS;
+- production readiness boundaries = PASS;
+- container smoke = PASS.
+
+Suite final: **89 PASS / 0 FAIL**.
+
+### Production status
+
+**PRODUCTION STATUS: NOT CONFIGURED.**
+
+No existe proveedor real seleccionado o conectado en el repositorio. No se conectaron Telegram Stars ni otro payment provider. No se crearon credenciales ni deployment externo.
+
+BONE-011 continúa **OPEN / IN PROGRESS**.
+
+BONE-004 continúa **OPEN / BLOCKED**.
+
+BONE-005 continúa **CLOSED**.  
+BONE-006 continúa **CLOSED**.  
+BONE-010 continúa **CLOSED**.  
+BONE-011 AUTH-008 solamente deja preparado el seam de integración futura.
+
+### Scope
+
+GAMEPLAY: NO CHANGE.  
+BALANCE: NO CHANGE.  
+GACHA/PITY: NO CHANGE.  
+ECONOMIC APPLICATION: NO CHANGE.  
+GLOBAL GATE: CERRADO.
