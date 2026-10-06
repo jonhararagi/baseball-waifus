@@ -21,6 +21,12 @@ export function loadConfig(env = process.env) {
   const persistenceDsn = env.AUTHORITY_PERSISTENCE_DSN ? String(env.AUTHORITY_PERSISTENCE_DSN) : "";
   const allowedOrigins = splitList(env.ALLOWED_ORIGINS, nodeEnv === "production" ? [] : ["*"]);
 
+  const purchaseProvider = String(env.PURCHASE_PROVIDER || "").trim();
+  const purchaseProviderEndpoint = String(env.PURCHASE_PROVIDER_ENDPOINT || "").trim();
+  const purchaseProviderCredentialConfigured = Boolean(
+    String(env.PURCHASE_PROVIDER_CREDENTIAL || "").trim()
+  );
+
   return Object.freeze({
     nodeEnv,
     production: nodeEnv === "production",
@@ -29,10 +35,14 @@ export function loadConfig(env = process.env) {
     deploymentMode: nodeEnv,
     port: positiveInteger(env.PORT, 8787),
     rewardSigningPrivateKeyPem: env.REWARD_SIGNING_PRIVATE_KEY
-      ? String(env.REWARD_SIGNING_PRIVATE_KEY).replace(/\\n/g, "\n")
+      ? String(env.REWARD_SIGNING_PRIVATE_KEY).replace(/\n/g, "
+")
       : "",
     telegramBotToken: String(env.TELEGRAM_BOT_TOKEN || ""),
-    telegramInitDataMaxAgeSeconds: positiveInteger(env.TELEGRAM_INIT_DATA_MAX_AGE_SECONDS, DEFAULT_MAX_AGE_SECONDS),
+    telegramInitDataMaxAgeSeconds: positiveInteger(
+      env.TELEGRAM_INIT_DATA_MAX_AGE_SECONDS,
+      DEFAULT_MAX_AGE_SECONDS
+    ),
     allowedOrigins,
     persistenceProvider,
     persistenceFilePath,
@@ -40,7 +50,12 @@ export function loadConfig(env = process.env) {
     persistenceConfigured: Boolean(
       (persistenceProvider === "filesystem" && persistenceFilePath)
       || (persistenceProvider === "managed" && persistenceDsn)
-    )
+    ),
+    purchaseProvider,
+    purchaseProviderEndpoint,
+    purchaseProviderConfigured: Boolean(purchaseProvider),
+    purchaseProviderCredentialConfigured,
+    purchaseProviderConfigConfigured: Boolean(purchaseProvider && purchaseProviderEndpoint)
   });
 }
 
@@ -50,7 +65,9 @@ export function validateProductionConfig(config) {
   const missing = [];
   if (!config.rewardSigningPrivateKeyPem) missing.push("REWARD_SIGNING_PRIVATE_KEY");
   if (!config.telegramBotToken) missing.push("TELEGRAM_BOT_TOKEN");
-  if (!Array.isArray(config.allowedOrigins) || config.allowedOrigins.length === 0) missing.push("ALLOWED_ORIGINS");
+  if (!Array.isArray(config.allowedOrigins) || config.allowedOrigins.length === 0) {
+    missing.push("ALLOWED_ORIGINS");
+  }
 
   if (config.allowedOrigins?.includes("*")) {
     throw new Error("Production ALLOWED_ORIGINS must be explicit; wildcard '*' is forbidden");

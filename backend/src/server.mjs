@@ -6,6 +6,9 @@ import { createAttestationSigner } from "./attestation_signer.mjs";
 import { CombatService } from "./combat_service.mjs";
 import { createPersistenceStore, persistenceReadiness } from "./persistence_provider.mjs";
 import { createPurchaseStore } from "./purchase_persistence_provider.mjs";
+import {
+  createPurchaseProviderAdapterFromConfig
+} from "./purchase_provider_adapter.mjs";
 import { evaluatePurchaseReadiness, purchaseReadinessSatisfied } from "./purchase_readiness.mjs";
 import { PurchaseAuthority, PURCHASE_AUTHORITY_RESULT } from "./purchase_authority.mjs";
 import { AuthorityError, isAuthorityError } from "./errors.mjs";
@@ -116,15 +119,18 @@ export function createAuthorityServer({
   signer = null,
   purchaseStore = null,
   purchaseVerifier = null,
-  purchaseAuthority = null
+  purchaseAuthority = null,
+  purchaseProviderAdapter = null
 } = {}) {
   const activeStore = store || createPersistenceStore(config);
   const activeSigner = signer || (config.rewardSigningPrivateKeyPem ? createAttestationSigner({ privateKeyPem: config.rewardSigningPrivateKeyPem }) : null);
   const service = new CombatService({ store: activeStore, signer: activeSigner });
   const activePurchaseStore = purchaseStore || createPurchaseStore(config);
+  const activePurchaseAdapter = purchaseProviderAdapter || createPurchaseProviderAdapterFromConfig(config);
+  const activePurchaseVerifier = purchaseVerifier || activePurchaseAdapter.verifier;
   const activePurchaseAuthority = purchaseAuthority || new PurchaseAuthority({
     store: activePurchaseStore,
-    providerVerifier: purchaseVerifier,
+    providerVerifier: activePurchaseVerifier,
     production: config.production
   });
 
@@ -150,7 +156,8 @@ export function createAuthorityServer({
           activeSigner,
           activeStore,
           activePurchaseAuthority,
-          activePurchaseStore
+          activePurchaseStore,
+          activePurchaseAdapter
         );
         return jsonResponse(response, status.ready ? 200 : 503, status, origin);
       }
@@ -228,7 +235,15 @@ export function createAuthorityServer({
     }
   });
 
-  return Object.freeze({ server, store: activeStore, service, signer: activeSigner, purchaseStore: activePurchaseStore, purchaseAuthority: activePurchaseAuthority });
+  return Object.freeze({
+    server,
+    store: activeStore,
+    service,
+    signer: activeSigner,
+    purchaseStore: activePurchaseStore,
+    purchaseAuthority: activePurchaseAuthority,
+    purchaseProviderAdapter: activePurchaseAdapter
+  });
 }
 
 export async function startServer(config = loadConfig()) {
