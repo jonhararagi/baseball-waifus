@@ -10396,3 +10396,44 @@ BONE-006: CLOSED / unchanged.
 BONE-010: CLOSED / unchanged.  
 BONE-011: OPEN / IN PROGRESS.  
 GLOBAL GATE: CERRADO.
+
+
+---
+
+## BONE-011-AUTH-009 · TELEGRAM STARS PROVIDER ADAPTER
+
+Fecha: 2026-10-06  
+BASE SHA: `3f3643160732aec865da39f3884306d73ad50445`  
+IMPLEMENTATION VALIDATED HEAD: `b4cafa763757bc4a223382cacb6f85c240359e18`  
+DOCUMENTATION HEAD: `a65fb41d401b146efc18ec4228341cd3ba26a7a2`  
+TIMER: 1.5–2.5 horas  
+RESULT: PASS / CHECKPOINT CLOSED
+
+Se implementó el primer adapter provider-specific para Telegram Stars dentro del seam AUTH-008.
+
+Evidence:
+- `backend/src/telegram_stars_adapter.mjs` valida `successful_payment`, `XTR`, identidad Telegram, invoice payload `bwstars:v1`, transaction id y correlación con PurchaseStore.
+- El transport usa el webhook secret de Telegram y fail-closed ante ausencia/invalidación.
+- `PurchaseAuthority` conserva la autoridad económica; no se creó un segundo PurchaseStore.
+- `PurchaseProviderAdapter` soporta callback-only providers.
+- GitHub Actions Run `37525464161` = SUCCESS; Job `112481219857` = SUCCESS.
+- Suite completa: `103 PASS / 0 FAIL`.
+- Container smoke: PASS.
+- No se añadieron credenciales reales ni se ejecutó deployment externo.
+
+Production:
+IMPLEMENTED: YES.
+CONFIGURED: NO.
+DEPLOYED: NO.
+REAL TELEGRAM CREDENTIALS: NO.
+PRODUCTION EVIDENCE: NO.
+
+BONE-004: OPEN / BLOCKED / unchanged.  
+BONE-005: CLOSED / unchanged.  
+BONE-006: CLOSED / unchanged.  
+BONE-010: CLOSED / unchanged.  
+BONE-011: OPEN / IN PROGRESS.  
+GLOBAL GATE: CERRADO.
+
+GAMEPLAY: NO CHANGE.  
+BALANCE: NO CHANGE.
