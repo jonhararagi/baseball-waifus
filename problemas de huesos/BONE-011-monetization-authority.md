@@ -322,3 +322,75 @@ GAMEPLAY: NO CHANGE.
 BALANCE: NO CHANGE.
 
 Remaining blocker de BONE-011: conectar posteriormente un provider adapter real con verificación criptográfica/autoridad real y su persistence/operación productiva; esta task únicamente deja preparado el seam.
+
+
+## BONE-011-AUTH-006 · CALLBACK RAW-BODY & AUTHENTICATION TRANSPORT SEAM
+
+Fecha: 2026-10-06  
+HEAD BEFORE: `bbfcdffb5e9c6e12779390665b31aa2d180c5c45`  
+HEAD AFTER: `bbfcdffb5e9c6e12779390665b31aa2d180c5c45`  
+TIMER: 45–75 minutos  
+RESULT: PASS
+
+Se endureció exclusivamente el transporte HTTP del callback provider-neutral.
+
+### Raw body / headers
+
+El endpoint `POST /v1/purchases/provider-callback` ahora realiza una sola lectura del request y conserva:
+
+- `rawBody` como `Buffer` con los bytes recibidos antes de `JSON.parse`;
+- `headers` como representación explícita de los headers HTTP recibidos;
+- `body` como payload JSON parseado.
+
+El provider verifier recibe los tres valores sin reconstruir el raw body mediante `JSON.stringify`.
+
+### Fail-closed transport
+
+El límite existente de 64 KiB se mantiene y un body excesivo devuelve `413 BODY_TOO_LARGE` antes de invocar al verifier.
+
+Los datos de transporte no son autoridad económica. La autoridad continúa dependiendo exclusivamente del resultado `VERIFIED` producido por `PurchaseProviderVerifier` y consumido por `PurchaseAuthority`.
+
+### Negative coverage
+
+Los tests dirigidos verifican:
+
+- raw body exacto;
+- headers relevantes;
+- parsed body disponible;
+- oversized callback rechazado;
+- `x-test-player-id`, `player_id` y `grant_amount` no pueden alterar el evento verificado;
+- verifier `REJECTED` no crea purchase;
+- verifier `UNAVAILABLE` no crea purchase;
+- idempotencia y persistent recovery permanecen intactos.
+
+### Validation
+
+GitHub Actions Run `37499083138` = SUCCESS.
+
+- backend syntax = PASS;
+- backend authority / BONE-011 suite = PASS;
+- callback HTTP transport = PASS;
+- raw-body transport = PASS_STATIC;
+- headers transport = PASS_STATIC;
+- negative injection = PASS;
+- idempotency = PASS;
+- persistent recovery = PASS;
+- container smoke = PASS.
+
+Browser: NOT REQUIRED / NOT RUN.
+
+### Scope
+
+GAMEPLAY: NO CHANGE.  
+BALANCE: NO CHANGE.  
+BONE-004: OPEN / BLOCKED / UNCHANGED.  
+BONE-005: CLOSED / UNCHANGED.  
+BONE-006: CLOSED / UNCHANGED.  
+BONE-007: CLOSED / UNCHANGED.  
+BONE-008: CLOSED / UNCHANGED.  
+BONE-009: CLOSED / UNCHANGED.  
+BONE-010: CLOSED / UNCHANGED.  
+BONE-011: OPEN / IN PROGRESS.  
+GLOBAL GATE: CERRADO.
+
+Production provider remains NOT CONFIGURED. No real provider, secret, API key or credential was introduced.

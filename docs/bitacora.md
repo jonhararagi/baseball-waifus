@@ -10276,3 +10276,38 @@ Corrección:
 README.md no fue modificado porque ya coincidía con el estado operativo correcto. Los checkpoints históricos de los Bones permanecen preservados.
 
 STATUS: PASS_STATIC / CONTINUITY RECONCILED.
+
+
+---
+
+## BONE-011-AUTH-006 · CALLBACK RAW-BODY & AUTHENTICATION TRANSPORT SEAM
+
+Fecha: 2026-10-06  
+HEAD BEFORE: `bbfcdffb5e9c6e12779390665b31aa2d180c5c45`  
+HEAD AFTER: `bbfcdffb5e9c6e12779390665b31aa2d180c5c45`  
+TIMER: 45–75 minutos  
+RESULT: PASS
+
+Se preservó el cuerpo HTTP crudo y los headers del callback antes del parseo JSON.
+
+- `rawBody` llega intacto al provider verifier;
+- `headers` llega como seam explícito;
+- `body` parseado continúa disponible;
+- el límite de 64 KiB mantiene `413 BODY_TOO_LARGE`;
+- `VERIFIED` continúa siendo la única frontera de autoridad económica;
+- inyección de identidad/grant desde request no altera el evento verificado;
+- rechazo/unavailable no generan purchase;
+- idempotencia y recovery persistente permanecen PASS.
+
+Evidence:
+- Backend Actions Run `37499083138` = SUCCESS.
+- Syntax PASS.
+- BONE-011 callback tests PASS.
+- Container smoke PASS.
+- Browser NOT RUN, no requerido.
+- No provider real ni secrets añadidos.
+- Gameplay/Balance: NO CHANGE.
+- BONE-004 permanece OPEN/BLOCKED.
+- BONE-005, BONE-006, BONE-007, BONE-008, BONE-009 y BONE-010 permanecen CLOSED.
+- BONE-011 permanece OPEN/IN PROGRESS.
+- GLOBAL GATE permanece CERRADO.
