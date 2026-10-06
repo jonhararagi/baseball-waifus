@@ -745,3 +745,166 @@ test("R7 · readiness evaluation never invokes receipt verification or authoriza
   assert.equal(authorizeCalls, 0);
   await rm(directory, { recursive: true, force: true });
 });
+
+
+test("CALLBACK-TRANSPORT-1 · raw body, headers and parsed body reach the verifier intact", async () => {
+  const captured = {};
+  const verifier = createPurchaseProviderVerifier({
+    verifyPurchaseCallback: async ({ rawBody, headers, body }) => {
+      captured.rawBody = Buffer.from(rawBody);
+      captured.headers = headers;
+      captured.body = body;
+      return {
+        status: PURCHASE_PROVIDER_VERIFICATION.REJECTED,
+        reason: "TRANSPORT_PROBE_ONLY"
+      };
+    }
+  });
+  const instance = createAuthorityServer({
+    config: loadConfig({ ...process.env, NODE_ENV: "test", PORT: "0" }),
+    store: new InMemoryCombatStore(),
+    signer: createEphemeralTestSigner(),
+    purchaseStore: new InMemoryPurchaseStore(),
+    purchaseVerifier: verifier
+  });
+  await new Promise((resolve) => instance.server.listen(0, resolve));
+  try {
+    const rawBody = '{"callback_token":"callback-valid", "grant_amount":999999}';
+    const response = await fetch("http://127.0.0.1:" + instance.server.address().port + "/v1/purchases/provider-callback", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-provider-signature": "signature-fixture",
+        "x-provider-event-id": "event-fixture",
+        "x-test-player-id": "attacker-player"
+      },
+      body: rawBody
+    });
+    assert.equal(response.status, 409);
+    assert.equal(captured.rawBody.toString("utf8"), rawBody);
+    assert.equal(captured.headers["x-provider-signature"], "signature-fixture");
+    assert.equal(captured.headers["x-provider-event-id"], "event-fixture");
+    assert.equal(captured.headers["x-test-player-id"], "attacker-player");
+    assert.deepEqual(captured.body, {
+      callback_token: "callback-valid",
+      grant_amount: 999999
+    });
+  } finally {
+    await new Promise((resolve) => instance.server.close(resolve));
+  }
+});
+
+test("CALLBACK-TRANSPORT-2 · oversized callback is rejected before verifier/economic authority", async () => {
+  let verifierCalls = 0;
+  const verifier = createPurchaseProviderVerifier({
+    verifyPurchaseCallback: async () => {
+      verifierCalls += 1;
+      return { status: PURCHASE_PROVIDER_VERIFICATION.VERIFIED };
+    }
+  });
+  const instance = createAuthorityServer({
+    config: loadConfig({ ...process.env, NODE_ENV: "test", PORT: "0" }),
+    store: new InMemoryCombatStore(),
+    signer: createEphemeralTestSigner(),
+    purchaseStore: new InMemoryPurchaseStore(),
+    purchaseVerifier: verifier
+  });
+  await new Promise((resolve) => instance.server.listen(0, resolve));
+  try {
+    const oversized = "x".repeat(64 * 1024 + 1);
+    const response = await fetch("http://127.0.0.1:" + instance.server.address().port + "/v1/purchases/provider-callback", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: oversized
+    });
+    assert.equal(response.status, 413);
+    assert.equal((await response.json()).error, "BODY_TOO_LARGE");
+    assert.equal(verifierCalls, 0);
+  } finally {
+    await new Promise((resolve) => instance.server.close(resolve));
+  }
+});
+
+test("CALLBACK-TRANSPORT-3 · request identity/economic injection cannot influence a verified provider event", async () => {
+  const verifier = createPurchaseProviderVerifier({
+    verifyPurchaseCallback: async ({ body, rawBody, headers }) => {
+      assert.equal(headers["x-test-player-id"], "attacker-player");
+      assert.match(rawBody.toString("utf8"), /grant_amount/);
+      assert.equal(body.player_id, "attacker-player");
+      assert.equal(body.grant_amount, 999999);
+      return {
+        status: PURCHASE_PROVIDER_VERIFICATION.VERIFIED,
+        purchaseId: "purchase-transport-001",
+        playerId: "player-001",
+        productId: "scrap_5000",
+        amount: 1,
+        currency: "XTR",
+        provider: "test-provider",
+        transactionId: "txn-transport-001",
+        receiptFingerprint: fingerprint("transport-receipt"),
+        grantKind: "scrap",
+        grantAmount: 5000
+      };
+    }
+  });
+  const instance = createAuthorityServer({
+    config: loadConfig({ ...process.env, NODE_ENV: "test", PORT: "0" }),
+    store: new InMemoryCombatStore(),
+    signer: createEphemeralTestSigner(),
+    purchaseStore: new InMemoryPurchaseStore(),
+    purchaseVerifier: verifier
+  });
+  await new Promise((resolve) => instance.server.listen(0, resolve));
+  try {
+    const response = await fetch("http://127.0.0.1:" + instance.server.address().port + "/v1/purchases/provider-callback", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-test-player-id": "attacker-player"
+      },
+      body: JSON.stringify({
+        callback_token: "callback-valid",
+        player_id: "attacker-player",
+        grant_amount: 999999
+      })
+    });
+    assert.equal(response.status, 200);
+    const result = await response.json();
+    assert.equal(result.status, PURCHASE_AUTHORITY_RESULT.AUTHORIZED_GRANT);
+    assert.equal(result.player_id, "player-001");
+    assert.equal(result.grant_amount, 5000);
+  } finally {
+    await new Promise((resolve) => instance.server.close(resolve));
+  }
+});
+
+test("CALLBACK-TRANSPORT-4 · rejected and unavailable verifiers never create a purchase record", async () => {
+  for (const status of [PURCHASE_PROVIDER_VERIFICATION.REJECTED, PURCHASE_PROVIDER_VERIFICATION.UNAVAILABLE]) {
+    const purchaseStore = new InMemoryPurchaseStore();
+    const verifier = createPurchaseProviderVerifier({
+      verifyPurchaseCallback: async () => ({
+        status,
+        reason: status === PURCHASE_PROVIDER_VERIFICATION.REJECTED ? "CALLBACK_REJECTED" : "PROVIDER_UNAVAILABLE"
+      })
+    });
+    const instance = createAuthorityServer({
+      config: loadConfig({ ...process.env, NODE_ENV: "test", PORT: "0" }),
+      store: new InMemoryCombatStore(),
+      signer: createEphemeralTestSigner(),
+      purchaseStore,
+      purchaseVerifier: verifier
+    });
+    await new Promise((resolve) => instance.server.listen(0, resolve));
+    try {
+      const response = await fetch("http://127.0.0.1:" + instance.server.address().port + "/v1/purchases/provider-callback", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: '{"callback_token":"blocked"}'
+      });
+      assert.equal(response.status, status === PURCHASE_PROVIDER_VERIFICATION.REJECTED ? 409 : 503);
+      assert.equal(purchaseStore.loadPurchase("purchase-callback-001"), null);
+    } finally {
+      await new Promise((resolve) => instance.server.close(resolve));
+    }
+  }
+});

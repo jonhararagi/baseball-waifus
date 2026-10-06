@@ -47,6 +47,35 @@ async function readJson(request, limitBytes = 64 * 1024) {
   }
 }
 
+async function readRawJson(request, limitBytes = 64 * 1024) {
+  const chunks = [];
+  let size = 0;
+  for await (const chunk of request) {
+    size += chunk.length;
+    if (size > limitBytes) throw new AuthorityError(413, "BODY_TOO_LARGE", "Request body exceeds the configured limit");
+    chunks.push(chunk);
+  }
+  const rawBody = Buffer.concat(chunks);
+  let body = {};
+  if (rawBody.length > 0) {
+    try {
+      body = JSON.parse(rawBody.toString("utf8"));
+    } catch {
+      throw new AuthorityError(400, "INVALID_JSON", "Request body must be valid JSON");
+    }
+  }
+  return Object.freeze({ rawBody, body });
+}
+
+function cloneHeaders(request) {
+  const source = request?.headers || {};
+  const entries = Object.entries(source).map(([name, value]) => [
+    String(name).toLowerCase(),
+    Array.isArray(value) ? Object.freeze([...value]) : value
+  ]);
+  return Object.freeze(Object.fromEntries(entries));
+}
+
 function readiness(config, signer, store, purchaseAuthority, purchaseStore) {
   const persistence = persistenceReadiness(config, store);
   const purchase = evaluatePurchaseReadiness({
@@ -133,8 +162,12 @@ export function createAuthorityServer({
       }
       const callbackMatch = url.pathname.match(new RegExp("^/v1/purchases/provider-callback$"));
       if (request.method === "POST" && callbackMatch) {
-        const body = await readJson(request);
-        const result = await activePurchaseAuthority.authorizeProviderCallback({ body });
+        const { rawBody, body } = await readRawJson(request);
+        const result = await activePurchaseAuthority.authorizeProviderCallback({
+          body,
+          rawBody,
+          headers: cloneHeaders(request)
+        });
         return jsonResponse(response, purchaseStatusCode(result.status), result, origin);
       }
 

@@ -21,8 +21,20 @@ function normalizeVerificationResult(result) {
   return Object.freeze({ ...result, status });
 }
 
+function normalizeCallbackInput(input = {}) {
+  const headers = input.headers && typeof input.headers === "object" && !Array.isArray(input.headers)
+    ? Object.freeze({ ...input.headers })
+    : Object.freeze({});
+  return Object.freeze({
+    ...input,
+    headers,
+    rawBody: input.rawBody ?? null,
+    body: input.body ?? null
+  });
+}
+
 function invokeVerifier(fn, input) {
-  return Promise.resolve(fn(Object.freeze({ ...input }))).then(normalizeVerificationResult);
+  return Promise.resolve(fn(normalizeCallbackInput(input))).then(normalizeVerificationResult);
 }
 
 export function createPurchaseProviderVerifier({

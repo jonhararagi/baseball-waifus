@@ -212,7 +212,7 @@ export class PurchaseAuthority {
     });
   }
 
-  async authorizeProviderCallback({ body } = {}) {
+  async authorizeProviderCallback({ body, rawBody = null, headers = {} } = {}) {
     if (!body || typeof body !== "object" || Array.isArray(body)) {
       throw new AuthorityError(400, "INVALID_PROVIDER_CALLBACK", "Provider callback body is required");
     }
@@ -225,7 +225,11 @@ export class PurchaseAuthority {
 
     let verified;
     try {
-      verified = await this.providerVerifier.verifyPurchaseCallback({ body });
+      verified = await this.providerVerifier.verifyPurchaseCallback({
+        body,
+        rawBody,
+        headers
+      });
     } catch {
       return { status: PURCHASE_AUTHORITY_RESULT.UNAVAILABLE, reason: "PROVIDER_CALLBACK_VERIFIER_ERROR" };
     }
