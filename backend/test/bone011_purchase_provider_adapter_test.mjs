@@ -66,7 +66,8 @@ test("malformed provider response remains outside authorized boundary", async ()
     verifyReceipt: async () => ({ malformed: true })
   });
   const result = await adapter.verifyReceipt({});
-  assert.equal(result.status, PURCHASE_PROVIDER_VERIFICATION.UNAVAILABLE);
+  assert.equal(result.status, PURCHASE_PROVIDER_VERIFICATION.REJECTED);
+  assert.equal(result.reason, "INVALID_PROVIDER_RESPONSE");
 });
 
 test("provider unavailable never becomes VERIFIED", async () => {
