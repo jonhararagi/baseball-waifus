@@ -91,7 +91,6 @@ function resultFromRecord(status, record) {
     purchase_id: record.purchaseId,
     player_id: record.playerId,
     product_id: record.productId,
-    amount: record.amount,
     grant_kind: record.grantKind,
     grant_amount: record.grantAmount,
     currency: record.currency,
@@ -157,6 +156,7 @@ export class PurchaseAuthority {
       return {
         status: PURCHASE_AUTHORITY_RESULT.PENDING,
         created: false,
+        amount: existing.amount,
         ...resultFromRecord(PURCHASE_AUTHORITY_RESULT.PENDING, existing)
       };
     }
@@ -194,6 +194,7 @@ export class PurchaseAuthority {
     return {
       status: PURCHASE_AUTHORITY_RESULT.PENDING,
       created: Boolean(created.created),
+      amount: created.record.amount,
       ...resultFromRecord(PURCHASE_AUTHORITY_RESULT.PENDING, created.record)
     };
   }
