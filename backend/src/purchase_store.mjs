@@ -89,16 +89,16 @@ export class InMemoryPurchaseStore {
   }
 
   savePurchase(record) {
-    validateRecord(record);
-    const purchaseId = stableId(record.purchaseId, "purchaseId");
-    const key = transactionKey(record.provider, record.providerTransactionId);
+    const purchaseId = stableId(record?.purchaseId, "purchaseId");
+    const key = transactionKey(record?.provider, record?.providerTransactionId);
+    const next = clone({ ...record, transactionKey: key });
+    validateRecord(next);
     const existingPurchase = this.purchases.get(purchaseId);
     if (existingPurchase) return { created: false, record: clone(existingPurchase) };
     const existingByTransaction = this.transactions.get(key);
     if (existingByTransaction) {
       return { created: false, record: clone(this.purchases.get(existingByTransaction)) };
     }
-    const next = clone({ ...record, transactionKey: key });
     this.purchases.set(purchaseId, next);
     this.transactions.set(key, purchaseId);
     return { created: true, record: clone(next) };
@@ -161,13 +161,13 @@ export class PersistentPurchaseStore {
   }
 
   savePurchase(record) {
-    validateRecord(record);
+    const purchaseId = stableId(record?.purchaseId, "purchaseId");
+    const key = transactionKey(record?.provider, record?.providerTransactionId);
+    const next = clone({ ...record, transactionKey: key });
+    validateRecord(next);
     const document = this._readDocument();
-    const purchaseId = stableId(record.purchaseId, "purchaseId");
-    const key = transactionKey(record.provider, record.providerTransactionId);
     if (document.purchases[purchaseId]) return { created: false, record: clone(document.purchases[purchaseId]) };
     if (document.transactions[key]) return { created: false, record: clone(document.purchases[document.transactions[key]]) };
-    const next = clone({ ...record, transactionKey: key });
     document.purchases[purchaseId] = next;
     document.transactions[key] = purchaseId;
     this._writeDocument(document);
