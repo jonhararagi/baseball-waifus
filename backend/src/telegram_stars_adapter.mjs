@@ -188,9 +188,9 @@ export function createTelegramStarsProviderAdapter({
 
 export function createTelegramStarsProviderAdapterFromConfig(config = {}, options = {}) {
   return createTelegramStarsProviderAdapter({
-    webhookSecret: config.telegramStarsWebhookSecret,
+    webhookSecret: options.webhookSecret || "",
     purchaseStore: options.purchaseStore || null,
-    available: options.available ?? true
+    available: options.available ?? Boolean(config?.telegramStarsWebhookSecretConfigured)
   });
 }
 

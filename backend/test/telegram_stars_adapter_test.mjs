@@ -45,20 +45,21 @@ function seedPurchase(store) {
   });
 }
 
-function callback(overrides = {}) {
-  const message = {
-    from: { id: 7001 },
-    successful_payment: {
-      currency: purchase.currency,
-      total_amount: purchase.amount,
-      invoice_payload: buildTelegramStarsInvoicePayload(purchase),
-      telegram_payment_charge_id: purchase.transactionId
-    }
+function callback({ from = {}, successfulPayment = {}, ...topLevel } = {}) {
+  const payment = {
+    currency: purchase.currency,
+    total_amount: purchase.amount,
+    invoice_payload: buildTelegramStarsInvoicePayload(purchase),
+    telegram_payment_charge_id: purchase.transactionId,
+    ...successfulPayment
   };
   return {
     update_id: 901,
-    message: { ...message, ...overrides.message },
-    ...overrides
+    ...topLevel,
+    message: {
+      from: { id: 7001, ...from },
+      successful_payment: payment
+    }
   };
 }
 
@@ -89,12 +90,7 @@ test("B · wrong currency is rejected", async () => {
   seedPurchase(store);
   const adapter = createTelegramStarsProviderAdapter({ webhookSecret: secret, purchaseStore: store });
   const result = await adapter.verifyPurchaseCallback(input({
-    message: {
-      successful_payment: {
-        ...callback().message.successful_payment,
-        currency: "USD"
-      }
-    }
+    successfulPayment: { currency: "USD" }
   }));
   assert.equal(result.status, PURCHASE_PROVIDER_VERIFICATION.REJECTED);
   assert.equal(result.reason, "INVALID_CURRENCY");
@@ -118,12 +114,7 @@ test("D · invalid invoice payload is rejected", async () => {
   seedPurchase(store);
   const adapter = createTelegramStarsProviderAdapter({ webhookSecret: secret, purchaseStore: store });
   const result = await adapter.verifyPurchaseCallback(input({
-    message: {
-      successful_payment: {
-        ...callback().message.successful_payment,
-        invoice_payload: "forged"
-      }
-    }
+    successfulPayment: { invoice_payload: "forged" }
   }));
   assert.equal(result.status, PURCHASE_PROVIDER_VERIFICATION.REJECTED);
   assert.equal(result.reason, "INVALID_INVOICE_PAYLOAD");
@@ -142,7 +133,7 @@ test("F · identity mismatch is rejected", async () => {
   seedPurchase(store);
   const adapter = createTelegramStarsProviderAdapter({ webhookSecret: secret, purchaseStore: store });
   const result = await adapter.verifyPurchaseCallback(input({
-    message: { from: { id: 8002 } }
+    from: { id: 8002 }
   }));
   assert.equal(result.status, PURCHASE_PROVIDER_VERIFICATION.REJECTED);
   assert.equal(result.reason, "PURCHASE_IDENTITY_MISMATCH");
@@ -153,12 +144,9 @@ test("G · amount mismatch is rejected", async () => {
   seedPurchase(store);
   const adapter = createTelegramStarsProviderAdapter({ webhookSecret: secret, purchaseStore: store });
   const result = await adapter.verifyPurchaseCallback(input({
-    message: {
-      successful_payment: {
-        ...callback().message.successful_payment,
-        total_amount: 51,
-        invoice_payload: buildTelegramStarsInvoicePayload({ ...purchase, amount: 51 })
-      }
+    successfulPayment: {
+      total_amount: 51,
+      invoice_payload: buildTelegramStarsInvoicePayload({ ...purchase, amount: 51 })
     }
   }));
   assert.equal(result.status, PURCHASE_PROVIDER_VERIFICATION.REJECTED);
@@ -173,6 +161,8 @@ test("H · first callback authorizes and duplicate callback is NO_OP", async () 
     store,
     providerVerifier: adapter.verifier
   });
+  const verified = await adapter.verifyPurchaseCallback(input());
+  assert.equal(verified.status, PURCHASE_PROVIDER_VERIFICATION.VERIFIED);
   const first = await authority.authorizeProviderCallback(input());
   const second = await authority.authorizeProviderCallback(input());
   assert.equal(first.status, PURCHASE_AUTHORITY_RESULT.DUPLICATE_NO_OP);
@@ -184,15 +174,14 @@ test("I · conflicting duplicate transaction is rejected", async () => {
   seedPurchase(store);
   const adapter = createTelegramStarsProviderAdapter({ webhookSecret: secret, purchaseStore: store });
   const authority = new PurchaseAuthority({ store, providerVerifier: adapter.verifier });
+  const firstVerified = await adapter.verifyPurchaseCallback(input());
+  assert.equal(firstVerified.status, PURCHASE_PROVIDER_VERIFICATION.VERIFIED);
   const first = await authority.authorizeProviderCallback(input());
   assert.equal(first.status, PURCHASE_AUTHORITY_RESULT.DUPLICATE_NO_OP);
 
   const conflicting = await authority.authorizeProviderCallback(input({
-    message: {
-      successful_payment: {
-        ...callback().message.successful_payment,
-        provider_payment_charge_id: "provider-charge-conflict"
-      }
+    successfulPayment: {
+      provider_payment_charge_id: "provider-charge-conflict"
     }
   }));
   assert.equal(conflicting.status, PURCHASE_AUTHORITY_RESULT.REJECTED);
@@ -237,7 +226,8 @@ test("L · config seam marks Telegram Stars credential without exposing its valu
   assert.equal(config.purchaseProvider, TELEGRAM_STARS_PROVIDER);
   assert.equal(config.purchaseProviderCredentialConfigured, true);
   assert.equal(config.purchaseProviderConfigConfigured, true);
-  assert.equal("telegramStarsWebhookSecret" in config, true);
+  assert.equal("telegramStarsWebhookSecret" in config, false);
+  assert.equal(config.telegramStarsWebhookSecretConfigured, true);
   assert.doesNotMatch(JSON.stringify(config), /telegram-stars-test-webhook-secret/);
 });
 

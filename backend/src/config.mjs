@@ -26,9 +26,9 @@ export function loadConfig(env = process.env) {
   const purchaseProviderCredentialConfigured = Boolean(
     String(env.PURCHASE_PROVIDER_CREDENTIAL || "").trim()
   );
-  const telegramStarsWebhookSecret = String(
-    env.TELEGRAM_STARS_WEBHOOK_SECRET || ""
-  ).trim();
+  const telegramStarsWebhookSecretConfigured = Boolean(
+    String(env.TELEGRAM_STARS_WEBHOOK_SECRET || "").trim()
+  );
 
   return Object.freeze({
     nodeEnv,
@@ -58,11 +58,11 @@ export function loadConfig(env = process.env) {
     purchaseProviderConfigured: Boolean(purchaseProvider),
     purchaseProviderCredentialConfigured: Boolean(
       purchaseProviderCredentialConfigured
-      || (purchaseProvider === "telegram-stars" && telegramStarsWebhookSecret)
+      || (purchaseProvider === "telegram-stars" && telegramStarsWebhookSecretConfigured)
     ),
-    telegramStarsWebhookSecret,
+    telegramStarsWebhookSecretConfigured,
     purchaseProviderConfigConfigured: purchaseProvider === "telegram-stars"
-      ? Boolean(purchaseProvider && telegramStarsWebhookSecret)
+      ? Boolean(purchaseProvider && telegramStarsWebhookSecretConfigured)
       : Boolean(purchaseProvider && purchaseProviderEndpoint)
   });
 }

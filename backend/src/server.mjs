@@ -133,7 +133,10 @@ export function createAuthorityServer({
   const activePurchaseAdapter = purchaseProviderAdapter
     || (purchaseVerifier ? null : (
       config.purchaseProvider === "telegram-stars"
-        ? createTelegramStarsProviderAdapterFromConfig(config, { purchaseStore: activePurchaseStore })
+        ? createTelegramStarsProviderAdapterFromConfig(config, {
+          purchaseStore: activePurchaseStore,
+          webhookSecret: process.env.TELEGRAM_STARS_WEBHOOK_SECRET || ""
+        })
         : createPurchaseProviderAdapterFromConfig(config)
     ));
   const activePurchaseVerifier = purchaseVerifier || activePurchaseAdapter?.verifier;

@@ -121,3 +121,16 @@ test("config-only adapter distinguishes NOT_CONFIGURED from CONFIGURED_UNAVAILAB
   assert.equal(configured.getStatus().state, PURCHASE_PROVIDER_ADAPTER_STATUS.CONFIGURED_UNAVAILABLE);
   assert.equal(configured.getStatus().provider, "test-provider");
 });
+
+test("callback-only provider adapter can reach READY", async () => {
+  const adapter = createPurchaseProviderAdapter({
+    provider: "telegram-stars",
+    credentialsConfigured: true,
+    available: true,
+    verifyPurchaseCallback: async () => ({
+      status: PURCHASE_PROVIDER_VERIFICATION.VERIFIED
+    })
+  });
+  assert.equal(adapter.getStatus().state, PURCHASE_PROVIDER_ADAPTER_STATUS.READY);
+  assert.equal(adapter.getStatus().verifier_configured, true);
+});
