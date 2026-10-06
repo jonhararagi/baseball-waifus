@@ -154,18 +154,13 @@ export class PurchaseAuthority {
   _persistVerifiedRecord(record) {
     const existing = this.store.loadPurchase(record.purchaseId);
     if (existing?.authorizationStatus === "PENDING") {
-      if (!samePurchase(existing, record)) {
-        return {
-          status: PURCHASE_AUTHORITY_RESULT.REJECTED,
-          reason: "IDEMPOTENCY_CONFLICT"
-        };
-      }
       if (typeof this.store.authorizePendingPurchase !== "function") {
         return {
           status: PURCHASE_AUTHORITY_RESULT.UNAVAILABLE,
           reason: "PENDING_PURCHASE_PROMOTION_NOT_SUPPORTED"
         };
       }
+
       const promoted = this.store.authorizePendingPurchase(record);
       if (promoted.status === "CONFLICT") {
         return {
@@ -175,6 +170,15 @@ export class PurchaseAuthority {
       }
       if (promoted.status === "AUTHORIZED_GRANT") {
         return resultFromRecord(PURCHASE_AUTHORITY_RESULT.AUTHORIZED_GRANT, promoted.record);
+      }
+      if (promoted.status === "ALREADY_AUTHORIZED") {
+        return resultFromRecord(PURCHASE_AUTHORITY_RESULT.DUPLICATE_NO_OP, promoted.record);
+      }
+      if (promoted.status === "NOT_FOUND") {
+        return {
+          status: PURCHASE_AUTHORITY_RESULT.REJECTED,
+          reason: "PURCHASE_NOT_FOUND"
+        };
       }
     }
 
