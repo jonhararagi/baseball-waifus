@@ -31,6 +31,9 @@ const purchase = {
 };
 
 function seedPurchase(store) {
+  const fingerprint = createHash("sha256")
+    .update(JSON.stringify(callback()))
+    .digest("hex");
   store.savePurchase({
     purchaseId: purchase.purchaseId,
     playerId: purchase.playerId,
@@ -39,7 +42,7 @@ function seedPurchase(store) {
     currency: purchase.currency,
     provider: purchase.provider,
     providerTransactionId: purchase.transactionId,
-    receiptFingerprint: createHash("sha256").update(purchase.receipt).digest("hex"),
+    receiptFingerprint: fingerprint,
     grantKind: purchase.grantKind,
     grantAmount: purchase.grantAmount
   });
