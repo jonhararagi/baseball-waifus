@@ -197,7 +197,7 @@ test("E · another player cannot claim someone else's purchase", async () => {
 test("F · claim rejects all client authority/economic injection fields", async () => {
   const store = new InMemoryPurchaseStore();
   const authority = await authorizedAuthority(store);
-  await assert.rejects(
+  assert.throws(
     () => authority.claim({
       playerId: purchase.playerId,
       purchaseId: purchase.purchaseId,
