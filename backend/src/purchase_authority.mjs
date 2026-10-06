@@ -110,6 +110,7 @@ export class PurchaseAuthority {
     const id = stableId(purchaseId, "purchase_id");
     const record = this.store.loadPurchase(id);
     if (!record || record.playerId !== ownerId) return null;
+    if (record.authorizationStatus === "PENDING") return null;
     const status = record.claimStatus === "GRANT_CLAIMED"
       ? PURCHASE_AUTHORITY_RESULT.GRANT_CLAIMED
       : PURCHASE_AUTHORITY_RESULT.AUTHORIZED_GRANT;
@@ -151,6 +152,32 @@ export class PurchaseAuthority {
   }
 
   _persistVerifiedRecord(record) {
+    const existing = this.store.loadPurchase(record.purchaseId);
+    if (existing?.authorizationStatus === "PENDING") {
+      if (!samePurchase(existing, record)) {
+        return {
+          status: PURCHASE_AUTHORITY_RESULT.REJECTED,
+          reason: "IDEMPOTENCY_CONFLICT"
+        };
+      }
+      if (typeof this.store.authorizePendingPurchase !== "function") {
+        return {
+          status: PURCHASE_AUTHORITY_RESULT.UNAVAILABLE,
+          reason: "PENDING_PURCHASE_PROMOTION_NOT_SUPPORTED"
+        };
+      }
+      const promoted = this.store.authorizePendingPurchase(record);
+      if (promoted.status === "CONFLICT") {
+        return {
+          status: PURCHASE_AUTHORITY_RESULT.REJECTED,
+          reason: "IDEMPOTENCY_CONFLICT"
+        };
+      }
+      if (promoted.status === "AUTHORIZED_GRANT") {
+        return resultFromRecord(PURCHASE_AUTHORITY_RESULT.AUTHORIZED_GRANT, promoted.record);
+      }
+    }
+
     const saved = this.store.savePurchase(record);
     if (!saved.created) {
       if (!samePurchase(saved.record, record)) {

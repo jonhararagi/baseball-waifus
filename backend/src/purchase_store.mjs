@@ -20,6 +20,14 @@ function transactionKey(provider, transactionId) {
   return stableId(`${provider}:${transactionId}`, "transactionKey");
 }
 
+function normalizeAuthorizationStatus(value) {
+  const status = String(value || "AUTHORIZED").toUpperCase();
+  if (status !== "PENDING" && status !== "AUTHORIZED") {
+    throw new TypeError("Invalid purchase authorizationStatus");
+  }
+  return status;
+}
+
 function validateRecord(record) {
   if (!record || typeof record !== "object" || Array.isArray(record)) throw new TypeError("Invalid purchase record");
   for (const [key, label] of [
@@ -37,14 +45,26 @@ function validateRecord(record) {
   if (typeof record.receiptFingerprint !== "string" || !/^[a-f0-9]{64}$/.test(record.receiptFingerprint)) {
     throw new TypeError("Invalid receipt fingerprint");
   }
+  normalizeAuthorizationStatus(record.authorizationStatus);
   if (record.claimStatus !== "UNCLAIMED" && record.claimStatus !== "GRANT_CLAIMED") {
     throw new TypeError("Invalid purchase claimStatus");
+  }
+  if (record.authorizationStatus === "PENDING" && record.claimStatus === "GRANT_CLAIMED") {
+    throw new TypeError("Pending purchase cannot be already claimed");
   }
   return true;
 }
 
 function emptyDocument() {
   return { schemaVersion: SCHEMA_VERSION, purchases: {}, transactions: {} };
+}
+
+function normalizePersistedRecord(record) {
+  return {
+    ...record,
+    authorizationStatus: normalizeAuthorizationStatus(record.authorizationStatus),
+    claimStatus: record.claimStatus || "UNCLAIMED"
+  };
 }
 
 function validateDocument(document) {
@@ -54,10 +74,7 @@ function validateDocument(document) {
   if (!document.transactions || typeof document.transactions !== "object" || Array.isArray(document.transactions)) throw new TypeError("Invalid transactions collection");
   for (const [purchaseId, record] of Object.entries(document.purchases)) {
     if (stableId(purchaseId, "purchaseId") !== purchaseId) throw new TypeError("Invalid purchase key");
-    const normalizedRecord = {
-      ...record,
-      claimStatus: record.claimStatus || "UNCLAIMED"
-    };
+    const normalizedRecord = normalizePersistedRecord(record);
     validateRecord(normalizedRecord);
     if (normalizedRecord.purchaseId !== purchaseId) throw new TypeError("Purchase identity mismatch");
     document.purchases[purchaseId] = normalizedRecord;
@@ -68,6 +85,25 @@ function validateDocument(document) {
     if (!document.purchases[purchaseId]) throw new TypeError("Transaction points to missing purchase");
   }
   return true;
+}
+
+function comparablePurchase(record) {
+  return {
+    purchaseId: record.purchaseId,
+    playerId: record.playerId,
+    productId: record.productId,
+    amount: record.amount,
+    currency: record.currency,
+    provider: record.provider,
+    providerTransactionId: record.providerTransactionId,
+    receiptFingerprint: record.receiptFingerprint,
+    grantKind: record.grantKind,
+    grantAmount: record.grantAmount
+  };
+}
+
+function samePurchase(a, b) {
+  return Boolean(a && b && JSON.stringify(comparablePurchase(a)) === JSON.stringify(comparablePurchase(b)));
 }
 
 export class PurchaseStoreError extends Error {
@@ -96,30 +132,51 @@ export class InMemoryPurchaseStore {
     return purchaseId ? this.loadPurchase(purchaseId) : null;
   }
 
-  savePurchase(record) {
+  _insert(record, authorizationStatus = "AUTHORIZED") {
     const purchaseId = stableId(record?.purchaseId, "purchaseId");
     const key = transactionKey(record?.provider, record?.providerTransactionId);
-    const next = clone({ ...record, transactionKey: key, claimStatus: record.claimStatus || "UNCLAIMED" });
+    const next = clone({
+      ...record,
+      transactionKey: key,
+      authorizationStatus,
+      claimStatus: record.claimStatus || "UNCLAIMED"
+    });
     validateRecord(next);
     const existingPurchase = this.purchases.get(purchaseId);
     if (existingPurchase) return { created: false, record: clone(existingPurchase) };
     const existingByTransaction = this.transactions.get(key);
-    if (existingByTransaction) {
-      return { created: false, record: clone(this.purchases.get(existingByTransaction)) };
-    }
+    if (existingByTransaction) return { created: false, record: clone(this.purchases.get(existingByTransaction)) };
     this.purchases.set(purchaseId, next);
     this.transactions.set(key, purchaseId);
     return { created: true, record: clone(next) };
+  }
+
+  savePurchase(record) {
+    return this._insert(record, "AUTHORIZED");
+  }
+
+  createPendingPurchase(record) {
+    return this._insert(record, "PENDING");
+  }
+
+  authorizePendingPurchase(record) {
+    const id = stableId(record?.purchaseId, "purchaseId");
+    const existing = this.purchases.get(id);
+    if (!existing) return { updated: false, status: "NOT_FOUND" };
+    if (!samePurchase(existing, record)) return { updated: false, status: "CONFLICT", record: clone(existing) };
+    if (existing.authorizationStatus !== "PENDING") return { updated: false, status: "ALREADY_AUTHORIZED", record: clone(existing) };
+    const next = clone({ ...existing, authorizationStatus: "AUTHORIZED" });
+    validateRecord(next);
+    this.purchases.set(id, next);
+    return { updated: true, status: "AUTHORIZED_GRANT", record: clone(next) };
   }
 
   claimPurchase(purchaseId, playerId) {
     const id = stableId(purchaseId, "purchaseId");
     const owner = stableId(playerId, "playerId");
     const record = this.purchases.get(id);
-    if (!record || record.playerId !== owner) return { status: "NOT_FOUND" };
-    if (record.claimStatus === "GRANT_CLAIMED") {
-      return { status: "GRANT_ALREADY_CLAIMED", record: clone(record) };
-    }
+    if (!record || record.playerId !== owner || record.authorizationStatus !== "AUTHORIZED") return { status: "NOT_FOUND" };
+    if (record.claimStatus === "GRANT_CLAIMED") return { status: "GRANT_ALREADY_CLAIMED", record: clone(record) };
     record.claimStatus = "GRANT_CLAIMED";
     return { status: "GRANT_CLAIMED", record: clone(record) };
   }
@@ -136,16 +193,22 @@ export class PersistentPurchaseStore {
   _readDocument() {
     let raw;
     try { raw = fs.readFileSync(this.filePath, "utf8"); }
-    catch (error) { if (error?.code === "ENOENT") return emptyDocument(); throw new PurchaseStoreError("Unable to read purchase state", error); }
+    catch (error) {
+      if (error?.code === "ENOENT") return emptyDocument();
+      throw new PurchaseStoreError("Unable to read purchase state", error);
+    }
     if (!raw) throw new PurchaseStoreError("Purchase state is empty");
     let document;
-    try { document = JSON.parse(raw); } catch (error) { throw new PurchaseStoreError("Purchase state is corrupted", error); }
-    try { validateDocument(document); } catch (error) { throw new PurchaseStoreError("Purchase state failed validation", error); }
+    try { document = JSON.parse(raw); }
+    catch (error) { throw new PurchaseStoreError("Purchase state is corrupted", error); }
+    try { validateDocument(document); }
+    catch (error) { throw new PurchaseStoreError("Purchase state failed validation", error); }
     return document;
   }
 
   _writeDocument(document) {
-    try { validateDocument(document); } catch (error) { throw new PurchaseStoreError("Refusing to persist invalid purchase state", error); }
+    try { validateDocument(document); }
+    catch (error) { throw new PurchaseStoreError("Refusing to persist invalid purchase state", error); }
     const directory = path.dirname(this.filePath);
     const temporaryPath = `${this.filePath}.${process.pid}.${randomUUID()}.tmp`;
     let descriptor = null;
@@ -180,10 +243,15 @@ export class PersistentPurchaseStore {
     return purchaseId ? clone(document.purchases[purchaseId]) : null;
   }
 
-  savePurchase(record) {
+  _insert(record, authorizationStatus = "AUTHORIZED") {
     const purchaseId = stableId(record?.purchaseId, "purchaseId");
     const key = transactionKey(record?.provider, record?.providerTransactionId);
-    const next = clone({ ...record, transactionKey: key, claimStatus: record.claimStatus || "UNCLAIMED" });
+    const next = clone({
+      ...record,
+      transactionKey: key,
+      authorizationStatus,
+      claimStatus: record.claimStatus || "UNCLAIMED"
+    });
     validateRecord(next);
     const document = this._readDocument();
     if (document.purchases[purchaseId]) return { created: false, record: clone(document.purchases[purchaseId]) };
@@ -194,15 +262,35 @@ export class PersistentPurchaseStore {
     return { created: true, record: clone(next) };
   }
 
+  savePurchase(record) {
+    return this._insert(record, "AUTHORIZED");
+  }
+
+  createPendingPurchase(record) {
+    return this._insert(record, "PENDING");
+  }
+
+  authorizePendingPurchase(record) {
+    const id = stableId(record?.purchaseId, "purchaseId");
+    const document = this._readDocument();
+    const existing = document.purchases[id];
+    if (!existing) return { updated: false, status: "NOT_FOUND" };
+    if (!samePurchase(existing, record)) return { updated: false, status: "CONFLICT", record: clone(existing) };
+    if (existing.authorizationStatus !== "PENDING") return { updated: false, status: "ALREADY_AUTHORIZED", record: clone(existing) };
+    const next = { ...existing, authorizationStatus: "AUTHORIZED" };
+    validateRecord(next);
+    document.purchases[id] = next;
+    this._writeDocument(document);
+    return { updated: true, status: "AUTHORIZED_GRANT", record: clone(next) };
+  }
+
   claimPurchase(purchaseId, playerId) {
     const id = stableId(purchaseId, "purchaseId");
     const owner = stableId(playerId, "playerId");
     const document = this._readDocument();
     const record = document.purchases[id];
-    if (!record || record.playerId !== owner) return { status: "NOT_FOUND" };
-    if (record.claimStatus === "GRANT_CLAIMED") {
-      return { status: "GRANT_ALREADY_CLAIMED", record: clone(record) };
-    }
+    if (!record || record.playerId !== owner || record.authorizationStatus !== "AUTHORIZED") return { status: "NOT_FOUND" };
+    if (record.claimStatus === "GRANT_CLAIMED") return { status: "GRANT_ALREADY_CLAIMED", record: clone(record) };
     record.claimStatus = "GRANT_CLAIMED";
     this._writeDocument(document);
     return { status: "GRANT_CLAIMED", record: clone(record) };
