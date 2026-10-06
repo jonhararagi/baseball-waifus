@@ -35,8 +35,7 @@ export function loadConfig(env = process.env) {
     deploymentMode: nodeEnv,
     port: positiveInteger(env.PORT, 8787),
     rewardSigningPrivateKeyPem: env.REWARD_SIGNING_PRIVATE_KEY
-      ? String(env.REWARD_SIGNING_PRIVATE_KEY).replace(/\n/g, "
-")
+      ? String(env.REWARD_SIGNING_PRIVATE_KEY).replace(/\\n/g, "\n")
       : "",
     telegramBotToken: String(env.TELEGRAM_BOT_TOKEN || ""),
     telegramInitDataMaxAgeSeconds: positiveInteger(
