@@ -76,7 +76,17 @@ export class PurchaseProviderAdapter {
           : "PROVIDER_UNAVAILABLE"
       );
     }
-    return this.verifier.verifyReceipt(input);
+    const result = await this.verifier.verifyReceipt(input);
+    if (
+      result.status === PURCHASE_PROVIDER_VERIFICATION.UNAVAILABLE
+      && ["INVALID_VERIFIER_RESPONSE", "INVALID_VERIFIER_STATUS"].includes(result.reason)
+    ) {
+      return Object.freeze({
+        status: PURCHASE_PROVIDER_VERIFICATION.REJECTED,
+        reason: "INVALID_PROVIDER_RESPONSE"
+      });
+    }
+    return result;
   }
 
   async verifyPurchaseCallback(input) {
@@ -87,7 +97,17 @@ export class PurchaseProviderAdapter {
           : "PROVIDER_UNAVAILABLE"
       );
     }
-    return this.verifier.verifyPurchaseCallback(input);
+    const result = await this.verifier.verifyPurchaseCallback(input);
+    if (
+      result.status === PURCHASE_PROVIDER_VERIFICATION.UNAVAILABLE
+      && ["INVALID_VERIFIER_RESPONSE", "INVALID_VERIFIER_STATUS"].includes(result.reason)
+    ) {
+      return Object.freeze({
+        status: PURCHASE_PROVIDER_VERIFICATION.REJECTED,
+        reason: "INVALID_PROVIDER_RESPONSE"
+      });
+    }
+    return result;
   }
 }
 
