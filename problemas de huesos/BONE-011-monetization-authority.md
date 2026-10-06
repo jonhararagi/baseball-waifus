@@ -65,3 +65,74 @@ Pendiente de BONE-011:
 
 HEAD AFTER:
 80f1a3dd06453127ee5ca7caec79b2ed0c845800
+
+## BONE-011-AUTH-002-R · BACKEND SYNTAX RECOVERY
+
+Estado del checkpoint: CLOSED.
+Estado de BONE-011: OPEN / IN_PROGRESS.
+
+HEAD BEFORE:
+32bc65ba55407a1acf038e084fb2554e0466ae87
+
+HEAD AFTER:
+f8ffd7efc624ce8d2d315876f3e4ae1e2f93555f
+
+TIMER:
+20–30 minutos.
+
+Recovery:
+- La implementación de Purchase Authority había quedado bloqueada por un error de sintaxis en los tres patrones de rutas de `backend/src/server.mjs`.
+- La recovery corrigió exclusivamente los matchers de:
+  - `GET /v1/combat/:matchId/init`
+  - `POST /v1/combat/:matchId/turn`
+  - `POST /v1/purchases/:purchaseId/authorize`
+- La solución utiliza `new RegExp(...)` y preserva la semántica de las rutas.
+- Workflow `37475223425` terminó exitosamente.
+
+Validacion:
+- Workflow `37475223425` = SUCCESS.
+- Backend tests = `40 PASS / 0 FAIL`.
+- SYNTAX = PASS.
+- ROUTE MATCHING = PASS.
+- PRODUCTION CONFIG = PASS.
+- BONE-011 AUTHORITY TESTS = PASS.
+
+Casos BONE-011 validados:
+- valid purchase;
+- forged receipt;
+- provider unavailable;
+- missing provider;
+- identity mismatch;
+- product mismatch;
+- amount mismatch;
+- first grant;
+- duplicate;
+- conflict;
+- reconnect;
+- client authority injection.
+
+Scope:
+- GAMEPLAY: NO CHANGE.
+- BALANCE: NO CHANGE.
+- BROWSER: NOT RUN.
+- No se modificó runtime funcional, Purchase Authority ni ningún archivo fuera de este checkpoint antes de su registro documental.
+
+Production:
+PRODUCTION STATUS: NOT CONFIGURED
+
+La recovery de sintaxis y la suite verde no significan producción configurada. Todavía no existe:
+- proveedor de pagos real;
+- verificación real de receipts contra el proveedor;
+- integración productiva;
+- managed persistence productiva;
+- callbacks reales;
+- evidencia productiva de idempotencia/reconexión.
+
+BONE-004:
+OPEN / BLOCKED / UNCHANGED.
+
+BONE-010:
+CLOSED / UNCHANGED.
+
+GLOBAL GATE:
+CERRADO.
