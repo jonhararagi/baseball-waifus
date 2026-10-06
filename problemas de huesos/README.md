@@ -21,7 +21,7 @@ Estados: OPEN, IN_PROGRESS, BLOCKED, VERIFYING, CLOSED.
 | BONE-007 | Lifecycle, RAF, timers y listeners | P1 | CLOSED |
 | BONE-008 | Separacion CombatRenderer/gameplay/presentation | P1 | CLOSED |
 | BONE-009 | Multiples runtimes de gameplay | P1 | CLOSED |
-| BONE-010 | Duplicacion de bridges Telegram | P1 | OPEN |
+| BONE-010 | Duplicacion de bridges Telegram | P1 | CLOSED |
 | BONE-011 | Monetizacion y autoridad backend | P0 | OPEN |
 
 ## Gate
@@ -125,7 +125,7 @@ Esta carpeta es una deuda controlada del producto, no una lista decorativa.
 
 **PRODUCTION:** NO CHANGE.
 
-**Gate:** GLOBAL GATE remains CLOSED because BONE-004, BONE-009, BONE-010 and BONE-011 remain open.
+**Gate:** GLOBAL GATE remains CLOSED because BONE-004 and BONE-011 remain open.
 
 
 ## BONE-009 — Authority Map & Multi-Runtime Contract
@@ -133,3 +133,13 @@ Esta carpeta es una deuda controlada del producto, no una lista decorativa.
 BONE-009 is CLOSED at the current checkpoint. The current Web/TMA product has one Web gameplay authority chain. Godot remains a separate native/future runtime and is not a simultaneous Web production resolver. Kytos and Student 4v4 remain non-authoritative slices. See docs/architecture/bone-009-authority-map.md and webapp/js/bone009_multi_runtime_contract_test.mjs for the deterministic contract.
 
 BONE-004 remains OPEN/BLOCKED and is not changed by BONE-009.
+
+
+## Checkpoint final BONE-010
+
+- **BONE-010:** CLOSED.
+- **BONE-010-CLOSE-002:** CLOSED y sustentado por evidencia Chromium existente.
+- **Referencia formal:** `problemas de huesos/BONE-010-telegram-bridges.md`.
+- **Evidence:** Workflow `37405698991`, job `112082662374`, checkout `a87764930754accf2e7bae045f92ad385c997cba` = SUCCESS; TelegramBridge y single platform bridge = PASS_STATIC; browser/runtime regression = PASS_REAL.
+- **Estado de otros Bones:** BONE-004 = OPEN/BLOCKED; BONE-011 = OPEN; no se modifica ningún otro estado.
+- **GLOBAL GATE:** CERRADO por los Bones críticos restantes.
