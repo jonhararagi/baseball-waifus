@@ -142,7 +142,9 @@ function verifyStarsCallback({ webhookSecret, purchaseStore, body, rawBody, head
   if (purchase.productId !== invoice.productId) return reject("PURCHASE_PRODUCT_MISMATCH");
   if (purchase.amount !== totalAmount) return reject("PURCHASE_AMOUNT_MISMATCH");
   if (purchase.currency !== TELEGRAM_STARS_CURRENCY) return reject("PURCHASE_CURRENCY_MISMATCH");
-  if (purchase.providerTransactionId !== telegramChargeId) return reject("PURCHASE_TRANSACTION_MISMATCH");
+  if (purchase.authorizationStatus !== "PENDING" && purchase.providerTransactionId !== telegramChargeId) {
+    return reject("PURCHASE_TRANSACTION_MISMATCH");
+  }
 
   const expectedPayload = invoicePayloadFor(purchase);
   if (payment.invoice_payload !== expectedPayload) return reject("INVOICE_PAYLOAD_MISMATCH");

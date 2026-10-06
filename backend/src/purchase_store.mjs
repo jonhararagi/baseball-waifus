@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { randomUUID } from "node:crypto";
+import { randomUUID, createHash } from "node:crypto";
 
 const SCHEMA_VERSION = 1;
 
@@ -26,6 +26,18 @@ function normalizeAuthorizationStatus(value) {
     throw new TypeError("Invalid purchase authorizationStatus");
   }
   return status;
+}
+
+function pendingTransactionId(purchaseId) {
+  return "pending:" + stableId(purchaseId, "purchaseId");
+}
+
+function pendingReceiptFingerprint(purchaseId) {
+  return requireSha256(pendingTransactionId(purchaseId));
+}
+
+function requireSha256(value) {
+  return createHash("sha256").update(String(value), "utf8").digest("hex");
 }
 
 function validateRecord(record) {
@@ -87,23 +99,34 @@ function validateDocument(document) {
   return true;
 }
 
-function comparablePurchase(record) {
-  return {
+function comparablePurchase(record, { includePaymentIdentity = true } = {}) {
+  const base = {
     purchaseId: record.purchaseId,
     playerId: record.playerId,
     productId: record.productId,
     amount: record.amount,
     currency: record.currency,
     provider: record.provider,
-    providerTransactionId: record.providerTransactionId,
-    receiptFingerprint: record.receiptFingerprint,
     grantKind: record.grantKind,
     grantAmount: record.grantAmount
   };
+  if (includePaymentIdentity) {
+    base.providerTransactionId = record.providerTransactionId;
+    base.receiptFingerprint = record.receiptFingerprint;
+  }
+  return base;
 }
 
 function samePurchase(a, b) {
   return Boolean(a && b && JSON.stringify(comparablePurchase(a)) === JSON.stringify(comparablePurchase(b)));
+}
+
+function samePendingPurchase(a, b) {
+  return Boolean(
+    a && b
+    && JSON.stringify(comparablePurchase(a, { includePaymentIdentity: false }))
+      === JSON.stringify(comparablePurchase(b, { includePaymentIdentity: false }))
+  );
 }
 
 export class PurchaseStoreError extends Error {
@@ -134,9 +157,14 @@ export class InMemoryPurchaseStore {
 
   _insert(record, authorizationStatus = "AUTHORIZED") {
     const purchaseId = stableId(record?.purchaseId, "purchaseId");
-    const key = transactionKey(record?.provider, record?.providerTransactionId);
+    const effectiveTransactionId = authorizationStatus === "PENDING"
+      ? String(record?.providerTransactionId || pendingTransactionId(purchaseId))
+      : stableId(record?.providerTransactionId, "providerTransactionId");
+    const key = transactionKey(record?.provider, effectiveTransactionId);
     const next = clone({
       ...record,
+      providerTransactionId: effectiveTransactionId,
+      receiptFingerprint: record?.receiptFingerprint || pendingReceiptFingerprint(purchaseId),
       transactionKey: key,
       authorizationStatus,
       claimStatus: record.claimStatus || "UNCLAIMED"
@@ -161,13 +189,29 @@ export class InMemoryPurchaseStore {
 
   authorizePendingPurchase(record) {
     const id = stableId(record?.purchaseId, "purchaseId");
+    const key = transactionKey(record?.provider, record?.providerTransactionId);
     const existing = this.purchases.get(id);
     if (!existing) return { updated: false, status: "NOT_FOUND" };
-    if (!samePurchase(existing, record)) return { updated: false, status: "CONFLICT", record: clone(existing) };
+    if (!samePendingPurchase(existing, record)) return { updated: false, status: "CONFLICT", record: clone(existing) };
     if (existing.authorizationStatus !== "PENDING") return { updated: false, status: "ALREADY_AUTHORIZED", record: clone(existing) };
-    const next = clone({ ...existing, authorizationStatus: "AUTHORIZED" });
+
+    const existingTransactionOwner = this.transactions.get(key);
+    if (existingTransactionOwner && existingTransactionOwner !== id) {
+      return { updated: false, status: "CONFLICT", record: clone(existing) };
+    }
+
+    const next = clone({
+      ...existing,
+      providerTransactionId: stableId(record.providerTransactionId, "providerTransactionId"),
+      receiptFingerprint: record.receiptFingerprint,
+      transactionKey: key,
+      authorizationStatus: "AUTHORIZED"
+    });
     validateRecord(next);
     this.purchases.set(id, next);
+    const pendingKey = existing.transactionKey;
+    if (pendingKey !== key) this.transactions.delete(pendingKey);
+    this.transactions.set(key, id);
     return { updated: true, status: "AUTHORIZED_GRANT", record: clone(next) };
   }
 
@@ -272,14 +316,30 @@ export class PersistentPurchaseStore {
 
   authorizePendingPurchase(record) {
     const id = stableId(record?.purchaseId, "purchaseId");
+    const key = transactionKey(record?.provider, record?.providerTransactionId);
     const document = this._readDocument();
     const existing = document.purchases[id];
     if (!existing) return { updated: false, status: "NOT_FOUND" };
-    if (!samePurchase(existing, record)) return { updated: false, status: "CONFLICT", record: clone(existing) };
+    if (!samePendingPurchase(existing, record)) return { updated: false, status: "CONFLICT", record: clone(existing) };
     if (existing.authorizationStatus !== "PENDING") return { updated: false, status: "ALREADY_AUTHORIZED", record: clone(existing) };
-    const next = { ...existing, authorizationStatus: "AUTHORIZED" };
+
+    const existingTransactionOwner = document.transactions[key];
+    if (existingTransactionOwner && existingTransactionOwner !== id) {
+      return { updated: false, status: "CONFLICT", record: clone(existing) };
+    }
+
+    const next = {
+      ...existing,
+      providerTransactionId: stableId(record.providerTransactionId, "providerTransactionId"),
+      receiptFingerprint: record.receiptFingerprint,
+      transactionKey: key,
+      authorizationStatus: "AUTHORIZED"
+    };
     validateRecord(next);
     document.purchases[id] = next;
+    const pendingKey = existing.transactionKey;
+    if (pendingKey !== key) delete document.transactions[pendingKey];
+    document.transactions[key] = id;
     this._writeDocument(document);
     return { updated: true, status: "AUTHORIZED_GRANT", record: clone(next) };
   }
