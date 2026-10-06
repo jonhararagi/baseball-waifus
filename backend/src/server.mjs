@@ -9,6 +9,9 @@ import { createPurchaseStore } from "./purchase_persistence_provider.mjs";
 import {
   createPurchaseProviderAdapterFromConfig
 } from "./purchase_provider_adapter.mjs";
+import {
+  createTelegramStarsProviderAdapterFromConfig
+} from "./telegram_stars_adapter.mjs";
 import { evaluatePurchaseReadiness, purchaseReadinessSatisfied } from "./purchase_readiness.mjs";
 import { PurchaseAuthority, PURCHASE_AUTHORITY_RESULT } from "./purchase_authority.mjs";
 import { AuthorityError, isAuthorityError } from "./errors.mjs";
@@ -79,12 +82,13 @@ function cloneHeaders(request) {
   return Object.freeze(Object.fromEntries(entries));
 }
 
-function readiness(config, signer, store, purchaseAuthority, purchaseStore) {
+function readiness(config, signer, store, purchaseAuthority, purchaseStore, purchaseProviderAdapter) {
   const persistence = persistenceReadiness(config, store);
   const purchase = evaluatePurchaseReadiness({
     config,
     purchaseAuthority,
-    purchaseStore
+    purchaseStore,
+    purchaseProviderAdapter
   });
   return {
     ready: Boolean(
@@ -127,7 +131,11 @@ export function createAuthorityServer({
   const service = new CombatService({ store: activeStore, signer: activeSigner });
   const activePurchaseStore = purchaseStore || createPurchaseStore(config);
   const activePurchaseAdapter = purchaseProviderAdapter
-    || (purchaseVerifier ? null : createPurchaseProviderAdapterFromConfig(config));
+    || (purchaseVerifier ? null : (
+      config.purchaseProvider === "telegram-stars"
+        ? createTelegramStarsProviderAdapterFromConfig(config, { purchaseStore: activePurchaseStore })
+        : createPurchaseProviderAdapterFromConfig(config)
+    ));
   const activePurchaseVerifier = purchaseVerifier || activePurchaseAdapter?.verifier;
   const activePurchaseAuthority = purchaseAuthority || new PurchaseAuthority({
     store: activePurchaseStore,

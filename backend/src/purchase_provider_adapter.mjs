@@ -38,7 +38,10 @@ export class PurchaseProviderAdapter {
       this.status = PURCHASE_PROVIDER_ADAPTER_STATUS.NOT_CONFIGURED;
     } else if (
       !this.credentialsConfigured
-      || typeof this._verifyReceipt !== "function"
+      || (
+        typeof this._verifyReceipt !== "function"
+        && typeof this._verifyPurchaseCallback !== "function"
+      )
     ) {
       this.status = PURCHASE_PROVIDER_ADAPTER_STATUS.CONFIGURED_UNAVAILABLE;
     } else if (!this.available) {
@@ -63,7 +66,10 @@ export class PurchaseProviderAdapter {
       provider: this.provider || null,
       credentials_configured: this.credentialsConfigured,
       available: this.available,
-      verifier_configured: typeof this._verifyReceipt === "function",
+      verifier_configured: Boolean(
+        typeof this._verifyReceipt === "function"
+        || typeof this._verifyPurchaseCallback === "function"
+      ),
       ready: this.status === PURCHASE_PROVIDER_ADAPTER_STATUS.READY
     });
   }
