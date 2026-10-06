@@ -100,7 +100,12 @@ function readiness(config, signer, store, purchaseAuthority, purchaseStore) {
 }
 
 function purchaseStatusCode(status) {
-  if (status === PURCHASE_AUTHORITY_RESULT.AUTHORIZED_GRANT || status === PURCHASE_AUTHORITY_RESULT.DUPLICATE_NO_OP) return 200;
+  if (
+    status === PURCHASE_AUTHORITY_RESULT.AUTHORIZED_GRANT
+    || status === PURCHASE_AUTHORITY_RESULT.DUPLICATE_NO_OP
+    || status === PURCHASE_AUTHORITY_RESULT.GRANT_CLAIMED
+    || status === PURCHASE_AUTHORITY_RESULT.GRANT_ALREADY_CLAIMED
+  ) return 200;
   if (status === PURCHASE_AUTHORITY_RESULT.UNAVAILABLE || status === PURCHASE_AUTHORITY_RESULT.BLOCKED) return 503;
   return 409;
 }
@@ -177,6 +182,24 @@ export function createAuthorityServer({
         const result = activePurchaseAuthority.getStatus({
           purchaseId: decodeURIComponent(purchaseStatusMatch[1]),
           playerId: auth.playerId
+        });
+        if (!result) {
+          return jsonResponse(response, 404, {
+            status: "NOT_FOUND",
+            error: "NOT_FOUND"
+          }, origin);
+        }
+        return jsonResponse(response, 200, result, origin);
+      }
+
+      const claimMatch = url.pathname.match(new RegExp("^/v1/purchases/([^/]+)/claim$"));
+      if (request.method === "POST" && claimMatch) {
+        const auth = await authenticateRequest(request, config);
+        const body = await readJson(request);
+        const result = await activePurchaseAuthority.claim({
+          purchaseId: decodeURIComponent(claimMatch[1]),
+          playerId: auth.playerId,
+          body
         });
         if (!result) {
           return jsonResponse(response, 404, {
