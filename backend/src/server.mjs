@@ -131,6 +131,13 @@ export function createAuthorityServer({
         const body = await readJson(request);
         return jsonResponse(response, 200, await service.applyTurn({ matchId: decodeURIComponent(turnMatch[1]), playerId: auth.playerId, body }), origin);
       }
+      const callbackMatch = url.pathname.match(new RegExp("^/v1/purchases/provider-callback$"));
+      if (request.method === "POST" && callbackMatch) {
+        const body = await readJson(request);
+        const result = await activePurchaseAuthority.authorizeProviderCallback({ body });
+        return jsonResponse(response, purchaseStatusCode(result.status), result, origin);
+      }
+
       const purchaseStatusMatch = url.pathname.match(new RegExp("^/v1/purchases/([^/]+)$"));
       if (request.method === "GET" && purchaseStatusMatch) {
         const auth = await authenticateRequest(request, config);

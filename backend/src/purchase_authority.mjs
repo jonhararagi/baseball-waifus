@@ -12,18 +12,24 @@ export const PURCHASE_AUTHORITY_RESULT = Object.freeze({
 
 function stableId(value, label) {
   const id = String(value || "").trim();
-  if (!/^[A-Za-z0-9._:-]+$/.test(id) || id.length > 256) throw new AuthorityError(400, "INVALID_PURCHASE", `${label} must be a stable identifier`);
+  if (!/^[A-Za-z0-9._:-]+$/.test(id) || id.length > 256) {
+    throw new AuthorityError(400, "INVALID_PURCHASE", `${label} must be a stable identifier`);
+  }
   return id;
 }
 
 function normalizeAmount(value, label) {
   const amount = Number(value);
-  if (!Number.isFinite(amount) || amount < 0) throw new AuthorityError(400, "INVALID_PURCHASE", `${label} must be a non-negative number`);
+  if (!Number.isFinite(amount) || amount < 0) {
+    throw new AuthorityError(400, "INVALID_PURCHASE", `${label} must be a non-negative number`);
+  }
   return amount;
 }
 
 function normalizeRequest(playerId, purchaseId, body) {
-  if (!body || typeof body !== "object" || Array.isArray(body)) throw new AuthorityError(400, "INVALID_PURCHASE", "Purchase request body is required");
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    throw new AuthorityError(400, "INVALID_PURCHASE", "Purchase request body is required");
+  }
   if (Object.prototype.hasOwnProperty.call(body, "authorized")) {
     throw new AuthorityError(400, "CLIENT_AUTHORITY_FORBIDDEN", "Client authority fields are not accepted");
   }
@@ -54,6 +60,14 @@ function receiptFingerprint(receipt) {
   return createHash("sha256").update(String(receipt), "utf8").digest("hex");
 }
 
+function validateFingerprint(value) {
+  const fingerprint = String(value || "").trim().toLowerCase();
+  if (!/^[a-f0-9]{64}$/.test(fingerprint)) {
+    throw new AuthorityError(400, "INVALID_PURCHASE", "receiptFingerprint must be a SHA-256 hexadecimal fingerprint");
+  }
+  return fingerprint;
+}
+
 function samePurchase(a, b) {
   return Boolean(a && b &&
     a.playerId === b.playerId &&
@@ -62,7 +76,9 @@ function samePurchase(a, b) {
     a.currency === b.currency &&
     a.provider === b.provider &&
     a.providerTransactionId === b.providerTransactionId &&
-    a.receiptFingerprint === b.receiptFingerprint);
+    a.receiptFingerprint === b.receiptFingerprint &&
+    a.grantKind === b.grantKind &&
+    a.grantAmount === b.grantAmount);
 }
 
 function resultFromRecord(status, record) {
@@ -95,6 +111,27 @@ export class PurchaseAuthority {
     return resultFromRecord(PURCHASE_AUTHORITY_RESULT.AUTHORIZED_GRANT, record);
   }
 
+  _persistVerifiedRecord(record) {
+    const saved = this.store.savePurchase(record);
+    if (!saved.created) {
+      if (!samePurchase(saved.record, record)) {
+        return {
+          status: PURCHASE_AUTHORITY_RESULT.REJECTED,
+          reason: "IDEMPOTENCY_CONFLICT"
+        };
+      }
+      return resultFromRecord(PURCHASE_AUTHORITY_RESULT.DUPLICATE_NO_OP, saved.record);
+    }
+    return resultFromRecord(PURCHASE_AUTHORITY_RESULT.AUTHORIZED_GRANT, saved.record);
+  }
+
+  _missingProviderResult() {
+    return {
+      status: this.production ? PURCHASE_AUTHORITY_RESULT.UNAVAILABLE : PURCHASE_AUTHORITY_RESULT.BLOCKED,
+      reason: "PROVIDER_VERIFIER_NOT_CONFIGURED"
+    };
+  }
+
   async authorize({ playerId, purchaseId, body }) {
     const request = normalizeRequest(playerId, purchaseId, body);
     const existingPurchase = this.store.loadPurchase(request.purchaseId);
@@ -125,12 +162,7 @@ export class PurchaseAuthority {
       return resultFromRecord(PURCHASE_AUTHORITY_RESULT.DUPLICATE_NO_OP, existingTransaction);
     }
 
-    if (!this.providerVerifier) {
-      return {
-        status: this.production ? PURCHASE_AUTHORITY_RESULT.UNAVAILABLE : PURCHASE_AUTHORITY_RESULT.BLOCKED,
-        reason: "PROVIDER_VERIFIER_NOT_CONFIGURED"
-      };
-    }
+    if (!this.providerVerifier) return this._missingProviderResult();
 
     let verified;
     try {
@@ -155,6 +187,7 @@ export class PurchaseAuthority {
       return { status: PURCHASE_AUTHORITY_RESULT.REJECTED, reason: verified?.reason || "RECEIPT_REJECTED" };
     }
 
+    const verifiedFingerprint = validateFingerprint(verified.receiptFingerprint);
     const mismatch = verified.playerId !== request.playerId ||
       verified.productId !== request.productId ||
       Number(verified.amount) !== request.amount ||
@@ -162,12 +195,10 @@ export class PurchaseAuthority {
       verified.provider !== request.provider ||
       verified.transactionId !== request.transactionId ||
       verified.purchaseId !== request.purchaseId ||
-      String(verified.receiptFingerprint || "") !== receiptFingerprint(request.receipt);
+      verifiedFingerprint !== receiptFingerprint(request.receipt);
     if (mismatch) return { status: PURCHASE_AUTHORITY_RESULT.REJECTED, reason: "VERIFIED_RECEIPT_MISMATCH" };
 
-    const grantKind = stableId(verified.grantKind, "grant_kind");
-    const grantAmount = normalizeAmount(verified.grantAmount, "grant_amount");
-    const record = {
+    return this._persistVerifiedRecord({
       purchaseId: request.purchaseId,
       playerId: request.playerId,
       productId: request.productId,
@@ -175,16 +206,59 @@ export class PurchaseAuthority {
       currency: request.currency,
       provider: request.provider,
       providerTransactionId: request.transactionId,
-      receiptFingerprint: receiptFingerprint(request.receipt),
-      grantKind,
-      grantAmount
-    };
+      receiptFingerprint: verifiedFingerprint,
+      grantKind: stableId(verified.grantKind, "grant_kind"),
+      grantAmount: normalizeAmount(verified.grantAmount, "grant_amount")
+    });
+  }
 
-    const saved = this.store.savePurchase(record);
-    if (!saved.created) {
-      if (!samePurchase(saved.record, record)) return { status: PURCHASE_AUTHORITY_RESULT.REJECTED, reason: "IDEMPOTENCY_CONFLICT" };
-      return resultFromRecord(PURCHASE_AUTHORITY_RESULT.DUPLICATE_NO_OP, saved.record);
+  async authorizeProviderCallback({ body } = {}) {
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      throw new AuthorityError(400, "INVALID_PROVIDER_CALLBACK", "Provider callback body is required");
     }
-    return resultFromRecord(PURCHASE_AUTHORITY_RESULT.AUTHORIZED_GRANT, saved.record);
+    if (!this.providerVerifier || typeof this.providerVerifier.verifyPurchaseCallback !== "function") {
+      return {
+        status: this.production ? PURCHASE_AUTHORITY_RESULT.UNAVAILABLE : PURCHASE_AUTHORITY_RESULT.BLOCKED,
+        reason: "CALLBACK_VERIFIER_NOT_CONFIGURED"
+      };
+    }
+
+    let verified;
+    try {
+      verified = await this.providerVerifier.verifyPurchaseCallback({ body });
+    } catch {
+      return { status: PURCHASE_AUTHORITY_RESULT.UNAVAILABLE, reason: "PROVIDER_CALLBACK_VERIFIER_ERROR" };
+    }
+
+    if (verified?.status === PURCHASE_PROVIDER_VERIFICATION.UNAVAILABLE) {
+      return { status: PURCHASE_AUTHORITY_RESULT.UNAVAILABLE, reason: verified.reason || "PROVIDER_UNAVAILABLE" };
+    }
+    if (verified?.status !== PURCHASE_PROVIDER_VERIFICATION.VERIFIED) {
+      return { status: PURCHASE_AUTHORITY_RESULT.REJECTED, reason: verified?.reason || "PROVIDER_CALLBACK_REJECTED" };
+    }
+
+    const purchaseId = stableId(verified.purchaseId, "purchase_id");
+    const playerId = stableId(verified.playerId, "player_id");
+    const productId = stableId(verified.productId, "product_id");
+    const provider = stableId(verified.provider, "provider");
+    const transactionId = stableId(verified.transactionId, "transaction_id");
+    const currency = stableId(verified.currency, "currency");
+    const verifiedAmount = normalizeAmount(verified.amount, "amount");
+    const verifiedGrantKind = stableId(verified.grantKind, "grant_kind");
+    const verifiedGrantAmount = normalizeAmount(verified.grantAmount, "grant_amount");
+    const fingerprint = validateFingerprint(verified.receiptFingerprint);
+
+    return this._persistVerifiedRecord({
+      purchaseId,
+      playerId,
+      productId,
+      amount: verifiedAmount,
+      currency,
+      provider,
+      providerTransactionId: transactionId,
+      receiptFingerprint: fingerprint,
+      grantKind: verifiedGrantKind,
+      grantAmount: verifiedGrantAmount
+    });
   }
 }

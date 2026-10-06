@@ -57,6 +57,219 @@ function authority({ store = new InMemoryPurchaseStore(), providerVerifier = ver
   return new PurchaseAuthority({ store, providerVerifier, production });
 }
 
+function callbackVerifierFor({ calls = null, resultOverrides = {} } = {}) {
+  return createPurchaseProviderVerifier({
+    verifyReceipt: async ({ receipt }) => {
+      const verified = RECEIPTS.get(receipt);
+      if (!verified) return { status: PURCHASE_PROVIDER_VERIFICATION.REJECTED, reason: "UNKNOWN_RECEIPT" };
+      return { status: PURCHASE_PROVIDER_VERIFICATION.VERIFIED, ...verified, receiptFingerprint: fingerprint(receipt) };
+    },
+    verifyPurchaseCallback: async ({ body }) => {
+      if (calls) calls.count += 1;
+      if (body?.callback_token === "callback-down") {
+        return { status: PURCHASE_PROVIDER_VERIFICATION.UNAVAILABLE, reason: "PROVIDER_UNAVAILABLE" };
+      }
+      if (body?.callback_token === "callback-rejected") {
+        return { status: PURCHASE_PROVIDER_VERIFICATION.REJECTED, reason: "CALLBACK_REJECTED" };
+      }
+      if (body?.callback_token !== "callback-valid") {
+        return { status: PURCHASE_PROVIDER_VERIFICATION.REJECTED, reason: "INVALID_CALLBACK" };
+      }
+      return {
+        status: PURCHASE_PROVIDER_VERIFICATION.VERIFIED,
+        purchaseId: "purchase-callback-001",
+        playerId: "player-001",
+        productId: "scrap_5000",
+        amount: 1,
+        currency: "XTR",
+        provider: "test-provider",
+        transactionId: "txn-callback-001",
+        receiptFingerprint: fingerprint("callback-receipt-001"),
+        grantKind: "scrap",
+        grantAmount: 5000,
+        ...resultOverrides
+      };
+    }
+  });
+}
+
+
+
+test("CALLBACK-1 · verified provider callback creates AUTHORIZED_GRANT", async () => {
+  const result = await authority({ providerVerifier: callbackVerifierFor() }).authorizeProviderCallback({
+    body: { callback_token: "callback-valid" }
+  });
+  assert.equal(result.status, PURCHASE_AUTHORITY_RESULT.AUTHORIZED_GRANT);
+  assert.equal(result.player_id, "player-001");
+  assert.equal(result.grant_kind, "scrap");
+  assert.equal(result.grant_amount, 5000);
+});
+
+test("CALLBACK-2 · identical callback returns DUPLICATE_NO_OP", async () => {
+  const store = new InMemoryPurchaseStore();
+  const auth = authority({ store, providerVerifier: callbackVerifierFor() });
+  const first = await auth.authorizeProviderCallback({ body: { callback_token: "callback-valid" } });
+  const second = await auth.authorizeProviderCallback({ body: { callback_token: "callback-valid" } });
+  assert.equal(first.status, PURCHASE_AUTHORITY_RESULT.AUTHORIZED_GRANT);
+  assert.equal(second.status, PURCHASE_AUTHORITY_RESULT.DUPLICATE_NO_OP);
+});
+
+test("CALLBACK-3 · same purchase_id with different verified data is rejected", async () => {
+  const store = new InMemoryPurchaseStore();
+  const auth = authority({ store, providerVerifier: callbackVerifierFor() });
+  await auth.authorizeProviderCallback({ body: { callback_token: "callback-valid" } });
+  const conflict = authority({
+    store,
+    providerVerifier: callbackVerifierFor({ resultOverrides: { productId: "scrap_1000", grantAmount: 1000, transactionId: "txn-callback-002" } })
+  });
+  const result = await conflict.authorizeProviderCallback({ body: { callback_token: "callback-valid" } });
+  assert.equal(result.status, PURCHASE_AUTHORITY_RESULT.REJECTED);
+  assert.equal(result.reason, "IDEMPOTENCY_CONFLICT");
+});
+
+test("CALLBACK-4 · same provider transaction with different data is rejected", async () => {
+  const store = new InMemoryPurchaseStore();
+  const first = authority({ store, providerVerifier: callbackVerifierFor() });
+  await first.authorizeProviderCallback({ body: { callback_token: "callback-valid" } });
+  const second = authority({
+    store,
+    providerVerifier: callbackVerifierFor({
+      resultOverrides: { purchaseId: "purchase-callback-002", productId: "scrap_1000", grantAmount: 1000 }
+    })
+  });
+  const result = await second.authorizeProviderCallback({ body: { callback_token: "callback-valid" } });
+  assert.equal(result.status, PURCHASE_AUTHORITY_RESULT.REJECTED);
+  assert.equal(result.reason, "IDEMPOTENCY_CONFLICT");
+});
+
+test("CALLBACK-5 · provider verifier unavailable returns UNAVAILABLE", async () => {
+  const result = await authority({ providerVerifier: callbackVerifierFor() }).authorizeProviderCallback({
+    body: { callback_token: "callback-down" }
+  });
+  assert.equal(result.status, PURCHASE_AUTHORITY_RESULT.UNAVAILABLE);
+  assert.equal(result.reason, "PROVIDER_UNAVAILABLE");
+});
+
+test("CALLBACK-6 · callback verifier absent in production blocks callback", async () => {
+  const verifier = createPurchaseProviderVerifier({
+    verifyReceipt: async () => ({ status: PURCHASE_PROVIDER_VERIFICATION.VERIFIED })
+  });
+  const result = await authority({ providerVerifier: verifier, production: true }).authorizeProviderCallback({
+    body: { callback_token: "callback-valid" }
+  });
+  assert.equal(result.status, PURCHASE_AUTHORITY_RESULT.UNAVAILABLE);
+  assert.equal(result.reason, "CALLBACK_VERIFIER_NOT_CONFIGURED");
+});
+
+test("CALLBACK-7 · request grant_amount injection cannot alter verified grant", async () => {
+  const result = await authority({ providerVerifier: callbackVerifierFor() }).authorizeProviderCallback({
+    body: { callback_token: "callback-valid", grant_amount: 999999999 }
+  });
+  assert.equal(result.status, PURCHASE_AUTHORITY_RESULT.AUTHORIZED_GRANT);
+  assert.equal(result.grant_amount, 5000);
+});
+
+test("CALLBACK-8 · request grant_kind injection cannot alter verified grant", async () => {
+  const result = await authority({ providerVerifier: callbackVerifierFor() }).authorizeProviderCallback({
+    body: { callback_token: "callback-valid", grant_kind: "stars" }
+  });
+  assert.equal(result.status, PURCHASE_AUTHORITY_RESULT.AUTHORIZED_GRANT);
+  assert.equal(result.grant_kind, "scrap");
+});
+
+test("CALLBACK-9 · request player_id injection cannot alter verified identity", async () => {
+  const result = await authority({ providerVerifier: callbackVerifierFor() }).authorizeProviderCallback({
+    body: { callback_token: "callback-valid", player_id: "attacker-player" }
+  });
+  assert.equal(result.status, PURCHASE_AUTHORITY_RESULT.AUTHORIZED_GRANT);
+  assert.equal(result.player_id, "player-001");
+});
+
+test("CALLBACK-10 · callback authorization is recoverable through GET status", async () => {
+  const store = new InMemoryPurchaseStore();
+  const auth = authority({ store, providerVerifier: callbackVerifierFor() });
+  await auth.authorizeProviderCallback({ body: { callback_token: "callback-valid" } });
+  const status = auth.getStatus({ playerId: "player-001", purchaseId: "purchase-callback-001" });
+  assert.equal(status.status, PURCHASE_AUTHORITY_RESULT.AUTHORIZED_GRANT);
+  assert.equal(status.grant_amount, 5000);
+});
+
+test("CALLBACK-11 · repeated status lookup causes no additional purchase mutation", async () => {
+  const store = new InMemoryPurchaseStore();
+  const auth = authority({ store, providerVerifier: callbackVerifierFor() });
+  const first = await auth.authorizeProviderCallback({ body: { callback_token: "callback-valid" } });
+  const before = store.loadPurchase("purchase-callback-001");
+  const statusA = auth.getStatus({ playerId: "player-001", purchaseId: "purchase-callback-001" });
+  const statusB = auth.getStatus({ playerId: "player-001", purchaseId: "purchase-callback-001" });
+  assert.equal(statusA.status, PURCHASE_AUTHORITY_RESULT.AUTHORIZED_GRANT);
+  assert.equal(statusB.status, PURCHASE_AUTHORITY_RESULT.AUTHORIZED_GRANT);
+  assert.deepEqual(store.loadPurchase("purchase-callback-001"), before);
+});
+
+test("CALLBACK-12 · persistent callback authorization survives purchase store restart", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "basewarriors-callback-purchase-"));
+  const filePath = join(directory, "purchases.json");
+  try {
+    const storeA = new PersistentPurchaseStore({ filePath });
+    const authA = authority({ store: storeA, providerVerifier: callbackVerifierFor() });
+    const first = await authA.authorizeProviderCallback({ body: { callback_token: "callback-valid" } });
+    assert.equal(first.status, PURCHASE_AUTHORITY_RESULT.AUTHORIZED_GRANT);
+
+    const storeB = new PersistentPurchaseStore({ filePath });
+    const authB = authority({ store: storeB, providerVerifier: callbackVerifierFor() });
+    const recovered = await authB.authorizeProviderCallback({ body: { callback_token: "callback-valid" } });
+    assert.equal(recovered.status, PURCHASE_AUTHORITY_RESULT.DUPLICATE_NO_OP);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("CALLBACK-13 · first callback verification executes exactly once", async () => {
+  const calls = { count: 0 };
+  const result = await authority({ providerVerifier: callbackVerifierFor({ calls }) }).authorizeProviderCallback({
+    body: { callback_token: "callback-valid" }
+  });
+  assert.equal(result.status, PURCHASE_AUTHORITY_RESULT.AUTHORIZED_GRANT);
+  assert.equal(calls.count, 1);
+});
+
+test("CALLBACK-14 · duplicate callback is verified before dedupe because raw callback data is not trusted", async () => {
+  const calls = { count: 0 };
+  const auth = authority({ providerVerifier: callbackVerifierFor({ calls }) });
+  await auth.authorizeProviderCallback({ body: { callback_token: "callback-valid" } });
+  await auth.authorizeProviderCallback({ body: { callback_token: "callback-valid" } });
+  assert.equal(calls.count, 2);
+});
+
+test("CALLBACK-HTTP · provider callback endpoint does not use x-test-player-id as authority", async () => {
+  const verifier = callbackVerifierFor();
+  const instance = createAuthorityServer({
+    config: loadConfig({ ...process.env, NODE_ENV: "test", PORT: "0" }),
+    store: new InMemoryCombatStore(),
+    signer: createEphemeralTestSigner(),
+    purchaseStore: new InMemoryPurchaseStore(),
+    purchaseVerifier: verifier
+  });
+  await new Promise((resolve) => instance.server.listen(0, resolve));
+  try {
+    const response = await fetch("http://127.0.0.1:" + instance.server.address().port + "/v1/purchases/provider-callback", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-test-player-id": "attacker-player"
+      },
+      body: JSON.stringify({ callback_token: "callback-valid", player_id: "attacker-player", grant_amount: 999999 })
+    });
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.status, PURCHASE_AUTHORITY_RESULT.AUTHORIZED_GRANT);
+    assert.equal(body.player_id, "player-001");
+    assert.equal(body.grant_amount, 5000);
+  } finally {
+    await new Promise((resolve) => instance.server.close(resolve));
+  }
+});
+
 test("A/H · valid first purchase produces AUTHORIZED_GRANT", async () => {
   const result = await authority().authorize({ playerId: "player-001", purchaseId: "purchase-001", body: requestBody() });
   assert.equal(result.status, PURCHASE_AUTHORITY_RESULT.AUTHORIZED_GRANT);

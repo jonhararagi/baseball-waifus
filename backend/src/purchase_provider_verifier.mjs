@@ -4,22 +4,54 @@ export const PURCHASE_PROVIDER_VERIFICATION = Object.freeze({
   UNAVAILABLE: "UNAVAILABLE"
 });
 
-export function createPurchaseProviderVerifier({ verifyReceipt } = {}) {
-  if (typeof verifyReceipt !== "function") {
-    throw new TypeError("PurchaseProviderVerifier requires verifyReceipt");
+function normalizeVerificationResult(result) {
+  if (!result || typeof result !== "object" || Array.isArray(result)) {
+    return Object.freeze({
+      status: PURCHASE_PROVIDER_VERIFICATION.UNAVAILABLE,
+      reason: "INVALID_VERIFIER_RESPONSE"
+    });
+  }
+  const status = String(result.status || "").toUpperCase();
+  if (!Object.values(PURCHASE_PROVIDER_VERIFICATION).includes(status)) {
+    return Object.freeze({
+      status: PURCHASE_PROVIDER_VERIFICATION.UNAVAILABLE,
+      reason: "INVALID_VERIFIER_STATUS"
+    });
+  }
+  return Object.freeze({ ...result, status });
+}
+
+function invokeVerifier(fn, input) {
+  return Promise.resolve(fn(Object.freeze({ ...input }))).then(normalizeVerificationResult);
+}
+
+export function createPurchaseProviderVerifier({
+  verifyReceipt,
+  verifyPurchaseCallback = null
+} = {}) {
+  if (typeof verifyReceipt !== "function" && typeof verifyPurchaseCallback !== "function") {
+    throw new TypeError("PurchaseProviderVerifier requires verifyReceipt or verifyPurchaseCallback");
   }
 
   return Object.freeze({
     async verifyReceipt(input) {
-      const result = await verifyReceipt(Object.freeze({ ...input }));
-      if (!result || typeof result !== "object") {
-        return Object.freeze({ status: PURCHASE_PROVIDER_VERIFICATION.UNAVAILABLE, reason: "INVALID_VERIFIER_RESPONSE" });
+      if (typeof verifyReceipt !== "function") {
+        return Object.freeze({
+          status: PURCHASE_PROVIDER_VERIFICATION.UNAVAILABLE,
+          reason: "RECEIPT_VERIFIER_NOT_CONFIGURED"
+        });
       }
-      const status = String(result.status || "").toUpperCase();
-      if (!Object.values(PURCHASE_PROVIDER_VERIFICATION).includes(status)) {
-        return Object.freeze({ status: PURCHASE_PROVIDER_VERIFICATION.UNAVAILABLE, reason: "INVALID_VERIFIER_STATUS" });
+      return invokeVerifier(verifyReceipt, input);
+    },
+
+    async verifyPurchaseCallback(input) {
+      if (typeof verifyPurchaseCallback !== "function") {
+        return Object.freeze({
+          status: PURCHASE_PROVIDER_VERIFICATION.UNAVAILABLE,
+          reason: "CALLBACK_VERIFIER_NOT_CONFIGURED"
+        });
       }
-      return Object.freeze({ ...result, status });
+      return invokeVerifier(verifyPurchaseCallback, input);
     }
   });
 }
