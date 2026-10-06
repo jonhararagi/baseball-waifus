@@ -126,8 +126,9 @@ export function createAuthorityServer({
   const activeSigner = signer || (config.rewardSigningPrivateKeyPem ? createAttestationSigner({ privateKeyPem: config.rewardSigningPrivateKeyPem }) : null);
   const service = new CombatService({ store: activeStore, signer: activeSigner });
   const activePurchaseStore = purchaseStore || createPurchaseStore(config);
-  const activePurchaseAdapter = purchaseProviderAdapter || createPurchaseProviderAdapterFromConfig(config);
-  const activePurchaseVerifier = purchaseVerifier || activePurchaseAdapter.verifier;
+  const activePurchaseAdapter = purchaseProviderAdapter
+    || (purchaseVerifier ? null : createPurchaseProviderAdapterFromConfig(config));
+  const activePurchaseVerifier = purchaseVerifier || activePurchaseAdapter?.verifier;
   const activePurchaseAuthority = purchaseAuthority || new PurchaseAuthority({
     store: activePurchaseStore,
     providerVerifier: activePurchaseVerifier,
