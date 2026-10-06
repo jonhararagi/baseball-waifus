@@ -232,3 +232,93 @@ BONE-011: OPEN / IN PROGRESS.
 GLOBAL GATE: CERRADO.
 GAMEPLAY: NO CHANGE.
 BALANCE: NO CHANGE.
+
+
+## BONE-011-AUTH-005 · PROVIDER PURCHASE CALLBACK AUTHORITY CONTRACT
+
+Estado del checkpoint: CLOSED.  
+Estado de BONE-011: OPEN / IN PROGRESS.
+
+HEAD BEFORE: `ab75a66ea6a3b2af6ccea12f7fa735d5520ed226`  
+HEAD AFTER: `5d5fe2b12255f31c88c37953874315b3a57ba857`  
+TIMER: 1–2 horas.
+
+### Callback authority seam
+
+Se añadió el seam provider-neutral `verifyPurchaseCallback(...)` a `backend/src/purchase_provider_verifier.mjs`.
+
+El resultado confiable del callback es exclusivamente el evento verificado por el provider verifier. `PurchaseAuthority` no deriva identidad ni grant desde `x-test-player-id` ni desde campos económicos no verificados del request.
+
+El callback especializado:
+
+`HTTP callback → provider verifier → verified provider event → PurchaseAuthority → PurchaseStore`
+
+reutiliza el mismo contrato de idempotencia y persistencia existente.
+
+### Endpoint
+
+Se añadió:
+
+`POST /v1/purchases/provider-callback`
+
+La ruta no autentica al comprador mediante `x-test-player-id`. La identidad final procede del resultado `VERIFIED` del provider verifier.
+
+### Idempotencia
+
+Se conserva la semántica existente:
+
+- primera recepción verificada → `AUTHORIZED_GRANT`;
+- callback idéntico repetido → `DUPLICATE_NO_OP`;
+- mismo `purchase_id` o `provider + transaction_id` con datos verificados incompatibles → `REJECTED`;
+- verifier unavailable → `UNAVAILABLE`;
+- verifier de callback ausente en production → `UNAVAILABLE` / fail-closed.
+
+Para seguridad, el callback se verifica antes de deduplicar: los datos crudos del proveedor no se consideran confiables para decidir que una compra ya existe.
+
+### GET status / recovery
+
+`GET /v1/purchases/:purchaseId` permanece sin cambios de semántica y recupera la compra persistida después del callback. Las lecturas repetidas no generan una nueva mutación económica.
+
+### Security boundary
+
+Tests demostraron que:
+
+- request `player_id` no puede sustituir la identidad verificada;
+- request `grant_kind` no puede sustituir el grant verificado;
+- request `grant_amount` no puede sustituir el grant verificado;
+- el endpoint callback no depende de `x-test-player-id`;
+- no se exponen secretos del proveedor.
+
+### Tests / workflow
+
+Workflow backend existente:
+
+Run `37497428233` = SUCCESS.
+
+Se validaron:
+
+- syntax;
+- backend authority suite;
+- callback authority;
+- callback HTTP endpoint;
+- idempotency;
+- persistent recovery;
+- container smoke.
+
+### Producción
+
+PRODUCTION STATUS: NOT CONFIGURED.
+
+No se implementó Telegram Stars real, ningún proveedor real, credencial, Bot Token, API key, webhook externo ni deployment cloud.
+
+### Dependencias / Gate
+
+BONE-004: OPEN / BLOCKED / UNCHANGED.  
+BONE-010: CLOSED / UNCHANGED.  
+BONE-011: OPEN / IN PROGRESS.  
+GLOBAL GATE: CERRADO.
+
+GAMEPLAY: NO CHANGE.  
+BALANCE: NO CHANGE.
+
+Remaining blocker de BONE-011: conectar posteriormente un provider adapter real con verificación criptográfica/autoridad real y su persistence/operación productiva; esta task únicamente deja preparado el seam.

@@ -10207,3 +10207,44 @@ BONE-010 permanece CLOSED.
 GLOBAL GATE permanece CERRADO.
 GAMEPLAY: NO CHANGE.
 BALANCE: NO CHANGE.
+
+
+---
+
+## BONE-011-AUTH-005 · PROVIDER PURCHASE CALLBACK AUTHORITY CONTRACT
+
+Fecha: 2026-10-06  
+HEAD BEFORE: `ab75a66ea6a3b2af6ccea12f7fa735d5520ed226`  
+HEAD AFTER: `5d5fe2b12255f31c88c37953874315b3a57ba857`  
+TIMER: 1–2 horas  
+RESULT: PASS
+
+Se añadió un seam provider-neutral para recibir un callback de compra ya verificado por un futuro adapter real.
+
+- `verifyPurchaseCallback(...)` en `purchase_provider_verifier.mjs`;
+- `PurchaseAuthority.authorizeProviderCallback(...)`;
+- `POST /v1/purchases/provider-callback`;
+- reutilización de `PurchaseStore` e idempotencia existente;
+- recovery mediante `GET /v1/purchases/:purchaseId`;
+- rechazo de inyección de `player_id`, `grant_kind` y `grant_amount` desde el request;
+- callback verifier ausente en production → fail-closed;
+- duplicados y conflictos mantienen los estados `DUPLICATE_NO_OP` / `REJECTED`.
+
+Evidence:
+
+- GitHub Actions Run `37497428233` = SUCCESS.
+- Syntax PASS.
+- Backend authority suite PASS.
+- Container smoke PASS.
+- No se creó proveedor real ni se registraron secrets.
+- BONE-004 permanece OPEN/BLOCKED.
+- BONE-005 permanece CLOSED.
+- BONE-006 permanece CLOSED.
+- BONE-010 permanece CLOSED.
+- BONE-011 permanece OPEN / IN PROGRESS.
+- GLOBAL GATE permanece CERRADO.
+
+Production status: NOT CONFIGURED.
+
+GAMEPLAY: NO CHANGE.  
+BALANCE: NO CHANGE.
