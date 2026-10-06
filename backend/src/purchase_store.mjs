@@ -183,7 +183,7 @@ export class PersistentPurchaseStore {
   savePurchase(record) {
     const purchaseId = stableId(record?.purchaseId, "purchaseId");
     const key = transactionKey(record?.provider, record?.providerTransactionId);
-    const next = clone({ ...record, transactionKey: key });
+    const next = clone({ ...record, transactionKey: key, claimStatus: record.claimStatus || "UNCLAIMED" });
     validateRecord(next);
     const document = this._readDocument();
     if (document.purchases[purchaseId]) return { created: false, record: clone(document.purchases[purchaseId]) };
