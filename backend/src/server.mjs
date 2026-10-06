@@ -10,6 +10,7 @@ import {
   createPurchaseProviderAdapterFromConfig
 } from "./purchase_provider_adapter.mjs";
 import {
+  buildTelegramStarsInvoicePayload,
   createTelegramStarsProviderAdapterFromConfig
 } from "./telegram_stars_adapter.mjs";
 import { evaluatePurchaseReadiness, purchaseReadinessSatisfied } from "./purchase_readiness.mjs";
@@ -26,7 +27,7 @@ function jsonResponse(res, status, payload, origin = "null") {
   res.writeHead(status, {
     ...JSON_HEADERS,
     "access-control-allow-origin": origin,
-    "access-control-allow-headers": "content-type, x-telegram-init-data, x-test-player-id",
+    "access-control-allow-headers": "content-type, x-telegram-init-data, x-test-player-id, idempotency-key",
     "access-control-allow-methods": "GET,POST,OPTIONS"
   });
   res.end(JSON.stringify(payload));
@@ -151,7 +152,7 @@ export function createAuthorityServer({
     if (request.method === "OPTIONS") {
       response.writeHead(204, {
         "access-control-allow-origin": origin,
-        "access-control-allow-headers": "content-type, x-telegram-init-data, x-test-player-id",
+        "access-control-allow-headers": "content-type, x-telegram-init-data, x-test-player-id, idempotency-key",
         "access-control-allow-methods": "GET,POST,OPTIONS"
       });
       response.end();
@@ -183,6 +184,31 @@ export function createAuthorityServer({
         const auth = await authenticateRequest(request, config);
         const body = await readJson(request);
         return jsonResponse(response, 200, await service.applyTurn({ matchId: decodeURIComponent(turnMatch[1]), playerId: auth.playerId, body }), origin);
+      }
+      if (request.method === "POST" && url.pathname === "/v1/purchases") {
+        const auth = await authenticateRequest(request, config);
+        const body = await readJson(request);
+        const result = activePurchaseAuthority.createPending({
+          playerId: auth.playerId,
+          body,
+          idempotencyKey: request.headers?.["idempotency-key"] || ""
+        });
+        if (result.status !== "PENDING") {
+          return jsonResponse(response, 409, result, origin);
+        }
+        return jsonResponse(response, result.created ? 201 : 200, {
+          ...result,
+          invoice: {
+            provider: result.provider,
+            currency: result.currency,
+            amount: result.amount,
+            invoice_payload: buildTelegramStarsInvoicePayload({
+              purchaseId: result.purchase_id,
+              productId: result.product_id,
+              amount: result.amount
+            })
+          }
+        }, origin);
       }
       const callbackMatch = url.pathname.match(new RegExp("^/v1/purchases/provider-callback$"));
       if (request.method === "POST" && callbackMatch) {
