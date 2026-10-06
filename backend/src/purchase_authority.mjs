@@ -1,8 +1,11 @@
 import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { AuthorityError } from "./errors.mjs";
+import { getTelegramStarsProduct } from "./telegram_stars_product_catalog.mjs";
 import { PURCHASE_PROVIDER_VERIFICATION } from "./purchase_provider_verifier.mjs";
 
 export const PURCHASE_AUTHORITY_RESULT = Object.freeze({
+  PENDING: "PENDING",
   AUTHORIZED_GRANT: "AUTHORIZED_GRANT",
   BLOCKED: "BLOCKED",
   REJECTED: "REJECTED",
@@ -103,6 +106,96 @@ export class PurchaseAuthority {
     this.store = store;
     this.providerVerifier = providerVerifier;
     this.production = Boolean(production);
+  }
+
+  createPending({ playerId, body = {}, idempotencyKey = "" } = {}) {
+    const ownerId = stableId(playerId, "player_id");
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      throw new AuthorityError(400, "INVALID_PURCHASE_REQUEST", "Purchase request body must be a JSON object");
+    }
+
+    const forbidden = [
+      "purchase_id", "purchaseId", "player_id", "playerId", "telegram_user_id",
+      "telegramUserId", "amount", "currency", "grant_kind", "grant_amount",
+      "provider", "transaction_id", "transactionId", "receipt", "transaction",
+      "status", "claim_status", "authorized", "verified", "successful_payment"
+    ];
+    const injected = forbidden.find((key) => Object.prototype.hasOwnProperty.call(body, key));
+    if (injected) {
+      throw new AuthorityError(400, "CLIENT_AUTHORITY_FORBIDDEN", `Client purchase authority field is not accepted: ${injected}`);
+    }
+
+    const productId = stableId(body.product_id, "product_id");
+    const product = getTelegramStarsProduct(productId);
+    if (!product) {
+      throw new AuthorityError(404, "UNKNOWN_PRODUCT", "Product is not available for Telegram Stars");
+    }
+
+    const key = String(idempotencyKey || "").trim();
+    if (key && (!/^[A-Za-z0-9._:-]+$/.test(key) || key.length > 256)) {
+      throw new AuthorityError(400, "INVALID_IDEMPOTENCY_KEY", "Idempotency-Key must be a stable identifier");
+    }
+
+    const generatedPurchaseId = key
+      ? "purchase-" + createHash("sha256").update(ownerId + ":" + key, "utf8").digest("hex")
+      : "purchase-" + randomUUID();
+
+    const existing = this.store.loadPurchase(generatedPurchaseId);
+    if (existing) {
+      if (
+        existing.playerId !== ownerId
+        || existing.productId !== product.productId
+        || existing.amount !== product.amount
+        || existing.currency !== product.currency
+        || existing.provider !== product.provider
+        || existing.grantKind !== product.grantKind
+        || existing.grantAmount !== product.grantAmount
+      ) {
+        throw new AuthorityError(409, "IDEMPOTENCY_CONFLICT", "Purchase idempotency key is bound to different purchase data");
+      }
+
+      return {
+        status: PURCHASE_AUTHORITY_RESULT.PENDING,
+        created: false,
+        ...resultFromRecord(PURCHASE_AUTHORITY_RESULT.PENDING, existing)
+      };
+    }
+
+    const record = {
+      purchaseId: generatedPurchaseId,
+      playerId: ownerId,
+      productId: product.productId,
+      amount: product.amount,
+      currency: product.currency,
+      provider: product.provider,
+      providerTransactionId: "pending:" + generatedPurchaseId,
+      receiptFingerprint: createHash("sha256").update("pending:" + generatedPurchaseId, "utf8").digest("hex"),
+      grantKind: product.grantKind,
+      grantAmount: product.grantAmount,
+      claimStatus: "UNCLAIMED",
+      authorizationStatus: "PENDING",
+      createdAt: new Date().toISOString()
+    };
+
+    if (typeof this.store.createPendingPurchase !== "function") {
+      throw new AuthorityError(503, "PENDING_PURCHASE_NOT_SUPPORTED", "Purchase store does not support pending purchases");
+    }
+
+    const created = this.store.createPendingPurchase(record);
+    if (!created.created) {
+      const sameOwner = created.record?.playerId === ownerId;
+      const sameProduct = created.record?.productId === product.productId;
+      const samePrice = created.record?.amount === product.amount && created.record?.currency === product.currency;
+      if (!sameOwner || !sameProduct || !samePrice) {
+        throw new AuthorityError(409, "IDEMPOTENCY_CONFLICT", "Purchase creation collided with different purchase data");
+      }
+    }
+
+    return {
+      status: PURCHASE_AUTHORITY_RESULT.PENDING,
+      created: Boolean(created.created),
+      ...resultFromRecord(PURCHASE_AUTHORITY_RESULT.PENDING, created.record)
+    };
   }
 
   getStatus({ playerId, purchaseId } = {}) {
