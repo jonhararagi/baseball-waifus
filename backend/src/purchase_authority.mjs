@@ -37,7 +37,7 @@ function normalizeRequest(playerId, purchaseId, body) {
   if (Object.prototype.hasOwnProperty.call(body, "authorized")) {
     throw new AuthorityError(400, "CLIENT_AUTHORITY_FORBIDDEN", "Client authority fields are not accepted");
   }
-  for (const forbidden of ["grant_kind", "grant_amount", "grant_turns", "paid", "reward"]) {
+  for (const forbidden of ["grant_kind", "grant_amount", "grant_turns", "paid", "reward", "status", "authorized", "verified", "successful_payment"]) {
     if (Object.prototype.hasOwnProperty.call(body, forbidden)) {
       throw new AuthorityError(400, "CLIENT_AUTHORITY_FORBIDDEN", `Client economic authority field is not accepted: ${forbidden}`);
     }
@@ -91,6 +91,7 @@ function resultFromRecord(status, record) {
     purchase_id: record.purchaseId,
     player_id: record.playerId,
     product_id: record.productId,
+    amount: record.amount,
     grant_kind: record.grantKind,
     grant_amount: record.grantAmount,
     currency: record.currency,
