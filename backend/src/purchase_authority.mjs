@@ -7,7 +7,9 @@ export const PURCHASE_AUTHORITY_RESULT = Object.freeze({
   BLOCKED: "BLOCKED",
   REJECTED: "REJECTED",
   UNAVAILABLE: "UNAVAILABLE",
-  DUPLICATE_NO_OP: "DUPLICATE_NO_OP"
+  DUPLICATE_NO_OP: "DUPLICATE_NO_OP",
+  GRANT_CLAIMED: "GRANT_CLAIMED",
+  GRANT_ALREADY_CLAIMED: "GRANT_ALREADY_CLAIMED"
 });
 
 function stableId(value, label) {
@@ -108,7 +110,44 @@ export class PurchaseAuthority {
     const id = stableId(purchaseId, "purchase_id");
     const record = this.store.loadPurchase(id);
     if (!record || record.playerId !== ownerId) return null;
-    return resultFromRecord(PURCHASE_AUTHORITY_RESULT.AUTHORIZED_GRANT, record);
+    const status = record.claimStatus === "GRANT_CLAIMED"
+      ? PURCHASE_AUTHORITY_RESULT.GRANT_CLAIMED
+      : PURCHASE_AUTHORITY_RESULT.AUTHORIZED_GRANT;
+    return resultFromRecord(status, record);
+  }
+
+  claim({ playerId, purchaseId, body = {} } = {}) {
+    const ownerId = stableId(playerId, "player_id");
+    const id = stableId(purchaseId, "purchase_id");
+
+    if (body === null || typeof body !== "object" || Array.isArray(body)) {
+      throw new AuthorityError(400, "INVALID_CLAIM_REQUEST", "Claim body must be a JSON object");
+    }
+
+    const forbiddenFields = [
+      "amount", "resource", "grant", "playerId", "player_id",
+      "authority", "purchase_status", "purchaseStatus", "claimed",
+      "grant_kind", "grant_amount", "grant_turns", "paid", "reward"
+    ];
+    const supplied = Object.keys(body).filter((key) => forbiddenFields.includes(key));
+    if (supplied.length > 0 || Object.keys(body).length > 0) {
+      throw new AuthorityError(
+        400,
+        "CLIENT_AUTHORITY_FORBIDDEN",
+        "Claim endpoint accepts no client authority fields"
+      );
+    }
+
+    if (typeof this.store.claimPurchase !== "function") {
+      throw new AuthorityError(503, "CLAIM_NOT_SUPPORTED", "Purchase store does not support one-time claims");
+    }
+
+    const result = this.store.claimPurchase(id, ownerId);
+    if (result.status === "NOT_FOUND") return null;
+    if (result.status === "GRANT_ALREADY_CLAIMED") {
+      return resultFromRecord(PURCHASE_AUTHORITY_RESULT.GRANT_ALREADY_CLAIMED, result.record);
+    }
+    return resultFromRecord(PURCHASE_AUTHORITY_RESULT.GRANT_CLAIMED, result.record);
   }
 
   _persistVerifiedRecord(record) {
