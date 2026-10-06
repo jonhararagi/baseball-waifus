@@ -10468,3 +10468,53 @@ BONE-006 CLOSED.
 BONE-011 OPEN / IN PROGRESS.
 GLOBAL GATE CERRADO.
 PRODUCTION: NOT CONFIGURED.
+
+
+---
+
+## BONE-011-AUTH-011 · TELEGRAM STARS PURCHASE CREATION & PENDING FLOW
+
+Fecha: 2026-10-06
+HEAD BEFORE: e17072be22567ca014663e431fac95e4c20eb814
+HEAD AFTER: 3f6e2c54e1d9bc284ec12f46d152fc0ffdd2cbb8
+TIMER: 1.5–2.5 horas
+RESULT: PASS / CHECKPOINT CLOSED
+
+Se implementó POST /v1/purchases como seam server-side de creación de compra Telegram Stars en estado PENDING.
+
+El cliente solo aporta product_id e Idempotency-Key opcional. PurchaseAuthority genera purchaseId server-side, deriva playerId de autenticación y usa el catálogo confiable de Telegram Stars:
+scrap_5000 = 50 XTR → 5000 SCRAP
+scrap_25000 = 200 XTR → 25000 SCRAP
+
+La respuesta entrega invoice_payload determinista; el backend no acepta amount, currency, provider, transactionId, purchaseId, playerId, grant ni status como autoridad del cliente.
+
+PENDING se persiste con claimStatus UNCLAIMED. La promoción solo sigue el callback verificado Telegram Stars existente y conserva la corrección AUTH-010-R.
+
+Idempotency-Key repetida con identidad/producto iguales devuelve el mismo PENDING; la misma key con otro producto produce IDEMPOTENCY_CONFLICT.
+
+Evidence:
+- GitHub Actions Run 37548761332 = SUCCESS.
+- Backend suite = 119 PASS / 0 FAIL.
+- AUTH-011 targeted suite = PASS.
+- AUTH-010-R, AUTH-009, claim, provider adapter y persistence suites = PASS dentro de la ejecución completa.
+- Persistent PENDING survives restart = PASS.
+- Verified successful_payment promotes to AUTHORIZED_GRANT = PASS.
+- Duplicate callback = DUPLICATE_NO_OP.
+- One-time claim = GRANT_CLAIMED / duplicate claim = GRANT_ALREADY_CLAIMED.
+- Foreign identity cannot read/promote another player's purchase = PASS.
+- No Player Meta/economic grant mutation introduced.
+
+Production:
+IMPLEMENTED: YES
+CONFIGURED: NO
+DEPLOYED: NO
+REAL TELEGRAM BOT: NO
+REAL CREDENTIALS: NO
+PRODUCTION EVIDENCE: NO
+
+BONE-004 remains OPEN/BLOCKED.
+BONE-005 CLOSED.
+BONE-006 CLOSED.
+BONE-010 CLOSED.
+BONE-011 OPEN/IN PROGRESS.
+GLOBAL GATE CERRADO.

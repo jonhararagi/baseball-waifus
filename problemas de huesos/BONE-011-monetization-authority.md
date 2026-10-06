@@ -711,3 +711,130 @@ PRODUCTION:
 NOT CONFIGURED. No real provider credentials, Bot Token or production deployment were added.
 
 La recuperación queda persistida en main. 
+
+
+## BONE-011-AUTH-011 · TELEGRAM STARS PURCHASE CREATION & PENDING FLOW
+
+Fecha: 2026-10-06
+HEAD BEFORE: e17072be22567ca014663e431fac95e4c20eb814
+HEAD AFTER: 3f6e2c54e1d9bc284ec12f46d152fc0ffdd2cbb8
+TIMER: ~1.5–2.5 horas
+STATUS: CLOSED / CHECKPOINT COMPLETE
+
+### Implementación
+
+Se añadió el seam server-side de creación de compra:
+
+POST /v1/purchases
+
+La solicitud autenticada acepta únicamente product_id y, opcionalmente, Idempotency-Key.
+
+PurchaseAuthority genera server-side el purchaseId, deriva playerId de la identidad autenticada y toma producto/precio/grant de un catálogo server-side.
+
+Productos Stars soportados por el catálogo actual:
+- scrap_5000 = 50 XTR → 5000 SCRAP
+- scrap_25000 = 200 XTR → 25000 SCRAP
+
+La compra queda:
+PENDING
+UNCLAIMED
+provider=telegram-stars
+currency=XTR
+provider transaction externo ausente hasta successful_payment.
+
+La respuesta incluye un invoice_payload determinista basado en purchaseId, productId y amount mediante el adapter Telegram Stars existente.
+
+### Idempotencia
+
+Idempotency-Key queda vinculada server-side a la identidad del jugador y al producto mediante purchaseId derivado del hash.
+
+Repetición con la misma identidad/producto devuelve el mismo purchase PENDING sin crear una segunda compra.
+
+Reutilización con otro producto devuelve IDEMPOTENCY_CONFLICT.
+
+Sin Idempotency-Key se genera un purchaseId aleatorio server-side; sigue sin existir grant económico en la creación PENDING.
+
+### Security boundary
+
+El endpoint rechaza inyección de:
+- purchaseId;
+- playerId / telegramUserId;
+- amount;
+- currency;
+- provider;
+- transactionId;
+- grantKind / grantAmount;
+- status / authorized / verified;
+- successful_payment.
+
+La autoridad Telegram final no se obtiene del cliente.
+
+### Pending → Authorized
+
+La promoción no ocurre al crear PENDING.
+
+El flujo verificado existente permanece:
+Telegram successful_payment
+→ TelegramStarsAdapter
+→ VERIFIED
+→ PurchaseAuthority
+→ AUTHORIZED_GRANT
+→ claim.
+
+AUTH-010-R sigue siendo la corrección causal para la promoción PENDING → AUTHORIZED_GRANT y no fue revertida.
+
+### Persistence / restart
+
+PersistentPurchaseStore conserva el registro PENDING y su estado tras reconstrucción del proceso.
+
+GET /v1/purchases/:purchaseId ahora puede devolver explícitamente PENDING para reconexión del jugador autenticado.
+
+No se aplican Scrap, boosts ni Player Meta durante esta task.
+
+### Tests
+
+Workflow backend:
+Run 37548761332 = SUCCESS.
+
+Suite completa:
+119 PASS / 0 FAIL.
+
+La nueva suite:
+backend/test/bone011_auth011_purchase_creation_test.mjs
+
+cubre:
+- authenticated server-priced PENDING;
+- idempotency;
+- unknown product;
+- amount/currency/provider/identity/purchaseId injection;
+- fake authorization/status/transaction;
+- persistent PENDING restart;
+- verified Telegram Stars promotion;
+- duplicate callback;
+- one-time claim;
+- foreign identity isolation;
+- no economic grant side effect.
+
+Las suites existentes AUTH-009/AUTH-010 y claim/provider/persistence continúan PASS dentro de los 119 tests.
+
+### Production status
+
+IMPLEMENTED: YES
+CONFIGURED: NO
+DEPLOYED: NO
+REAL TELEGRAM BOT: NO
+REAL CREDENTIALS: NO
+PRODUCTION EVIDENCE: NO
+
+No se realizó ninguna llamada real a Telegram ni deployment externo.
+
+BONE-004: OPEN / BLOCKED / unchanged.
+BONE-005: CLOSED / unchanged.
+BONE-006: CLOSED / unchanged.
+BONE-010: CLOSED / unchanged.
+BONE-011: OPEN / IN PROGRESS.
+
+GAMEPLAY: NO CHANGE.
+BALANCE: NO CHANGE.
+GACHA/PITY: NO CHANGE.
+PLAYER META: NO CHANGE.
