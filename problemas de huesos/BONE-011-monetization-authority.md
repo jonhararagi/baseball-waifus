@@ -588,3 +588,82 @@ BALANCE: NO CHANGE.
 GACHA/PITY: NO CHANGE.  
 ECONOMIC APPLICATION: NO CHANGE.  
 GLOBAL GATE: CERRADO.
+
+
+## BONE-011-AUTH-009 · TELEGRAM STARS PROVIDER ADAPTER
+
+Fecha: 2026-10-06  
+HEAD BEFORE: `3f3643160732aec865da39f3884306d73ad50445`  
+IMPLEMENTATION HEAD: `b4cafa763757bc4a223382cacb6f85c240359e18`  
+TIMER: 1.5–2.5 horas  
+RESULT: PASS / CHECKPOINT CLOSED
+
+### Implementación
+
+Se añadió `backend/src/telegram_stars_adapter.mjs` dentro del seam provider-neutral de AUTH-008.
+
+El adapter valida eventos Telegram `successful_payment` mediante el header de webhook de Telegram, verifica `currency = XTR`, identidad `message.from.id`, transaction id, invoice payload determinista `bwstars:v1` y correlación server-side contra el PurchaseStore existente.
+
+El adapter produce únicamente un evento provider-neutral `VERIFIED`. No calcula ni aplica grants. PurchaseAuthority continúa siendo la autoridad económica y PurchaseStore la fuente de verdad.
+
+### Seguridad y fail-closed
+
+Se validaron:
+
+- provider ausente;
+- credential ausente;
+- webhook secret inválido;
+- `successful_payment` ausente;
+- currency incorrecta;
+- amount inválido/incompatible;
+- invoice payload inválido;
+- purchase inexistente;
+- identity mismatch;
+- product mismatch;
+- transaction mismatch;
+- duplicado/conflicto de evento.
+
+El valor del webhook secret no queda expuesto en status/config serializable. No se añadieron credenciales reales, Bot Token, API keys ni secretos al repositorio.
+
+### Compatibilidad
+
+`PurchaseProviderAdapter` ahora soporta providers callback-only sin romper el contrato AUTH-008.
+
+AUTH-005, AUTH-006, AUTH-007 y AUTH-008 permanecieron PASS en la suite de regresión.
+
+### Validation
+
+GitHub Actions Run `37525464161` = SUCCESS.  
+Job `112481219857` = SUCCESS.  
+Suite completa: `103 PASS / 0 FAIL`.
+
+La ejecución incluyó syntax, backend authority, provider adapter/configuration, Telegram Stars adapter, purchase claim/persistence y container smoke.
+
+### Producción
+
+IMPLEMENTED: Telegram Stars adapter.
+
+CONFIGURED: NO.
+
+DEPLOYED: NO.
+
+REAL TELEGRAM BOT: NO.
+
+REAL CREDENTIALS: NO.
+
+PRODUCTION EVIDENCE: NO.
+
+No se ejecutó deployment externo ni llamada productiva a Telegram.
+
+### Dependencias / Gate
+
+BONE-004: OPEN / BLOCKED / unchanged.  
+BONE-005: CLOSED / unchanged.  
+BONE-006: CLOSED / unchanged.  
+BONE-010: CLOSED / unchanged.  
+BONE-011: OPEN / IN PROGRESS.  
+GLOBAL GATE: CERRADO.
+
+GAMEPLAY: NO CHANGE.  
+BALANCE: NO CHANGE.  
+GACHA/PITY: NO CHANGE.
