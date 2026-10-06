@@ -75,16 +75,30 @@ async function waitForTarget() {
   throw new Error("Chromium CDP target unavailable");
 }
 
-async function cdp(ws, id, method, params = {}) {
+const CDP_EVALUATE_TIMEOUT_MS = 45000;
+
+async function cdp(ws, id, method, params = {}, timeoutMs = 10000) {
   ws.send(JSON.stringify({ id, method, params }));
   return await new Promise((resolve, reject) => {
+    let settled = false;
+    const finish = (callback) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      ws.removeEventListener("message", handler);
+      callback();
+    };
     const handler = (event) => {
       const message = JSON.parse(event.data);
       if (message.id !== id) return;
-      ws.removeEventListener("message", handler);
-      if (message.error) reject(new Error(JSON.stringify(message.error)));
-      else resolve(message.result || {});
+      finish(() => {
+        if (message.error) reject(new Error(JSON.stringify(message.error)));
+        else resolve(message.result || {});
+      });
     };
+    const timeout = setTimeout(() => {
+      finish(() => reject(new Error(`CDP ${method} timeout after ${timeoutMs}ms`)));
+    }, timeoutMs);
     ws.addEventListener("message", handler);
   });
 }
@@ -219,7 +233,7 @@ try {
     expression,
     awaitPromise: true,
     returnByValue: true
-  });
+  }, CDP_EVALUATE_TIMEOUT_MS);
   if (result.exceptionDetails) throw new Error(result.exceptionDetails.exception?.description || result.exceptionDetails.text);
 
   const value = result.result?.value;
