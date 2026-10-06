@@ -54,8 +54,13 @@ function validateDocument(document) {
   if (!document.transactions || typeof document.transactions !== "object" || Array.isArray(document.transactions)) throw new TypeError("Invalid transactions collection");
   for (const [purchaseId, record] of Object.entries(document.purchases)) {
     if (stableId(purchaseId, "purchaseId") !== purchaseId) throw new TypeError("Invalid purchase key");
-    validateRecord(record);
-    if (record.purchaseId !== purchaseId) throw new TypeError("Purchase identity mismatch");
+    const normalizedRecord = {
+      ...record,
+      claimStatus: record.claimStatus || "UNCLAIMED"
+    };
+    validateRecord(normalizedRecord);
+    if (normalizedRecord.purchaseId !== purchaseId) throw new TypeError("Purchase identity mismatch");
+    document.purchases[purchaseId] = normalizedRecord;
   }
   for (const [key, purchaseId] of Object.entries(document.transactions)) {
     if (stableId(key, "transactionKey") !== key) throw new TypeError("Invalid transaction key");
