@@ -10248,3 +10248,31 @@ Production status: NOT CONFIGURED.
 
 GAMEPLAY: NO CHANGE.  
 BALANCE: NO CHANGE.
+
+
+---
+
+## CONT-001 · GATE INVENTORY AND CONTINUITY RECONCILIATION
+
+Fecha: 2026-10-06
+HEAD BEFORE: 8dd76acb6ea75af57b826f16b685d285486e3ec4
+
+Problema: `problemas de huesos/00-gate-de-avance.md` mantenía una reconciliación histórica incompatible con el inventario operativo actual de `problemas de huesos/README.md`.
+
+Corrección:
+- BONE-001 = CLOSED
+- BONE-002 = CLOSED
+- BONE-003 = CLOSED
+- BONE-004 = OPEN / BLOCKED
+- BONE-005 = CLOSED
+- BONE-006 = CLOSED
+- BONE-007 = CLOSED
+- BONE-008 = CLOSED
+- BONE-009 = CLOSED
+- BONE-010 = CLOSED
+- BONE-011 = OPEN / IN_PROGRESS
+- GLOBAL GATE = CERRADO
+
+README.md no fue modificado porque ya coincidía con el estado operativo correcto. Los checkpoints históricos de los Bones permanecen preservados.
+
+STATUS: PASS_STATIC / CONTINUITY RECONCILED.
