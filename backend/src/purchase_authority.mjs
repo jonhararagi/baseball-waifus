@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { createHash, randomUUID } from "node:crypto";
 import { AuthorityError } from "./errors.mjs";
 import { getTelegramStarsProduct } from "./telegram_stars_product_catalog.mjs";
