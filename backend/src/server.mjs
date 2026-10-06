@@ -102,18 +102,18 @@ export function createAuthorityServer({
         const status = readiness(config, activeSigner, activeStore);
         return jsonResponse(response, status.ready ? 200 : 503, status, origin);
       }
-      const initMatch = url.pathname.match(/^/v1/combat/([^/]+)/init$/);
+      const initMatch = url.pathname.match(/^\/v1\/combat\/([^/]+)\/init$/);
       if (request.method === "GET" && initMatch) {
         const auth = await authenticateRequest(request, config);
         return jsonResponse(response, 200, await service.init(decodeURIComponent(initMatch[1]), auth.playerId), origin);
       }
-      const turnMatch = url.pathname.match(/^/v1/combat/([^/]+)/turn$/);
+      const turnMatch = url.pathname.match(/^\/v1\/combat\/([^/]+)\/turn$/);
       if (request.method === "POST" && turnMatch) {
         const auth = await authenticateRequest(request, config);
         const body = await readJson(request);
         return jsonResponse(response, 200, await service.applyTurn({ matchId: decodeURIComponent(turnMatch[1]), playerId: auth.playerId, body }), origin);
       }
-      const purchaseMatch = url.pathname.match(/^/v1/purchases/([^/]+)/authorize$/);
+      const purchaseMatch = url.pathname.match(/^\/v1\/purchases\/([^/]+)\/authorize$/);
       if (request.method === "POST" && purchaseMatch) {
         const auth = await authenticateRequest(request, config);
         const body = await readJson(request);
