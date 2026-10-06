@@ -6,6 +6,7 @@ import { createAttestationSigner } from "./attestation_signer.mjs";
 import { CombatService } from "./combat_service.mjs";
 import { createPersistenceStore, persistenceReadiness } from "./persistence_provider.mjs";
 import { createPurchaseStore } from "./purchase_persistence_provider.mjs";
+import { evaluatePurchaseReadiness, purchaseReadinessSatisfied } from "./purchase_readiness.mjs";
 import { PurchaseAuthority, PURCHASE_AUTHORITY_RESULT } from "./purchase_authority.mjs";
 import { AuthorityError, isAuthorityError } from "./errors.mjs";
 
@@ -46,13 +47,24 @@ async function readJson(request, limitBytes = 64 * 1024) {
   }
 }
 
-function readiness(config, signer, store) {
+function readiness(config, signer, store, purchaseAuthority, purchaseStore) {
   const persistence = persistenceReadiness(config, store);
+  const purchase = evaluatePurchaseReadiness({
+    config,
+    purchaseAuthority,
+    purchaseStore
+  });
   return {
-    ready: Boolean(signer && authenticationConfigured(config) && persistence),
+    ready: Boolean(
+      signer
+      && authenticationConfigured(config)
+      && persistence
+      && purchaseReadinessSatisfied(purchase)
+    ),
     signing_key: Boolean(signer),
     authentication: authenticationConfigured(config),
     persistence,
+    ...purchase,
     deployment_mode: config.deploymentMode,
     deployment: false
   };
@@ -99,7 +111,13 @@ export function createAuthorityServer({
         return jsonResponse(response, 200, { ok: true, service: "basewarriors-authority" }, origin);
       }
       if (request.method === "GET" && url.pathname === "/ready") {
-        const status = readiness(config, activeSigner, activeStore);
+        const status = readiness(
+          config,
+          activeSigner,
+          activeStore,
+          activePurchaseAuthority,
+          activePurchaseStore
+        );
         return jsonResponse(response, status.ready ? 200 : 503, status, origin);
       }
       const initMatch = url.pathname.match(new RegExp("^/v1/combat/([^/]+)/init$"));

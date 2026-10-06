@@ -10179,3 +10179,31 @@ La suite se conecta al workflow de combat para validar el boundary junto con las
 No se modificaron combat_core.js, balance, damage, stamina, hit/miss, reward amounts, Player Meta ni BONE-004. No se inició BONE-010/BONE-011.
 
 BONE-004 permanece OPEN/BLOCKED.
+
+
+---
+
+## BONE-011-AUTH-004 · PURCHASE READINESS AND FAIL-CLOSED DEPLOYMENT GATE
+
+Fecha: 2026-10-06
+BASE SHA: 6a6b8d6d335054e428e7ad3a304ae6914bcd2f13
+TIMER: 1–2 horas
+RESULT: PASS / readiness económico fail-closed
+
+Se añadió purchase readiness explícito a GET /ready mediante backend/src/purchase_readiness.mjs.
+
+La señal económica exige:
+- PurchaseAuthority disponible;
+- PurchaseStore presente y adecuado al modo;
+- providerVerifier disponible.
+
+La evaluación es pura y no ejecuta verificación de receipt, authorize ni grants.
+
+Tests R1–R7 cubren provider ausente, persistence no durable, configuración durable inyectada, combat ready con purchase no ready, test mode, secret safety y no side effects.
+
+BONE-011 permanece OPEN / IN PROGRESS.
+BONE-004 permanece OPEN / BLOCKED.
+BONE-010 permanece CLOSED.
+GLOBAL GATE permanece CERRADO.
+GAMEPLAY: NO CHANGE.
+BALANCE: NO CHANGE.

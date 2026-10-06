@@ -11,6 +11,7 @@ import { createAuthorityServer } from "../src/server.mjs";
 import { loadConfig } from "../src/config.mjs";
 import { InMemoryCombatStore } from "../src/combat_store.mjs";
 import { createEphemeralTestSigner } from "../src/attestation_signer.mjs";
+import { evaluatePurchaseReadiness, purchaseReadinessSatisfied } from "../src/purchase_readiness.mjs";
 
 const RECEIPTS = new Map([
   ["receipt-valid", { playerId: "player-001", productId: "scrap_5000", amount: 1, currency: "XTR", provider: "test-provider", transactionId: "txn-001", purchaseId: "purchase-001", grantKind: "scrap", grantAmount: 5000 }],
@@ -367,4 +368,167 @@ test("Q · repeated status lookup has no duplicate grant mutation", async () => 
   } finally {
     await new Promise((resolve) => instance.server.close(resolve));
   }
+});
+
+
+function productionReadinessConfig() {
+  return loadConfig({
+    NODE_ENV: "production",
+    PORT: "0",
+    REWARD_SIGNING_PRIVATE_KEY: "fixture-key-material",
+    TELEGRAM_BOT_TOKEN: "fixture-bot-token",
+    ALLOWED_ORIGINS: "https://example.github.io",
+    AUTHORITY_PERSISTENCE_PROVIDER: "managed",
+    AUTHORITY_PERSISTENCE_DSN: "fixture://managed-persistence"
+  });
+}
+
+function readinessServerParts({ purchaseStore, purchaseVerifier = verifierFor(), combatStore = { isDurable: true } }) {
+  return {
+    config: productionReadinessConfig(),
+    store: combatStore,
+    signer: createEphemeralTestSigner(),
+    purchaseStore,
+    purchaseVerifier
+  };
+}
+
+test("R1 · production without purchase provider is not ready", async () => {
+  const instance = createAuthorityServer(readinessServerParts({
+    purchaseStore: new InMemoryPurchaseStore(),
+    purchaseVerifier: null
+  }));
+  await new Promise((resolve) => instance.server.listen(0, resolve));
+  try {
+    const response = await fetch("http://127.0.0.1:" + instance.server.address().port + "/ready");
+    assert.equal(response.status, 503);
+    const body = await response.json();
+    assert.equal(body.ready, false);
+    assert.equal(body.purchase_authority, true);
+    assert.equal(body.purchase_persistence, false);
+    assert.equal(body.purchase_provider, false);
+  } finally {
+    await new Promise((resolve) => instance.server.close(resolve));
+  }
+});
+
+test("R2 · production with non-durable purchase persistence is not ready", async () => {
+  const instance = createAuthorityServer(readinessServerParts({
+    purchaseStore: new InMemoryPurchaseStore(),
+    purchaseVerifier: verifierFor()
+  }));
+  await new Promise((resolve) => instance.server.listen(0, resolve));
+  try {
+    const response = await fetch("http://127.0.0.1:" + instance.server.address().port + "/ready");
+    assert.equal(response.status, 503);
+    const body = await response.json();
+    assert.equal(body.ready, false);
+    assert.equal(body.purchase_authority, true);
+    assert.equal(body.purchase_persistence, false);
+    assert.equal(body.purchase_provider, true);
+  } finally {
+    await new Promise((resolve) => instance.server.close(resolve));
+  }
+});
+
+test("R3 · production purchase authority is ready with configured provider and durable injected store", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "basewarriors-purchase-readiness-"));
+  const purchaseStore = new PersistentPurchaseStore({ filePath: join(directory, "purchases.json") });
+  const instance = createAuthorityServer(readinessServerParts({
+    purchaseStore,
+    purchaseVerifier: verifierFor()
+  }));
+  await new Promise((resolve) => instance.server.listen(0, resolve));
+  try {
+    const response = await fetch("http://127.0.0.1:" + instance.server.address().port + "/ready");
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.ready, true);
+    assert.equal(body.purchase_authority, true);
+    assert.equal(body.purchase_persistence, true);
+    assert.equal(body.purchase_provider, true);
+  } finally {
+    await new Promise((resolve) => instance.server.close(resolve));
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("R4 · combat readiness cannot mask missing purchase readiness", async () => {
+  const instance = createAuthorityServer(readinessServerParts({
+    purchaseStore: new InMemoryPurchaseStore(),
+    purchaseVerifier: null
+  }));
+  await new Promise((resolve) => instance.server.listen(0, resolve));
+  try {
+    const response = await fetch("http://127.0.0.1:" + instance.server.address().port + "/ready");
+    assert.equal(response.status, 503);
+    assert.equal((await response.json()).ready, false);
+  } finally {
+    await new Promise((resolve) => instance.server.close(resolve));
+  }
+});
+
+test("R5 · test mode accepts injected purchase provider/store without changing the authority contract", () => {
+  const config = loadConfig({ NODE_ENV: "test", PORT: "0", ALLOWED_ORIGINS: "*" });
+  const purchaseStore = new InMemoryPurchaseStore();
+  const verifier = verifierFor();
+  const authority = new PurchaseAuthority({
+    store: purchaseStore,
+    providerVerifier: verifier,
+    production: false
+  });
+  const status = evaluatePurchaseReadiness({ config, purchaseAuthority: authority, purchaseStore });
+  assert.equal(status.purchase_authority, true);
+  assert.equal(status.purchase_persistence, false);
+  assert.equal(status.purchase_provider, true);
+  assert.equal(purchaseReadinessSatisfied(status), false);
+});
+
+test("R6 · purchase readiness response exposes no secrets", async () => {
+  const instance = createAuthorityServer(readinessServerParts({
+    purchaseStore: new InMemoryPurchaseStore(),
+    purchaseVerifier: null
+  }));
+  await new Promise((resolve) => instance.server.listen(0, resolve));
+  try {
+    const response = await fetch("http://127.0.0.1:" + instance.server.address().port + "/ready");
+    const body = await response.json();
+    assert.equal(body.private_key, undefined);
+    assert.equal(body.telegram_bot_token, undefined);
+    assert.equal(body.persistence_dsn, undefined);
+    assert.equal(body.receipt, undefined);
+    assert.equal(body.provider_verifier, undefined);
+  } finally {
+    await new Promise((resolve) => instance.server.close(resolve));
+  }
+});
+
+test("R7 · readiness evaluation never invokes receipt verification or authorization", async () => {
+  let verifierCalls = 0;
+  let authorizeCalls = 0;
+  const providerVerifier = createPurchaseProviderVerifier({
+    verifyReceipt: async () => {
+      verifierCalls += 1;
+      return { status: PURCHASE_PROVIDER_VERIFICATION.VERIFIED };
+    }
+  });
+  const purchaseAuthority = Object.freeze({
+    authorize: async () => {
+      authorizeCalls += 1;
+      return { status: PURCHASE_AUTHORITY_RESULT.AUTHORIZED_GRANT };
+    },
+    getStatus: () => null,
+    providerVerifier
+  });
+  const directory = await mkdtemp(join(tmpdir(), "basewarriors-purchase-readiness-noop-"));
+  const purchaseStore = new PersistentPurchaseStore({ filePath: join(directory, "purchases.json") });
+  const status = evaluatePurchaseReadiness({
+    config: productionReadinessConfig(),
+    purchaseAuthority,
+    purchaseStore
+  });
+  assert.equal(purchaseReadinessSatisfied(status), true);
+  assert.equal(verifierCalls, 0);
+  assert.equal(authorizeCalls, 0);
+  await rm(directory, { recursive: true, force: true });
 });

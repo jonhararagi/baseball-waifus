@@ -198,3 +198,37 @@ BONE-004 permanece **OPEN / BLOCKED**.
 BONE-010 permanece **CLOSED**.
 
 GLOBAL GATE permanece **CERRADO** por los Bones críticos restantes.
+
+
+## BONE-011-AUTH-004 · PURCHASE READINESS AND FAIL-CLOSED DEPLOYMENT GATE
+
+Estado del checkpoint: CLOSED.  
+Estado de BONE-011: OPEN / IN PROGRESS.
+
+HEAD BEFORE: 6a6b8d6d335054e428e7ad3a304ae6914bcd2f13
+HEAD AFTER: checkpoint final de este cambio, reportado al validar main.
+TIMER: 1–2 horas.
+
+Implementación:
+- nuevo seam puro backend/src/purchase_readiness.mjs;
+- GET /ready incorpora purchase_authority, purchase_persistence y purchase_provider;
+- overall ready exige la autoridad económica además de signing/authentication/combat persistence;
+- readiness no ejecuta authorize ni verifyReceipt;
+- readiness no expone secretos.
+
+Tests BONE-011 añadidos R1–R7:
+- production sin provider;
+- purchase persistence no durable;
+- provider + persistence durable inyectados;
+- combat ready pero purchase no ready;
+- test mode;
+- secret safety;
+- no verification/authorization durante readiness.
+
+Production: NOT CONFIGURED.
+BONE-004: OPEN / BLOCKED / unchanged.
+BONE-010: CLOSED / unchanged.
+BONE-011: OPEN / IN PROGRESS.
+GLOBAL GATE: CERRADO.
+GAMEPLAY: NO CHANGE.
+BALANCE: NO CHANGE.
