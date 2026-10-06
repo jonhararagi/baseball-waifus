@@ -394,3 +394,103 @@ BONE-011: OPEN / IN PROGRESS.
 GLOBAL GATE: CERRADO.
 
 Production provider remains NOT CONFIGURED. No real provider, secret, API key or credential was introduced.
+
+
+## BONE-011-AUTH-007 · ONE-TIME PURCHASE GRANT CLAIM AUTHORITY
+
+Estado del checkpoint: CLOSED.  
+Estado de BONE-011: OPEN / IN PROGRESS.
+
+HEAD BEFORE: `dd6f024179fa750de7b6e8bbfb10831df17c043f`  
+HEAD AFTER: `2e296a4517a59fda59d7f67db709c6c00eb342e7`  
+TIMER: ~1.5–2.5 horas.  
+RESULT: PASS
+
+### Claim authority
+
+Se añadió la frontera durable:
+
+`AUTHORIZED_GRANT → UNCLAIMED → GRANT_CLAIMED → GRANT_ALREADY_CLAIMED`
+
+con endpoint:
+
+`POST /v1/purchases/:purchaseId/claim`
+
+La identidad procede de la autenticación existente y no de campos del request.
+
+El endpoint no acepta autoridad económica enviada por el cliente. Se rechazan campos como playerId, amount, resource, grant, authority, claimed y grant_amount.
+
+### Persistence
+
+`PurchaseStore` mantiene la única fuente de verdad del estado de compra mediante `claimStatus`.
+
+Los registros históricos sin claimStatus se interpretan de forma compatible como `UNCLAIMED`, preservando AUTH-006.
+
+`PersistentPurchaseStore.claimPurchase()` realiza la transición y la escritura atómica en el mismo documento de compra. No se creó un ledger paralelo.
+
+### Exactly-once claim
+
+Primera reclamación:
+
+`GRANT_CLAIMED`
+
+Reclamación posterior:
+
+`GRANT_ALREADY_CLAIMED`
+
+No se ejecuta ninguna mutación de Scrap, boosts, Player Meta ni otra economía en AUTH-007.
+
+Dos llamadas concurrentes sobre la misma compra produjeron exactamente un ganador y un resultado ya reclamado.
+
+### Callback interaction
+
+Un callback duplicado mantiene la compra ya reclamada. `authorizeProviderCallback()` conserva el registro existente y no devuelve su estado a `UNCLAIMED`.
+
+La secuencia verificada fue:
+
+`callback → AUTHORIZED_GRANT → claim → GRANT_CLAIMED → duplicate callback → claim → GRANT_ALREADY_CLAIMED`
+
+### Identity / read-only / unknown
+
+- otro jugador no puede reclamar la compra;
+- purchaseId desconocido produce semántica segura NOT_FOUND;
+- `GET /v1/purchases/:purchaseId` permanece read-only;
+- status después de claim refleja `GRANT_CLAIMED`.
+
+### Tests
+
+GitHub Actions Run `37520223734` = SUCCESS.
+
+El workflow ejecutó:
+
+- backend syntax = PASS;
+- backend authority suite = PASS;
+- production/security config suite = PASS;
+- purchase claim authority suite = PASS;
+- container smoke = PASS.
+
+La suite alcanzó **82/82 PASS** en el checkpoint final, incluyendo los nuevos casos A–K de AUTH-007.
+
+### Scope
+
+GAMEPLAY: NO CHANGE.  
+BALANCE: NO CHANGE.  
+ECONOMY APPLICATION: NO CHANGE.  
+GACHA/PITY: NO CHANGE.  
+BONE-004: OPEN / BLOCKED / UNCHANGED.  
+BONE-005: CLOSED / UNCHANGED.  
+BONE-006: CLOSED / UNCHANGED.  
+BONE-007: CLOSED / UNCHANGED.  
+BONE-008: CLOSED / UNCHANGED.  
+BONE-009: CLOSED / UNCHANGED.  
+BONE-010: CLOSED / UNCHANGED.  
+BONE-011: OPEN / IN PROGRESS.  
+GLOBAL GATE: CERRADO.
+
+### Production
+
+No provider real de pagos fue creado ni configurado en AUTH-007.
+
+No se añadieron secrets, private keys, Bot Tokens ni deployment productivo.
+
+AUTH-007 cierra únicamente la frontera de claim durable; BONE-011 completo permanece abierto hasta la autoridad monetaria productiva y sus dependencias.

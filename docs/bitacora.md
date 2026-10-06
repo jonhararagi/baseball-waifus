@@ -10311,3 +10311,52 @@ Evidence:
 - BONE-005, BONE-006, BONE-007, BONE-008, BONE-009 y BONE-010 permanecen CLOSED.
 - BONE-011 permanece OPEN/IN PROGRESS.
 - GLOBAL GATE permanece CERRADO.
+
+
+---
+
+## BONE-011-AUTH-007 · ONE-TIME PURCHASE GRANT CLAIM AUTHORITY
+
+Fecha: 2026-10-06  
+HEAD BEFORE: `dd6f024179fa750de7b6e8bbfb10831df17c043f`  
+HEAD AFTER: `2e296a4517a59fda59d7f67db709c6c00eb342e7`  
+TIMER: ~1.5–2.5 horas  
+RESULT: PASS / CHECKPOINT CLOSED
+
+Se implementó `POST /v1/purchases/:purchaseId/claim` sin aplicar todavía ninguna recompensa económica al jugador.
+
+Estado durable:
+
+`AUTHORIZED_GRANT → UNCLAIMED → GRANT_CLAIMED → GRANT_ALREADY_CLAIMED`
+
+El `PurchaseStore` es la única fuente de verdad; `claimStatus` se persiste junto con la compra existente.
+
+Evidence:
+
+- first claim = GRANT_CLAIMED;
+- repeated claim = GRANT_ALREADY_CLAIMED;
+- restart/reconstruction = GRANT_ALREADY_CLAIMED;
+- duplicate provider callback preserva GRANT_CLAIMED;
+- identity isolation = PASS;
+- client authority/economic injection = REJECTED;
+- unknown purchase = safe NOT_FOUND;
+- GET purchase status = read-only;
+- concurrent claims = exactamente 1 ganador;
+- no Scrap/boost/Player Meta mutation en AUTH-007.
+
+GitHub Actions Run `37520223734` = SUCCESS.
+
+Suite final: **82 PASS / 0 FAIL**.
+
+Container smoke: PASS.
+
+GAMEPLAY: NO CHANGE.  
+BALANCE: NO CHANGE.  
+BONE-004: OPEN / BLOCKED.  
+BONE-005: CLOSED.  
+BONE-006: CLOSED.  
+BONE-010: CLOSED.  
+BONE-011: OPEN / IN PROGRESS.  
+GLOBAL GATE: CERRADO.
+
+Production provider/secrets/deployment: NOT CONFIGURED.
