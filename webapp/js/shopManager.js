@@ -82,9 +82,9 @@ export class ShopManager {
       if (!raw) return null;
       const parsed = JSON.parse(raw);
       const item = parsed?.[String(productId)] || null;
-      if (!item?.purchaseId) return null;
+      if (!item?.purchaseId && !item?.idempotencyKey) return null;
       return {
-        purchaseId: normalizePurchaseId(item.purchaseId),
+        purchaseId: item.purchaseId ? normalizePurchaseId(item.purchaseId) : null,
         idempotencyKey: String(item.idempotencyKey || "")
       };
     } catch {
@@ -97,7 +97,7 @@ export class ShopManager {
       const raw = this.storage?.getItem?.(PENDING_PURCHASE_STORAGE_KEY);
       const data = raw ? JSON.parse(raw) : {};
       data[String(productId)] = {
-        purchaseId: normalizePurchaseId(purchaseId),
+        purchaseId: purchaseId ? normalizePurchaseId(purchaseId) : null,
         idempotencyKey: String(idempotencyKey || "")
       };
       this.storage?.setItem?.(PENDING_PURCHASE_STORAGE_KEY, JSON.stringify(data));
@@ -200,11 +200,11 @@ export class ShopManager {
       error: null
     });
 
-    let idempotencyKey = this._inflightKeys.get(normalizedProductId);
-    if (!idempotencyKey) {
-      idempotencyKey = this._readRecovery(normalizedProductId)?.idempotencyKey || makeIdempotencyKey(normalizedProductId);
-      this._inflightKeys.set(normalizedProductId, idempotencyKey);
-    }
+    let idempotencyKey = this._inflightKeys.get(normalizedProductId)
+      || this._readRecovery(normalizedProductId)?.idempotencyKey
+      || makeIdempotencyKey(normalizedProductId);
+    this._inflightKeys.set(normalizedProductId, idempotencyKey);
+    this._writeRecovery(normalizedProductId, null, idempotencyKey);
 
     let pending;
     try {
