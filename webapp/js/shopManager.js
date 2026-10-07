@@ -313,6 +313,7 @@ export class ShopManager {
     this._setState({
       status: CHECKOUT_STATUS.SYNCING_AUTHORITY,
       purchaseId: id,
+      productId: resolvedProductId,
       economicSideEffect: false,
       error: null
     });
@@ -420,6 +421,7 @@ export class ShopManager {
     this._setState({
       status: CHECKOUT_STATUS.CLAIMING,
       purchaseId,
+      productId,
       authorityStatus: "AUTHORIZED_GRANT",
       economicSideEffect: false,
       error: null
@@ -478,6 +480,7 @@ export class ShopManager {
     this._setState({
       status: CHECKOUT_STATUS.APPLYING,
       purchaseId,
+      productId,
       authorityStatus: claimDto?.status || String(statusDto?.status || "GRANT_CLAIMED"),
       economicSideEffect: false,
       error: null

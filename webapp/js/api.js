@@ -182,6 +182,48 @@ export class BaseballWaifusApi {
     return payload;
   }
 
+  async claimPurchase(purchaseId) {
+    if (!this.configured()) throw new Error("Purchase API base URL is not configured");
+    const id = encodeURIComponent(String(purchaseId || ""));
+    if (!id) throw new Error("purchaseId is required");
+    const response = await requestWithTimeout(
+      this.baseUrl + "/v1/purchases/" + id + "/claim",
+      {
+        method: "POST",
+        headers: {
+          ...this._headers(),
+          "content-type": "application/json"
+        },
+        body: "{}"
+      },
+      this.timeoutMs
+    );
+    const payload = await parseResponse(response);
+    if (!isPurchaseClaimDTO(payload)) throw new Error("Invalid purchase claim response");
+    return payload;
+  }
+
+  async applyPurchaseGrant(purchaseId) {
+    if (!this.configured()) throw new Error("Purchase API base URL is not configured");
+    const id = encodeURIComponent(String(purchaseId || ""));
+    if (!id) throw new Error("purchaseId is required");
+    const response = await requestWithTimeout(
+      this.baseUrl + "/v1/purchases/" + id + "/apply",
+      {
+        method: "POST",
+        headers: {
+          ...this._headers(),
+          "content-type": "application/json"
+        },
+        body: "{}"
+      },
+      this.timeoutMs
+    );
+    const payload = await parseResponse(response);
+    if (!isPurchaseApplyDTO(payload)) throw new Error("Invalid purchase grant application response");
+    return payload;
+  }
+
   async getPurchaseStatus(purchaseId) {
     if (!this.configured()) throw new Error("Purchase API base URL is not configured");
     const id = encodeURIComponent(String(purchaseId || ""));
@@ -380,6 +422,38 @@ export function isPurchaseStatusDTO(payload) {
 }
 
 export { PURCHASE_STATUSES };
+
+export function isPurchaseClaimDTO(payload) {
+  return Boolean(
+    isObject(payload)
+    && PURCHASE_CLAIM_STATUSES.includes(String(payload.status || ""))
+    && typeof payload.purchase_id === "string"
+    && payload.purchase_id.length > 0
+    && typeof payload.product_id === "string"
+    && payload.product_id.length > 0
+    && typeof payload.provider === "string"
+    && typeof payload.grant_kind === "string"
+    && Number.isFinite(Number(payload.grant_amount))
+  );
+}
+
+export function isPurchaseApplyDTO(payload) {
+  return Boolean(
+    isObject(payload)
+    && PURCHASE_APPLY_STATUSES.includes(String(payload.status || ""))
+    && typeof payload.purchase_id === "string"
+    && payload.purchase_id.length > 0
+    && typeof payload.fulfillment_id === "string"
+    && payload.fulfillment_id.length > 0
+    && typeof payload.product_id === "string"
+    && payload.product_id.length > 0
+    && typeof payload.provider === "string"
+    && typeof payload.grant_kind === "string"
+    && Number.isFinite(Number(payload.grant_amount))
+  );
+}
+
+export { PURCHASE_CLAIM_STATUSES, PURCHASE_APPLY_STATUSES };
 
 export function isPurchaseClaimDTO(payload) {
   return Boolean(
