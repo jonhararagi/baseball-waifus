@@ -56,7 +56,7 @@ jobs:
           cp backend/Dockerfile backend/package.json "$CONTEXT/backend/"
           cp backend/.dockerignore "$CONTEXT/.dockerignore"
           cp -R backend/src "$CONTEXT/backend/src"
-          cp webapp/js/combat_core.js webapp/js/reward_authority.js "$CONTEXT/webapp/js/"
+          cp webapp/js/combat_core.js webapp/js/reward_authority.js webapp/js/player_meta_state.js "$CONTEXT/webapp/js/"
           docker buildx build --platform linux/amd64 --load --tag basewarriors-authority:test --file "$CONTEXT/backend/Dockerfile" "$CONTEXT"
 
       - name: Run backend container smoke check
