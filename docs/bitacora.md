@@ -10757,3 +10757,57 @@ AUTH-013 = CHECKPOINT RECONCILED. La implementación de checkout server-authorit
 AUTH-018 = BLOCKED / EXTERNAL DEPENDENCIES. No se registra proveedor productivo, persistence gestionada, secrets verificables directamente, HTTPS, webhook, deployment, pago real, callback real ni persistence real. El bloqueo externo permanece documentado y no se convierte en implementación ficticia.
 
 No se realizaron cambios funcionales, gameplay, combat, economía ni PurchaseAuthority/Telegram Stars runtime. BONE-004 permanece OPEN / BLOCKED. BONE-005 y BONE-006 permanecen CLOSED. BONE-011 permanece OPEN / IN PROGRESS. GLOBAL GATE permanece CERRADO.
+
+
+---
+
+## BONE-011-AUTH-021 · PRODUCTION INFRASTRUCTURE HANDOFF
+
+Fecha: 2026-10-07  
+HEAD BEFORE: `934ba64989855cfe9beea6a745dbe74bc30e60b3`  
+TIMER: 1–2 horas  
+RESULT: PARTIAL
+
+Se persistió un inventario exacto de la frontera productiva de BONE-011.
+
+### Implemented
+
+- backend authority;
+- Telegram server authentication;
+- ECDSA reward attestation;
+- development/integration durable persistence;
+- concurrency;
+- PurchaseAuthority y Telegram Stars adapter;
+- producción fail-closed;
+- Docker contract;
+- workflow manual de deployment contract;
+- health/readiness.
+
+### Configured / Verified
+
+No existe evidencia de provider productivo, managed persistence, backend host, registry, HTTPS, domain o webhook productivo.
+
+GitHub Secrets/Environment values no son accesibles mediante la conexión actual; sus valores no fueron leídos ni inferidos.
+
+### Implementation gap
+
+`AUTHORITY_PERSISTENCE_PROVIDER=managed` es el requisito de producción, pero `backend/src/persistence_provider.mjs` no contiene un managed adapter. El arranque productivo se niega a continuar hasta que exista el wiring/provider externo compatible con el store contract.
+
+### Evidence
+
+- Current HEAD = `934ba64989855cfe9beea6a745dbe74bc30e60b3`.
+- Backend Authority Tests Run `37559356541` = SUCCESS sobre `3af3ce0c2656d19bed58f3e9ccc3aff17bfb429d`.
+- Compare desde ese SHA al HEAD actual muestra ausencia de cambios en `backend/`.
+- Deployment workflow tiene `workflow_dispatch` y environment `production`, pero no registra runs y no hace deployment externo.
+- Árbol del repo no contiene secret files ni configuración vendor-specific detectada.
+- Production endpoint/HTTPS smoke: NOT_RUN porque no existe endpoint externo verificable.
+
+### Status
+
+BONE-004 = OPEN / BLOCKED.  
+BONE-011 = OPEN / IN PROGRESS.  
+GLOBAL GATE = CERRADO.
+
+### Next checkpoint
+
+PRODUCTION ACTIVATION + REAL DEPLOYMENT + HEALTH + READINESS + AUTHORITY SMOKE TEST, una vez resuelto el managed persistence implementation gap y provisionada la infraestructura externa.

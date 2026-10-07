@@ -1415,3 +1415,162 @@ BONE-006: CLOSED / unchanged.
 BONE-010: CLOSED / unchanged.  
 BONE-011: OPEN / IN PROGRESS.  
 GLOBAL GATE: CERRADO.
+
+
+---
+
+## BONE-011-AUTH-021 · PRODUCTION INFRASTRUCTURE HANDOFF CHECKPOINT
+
+Fecha: 2026-10-07  
+HEAD BEFORE: `934ba64989855cfe9beea6a745dbe74bc30e60b3`  
+RESULT: PARTIAL / HANDOFF COMPLETE WITH INTERNAL IMPLEMENTATION GAP  
+TIMER: 1–2 horas
+
+### CURRENT STATE
+
+El repositorio contiene la autoridad backend, la frontera Telegram, el signer ECDSA, persistencia durable de desarrollo/integration, concurrencia, PurchaseAuthority y el contrato de producción. No existe evidencia de infraestructura productiva desplegada.
+
+Estados confirmados:
+
+- BONE-004 = OPEN / BLOCKED.
+- BONE-011 = OPEN / IN PROGRESS.
+- GLOBAL GATE = CERRADO.
+- BONE-005 = CLOSED.
+- BONE-006 = CLOSED.
+- BONE-010 = CLOSED.
+
+### PRODUCTION REQUIREMENTS MATRIX
+
+| Elemento | Estado repositorio | Configuración externa | Verificación actual | Quién/de dónde depende |
+|---|---|---|---|---|
+| REWARD_SIGNING_PRIVATE_KEY | IMPLEMENTED | UNKNOWN / NOT_ACCESSIBLE | NOT_VERIFIABLE | GitHub Environment/secret manager + operador de producción |
+| TELEGRAM_BOT_TOKEN | IMPLEMENTED | UNKNOWN / NOT_ACCESSIBLE | NOT_VERIFIABLE | Telegram bot owner + production secret manager |
+| AUTHORITY_ALLOWED_ORIGINS | IMPLEMENTED | UNKNOWN / NOT_ACCESSIBLE | NOT_VERIFIABLE | operador de producción / GitHub Environment variable |
+| AUTHORITY_PERSISTENCE_PROVIDER | IMPLEMENTED contract: managed | MISSING | PASS_STATIC | implementación/wiring de persistence + operador de infraestructura |
+| AUTHORITY_PERSISTENCE_DSN | IMPLEMENTED contract | UNKNOWN / NOT_ACCESSIBLE; no provider configured in repo | NOT_VERIFIABLE | managed database operator |
+| MANAGED DATABASE | NO adapter productivo | MISSING | NOT_READY | infraestructura externa + wiring interno pendiente |
+| BACKEND HOST | NO target configured | MISSING | NOT_CONFIGURED | proveedor de hosting |
+| CONTAINER REGISTRY | Workflow no hace push | MISSING | PASS_STATIC | proveedor/GHCR/u otro registry futuro |
+| HTTPS / TLS | Contrato preparado | MISSING | NOT_RUN | hosting + certificado/TLS |
+| DOMAIN | No documentado/configurado | MISSING | NOT_RUN | operador DNS/hosting |
+| WEBHOOK | Telegram callback endpoint existe en código | MISSING | NOT_RUN | deployment HTTPS + configuración Telegram |
+| PRODUCTION ENVIRONMENT | `environment: production` declarado en workflow | UNKNOWN / NOT_ACCESSIBLE | PASS_STATIC | configuración GitHub Environment |
+| GITHUB ENVIRONMENT SECRETS | nombres referenciados por workflow | UNKNOWN / NOT_ACCESSIBLE | NOT_VERIFIABLE | GitHub Environment maintainer |
+| GITHUB ACTIONS DEPLOY PERMISSION | workflow tiene `contents: read`, sin provider target/credential de deploy | MISSING | PASS_STATIC | GitHub Environment + proveedor |
+| HEALTH ENDPOINT | IMPLEMENTED | N/A | PASS_STATIC + historical container smoke PASS | backend |
+| READINESS ENDPOINT | IMPLEMENTED fail-closed | N/A | PASS_STATIC + historical container smoke contract | backend + production dependencies |
+| AUTHORITY ENDPOINT | IMPLEMENTED | N/A | PASS_STATIC | backend |
+| LOGGING | IMPLEMENTED básica vía proceso | MISSING managed observability | PASS_STATIC | hosting/observability |
+| MONITORING | NO | MISSING | NOT_RUN | infraestructura externa |
+| BACKUP / RECOVERY | Development filesystem recovery only | MISSING production policy | NOT_RUN | managed database operator |
+
+### SECRET INVENTORY
+
+Los nombres de secrets/variables aparecen en el workflow, pero la conexión GitHub disponible no expone la API de Secrets/Environment values.
+
+Por tanto:
+
+- `REWARD_SIGNING_PRIVATE_KEY`: NOT_ACCESSIBLE.
+- `TELEGRAM_BOT_TOKEN`: NOT_ACCESSIBLE.
+- `AUTHORITY_ALLOWED_ORIGINS`: NOT_ACCESSIBLE.
+- `AUTHORITY_PERSISTENCE_PROVIDER`: NOT_ACCESSIBLE.
+- `AUTHORITY_PERSISTENCE_DSN`: NOT_ACCESSIBLE.
+
+No se imprimieron valores sensibles ni se intentó recuperarlos.
+
+El árbol del repositorio no contiene archivos `.env`, `.pem`, `.key`, `.p12`, `.pfx` o `.jwk`.
+
+### PERSISTENCE
+
+Existe la interfaz provider-neutral y el provider filesystem de desarrollo/integration.
+
+En producción, `AUTHORITY_PERSISTENCE_PROVIDER=managed` es obligatorio, pero `backend/src/persistence_provider.mjs` no contiene un managed adapter. El camino productivo actual falla cerradamente y declara que el wiring del proveedor externo debe ser suministrado antes del arranque.
+
+**IMPLEMENTATION GAP:** antes del deployment real debe existir un adapter/wiring de persistence gestionada compatible con `CombatService` y con el contrato `createMatch/loadMatch/saveMatch/markRewardAuthorized/hasRewardAuthorized`. No se implementa en AUTH-021.
+
+### DEPLOYMENT CONTRACT
+
+`.github/workflows/backend-authority-deploy.yml` está implementado y es manual mediante `workflow_dispatch`.
+
+Puede realizar:
+
+1. checkout;
+2. backend tests;
+3. gate de secrets/configuración externa;
+4. validación de origins explícitos;
+5. build reproducible del container;
+6. comprobación básica de secret-safety de la imagen.
+
+El workflow **no** hace push a un registry ni deploy a un host. Su último paso es un handoff explícito que declara que no existe proveedor externo configurado.
+
+Por tanto:
+
+**último paso realizable actualmente:** build + secret-safety/handoff en GitHub Actions.  
+**primer paso que depende de infraestructura externa:** provisioning/selection de managed persistence, registry/host, secrets, DNS/TLS y deployment HTTPS.
+
+### SECURITY BOUNDARY
+
+La frontera actual permanece fail-closed:
+
+- production rechaza wildcard CORS;
+- production exige signing key;
+- production exige Telegram Bot Token;
+- production exige persistence provider `managed` + DSN;
+- no se usa `initDataUnsafe` como autoridad;
+- private key no aparece en public JWK;
+- Dockerfile no recibe signing key mediante `ARG`/runtime build instruction;
+- `.dockerignore` excluye secret files.
+
+### VALIDATION
+
+**AUTH-021 executions:** no se ejecutaron workflows ni tests nuevos de runtime.
+
+Evidencia histórica aplicable porque no hubo cambios backend posteriores al último CI backend exitoso:
+
+- Backend Authority Tests Run `37559356541` = SUCCESS sobre `3af3ce0c2656d19bed58f3e9ccc3aff17bfb429d`.
+- Compare `3af3ce0c2656d19bed58f3e9ccc3aff17bfb429d...934ba64989855cfe9beea6a745dbe74bc30e60b3` muestra que los cambios posteriores afectan únicamente `docs/bitacora.md`, `problemas de huesos/BONE-011-monetization-authority.md` y superficies cliente de checkout; no se modificó `backend/`.
+- Por ello el backend test suite y production_config suite conservan evidencia **PASS_REAL histórica**, no nueva.
+- Workflow de deployment productivo: **0 runs** en el historial consultado.
+- Provider searches en el repositorio para Railway, Render, Fly.io, Vercel, Supabase, Neon, AWS, GCP, Azure y GHCR: 0 referencias de configuración.
+- Secret files de producción en el árbol: ninguno.
+
+### WHAT CAN BE VERIFIED LOCALLY / WHAT REQUIRES PRODUCTION
+
+Local/CI:
+- backend syntax/tests;
+- fail-closed production config;
+- Docker build/security contract;
+- secret-file exclusion;
+- persistence development provider;
+- authority and purchase contracts.
+
+Solo después de external provisioning/deployment:
+- managed database connectivity;
+- production secret usability;
+- container registry push/pull;
+- backend HTTPS;
+- DNS/TLS;
+- /health productivo;
+- /ready productivo;
+- authenticated Telegram request real;
+- authenticated combat real;
+- real SERVER_COMBAT_ATTESTATION_V1 con production signing key;
+- Telegram Stars callback/webhook real;
+- production monitoring and backup/recovery;
+- client verification against the deployed backend.
+
+### NEXT CHECKPOINT
+
+El siguiente checkpoint único, una vez resuelto el implementation gap y provisionada la infraestructura externa, es:
+
+**PRODUCTION ACTIVATION + REAL DEPLOYMENT + HEALTH + READINESS + AUTHORITY SMOKE TEST**
+
+Sin gameplay, economía, Gacha ni features nuevas.
+
+### FINAL STATUS
+
+AUTH-021 = PARTIAL, porque el inventario de infraestructura ya es reproducible pero el repositorio todavía contiene un **IMPLEMENTATION GAP** concreto para el managed persistence provider/wiring productivo.
+
+BONE-004 permanece OPEN / BLOCKED.  
+BONE-011 permanece OPEN / IN PROGRESS.  
+GLOBAL GATE permanece CERRADO.
