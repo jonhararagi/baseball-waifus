@@ -10741,3 +10741,19 @@ BONE-006: CLOSED / unchanged.
 BONE-010: CLOSED / unchanged.  
 BONE-011: OPEN / IN PROGRESS.  
 GLOBAL GATE: CERRADO.
+
+
+---
+
+## BONE-011-CONT-002 · CHECKPOINT RECONCILIATION AUTH-013 + AUTH-018
+
+Fecha: 2026-10-06  
+HEAD BASE VALIDADO: `c5eb3a8e8641478907ec9b0e77c2d72dc9226b4f`  
+TIMER: ~45–75 minutos  
+RESULT: PASS / DOCUMENTATION RECONCILED
+
+AUTH-013 = CHECKPOINT RECONCILED. La implementación de checkout server-authoritative y su test `webapp/js/purchase_checkout_test.mjs` existen en `main`. La cobertura directa de AUTH-013 no se declara CI PASS porque su run histórico terminó en failure; la compatibilidad queda respaldada por la regresión posterior AUTH-016: Gacha Player Meta Run `37560140073` = SUCCESS, Telegram Mini App Run `37560332747` = SUCCESS, Visual QA Run `37560332707` = SUCCESS y `purchase_checkout_test.mjs` = PASS.
+
+AUTH-018 = BLOCKED / EXTERNAL DEPENDENCIES. No se registra proveedor productivo, persistence gestionada, secrets verificables directamente, HTTPS, webhook, deployment, pago real, callback real ni persistence real. El bloqueo externo permanece documentado y no se convierte en implementación ficticia.
+
+No se realizaron cambios funcionales, gameplay, combat, economía ni PurchaseAuthority/Telegram Stars runtime. BONE-004 permanece OPEN / BLOCKED. BONE-005 y BONE-006 permanecen CLOSED. BONE-011 permanece OPEN / IN PROGRESS. GLOBAL GATE permanece CERRADO.

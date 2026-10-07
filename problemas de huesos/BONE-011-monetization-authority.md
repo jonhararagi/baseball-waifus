@@ -1326,3 +1326,92 @@ BONE-006: CLOSED / unchanged.
 BONE-010: CLOSED / unchanged.  
 BONE-011: OPEN / IN PROGRESS.  
 GLOBAL GATE: CERRADO.
+
+
+---
+
+## BONE-011-AUTH-013 · SERVER-AUTHORITATIVE PURCHASE CHECKOUT INTEGRATION RECONCILIATION
+
+Fecha: 2026-10-06  
+Checkpoint reconciliado sobre `main` mediante evidencia existente.
+
+### Implementación comprobada
+
+La ruta de checkout fue construida incrementalmente sobre el authority boundary existente:
+
+- `8ad963bdacd0e268a3b35dadff0564e365de3e13` — `feat: wire ShopManager to purchase authority API`.
+- `71ed2e3fd260f67086ade656c056ba25d0125733` — `fix: route shop rewards through server purchase status`.
+- `847edd53f98ca75f0f76309f553e1611b598596c` — `fix: wire app shop to purchase authority API`.
+- `669470741a4982b3f18bd2b7bc62689d91530e4f` — preservación explícita del side effect de demo únicamente en desarrollo.
+- `c67d4e135208ebcde3549bbd3a72c943a1981f73` — `purchase_checkout_test.mjs` creado para validar el wiring de checkout con authority.
+- `b08a2b756fb50481664e72eed37a8e47e1c1b9ef` — añade la cobertura denominada AUTH-013 al workflow de Player Meta.
+- `6dd48128ae3ec415d9b5c125fd50ad720268c0c6` — cobertura de retry/idempotency de checkout.
+- `f18e60852844497c5efd06c84a2dfade45ef227b` — persiste la Idempotency-Key antes de solicitar la compra.
+- `c7e10d425758e678fb91233b7846d199b71f002f` — integración de claims server-authoritative en el checkout.
+- `602289f3f341cfdde6783676d7d96a9b3e6a53e5` — cobertura final del flujo server-authoritative de compra.
+
+### Evidencia de comportamiento
+
+`webapp/js/purchase_checkout_test.mjs` existe actualmente en `main` y comprueba el flujo server-authoritative incluyendo creación de purchase, invoice, status, claim, apply, recovery y retry de idempotency.
+
+AUTH-016 aporta la regresión posterior que confirma el checkout integrado en el árbol actual:
+
+- Gacha Player Meta Integration Tests Run `37560140073` = SUCCESS.
+- Telegram Mini App Run `37560332747` = SUCCESS.
+- Visual QA Run `37560332707` = SUCCESS.
+- `purchase_checkout_test.mjs` = PASS.
+- Browser harness = `PASS_REAL` para el flujo de checkout simulado/integrado, con `local_economic_side_effect=0`.
+
+La implementación productiva evita la ruta local `paid → addScrap`; `SIMULATED_DEMO_ONLY` permanece restringido al entorno de desarrollo. Claim/apply no reciben del cliente amount, currency, grant, playerId ni otros campos de autoridad económica.
+
+### Límites de evidencia
+
+Este checkpoint **no representa un pago real** ni demuestra producción desplegada. No existe evidencia de proveedor de pagos real, credenciales reales, webhook externo real, persistence gestionada productiva ni deployment externo en este árbol.
+
+El run asociado directamente a `b08a2b756fb50481664e72eed37a8e47e1c1b9ef` terminó con `failure`, por lo que **no** se registra como CI PASS de AUTH-013. La cobertura y la implementación quedan sustentadas por el contenido existente en `main` y por la regresión exitosa posterior de AUTH-016.
+
+### Estado
+
+AUTH-013 = CHECKPOINT RECONCILED.  
+IMPLEMENTED: YES.  
+CONFIGURED: NO.  
+DEPLOYED: NO.  
+BONE-004: OPEN / BLOCKED / unchanged.  
+BONE-005: CLOSED / unchanged.  
+BONE-006: CLOSED / unchanged.  
+BONE-010: CLOSED / unchanged.  
+BONE-011: OPEN / IN PROGRESS.  
+GLOBAL GATE: CERRADO.
+
+
+---
+
+## BONE-011-AUTH-018 · EXTERNAL PRODUCTION ACTIVATION RECHECK
+
+Estado: BLOCKED / EXTERNAL DEPENDENCIES
+
+HEAD BEFORE: `c5eb3a8e8641478907ec9b0e77c2d72dc9226b4f`  
+HEAD AFTER: `c5eb3a8e8641478907ec9b0e77c2d72dc9226b4f`
+
+IMPLEMENTED: YES  
+CONFIGURED: NO  
+DEPLOYED: NO
+
+PROVIDER: NOT_CONFIGURED  
+MANAGED PERSISTENCE: NOT_CONFIGURED  
+PRODUCTION SECRETS: NOT_VERIFIABLE_DIRECTLY  
+HTTPS: NOT_CONFIGURED  
+WEBHOOK: NOT_CONFIGURED  
+DEPLOYMENT: NOT EXECUTED  
+REAL PAYMENT: NOT RUN  
+REAL CALLBACK: NOT RUN  
+REAL PERSISTENCE: NOT RUN
+
+Conclusión: no existe evidencia verificable de proveedor productivo, persistence administrada, HTTPS productivo, webhook externo, secret configuration utilizable ni deployment real. AUTH-018 permanece bloqueado por dependencias externas y no se reactiva como tarea de implementación dentro de este checkpoint.
+
+BONE-004: OPEN / BLOCKED / unchanged.  
+BONE-005: CLOSED / unchanged.  
+BONE-006: CLOSED / unchanged.  
+BONE-010: CLOSED / unchanged.  
+BONE-011: OPEN / IN PROGRESS.  
+GLOBAL GATE: CERRADO.
