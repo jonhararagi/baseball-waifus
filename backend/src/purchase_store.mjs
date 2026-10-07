@@ -215,6 +215,30 @@ export class InMemoryPurchaseStore {
     return this._insert(record, "PENDING");
   }
 
+  setInvoiceForPurchase(purchaseId, invoiceUrl, invoicePayload) {
+    const id = stableId(purchaseId, "purchaseId");
+    const url = String(invoiceUrl || "").trim();
+    const payload = String(invoicePayload || "").trim();
+    if (!/^https:\/\//.test(url)) throw new TypeError("Invalid invoice URL");
+    if (!payload) throw new TypeError("Invoice payload is required");
+
+    const document = this._readDocument();
+    const existing = document.purchases[id];
+    if (!existing) return { status: "NOT_FOUND" };
+    if (existing.authorizationStatus !== "PENDING") return { status: "NOT_PENDING", record: clone(existing) };
+    if (existing.invoiceUrl && existing.invoiceUrl !== url) return { status: "CONFLICT", record: clone(existing) };
+
+    const next = {
+      ...existing,
+      invoiceUrl: existing.invoiceUrl || url,
+      invoicePayload: existing.invoicePayload || payload
+    };
+    validateRecord(next);
+    document.purchases[id] = next;
+    this._writeDocument(document);
+    return { status: "UPDATED", record: clone(next) };
+  }
+
   authorizePendingPurchase(record) {
     const id = stableId(record?.purchaseId, "purchaseId");
     const key = transactionKey(record?.provider, record?.providerTransactionId);
