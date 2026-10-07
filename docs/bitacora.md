@@ -10563,3 +10563,57 @@ GLOBAL GATE CERRADO.
 
 GAMEPLAY NO CHANGE.
 BALANCE NO CHANGE.
+
+
+---
+
+## BONE-011-AUTH-014 · SERVER-SIDE PURCHASE GRANT FULFILLMENT LEDGER
+
+Fecha: 2026-10-06  
+HEAD BEFORE: `6dd48128ae3ec415d9b5c125fd50ad720268c0c6`  
+HEAD AFTER: `c10c2099257eaa36a3e6c2a9253d868fb5f7077d`  
+TIMER: ~1.5–2.5 horas  
+RESULT: PASS / CHECKPOINT CLOSED
+
+Se implementó el fulfillment server-side durable de una compra autorizada y reclamada.
+
+Nueva frontera:
+
+`POST /v1/purchases/:purchaseId/fulfill`
+
+El request no puede aportar autoridad económica. La fulfillment se deriva exclusivamente del purchase persistido y exige `claimStatus=GRANT_CLAIMED`.
+
+La fuente durable continúa siendo `PurchaseStore`; el documento incorpora `fulfillments` sin crear un segundo store. La identidad determinista es `purchase-grant:<purchaseId>`.
+
+Validation:
+
+- successful fulfillment = PASS;
+- repeated fulfillment = `GRANT_ALREADY_FULFILLED`;
+- no claim = rejected;
+- PENDING = rejected;
+- owner isolation = PASS;
+- authority injection = rejected;
+- duplicate callback = PASS;
+- GET read-only = PASS;
+- restart recovery = PASS;
+- concurrent fulfillment = exactly one `GRANT_FULFILLED` + one `GRANT_ALREADY_FULFILLED`;
+- one ledger record per purchase = PASS.
+
+GitHub Actions Run `37553061081` = SUCCESS.  
+Job `112572839903` = SUCCESS.  
+Backend suite = **138 PASS / 0 FAIL**.  
+Container smoke = PASS.
+
+No se aplicó la recompensa a Player Meta ni a balances. No se cambiaron gameplay, balance, Gacha, pity, combate ni BONE-004.
+
+Production:
+IMPLEMENTED YES.  
+CONFIGURED NO.  
+DEPLOYED NO.
+
+BONE-004 permanece OPEN / BLOCKED.  
+BONE-005 permanece CLOSED.  
+BONE-006 permanece CLOSED.  
+BONE-010 permanece CLOSED.  
+BONE-011 permanece OPEN / IN PROGRESS.  
+GLOBAL GATE permanece CERRADO.

@@ -936,3 +936,139 @@ GLOBAL GATE: CERRADO.
 
 GAMEPLAY: NO CHANGE.
 BALANCE: NO CHANGE.
+
+
+## BONE-011-AUTH-014 · SERVER-SIDE PURCHASE GRANT FULFILLMENT LEDGER
+
+Fecha: 2026-10-06  
+HEAD BEFORE: `6dd48128ae3ec415d9b5c125fd50ad720268c0c6`  
+IMPLEMENTATION HEAD: `c10c2099257eaa36a3e6c2a9253d868fb5f7077d`  
+TIMER: ~1.5–2.5 horas  
+RESULT: PASS / CHECKPOINT CLOSED
+
+### Fulfillment authority
+
+Se añadió la transición durable:
+
+`AUTHORIZED_GRANT → UNCLAIMED → GRANT_CLAIMED → GRANT_FULFILLED`
+
+mediante `POST /v1/purchases/:purchaseId/fulfill`.
+
+La operación es server-side y autenticada. No acepta body económico ni identidad de cliente como autoridad. El grant se obtiene exclusivamente del purchase record persistido.
+
+No se aplica todavía el grant a Player Meta, Scrap ni boosts. AUTH-014 registra la fulfillment económica auditable para que una etapa posterior pueda consumirla.
+
+### Ledger durable
+
+`PurchaseStore` sigue siendo la única fuente de verdad de la compra. El documento durable existente incorpora `fulfillments` sin crear un PurchaseStore paralelo.
+
+La identidad determinista es:
+
+`purchase-grant:<purchaseId>`
+
+El registro conserva:
+
+- fulfillmentId;
+- purchaseId;
+- playerId;
+- productId;
+- grantKind;
+- grantAmount;
+- currency;
+- provider;
+- providerTransactionId;
+- status;
+- createdAt;
+- fulfilledAt.
+
+La validación exige purchase existente, `GRANT_CLAIMED`, identidad/producto coincidentes y estado `GRANT_FULFILLED`.
+
+### Exactly-once / concurrency
+
+Primera fulfillment:
+
+`GRANT_FULFILLED`
+
+Segunda fulfillment del mismo purchase:
+
+`GRANT_ALREADY_FULFILLED`
+
+Dos requests concurrentes en el mismo boundary persistente produjeron exactamente un resultado de cada tipo y un único ledger record.
+
+### Restart / callback
+
+El ledger sobrevive a una nueva instancia de `PersistentPurchaseStore`.
+
+Secuencia verificada:
+
+`authorize → claim → fulfill → restart → fulfill`
+
+Resultado después de restart:
+
+`GRANT_ALREADY_FULFILLED`
+
+Un callback duplicado posterior a claim + fulfill conserva el purchase y el fulfillment existentes; no resetea claim ni crea un segundo ledger record.
+
+### Invalid states / identity
+
+- purchase inexistente → `NOT_FOUND`;
+- jugador distinto → `NOT_FOUND`;
+- purchase `PENDING` / no autorizada → fulfillment rechazada;
+- purchase autorizado pero `UNCLAIMED` → `CLAIM_REQUIRED`;
+- payload con amount, grant, currency, provider, transaction, claimStatus, authorized, verified, paid, reward u otros campos económicos → rechazado;
+- `GET /v1/purchases/:purchaseId` permanece read-only.
+
+No se exponen datos del purchase ajeno a través del endpoint de fulfillment.
+
+### Regressions / scope
+
+AUTH-007 claim, AUTH-009 Telegram Stars adapter, AUTH-010-R promotion recovery, AUTH-011 purchase creation, AUTH-012 invoice authority y AUTH-013 checkout permanecen dentro de la suite backend completa.
+
+No se modificaron:
+
+- PlayerMetaAuthority;
+- gameplay;
+- combat;
+- Gacha;
+- pity;
+- boosts runtime;
+- CombatRenderer;
+- Combat Core;
+- reward amounts.
+
+### Validation
+
+GitHub Actions Run `37553061081` = SUCCESS.
+
+Job `112572839903` = SUCCESS.
+
+Suite backend:
+`138 PASS / 0 FAIL`
+
+Incluye:
+- syntax PASS;
+- AUTH-014 fulfillment suite PASS;
+- AUTH-007 claim regression PASS;
+- AUTH-012 invoice regression PASS;
+- AUTH-013 relevant checkout/authority regression PASS;
+- container smoke PASS.
+
+Production:
+IMPLEMENTED: YES.  
+CONFIGURED: NO.  
+DEPLOYED: NO.
+
+No se añadieron secrets, Bot Token, API keys, production database ni deployment externo.
+
+BONE-004: OPEN / BLOCKED / unchanged.  
+BONE-005: CLOSED / unchanged.  
+BONE-006: CLOSED / unchanged.  
+BONE-007: CLOSED / unchanged.  
+BONE-008: CLOSED / unchanged.  
+BONE-009: CLOSED / unchanged.  
+BONE-010: CLOSED / unchanged.  
+BONE-011: OPEN / IN PROGRESS.  
+GLOBAL GATE: CERRADO.
+
+GAMEPLAY: NO CHANGE.  
+BALANCE: NO CHANGE.
