@@ -74,7 +74,7 @@ function validateRecord(record) {
 }
 
 function emptyDocument() {
-  return { schemaVersion: SCHEMA_VERSION, purchases: {}, transactions: {} };
+  return { schemaVersion: SCHEMA_VERSION, purchases: {}, transactions: {}, fulfillments: {} };
 }
 
 function normalizePersistedRecord(record) {
@@ -103,10 +103,6 @@ function validateFulfillment(record) {
   if (!Number.isFinite(record.grantAmount) || record.grantAmount < 0) throw new TypeError("Invalid fulfillment grant amount");
   stableId(record.currency, "currency");
   return true;
-}
-
-function emptyDocument() {
-  return { schemaVersion: SCHEMA_VERSION, purchases: {}, transactions: {}, fulfillments: {} };
 }
 
 function validateDocument(document) {
