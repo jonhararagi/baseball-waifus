@@ -175,7 +175,7 @@ const gachaRecruitment = new GachaRecruitmentUI({
   }
 });
 
-const shopManager = new ShopManager({ telegramBridge: telegram });
+const shopManager = new ShopManager({ api, telegramBridge: telegram });
 
 const shopUI = new ShopUI({
   root: shopRoot,
