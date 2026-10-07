@@ -1172,3 +1172,116 @@ REAL CREDENTIALS: NO.
 PRODUCTION EVIDENCE: NO.
 
 AUTH-015-R no implica cierre de BONE-011 completo ni deployment productivo.
+
+
+---
+
+## BONE-011-AUTH-016 · CLIENT PURCHASE CLAIM & SERVER GRANT APPLICATION INTEGRATION
+
+**Fecha:** 2026-10-07  
+**HEAD BEFORE:** `3af3ce0c2656d19bed58f3e9ccc3aff17bfb429d`  
+**HEAD AFTER:** `b94f43cc4593d4bf655a2b64877422b6fdef3394`  
+**TIMER:** ~2–3 horas  
+**RESULT:** PASS / CHECKPOINT CLOSED
+
+Se cerró la integración cliente del checkout server-authoritative para los productos server-supported `scrap_5000` y `scrap_25000`.
+
+### Flujo
+
+`createPendingPurchase → createPurchaseInvoice → Telegram openInvoice → paid → GET status → claim → apply → GRANT_APPLIED`
+
+El cliente nunca aporta autoridad económica en claim/apply. Ambos endpoints envían exclusivamente `{}` y la identidad viaja por la autenticación Telegram existente.
+
+### API client
+
+Se añadieron:
+
+- `claimPurchase(purchaseId)`;
+- `applyPurchaseGrant(purchaseId)`;
+- validadores DTO para `GRANT_CLAIMED`, `GRANT_ALREADY_CLAIMED`, `GRANT_APPLIED` y `GRANT_ALREADY_APPLIED`;
+- errores HTTP estructurados sin alterar la autoridad server-side.
+
+### ShopManager / recovery
+
+El checkout real ahora continúa automáticamente:
+
+`AUTHORIZED_GRANT → CLAIMING → GRANT_CLAIMED → APPLYING → GRANT_APPLIED`
+
+También soporta:
+
+- `GRANT_ALREADY_CLAIMED` → continúa a apply;
+- `GRANT_ALREADY_APPLIED` → estado terminal seguro;
+- `PENDING` → `WAITING_AUTHORITY`, sin claim/apply;
+- timeout de claim/apply → recovery conservado;
+- reload → `recoverStoredPurchase(productId)` retoma el estado server-side;
+- recovery se limpia solamente tras estado terminal aplicado.
+
+### UI / economía
+
+`ShopUI` no ejecuta `addScrap()` para compras reales.
+
+La única acreditación local conserva la ruta explícita `SIMULATED_DEMO_ONLY` en desarrollo.
+
+La confirmación real muestra `RECOMPENSA ACREDITADA` solamente cuando el backend devuelve `GRANT_APPLIED` o `GRANT_ALREADY_APPLIED`.
+
+No se creó un segundo ledger, reward authority, purchase authority ni economy store.
+
+### Security / injection
+
+Los tests verifican que payloads cliente con `amount`, `grant_amount`, `player_id`, `authorized`, `verified` o `claimed` no se convierten en side effect económico local.
+
+La ruta de producción mantiene:
+
+`Telegram PAYMENT RESULT → Backend PurchaseAuthority → Claim → Apply → PlayerMetaAuthority`
+
+### Browser QA
+
+El harness `webapp/bone011_purchase_checkout_browser_harness.html` se publicó por GitHub Pages y se ejecutó en una página renderizada con mocks del backend/provider, sin compra real.
+
+Resultado:
+
+`browser_checkout = PASS_REAL`
+
+Flujo observado:
+
+`SHOP OPEN → CREATE PURCHASE → CREATE INVOICE → PAID → AUTHORIZED → CLAIM → APPLY → CONFIRMED`
+
+Requests observados:
+
+`create, invoice, telegram_open_invoice, status, claim, apply`
+
+`local_economic_side_effect = 0`
+
+`final_status = GRANT_APPLIED`
+
+`console_errors = []`
+
+### CI
+
+- Gacha Player Meta Integration Tests Run `37560140073` = SUCCESS sobre el código funcional del checkout.
+- Baseball Waifus Visual QA Run `37560332707` = SUCCESS sobre `b94f43cc4593d4bf655a2b64877422b6fdef3394`.
+- Baseball Waifus Telegram Mini App Run `37560332747` = SUCCESS sobre `b94f43cc4593d4bf655a2b64877422b6fdef3394`.
+- `purchase_checkout_test.mjs` reportó PASS.
+- Las suites anteriores de AUTH-015-R / AUTH-014 mantienen evidencia PASS según el checkpoint backend previo.
+
+### Scope
+
+**GAMEPLAY:** NO CHANGE.  
+**BALANCE:** NO CHANGE.  
+**GACHA:** NO CHANGE.  
+**PITY:** NO CHANGE.  
+**COMBAT:** NO CHANGE.  
+**BONE-004:** OPEN / BLOCKED / unchanged.  
+**BONE-005:** CLOSED / unchanged.  
+**BONE-006:** CLOSED / unchanged.  
+**BONE-010:** CLOSED / unchanged.  
+**BONE-011:** OPEN / IN PROGRESS.  
+**GLOBAL GATE:** CERRADO.
+
+### Production
+
+`IMPLEMENTED: YES`  
+`CONFIGURED: NO`  
+`DEPLOYED: NO`
+
+AUTH-016 integra la ruta cliente contra la autoridad backend ya existente, pero no constituye deployment productivo real ni cierre completo de BONE-011.

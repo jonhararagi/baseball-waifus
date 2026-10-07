@@ -10649,3 +10649,52 @@ Evidence:
 No se modificaron gameplay, balance, Gacha, pity, combat ni BONE-004. BONE-005 y BONE-006 permanecen CLOSED. BONE-011 permanece OPEN / IN PROGRESS. GLOBAL GATE CERRADO.
 
 Production remains NOT CONFIGURED / NOT DEPLOYED.
+
+
+---
+
+## BONE-011-AUTH-016 · CLIENT PURCHASE CLAIM & SERVER GRANT APPLICATION INTEGRATION
+
+Fecha: 2026-10-07  
+HEAD BEFORE: `3af3ce0c2656d19bed58f3e9ccc3aff17bfb429d`  
+HEAD AFTER: `b94f43cc4593d4bf655a2b64877422b6fdef3394`  
+TIMER: ~2–3 horas  
+RESULT: PASS / CHECKPOINT CLOSED
+
+Se integró el checkout cliente con `POST /v1/purchases/:purchaseId/claim` y `POST /v1/purchases/:purchaseId/apply`.
+
+El cliente envía `{}` a claim/apply, mantiene la autenticación Telegram existente y no aporta amount, currency, grant, playerId ni campos de autoridad económica.
+
+### Checkout
+
+`paid → GET status → AUTHORIZED_GRANT → CLAIMING → GRANT_CLAIMED → APPLYING → GRANT_APPLIED`
+
+`GRANT_ALREADY_CLAIMED` continúa a apply. `GRANT_ALREADY_APPLIED` es terminal seguro. `PENDING` no reclama ni aplica y conserva recovery.
+
+### Recovery
+
+Se conserva `baseball_waifus_purchase_recovery_v1`.
+
+Tras timeout de apply o reload, `recoverStoredPurchase(productId)` consulta al backend y retoma el estado pendiente sin side effect local duplicado.
+
+### Security
+
+No existe `paid → addScrap` en la ruta productiva.
+
+La ruta `SIMULATED_DEMO_ONLY` sigue aislada al entorno de desarrollo.
+
+### Evidence
+
+- `purchase_checkout_test.mjs` = PASS en CI.
+- Gacha Player Meta Integration Tests Run `37560140073` = SUCCESS.
+- Telegram Mini App Run `37560332747` = SUCCESS.
+- Visual QA Run `37560332707` = SUCCESS.
+- Browser harness público = `PASS_REAL`, con flujo completo y `local_economic_side_effect=0`.
+- No se modificaron gameplay, balance, Gacha, pity ni combat.
+
+BONE-004 permanece OPEN/BLOCKED.  
+BONE-005 CLOSED.  
+BONE-006 CLOSED.  
+BONE-010 CLOSED.  
+BONE-011 OPEN/IN PROGRESS.  
+GLOBAL GATE CERRADO.
