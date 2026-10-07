@@ -10518,3 +10518,48 @@ BONE-006 CLOSED.
 BONE-010 CLOSED.
 BONE-011 OPEN/IN PROGRESS.
 GLOBAL GATE CERRADO.
+
+
+---
+
+## BONE-011-AUTH-012 · TELEGRAM STARS INVOICE LINK AUTHORITY SEAM
+
+Fecha: 2026-10-06  
+HEAD BEFORE: 384158704aadee5bdd7c495233edf500d81e731d  
+HEAD AFTER: c72e3e3f115905bfbba594aff82fa5d008cc5dd4  
+TIMER: 1.5–2.5 horas  
+RESULT: PASS / CHECKPOINT CLOSED
+
+Se añadió `POST /v1/purchases/:purchaseId/invoice` como frontera server-side para crear/reutilizar una invoice Telegram Stars asociada a una compra PENDING.
+
+Evidence:
+- TelegramStarsInvoiceService implementado;
+- precio/producto/payload reconstruidos desde PurchaseStore + catálogo server-side;
+- ownership e identidad autenticada comprobados;
+- AUTHORIZED_GRANT y GRANT_CLAIMED bloqueados;
+- client authority injection bloqueada;
+- no economic side effect durante invoice creation;
+- invoiceUrl/invoicePayload persistidos y recuperables tras restart;
+- Bot Token no aparece en response/status/tests;
+- missing Bot Token → 503 fail-closed;
+- GitHub Actions Run 37549763581 = SUCCESS;
+- backend suite = 127 PASS / 0 FAIL.
+
+Production:
+IMPLEMENTED YES
+CONFIGURED NO
+DEPLOYED NO
+REAL TELEGRAM CALL NO
+REAL BOT TOKEN NO
+PRODUCTION EVIDENCE NO
+
+BONE-011 permanece OPEN / IN PROGRESS.
+BONE-004 permanece OPEN / BLOCKED.
+BONE-005 CLOSED.
+BONE-006 CLOSED.
+BONE-010 CLOSED.
+BONE-011 no se declara cerrado.
+GLOBAL GATE CERRADO.
+
+GAMEPLAY NO CHANGE.
+BALANCE NO CHANGE.

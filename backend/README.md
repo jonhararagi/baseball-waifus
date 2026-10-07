@@ -70,3 +70,20 @@ States:
 Provider selection and credential presence are external configuration only. No real provider credentials are stored in the repository.
 
 Production remains NOT CONFIGURED until a real provider adapter, production credentials, durable production operations and external deployment are supplied.
+
+
+## Telegram Stars invoice authority
+
+`POST /v1/purchases/:purchaseId/invoice` creates or reuses a Telegram Stars invoice for an authenticated player's PENDING purchase.
+
+The server owns:
+- purchase ownership;
+- product and amount;
+- currency;
+- deterministic invoice payload.
+
+The endpoint never authorizes or claims a purchase. A verified `successful_payment` callback remains the authority transition.
+
+Telegram Bot Token is injected only through external runtime configuration. No token is stored in the repository or returned by the API.
+
+The repository contains no production Telegram credentials and no deployed provider. Tests inject a simulated HTTP provider.

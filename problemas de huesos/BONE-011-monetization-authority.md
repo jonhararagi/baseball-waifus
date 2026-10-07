@@ -838,3 +838,101 @@ GAMEPLAY: NO CHANGE.
 BALANCE: NO CHANGE.
 GACHA/PITY: NO CHANGE.
 PLAYER META: NO CHANGE.
+
+
+## BONE-011-AUTH-012 · TELEGRAM STARS INVOICE LINK AUTHORITY SEAM
+
+Fecha: 2026-10-06  
+HEAD BEFORE: 384158704aadee5bdd7c495233edf500d81e731d  
+HEAD AFTER: c72e3e3f115905bfbba594aff82fa5d008cc5dd4  
+TIMER: 1.5–2.5 horas  
+RESULT: PASS / CHECKPOINT CLOSED
+
+Se implementó el seam server-side:
+
+POST /v1/purchases/:purchaseId/invoice
+
+La operación autentica al jugador, resuelve el purchase desde PurchaseAuthority, exige ownership y estado PENDING, y reconstruye el invoice payload exclusivamente a partir del purchase persistido y del catálogo Telegram Stars.
+
+### Implementación
+
+- nuevo `TelegramStarsInvoiceService`;
+- llamada provider-specific encapsulada a `createInvoiceLink`;
+- Bot Token solo server-side mediante configuración externa;
+- moneda y precio server-owned (`XTR` y catálogo Telegram Stars);
+- `invoice_payload` determinista y correlacionado con `purchaseId/productId/amount`;
+- respuesta devuelve únicamente `purchase_id`, provider, invoice payload y invoice URL;
+- `invoiceUrl` y `invoicePayload` se persisten en `PurchaseStore`;
+- `AUTHORIZED_GRANT` y `GRANT_CLAIMED` no pueden crear nuevas invoices;
+- unknown/foreign purchase devuelve NOT_FOUND;
+- request body con campos económicos/authority es rechazado;
+- creación de invoice no autoriza ni reclama el purchase.
+
+### Persistencia / restart
+
+`InMemoryPurchaseStore` y `PersistentPurchaseStore` soportan `setInvoiceForPurchase()`.
+
+El registro conserva:
+- purchaseId;
+- product;
+- amount;
+- currency;
+- provider;
+- invoice payload;
+- invoice URL;
+- authorizationStatus=PENDING;
+- claimStatus=UNCLAIMED.
+
+Se verificó recovery tras reconstrucción de `PersistentPurchaseStore`.
+
+### Fail-closed
+
+Sin Bot Token el endpoint responde 503 con `TELEGRAM_INVOICE_UNAVAILABLE`.
+
+No se fabrica una URL de pago productiva.
+
+No se registra ni devuelve el Bot Token.
+
+### Tests
+
+GitHub Actions backend Run 37549763581 = SUCCESS.
+
+Suite backend completa:
+127 PASS / 0 FAIL.
+
+AUTH-012 targeted:
+- PENDING invoice creation: PASS;
+- server price/product authority: PASS;
+- payload correlation: PASS;
+- unknown purchase: PASS;
+- foreign identity: PASS;
+- client economic injection: PASS;
+- AUTHORIZED_GRANT blocked: PASS;
+- GRANT_CLAIMED blocked: PASS;
+- missing Bot Token fail-closed: PASS;
+- repeated request reuses invoice handle: PASS;
+- persistent restart recovery: PASS;
+- no economic side effect: PASS.
+
+Las suites AUTH-007..AUTH-011 existentes continúan PASS dentro de la ejecución completa.
+
+### Producción
+
+IMPLEMENTED: YES
+CONFIGURED: NO
+DEPLOYED: NO
+REAL TELEGRAM CALL: NO
+REAL BOT TOKEN: NO
+PRODUCTION EVIDENCE: NO
+
+Los tests utilizan provider HTTP simulado inyectado; no se generaron ni almacenaron credenciales reales.
+
+BONE-004: OPEN / BLOCKED / unchanged.
+BONE-005: CLOSED / unchanged.
+BONE-006: CLOSED / unchanged.
+BONE-010: CLOSED / unchanged.
+BONE-011: OPEN / IN PROGRESS.
+GLOBAL GATE: CERRADO.
+
+GAMEPLAY: NO CHANGE.
+BALANCE: NO CHANGE.
