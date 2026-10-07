@@ -455,34 +455,3 @@ export function isPurchaseApplyDTO(payload) {
 
 export { PURCHASE_CLAIM_STATUSES, PURCHASE_APPLY_STATUSES };
 
-export function isPurchaseClaimDTO(payload) {
-  return Boolean(
-    isObject(payload)
-    && PURCHASE_CLAIM_STATUSES.includes(String(payload.status || ""))
-    && typeof payload.purchase_id === "string"
-    && payload.purchase_id.length > 0
-    && typeof payload.product_id === "string"
-    && payload.product_id.length > 0
-    && typeof payload.provider === "string"
-    && typeof payload.grant_kind === "string"
-    && Number.isFinite(Number(payload.grant_amount))
-  );
-}
-
-export function isPurchaseApplyDTO(payload) {
-  return Boolean(
-    isObject(payload)
-    && PURCHASE_APPLY_STATUSES.includes(String(payload.status || ""))
-    && typeof payload.purchase_id === "string"
-    && payload.purchase_id.length > 0
-    && typeof payload.fulfillment_id === "string"
-    && payload.fulfillment_id.length > 0
-    && typeof payload.product_id === "string"
-    && payload.product_id.length > 0
-    && typeof payload.provider === "string"
-    && typeof payload.grant_kind === "string"
-    && Number.isFinite(Number(payload.grant_amount))
-  );
-}
-
-export { PURCHASE_CLAIM_STATUSES, PURCHASE_APPLY_STATUSES };
