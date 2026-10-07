@@ -11,7 +11,9 @@ export const PURCHASE_AUTHORITY_RESULT = Object.freeze({
   UNAVAILABLE: "UNAVAILABLE",
   DUPLICATE_NO_OP: "DUPLICATE_NO_OP",
   GRANT_CLAIMED: "GRANT_CLAIMED",
-  GRANT_ALREADY_CLAIMED: "GRANT_ALREADY_CLAIMED"
+  GRANT_ALREADY_CLAIMED: "GRANT_ALREADY_CLAIMED",
+  GRANT_FULFILLED: "GRANT_FULFILLED",
+  GRANT_ALREADY_FULFILLED: "GRANT_ALREADY_FULFILLED"
 });
 
 function stableId(value, label) {
@@ -302,6 +304,58 @@ export class PurchaseAuthority {
     return resultFromRecord(PURCHASE_AUTHORITY_RESULT.AUTHORIZED_GRANT, saved.record);
   }
 
+  fulfill({ playerId, purchaseId, body = {} } = {}) {
+    const ownerId = stableId(playerId, "player_id");
+    const id = stableId(purchaseId, "purchase_id");
+    if (body === null || typeof body !== "object" || Array.isArray(body) || Object.keys(body).length > 0) {
+      throw new AuthorityError(400, "CLIENT_AUTHORITY_FORBIDDEN", "Fulfillment endpoint accepts no client authority fields");
+    }
+    if (typeof this.store.fulfillPurchase !== "function") {
+      throw new AuthorityError(503, "FULFILLMENT_NOT_SUPPORTED", "Purchase store does not support fulfillment");
+    }
+
+    const purchase = this.store.loadPurchase(id);
+    if (!purchase || purchase.playerId !== ownerId) {
+      return null;
+    }
+    const result = this.store.fulfillPurchase(id, ownerId);
+    if (result.status === "NOT_FOUND") return null;
+    if (result.status === "CLAIM_REQUIRED") {
+      throw new AuthorityError(409, "CLAIM_REQUIRED", "Purchase must be claimed before fulfillment");
+    }
+    if (result.status === "NOT_AUTHORIZED") {
+      throw new AuthorityError(409, "PURCHASE_NOT_AUTHORIZED", "Purchase is not authorized for fulfillment");
+    }
+    if (result.status === "GRANT_ALREADY_FULFILLED") {
+      const record = result.record;
+      return {
+        status: PURCHASE_AUTHORITY_RESULT.GRANT_ALREADY_FULFILLED,
+        fulfillment_id: record.fulfillmentId,
+        purchase_id: record.purchaseId,
+        product_id: record.productId,
+        grant_kind: record.grantKind,
+        grant_amount: record.grantAmount,
+        currency: record.currency,
+        provider: record.provider,
+        provider_transaction_id: record.providerTransactionId
+      };
+    }
+
+    const record = result.record;
+    return {
+      status: PURCHASE_AUTHORITY_RESULT.GRANT_FULFILLED,
+      fulfillment_id: record.fulfillmentId,
+      purchase_id: record.purchaseId,
+      product_id: record.productId,
+      grant_kind: record.grantKind,
+      grant_amount: record.grantAmount,
+      currency: record.currency,
+      provider: record.provider,
+      provider_transaction_id: record.providerTransactionId,
+      fulfilled_at: record.fulfilledAt
+    };
+  }
+
   _missingProviderResult() {
     return {
       status: this.production ? PURCHASE_AUTHORITY_RESULT.UNAVAILABLE : PURCHASE_AUTHORITY_RESULT.BLOCKED,
@@ -443,3 +497,5 @@ export class PurchaseAuthority {
     });
   }
 }
+
+

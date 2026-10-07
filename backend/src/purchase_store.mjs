@@ -85,11 +85,37 @@ function normalizePersistedRecord(record) {
   };
 }
 
+function validateFulfillment(record) {
+  if (!record || typeof record !== "object" || Array.isArray(record)) throw new TypeError("Invalid fulfillment record");
+  for (const [key, label] of [
+    ["fulfillmentId", "fulfillmentId"],
+    ["purchaseId", "purchaseId"],
+    ["playerId", "playerId"],
+    ["productId", "productId"],
+    ["grantKind", "grantKind"],
+    ["provider", "provider"],
+    ["providerTransactionId", "providerTransactionId"],
+    ["status", "status"],
+    ["createdAt", "createdAt"],
+    ["fulfilledAt", "fulfilledAt"]
+  ]) stableId(record[key], label);
+  if (!["GRANT_FULFILLED"].includes(record.status)) throw new TypeError("Invalid fulfillment status");
+  if (!Number.isFinite(record.grantAmount) || record.grantAmount < 0) throw new TypeError("Invalid fulfillment grant amount");
+  stableId(record.currency, "currency");
+  return true;
+}
+
+function emptyDocument() {
+  return { schemaVersion: SCHEMA_VERSION, purchases: {}, transactions: {}, fulfillments: {} };
+}
+
 function validateDocument(document) {
   if (!document || typeof document !== "object" || Array.isArray(document)) throw new TypeError("Invalid purchase persistence document");
   if (document.schemaVersion !== SCHEMA_VERSION) throw new TypeError("Unsupported purchase persistence schemaVersion");
   if (!document.purchases || typeof document.purchases !== "object" || Array.isArray(document.purchases)) throw new TypeError("Invalid purchases collection");
   if (!document.transactions || typeof document.transactions !== "object" || Array.isArray(document.transactions)) throw new TypeError("Invalid transactions collection");
+  if (document.fulfillments === undefined) document.fulfillments = {};
+  if (!document.fulfillments || typeof document.fulfillments !== "object" || Array.isArray(document.fulfillments)) throw new TypeError("Invalid fulfillments collection");
   for (const [purchaseId, record] of Object.entries(document.purchases)) {
     if (stableId(purchaseId, "purchaseId") !== purchaseId) throw new TypeError("Invalid purchase key");
     const normalizedRecord = normalizePersistedRecord(record);
@@ -101,6 +127,13 @@ function validateDocument(document) {
     if (stableId(key, "transactionKey") !== key) throw new TypeError("Invalid transaction key");
     stableId(purchaseId, "purchaseId");
     if (!document.purchases[purchaseId]) throw new TypeError("Transaction points to missing purchase");
+  }
+  for (const [fulfillmentId, fulfillment] of Object.entries(document.fulfillments)) {
+    if (stableId(fulfillmentId, "fulfillmentId") !== fulfillmentId) throw new TypeError("Invalid fulfillment key");
+    validateFulfillment(fulfillment);
+    if (fulfillment.fulfillmentId !== fulfillmentId) throw new TypeError("Fulfillment identity mismatch");
+    if (!document.purchases[fulfillment.purchaseId]) throw new TypeError("Fulfillment points to missing purchase");
+    if (fulfillment.status !== "GRANT_FULFILLED") throw new TypeError("Unsupported fulfillment status");
   }
   return true;
 }
@@ -147,6 +180,7 @@ export class InMemoryPurchaseStore {
   constructor() {
     this.purchases = new Map();
     this.transactions = new Map();
+    this.fulfillments = new Map();
     this.isDurable = false;
   }
 
@@ -251,6 +285,36 @@ export class InMemoryPurchaseStore {
     if (record.claimStatus === "GRANT_CLAIMED") return { status: "GRANT_ALREADY_CLAIMED", record: clone(record) };
     record.claimStatus = "GRANT_CLAIMED";
     return { status: "GRANT_CLAIMED", record: clone(record) };
+  }
+
+  fulfillPurchase(purchaseId, playerId) {
+    const id = stableId(purchaseId, "purchaseId");
+    const owner = stableId(playerId, "playerId");
+    const record = this.purchases.get(id);
+    if (!record || record.playerId !== owner) return { status: "NOT_FOUND" };
+    const fulfillmentId = "purchase-grant:" + id;
+    const existing = this.fulfillments.get(fulfillmentId);
+    if (existing) return { status: "GRANT_ALREADY_FULFILLED", record: clone(existing) };
+    if (record.authorizationStatus !== "AUTHORIZED") return { status: "NOT_AUTHORIZED" };
+    if (record.claimStatus !== "GRANT_CLAIMED") return { status: "CLAIM_REQUIRED" };
+
+    const fulfillment = {
+      fulfillmentId,
+      purchaseId: record.purchaseId,
+      playerId: record.playerId,
+      productId: record.productId,
+      grantKind: record.grantKind,
+      grantAmount: record.grantAmount,
+      currency: record.currency,
+      provider: record.provider,
+      providerTransactionId: record.providerTransactionId,
+      status: "GRANT_FULFILLED",
+      createdAt: new Date().toISOString(),
+      fulfilledAt: new Date().toISOString()
+    };
+    validateFulfillment(fulfillment);
+    this.fulfillments.set(fulfillmentId, clone(fulfillment));
+    return { status: "GRANT_FULFILLED", record: clone(fulfillment) };
   }
 }
 
@@ -411,5 +475,39 @@ export class PersistentPurchaseStore {
     record.claimStatus = "GRANT_CLAIMED";
     this._writeDocument(document);
     return { status: "GRANT_CLAIMED", record: clone(record) };
+  }
+
+  fulfillPurchase(purchaseId, playerId) {
+    const id = stableId(purchaseId, "purchaseId");
+    const owner = stableId(playerId, "playerId");
+    const document = this._readDocument();
+    const record = document.purchases[id];
+    if (!record || record.playerId !== owner) return { status: "NOT_FOUND" };
+
+    const fulfillmentId = "purchase-grant:" + id;
+    const existing = document.fulfillments[fulfillmentId];
+    if (existing) return { status: "GRANT_ALREADY_FULFILLED", record: clone(existing) };
+    if (record.authorizationStatus !== "AUTHORIZED") return { status: "NOT_AUTHORIZED" };
+    if (record.claimStatus !== "GRANT_CLAIMED") return { status: "CLAIM_REQUIRED" };
+
+    const now = new Date().toISOString();
+    const fulfillment = {
+      fulfillmentId,
+      purchaseId: record.purchaseId,
+      playerId: record.playerId,
+      productId: record.productId,
+      grantKind: record.grantKind,
+      grantAmount: record.grantAmount,
+      currency: record.currency,
+      provider: record.provider,
+      providerTransactionId: record.providerTransactionId,
+      status: "GRANT_FULFILLED",
+      createdAt: now,
+      fulfilledAt: now
+    };
+    validateFulfillment(fulfillment);
+    document.fulfillments[fulfillmentId] = fulfillment;
+    this._writeDocument(document);
+    return { status: "GRANT_FULFILLED", record: clone(fulfillment) };
   }
 }

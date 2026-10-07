@@ -114,6 +114,8 @@ function purchaseStatusCode(status) {
     || status === PURCHASE_AUTHORITY_RESULT.DUPLICATE_NO_OP
     || status === PURCHASE_AUTHORITY_RESULT.GRANT_CLAIMED
     || status === PURCHASE_AUTHORITY_RESULT.GRANT_ALREADY_CLAIMED
+    || status === PURCHASE_AUTHORITY_RESULT.GRANT_FULFILLED
+    || status === PURCHASE_AUTHORITY_RESULT.GRANT_ALREADY_FULFILLED
   ) return 200;
   if (status === PURCHASE_AUTHORITY_RESULT.UNAVAILABLE || status === PURCHASE_AUTHORITY_RESULT.BLOCKED) return 503;
   return 409;
@@ -269,6 +271,21 @@ export function createAuthorityServer({
           rawBody,
           headers: cloneHeaders(request)
         });
+        return jsonResponse(response, purchaseStatusCode(result.status), result, origin);
+      }
+
+      const fulfillmentMatch = url.pathname.match(new RegExp("^/v1/purchases/([^/]+)/fulfill$"));
+      if (request.method === "POST" && fulfillmentMatch) {
+        const auth = await authenticateRequest(request, config);
+        const body = await readJson(request);
+        const result = activePurchaseAuthority.fulfill({
+          purchaseId: decodeURIComponent(fulfillmentMatch[1]),
+          playerId: auth.playerId,
+          body
+        });
+        if (!result) {
+          return jsonResponse(response, 404, { status: "NOT_FOUND", error: "NOT_FOUND" }, origin);
+        }
         return jsonResponse(response, purchaseStatusCode(result.status), result, origin);
       }
 
