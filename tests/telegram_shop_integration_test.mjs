@@ -2,6 +2,12 @@ import assert from "node:assert/strict";
 import { TelegramBridge } from "../webapp/js/api.js";
 import { ShopManager } from "../webapp/js/shopManager.js";
 
+global.window = {
+  location: { hostname: "localhost" },
+  setTimeout,
+  clearTimeout
+};
+
 const events=[];
 const webApp={
   initDataUnsafe:{user:{id:123456,name:"Jonh",first_name:"Jonh"}},
