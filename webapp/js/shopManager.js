@@ -11,7 +11,10 @@ export const CHECKOUT_STATUS = Object.freeze({
   SYNCING_AUTHORITY: "SYNCING_AUTHORITY",
   AUTHORIZED_PENDING_CLAIM: "AUTHORIZED_PENDING_CLAIM",
   WAITING_AUTHORITY: "WAITING_AUTHORITY",
+  CLAIMING: "CLAIMING",
+  APPLYING: "APPLYING",
   GRANT_CLAIMED: "GRANT_CLAIMED",
+  GRANT_APPLIED: "GRANT_APPLIED",
   CANCELLED: "CANCELLED",
   FAILED: "FAILED"
 });
@@ -305,17 +308,29 @@ export class ShopManager {
   }
 
   async _syncAuthority(purchaseId, productId, paymentResult = null) {
-    this._setState({ status: CHECKOUT_STATUS.SYNCING_AUTHORITY, purchaseId: normalizePurchaseId(purchaseId) });
+    const id = normalizePurchaseId(purchaseId);
+    const resolvedProductId = productId || this.state.productId || null;
+    this._setState({
+      status: CHECKOUT_STATUS.SYNCING_AUTHORITY,
+      purchaseId: id,
+      economicSideEffect: false,
+      error: null
+    });
+
     let statusDto;
     try {
-      statusDto = await this.api.getPurchaseStatus(purchaseId);
+      statusDto = await this.api.getPurchaseStatus(id);
     } catch (error) {
-      this._setState({ status: CHECKOUT_STATUS.WAITING_AUTHORITY, error: String(error?.message || error), economicSideEffect: false });
+      this._setState({
+        status: CHECKOUT_STATUS.WAITING_AUTHORITY,
+        error: String(error?.message || error),
+        economicSideEffect: false
+      });
       return {
         ok: true,
         status: "authority_unavailable",
-        product_id: productId,
-        purchase_id: purchaseId,
+        product_id: resolvedProductId,
+        purchase_id: id,
         payment_result: paymentResult,
         authorityStatus: "UNKNOWN",
         economicSideEffect: false
@@ -323,6 +338,46 @@ export class ShopManager {
     }
 
     const authorityStatus = String(statusDto.status || "UNKNOWN");
+
+    if (authorityStatus === "PENDING") {
+      this._setState({
+        status: CHECKOUT_STATUS.WAITING_AUTHORITY,
+        authorityStatus,
+        economicSideEffect: false,
+        error: null
+      });
+      return {
+        ok: true,
+        status: "waiting_authority",
+        product_id: resolvedProductId,
+        purchase_id: id,
+        payment_result: paymentResult,
+        authorityStatus,
+        purchaseStatus: clone(statusDto),
+        economicSideEffect: false
+      };
+    }
+
+    if (authorityStatus === "GRANT_APPLIED" || authorityStatus === "GRANT_ALREADY_APPLIED") {
+      this._setState({
+        status: CHECKOUT_STATUS.GRANT_APPLIED,
+        authorityStatus,
+        economicSideEffect: false,
+        error: null
+      });
+      this._clearRecovery(resolvedProductId);
+      return {
+        ok: true,
+        status: "paid",
+        product_id: resolvedProductId,
+        purchase_id: id,
+        payment_result: paymentResult,
+        authorityStatus,
+        purchaseStatus: clone(statusDto),
+        economicSideEffect: false
+      };
+    }
+
     if (authorityStatus === "AUTHORIZED_GRANT") {
       this._setState({
         status: CHECKOUT_STATUS.AUTHORIZED_PENDING_CLAIM,
@@ -330,21 +385,133 @@ export class ShopManager {
         economicSideEffect: false,
         error: null
       });
-    } else if (authorityStatus === "GRANT_CLAIMED" || authorityStatus === "GRANT_ALREADY_CLAIMED") {
+      return this._claimAndApply(id, resolvedProductId, paymentResult, statusDto);
+    }
+
+    if (authorityStatus === "GRANT_CLAIMED" || authorityStatus === "GRANT_ALREADY_CLAIMED") {
       this._setState({
         status: CHECKOUT_STATUS.GRANT_CLAIMED,
         authorityStatus,
         economicSideEffect: false,
         error: null
       });
-    } else {
+      return this._applyClaimedGrant(id, resolvedProductId, paymentResult, statusDto);
+    }
+
+    this._setState({
+      status: CHECKOUT_STATUS.WAITING_AUTHORITY,
+      authorityStatus,
+      economicSideEffect: false,
+      error: null
+    });
+    return {
+      ok: true,
+      status: "waiting_authority",
+      product_id: resolvedProductId,
+      purchase_id: id,
+      payment_result: paymentResult,
+      authorityStatus,
+      purchaseStatus: clone(statusDto),
+      economicSideEffect: false
+    };
+  }
+
+  async _claimAndApply(purchaseId, productId, paymentResult, statusDto) {
+    this._setState({
+      status: CHECKOUT_STATUS.CLAIMING,
+      purchaseId,
+      authorityStatus: "AUTHORIZED_GRANT",
+      economicSideEffect: false,
+      error: null
+    });
+
+    let claimDto;
+    try {
+      claimDto = await this.api.claimPurchase(purchaseId);
+    } catch (error) {
       this._setState({
         status: CHECKOUT_STATUS.WAITING_AUTHORITY,
-        authorityStatus,
-        economicSideEffect: false,
-        error: null
+        error: String(error?.message || error),
+        economicSideEffect: false
       });
+      return {
+        ok: true,
+        status: "claim_unavailable",
+        product_id: productId,
+        purchase_id: purchaseId,
+        payment_result: paymentResult,
+        authorityStatus: "AUTHORIZED_GRANT",
+        purchaseStatus: clone(statusDto),
+        economicSideEffect: false
+      };
     }
+
+    if (claimDto.status !== "GRANT_CLAIMED" && claimDto.status !== "GRANT_ALREADY_CLAIMED") {
+      this._setState({
+        status: CHECKOUT_STATUS.WAITING_AUTHORITY,
+        authorityStatus: String(claimDto.status || "UNKNOWN"),
+        economicSideEffect: false
+      });
+      return {
+        ok: true,
+        status: "claim_pending",
+        product_id: productId,
+        purchase_id: purchaseId,
+        payment_result: paymentResult,
+        authorityStatus: String(claimDto.status || "UNKNOWN"),
+        purchaseStatus: clone(statusDto),
+        claimStatus: clone(claimDto),
+        economicSideEffect: false
+      };
+    }
+
+    this._setState({
+      status: CHECKOUT_STATUS.GRANT_CLAIMED,
+      authorityStatus: claimDto.status,
+      economicSideEffect: false,
+      error: null
+    });
+    return this._applyClaimedGrant(purchaseId, productId, paymentResult, statusDto, claimDto);
+  }
+
+  async _applyClaimedGrant(purchaseId, productId, paymentResult, statusDto, claimDto = null) {
+    this._setState({
+      status: CHECKOUT_STATUS.APPLYING,
+      purchaseId,
+      authorityStatus: claimDto?.status || String(statusDto?.status || "GRANT_CLAIMED"),
+      economicSideEffect: false,
+      error: null
+    });
+
+    let applyDto;
+    try {
+      applyDto = await this.api.applyPurchaseGrant(purchaseId);
+    } catch (error) {
+      this._setState({
+        status: CHECKOUT_STATUS.WAITING_AUTHORITY,
+        error: String(error?.message || error),
+        economicSideEffect: false
+      });
+      return {
+        ok: true,
+        status: "apply_unavailable",
+        product_id: productId,
+        purchase_id: purchaseId,
+        payment_result: paymentResult,
+        authorityStatus: claimDto?.status || String(statusDto?.status || "GRANT_CLAIMED"),
+        purchaseStatus: clone(statusDto),
+        claimStatus: claimDto ? clone(claimDto) : null,
+        economicSideEffect: false
+      };
+    }
+
+    this._setState({
+      status: CHECKOUT_STATUS.GRANT_APPLIED,
+      authorityStatus: applyDto.status,
+      economicSideEffect: false,
+      error: null
+    });
+    this._clearRecovery(productId);
 
     return {
       ok: true,
@@ -352,8 +519,10 @@ export class ShopManager {
       product_id: productId,
       purchase_id: purchaseId,
       payment_result: paymentResult,
-      authorityStatus,
+      authorityStatus: applyDto.status,
       purchaseStatus: clone(statusDto),
+      claimStatus: claimDto ? clone(claimDto) : null,
+      grantApplication: clone(applyDto),
       economicSideEffect: false
     };
   }
@@ -366,18 +535,18 @@ export class ShopManager {
     return this._checkout(productId);
   }
 
-  async recoverPurchase(purchaseId) {
+  async recoverPurchase(purchaseId, productId = null) {
     const id = normalizePurchaseId(purchaseId);
     if (!this.api?.configured?.()) {
       return { ok: false, status: "api_unavailable", purchase_id: id };
     }
-    return this._syncAuthority(id, this.state.productId || null, null);
+    return this._syncAuthority(id, productId || this.state.productId || null, null);
   }
 
   async recoverStoredPurchase(productId) {
     const saved = this._readRecovery(productId);
     if (!saved?.purchaseId) return { ok: false, status: "no_pending_purchase", product_id: productId };
-    return this.recoverPurchase(saved.purchaseId);
+    return this.recoverPurchase(saved.purchaseId, String(productId || "").trim() || null);
   }
 
   clearRecoveredPurchase(productId) {

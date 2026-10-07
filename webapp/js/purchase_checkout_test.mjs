@@ -75,6 +75,28 @@ apiResponses.set("GET https://authority.example/v1/purchases/purchase-auth013-00
     grant_amount: 5000
   }
 });
+apiResponses.set("POST https://authority.example/v1/purchases/purchase-auth013-001/claim", {
+  body: {
+    status: "GRANT_CLAIMED",
+    purchase_id: "purchase-auth013-001",
+    product_id: "scrap_5000",
+    provider: "telegram-stars",
+    grant_kind: "scrap",
+    grant_amount: 5000
+  }
+});
+apiResponses.set("POST https://authority.example/v1/purchases/purchase-auth013-001/apply", {
+  body: {
+    status: "GRANT_APPLIED",
+    fulfillment_id: "purchase-grant:purchase-auth013-001",
+    purchase_id: "purchase-auth013-001",
+    product_id: "scrap_5000",
+    provider: "telegram-stars",
+    grant_kind: "scrap",
+    grant_amount: 5000,
+    balance_after: 5000
+  }
+});
 
 const create = await api.createPendingPurchase("scrap_5000", "checkout-fixed-key");
 assert.equal(create.status, "PENDING");
@@ -100,9 +122,13 @@ const storage = {
 const checkoutManager = new ShopManager({ api, telegramBridge, storage });
 const checkout = await checkoutManager.buyScrapPack("scrap_5000");
 assert.equal(checkout.ok, true);
-assert.equal(checkout.authorityStatus, "AUTHORIZED_GRANT");
+assert.equal(checkout.authorityStatus, "GRANT_APPLIED");
 assert.equal(checkout.economicSideEffect, false);
-assert.equal(checkoutManager.getCheckoutState().status, CHECKOUT_STATUS.AUTHORIZED_PENDING_CLAIM);
+assert.equal(checkoutManager.getCheckoutState().status, CHECKOUT_STATUS.GRANT_APPLIED);
+assert.equal(requests.filter((request) => request.url.endsWith("/claim")).length, 1);
+assert.equal(requests.filter((request) => request.url.endsWith("/apply")).length, 1);
+assert.equal(requests.find((request) => request.url.endsWith("/claim")).body, "{}");
+assert.equal(requests.find((request) => request.url.endsWith("/apply")).body, "{}");
 assert.equal(checkout.purchaseStatus.status, "AUTHORIZED_GRANT");
 assert.ok(storage.getItem("baseball_waifus_purchase_recovery_v1"));
 
@@ -113,7 +139,9 @@ const reconnectManager = new ShopManager({
     getPurchaseStatus: async (purchaseId) => {
       recoveryId = purchaseId;
       return { status: "PENDING", purchase_id: purchaseId, product_id: "scrap_5000" };
-    }
+    },
+    claimPurchase: async () => { throw new Error("claim must not run while pending"); },
+    applyPurchaseGrant: async () => { throw new Error("apply must not run while pending"); }
   },
   storage
 });
@@ -228,4 +256,134 @@ await retryManager.buyScrapPack("scrap_5000");
 assert.equal(attempts, 2);
 assert.equal(JSON.parse(retryStorage.getItem("baseball_waifus_purchase_recovery_v1")).scrap_5000.purchaseId, "purchase-retry-001");
 
+console.log("purchase_checkout_test: PASS");
+
+
+{
+  const requestsBefore = requests.length;
+  let claimCalls = 0;
+  let applyCalls = 0;
+  const alreadyClaimedApi = {
+    configured: () => true,
+    getPurchaseStatus: async () => ({
+      status: "AUTHORIZED_GRANT",
+      purchase_id: "purchase-already-claimed",
+      product_id: "scrap_5000"
+    }),
+    claimPurchase: async () => {
+      claimCalls += 1;
+      return {
+        status: "GRANT_ALREADY_CLAIMED",
+        purchase_id: "purchase-already-claimed",
+        product_id: "scrap_5000",
+        provider: "telegram-stars",
+        grant_kind: "scrap",
+        grant_amount: 5000
+      };
+    },
+    applyPurchaseGrant: async () => {
+      applyCalls += 1;
+      return {
+        status: "GRANT_APPLIED",
+        fulfillment_id: "purchase-grant:purchase-already-claimed",
+        purchase_id: "purchase-already-claimed",
+        product_id: "scrap_5000",
+        provider: "telegram-stars",
+        grant_kind: "scrap",
+        grant_amount: 5000
+      };
+    }
+  };
+  const manager = new ShopManager({
+    api: alreadyClaimedApi,
+    storage: { getItem: () => null, setItem() {} }
+  });
+  const result = await manager.recoverPurchase("purchase-already-claimed", "scrap_5000");
+  assert.equal(result.authorityStatus, "GRANT_APPLIED");
+  assert.equal(claimCalls, 1);
+  assert.equal(applyCalls, 1);
+  assert.equal(requests.length, requestsBefore);
+}
+
+{
+  let applyCalls = 0;
+  const recoveryStorage = {
+    data: new Map([[
+      "baseball_waifus_purchase_recovery_v1",
+      JSON.stringify({ scrap_5000: { purchaseId: "purchase-timeout", idempotencyKey: "k1" } })
+    ]]),
+    getItem(key) { return this.data.get(key) || null; },
+    setItem(key, value) { this.data.set(key, String(value)); }
+  };
+  const recoveryApi = {
+    configured: () => true,
+    getPurchaseStatus: async () => ({
+      status: "GRANT_CLAIMED",
+      purchase_id: "purchase-timeout",
+      product_id: "scrap_5000"
+    }),
+    claimPurchase: async () => {
+      throw new Error("claim not needed after reload");
+    },
+    applyPurchaseGrant: async (purchaseId) => {
+      applyCalls += 1;
+      return {
+        status: "GRANT_ALREADY_APPLIED",
+        fulfillment_id: "purchase-grant:" + purchaseId,
+        purchase_id: purchaseId,
+        product_id: "scrap_5000",
+        provider: "telegram-stars",
+        grant_kind: "scrap",
+        grant_amount: 5000
+      };
+    }
+  };
+  const manager = new ShopManager({ api: recoveryApi, storage: recoveryStorage });
+  const recovered = await manager.recoverStoredPurchase("scrap_5000");
+  assert.equal(recovered.authorityStatus, "GRANT_ALREADY_APPLIED");
+  assert.equal(applyCalls, 1);
+  assert.equal(JSON.parse(recoveryStorage.getItem("baseball_waifus_purchase_recovery_v1")).scrap_5000, undefined);
+}
+
+{
+  const statusDto = {
+    status: "GRANT_CLAIMED",
+    purchase_id: "purchase-injection",
+    product_id: "scrap_5000"
+  };
+  let localGrantCalls = 0;
+  const maliciousApi = {
+    configured: () => true,
+    getPurchaseStatus: async () => ({
+      ...statusDto,
+      amount: 999999,
+      grant_amount: 999999,
+      player_id: "attacker",
+      authorized: true,
+      verified: true,
+      claimed: true
+    }),
+    claimPurchase: async () => ({
+      status: "GRANT_ALREADY_CLAIMED",
+      ...statusDto,
+      amount: 999999,
+      grant_amount: 999999,
+      player_id: "attacker",
+      authorized: true
+    }),
+    applyPurchaseGrant: async () => ({
+      status: "GRANT_ALREADY_APPLIED",
+      fulfillment_id: "purchase-grant:purchase-injection",
+      ...statusDto,
+      amount: 999999,
+      grant_amount: 999999,
+      player_id: "attacker"
+    })
+  };
+  const manager = new ShopManager({ api: maliciousApi, storage: { getItem: () => null, setItem() {} } });
+  const result = await manager.recoverPurchase("purchase-injection", "scrap_5000");
+  assert.equal(result.authorityStatus, "GRANT_ALREADY_APPLIED");
+  assert.equal(result.economicSideEffect, false);
+  assert.equal(localGrantCalls, 0);
+}
 console.log("purchase_checkout_test: PASS");

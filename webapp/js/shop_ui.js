@@ -56,8 +56,10 @@ export class ShopUI {
 
     if (result.authorityStatus === "AUTHORIZED_GRANT") {
       this.setStatus("PAGO CONFIRMADO // RECOMPENSA AUTORIZADA // ACREDITACION PENDIENTE");
+    } else if (result.authorityStatus === "GRANT_APPLIED" || result.authorityStatus === "GRANT_ALREADY_APPLIED") {
+      this.setStatus("RECOMPENSA ACREDITADA");
     } else if (result.authorityStatus === "GRANT_CLAIMED" || result.authorityStatus === "GRANT_ALREADY_CLAIMED") {
-      this.setStatus("PAGO CONFIRMADO // RECOMPENSA YA ACREDITADA");
+      this.setStatus("PAGO CONFIRMADO // RECOMPENSA RECLAMADA // ACREDITACION PENDIENTE");
     } else if (result.authorityStatus === "PENDING" || result.authorityStatus === "UNKNOWN") {
       this.setStatus("PAGO RECIBIDO // ESPERANDO AUTORIDAD");
     } else {
@@ -87,8 +89,10 @@ export class ShopUI {
 
     if (result.authorityStatus === "AUTHORIZED_GRANT") {
       this.setStatus("PAGO CONFIRMADO // RECOMPENSA AUTORIZADA // ACREDITACION PENDIENTE");
+    } else if (result.authorityStatus === "GRANT_APPLIED" || result.authorityStatus === "GRANT_ALREADY_APPLIED") {
+      this.setStatus("RECOMPENSA ACREDITADA");
     } else if (result.authorityStatus === "GRANT_CLAIMED" || result.authorityStatus === "GRANT_ALREADY_CLAIMED") {
-      this.setStatus("PAGO CONFIRMADO // RECOMPENSA YA ACREDITADA");
+      this.setStatus("PAGO CONFIRMADO // RECOMPENSA RECLAMADA // ACREDITACION PENDIENTE");
     } else if (result.authorityStatus === "PENDING" || result.authorityStatus === "UNKNOWN") {
       this.setStatus("PAGO RECIBIDO // ESPERANDO AUTORIDAD");
     } else {
