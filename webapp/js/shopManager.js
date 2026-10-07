@@ -157,7 +157,7 @@ export class ShopManager {
         this._setState({
           status: normalized === "paid" ? CHECKOUT_STATUS.PAYMENT_RESULT : CHECKOUT_STATUS.CANCELLED,
           paymentStatus: normalized,
-          economicSideEffect: false
+          economicSideEffect: normalized === "paid"
         });
         if (result.ok) onPaid?.(result);
         else onCancelled?.(result);
