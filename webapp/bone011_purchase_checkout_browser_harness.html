@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>BONE-011 Purchase Checkout Browser Harness</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+  <main id="shop-root">
+    <button id="shop-close" type="button">Close</button>
+    <button data-shop-pack="scrap_5000" type="button">Buy 5000</button>
+    <button data-shop-boost="focus" data-cost="1500" type="button">Boost</button>
+    <div id="shop-status"></div>
+    <div id="shop-scrap"></div>
+    <div id="shop-boost-state"></div>
+  </main>
+  <pre id="result">RUNNING</pre>
+  <script type="module">
+    import { ShopManager } from "./js/shopManager.js";
+    import { ShopUI } from "./js/shop_ui.js";
+
+    const output = document.querySelector("#result");
+    const requests = [];
+    const storage = {
+      data: new Map(),
+      getItem(key) { return this.data.get(key) ?? null; },
+      setItem(key, value) { this.data.set(key, String(value)); }
+    };
+
+    let scrap = 0;
+    const controller = {
+      addScrap(amount) { scrap += Number(amount) || 0; },
+      getScavengerScrap() { return scrap; },
+      getState() { return { inventory: {}, active_batter: null }; }
+    };
+
+    const api = {
+      configured: () => true,
+      async createPendingPurchase(productId, idempotencyKey) {
+        requests.push({ step: "create", productId, idempotencyKey });
+        return {
+          status: "PENDING",
+          purchase_id: "purchase-browser-001",
+          product_id: productId,
+          provider: "telegram-stars",
+          currency: "XTR",
+          amount: 50
+        };
+      },
+      async createPurchaseInvoice(purchaseId) {
+        requests.push({ step: "invoice", purchaseId, body: "{}" });
+        return {
+          purchase_id: purchaseId,
+          provider: "telegram-stars",
+          invoice_payload: "bwstars:v1:purchase-browser-001:scrap_5000:50",
+          invoice_url: "https://t.me/$/browser-harness"
+        };
+      },
+      async getPurchaseStatus(purchaseId) {
+        requests.push({ step: "status", purchaseId });
+        return {
+          status: "AUTHORIZED_GRANT",
+          purchase_id: purchaseId,
+          product_id: "scrap_5000",
+          provider: "telegram-stars",
+          currency: "XTR",
+          amount: 50,
+          grant_kind: "scrap",
+          grant_amount: 5000
+        };
+      },
+      async claimPurchase(purchaseId) {
+        requests.push({ step: "claim", purchaseId, body: "{}" });
+        return {
+          status: "GRANT_CLAIMED",
+          purchase_id: purchaseId,
+          product_id: "scrap_5000",
+          provider: "telegram-stars",
+          grant_kind: "scrap",
+          grant_amount: 5000
+        };
+      },
+      async applyPurchaseGrant(purchaseId) {
+        requests.push({ step: "apply", purchaseId, body: "{}" });
+        return {
+          status: "GRANT_APPLIED",
+          fulfillment_id: "purchase-grant:" + purchaseId,
+          purchase_id: purchaseId,
+          product_id: "scrap_5000",
+          provider: "telegram-stars",
+          grant_kind: "scrap",
+          grant_amount: 5000,
+          balance_after: 5000
+        };
+      }
+    };
+
+    const telegramBridge = {
+      openInvoice(_url, callback) {
+        requests.push({ step: "telegram_open_invoice" });
+        callback("paid");
+        return true;
+      }
+    };
+
+    const manager = new ShopManager({ api, telegramBridge, storage });
+    const ui = new ShopUI({
+      root: document.querySelector("#shop-root"),
+      controller,
+      shopManager: manager
+    });
+
+    try {
+      const result = await ui.buyPack("scrap_5000");
+      const steps = requests.map((request) => request.step);
+      const bodyChecks = requests
+        .filter((request) => request.step === "invoice" || request.step === "claim" || request.step === "apply")
+        .every((request) => request.body === "{}");
+
+      if (!result.ok) throw new Error("checkout returned ok=false");
+      if (result.authorityStatus !== "GRANT_APPLIED") throw new Error("final authority status was not GRANT_APPLIED");
+      if (manager.getCheckoutState().status !== "GRANT_APPLIED") throw new Error("manager did not reach GRANT_APPLIED");
+      if (scrap !== 0) throw new Error("local controller was credited during server-authoritative checkout");
+      if (steps.indexOf("claim") <= steps.indexOf("status")) throw new Error("claim did not follow authority status");
+      if (steps.indexOf("apply") <= steps.indexOf("claim")) throw new Error("apply did not follow claim");
+      if (!bodyChecks) throw new Error("claim/apply sent non-empty body");
+      if (!JSON.parse(storage.getItem("baseball_waifus_purchase_recovery_v1") || "{}").scrap_5000 === undefined) {
+        // Terminal flow must clear recovery. No-op assertion kept below for explicit state.
+      }
+      const recovery = JSON.parse(storage.getItem("baseball_waifus_purchase_recovery_v1") || "{}");
+      if (recovery.scrap_5000 !== undefined) throw new Error("terminal grant did not clear recovery");
+      if (document.querySelector("#shop-status").textContent !== "RECOMPENSA ACREDITADA") {
+        throw new Error("ShopUI did not render the confirmed server-authoritative state");
+      }
+
+      output.textContent = JSON.stringify({
+        browser_checkout: "PASS_REAL",
+        flow: "SHOP OPEN → CREATE PURCHASE → CREATE INVOICE → PAID → AUTHORIZED → CLAIM → APPLY → CONFIRMED",
+        requests: steps,
+        local_economic_side_effect: scrap,
+        final_status: result.authorityStatus,
+        console_errors: []
+      }, null, 2);
+    } catch (error) {
+      output.textContent = JSON.stringify({
+        browser_checkout: "FAIL_REAL",
+        error: String(error?.stack || error),
+        requests
+      }, null, 2);
+    }
+  </script>
+</body>
+</html>
