@@ -1285,3 +1285,44 @@ Requests observados:
 `DEPLOYED: NO`
 
 AUTH-016 integra la ruta cliente contra la autoridad backend ya existente, pero no constituye deployment productivo real ni cierre completo de BONE-011.
+
+
+## BONE-011-AUTH-017 · TELEGRAM STARS PRODUCTION READINESS & DEPLOYMENT PREFLIGHT
+
+Fecha: 2026-10-07  
+HEAD BASE VALIDADO: `2e21deb6678b20bcd71942219b850ee7b97aa929`  
+RESULT: PASS / PREFLIGHT COMPLETE  
+TIMER: ~1.5–2.5 horas de contrato; detenido al límite externo.
+
+IMPLEMENTED: YES.  
+CONFIGURED: NO.  
+DEPLOYED: NO.  
+REAL_PROVIDER: NOT_CONFIGURED.  
+REAL_PAYMENT: NOT_RUN.  
+REAL_WEBHOOK: NOT_RUN.  
+REAL_PERSISTENCE: NOT_CONFIGURED.
+
+La auditoría de AUTH-010-R→016 confirma que la cadena de autoridad Telegram Stars está implementada y respaldada por suites CI previas. AUTH-016 mantiene browser harness PASS_REAL con `local_economic_side_effect=0`, pero no es evidencia de un pago real.
+
+El backend production readiness permanece fail-closed cuando falta purchase provider/persistence/secrets. No se encontraron archivos de secretos rastreados ni configuración de proveedor externo en el árbol actual. `.github/workflows/backend-authority-deploy.yml` continúa como contrato provider-neutral y no registra ninguna ejecución de deployment productivo.
+
+Evidence:
+- AUTH-010-R Run `37528904073` = SUCCESS, 110 PASS / 0 FAIL.
+- AUTH-012 Run `37549763581` = SUCCESS, 127 PASS / 0 FAIL.
+- AUTH-014 Run `37553061081` = SUCCESS, 138 PASS / 0 FAIL.
+- AUTH-015-R Run `37559199877` = SUCCESS, 147 PASS / 0 FAIL.
+- AUTH-016 Gacha Player Meta Run `37560140073` = SUCCESS.
+- AUTH-016 Telegram Mini App Run `37560332747` = SUCCESS.
+- AUTH-016 Visual QA Run `37560332707` = SUCCESS.
+
+BLOCKER:
+external production provider + managed persistence + HTTPS deployment + production secrets are not configured/verified.
+
+No code/runtime change, no deployment, no real Telegram call, no real payment verification.
+
+BONE-004: OPEN / BLOCKED / unchanged.  
+BONE-005: CLOSED / unchanged.  
+BONE-006: CLOSED / unchanged.  
+BONE-010: CLOSED / unchanged.  
+BONE-011: OPEN / IN PROGRESS.  
+GLOBAL GATE: CERRADO.
