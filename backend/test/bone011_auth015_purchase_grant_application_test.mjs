@@ -174,7 +174,6 @@ test("duplicate provider callback after application remains idempotent", async (
     const auth = authority(store);
     assert.equal(auth.applyGrant({ playerId: purchase.playerId, purchaseId: purchase.purchaseId }).status, PURCHASE_AUTHORITY_RESULT.GRANT_APPLIED);
     const restarted = authority(new PersistentPurchaseStore({ filePath }));
-    const callback = await restarted.authorizeProviderCallback({ body: { ignored: true } }).catch(() => null);
     const callbackVerifier = createPurchaseProviderVerifier({
       verifyReceipt: async () => ({ status: PURCHASE_PROVIDER_VERIFICATION.REJECTED }),
       verifyPurchaseCallback: async () => ({
