@@ -152,7 +152,11 @@ assert.equal(requests.filter((request) => request.url.endsWith("/apply")).length
 assert.equal(requests.find((request) => request.url.endsWith("/claim")).body, "{}");
 assert.equal(requests.find((request) => request.url.endsWith("/apply")).body, "{}");
 assert.equal(checkout.purchaseStatus.status, "AUTHORIZED_GRANT");
-assert.ok(storage.getItem("baseball_waifus_purchase_recovery_v1"));
+assert.equal(JSON.parse(storage.getItem("baseball_waifus_purchase_recovery_v1") || "{}").scrap_5000, undefined);
+
+storage.setItem("baseball_waifus_purchase_recovery_v1", JSON.stringify({
+  scrap_5000: { purchaseId: "purchase-auth013-001", idempotencyKey: "checkout-fixed-key" }
+}));
 
 let recoveryId = null;
 const reconnectManager = new ShopManager({
