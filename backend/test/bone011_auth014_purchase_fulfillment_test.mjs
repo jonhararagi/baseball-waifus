@@ -446,7 +446,8 @@ test("K · duplicate fulfillment request after restart is already fulfilled", as
 
     instanceB = createAuthorityServer({
       config,
-      store: new PersistentPurchaseStore({ filePath }),
+      store: new InMemoryCombatStore(),
+      purchaseStore: new PersistentPurchaseStore({ filePath }),
       purchaseVerifier: verifierFor()
     });
     await new Promise((resolve) => instanceB.server.listen(0, resolve));
