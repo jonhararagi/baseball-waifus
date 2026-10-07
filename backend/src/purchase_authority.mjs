@@ -199,6 +199,17 @@ export class PurchaseAuthority {
     };
   }
 
+  getPendingPurchaseForInvoice({ playerId, purchaseId } = {}) {
+    const ownerId = stableId(playerId, "player_id");
+    const id = stableId(purchaseId, "purchase_id");
+    const record = this.store.loadPurchase(id);
+    if (!record || record.playerId !== ownerId) return null;
+    if (record.authorizationStatus !== "PENDING") {
+      throw new AuthorityError(409, "PURCHASE_NOT_PENDING", "Invoice creation is allowed only for pending purchases");
+    }
+    return record;
+  }
+
   getStatus({ playerId, purchaseId } = {}) {
     const ownerId = stableId(playerId, "player_id");
     const id = stableId(purchaseId, "purchase_id");

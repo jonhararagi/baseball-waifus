@@ -61,6 +61,12 @@ function validateRecord(record) {
   if (record.claimStatus !== "UNCLAIMED" && record.claimStatus !== "GRANT_CLAIMED") {
     throw new TypeError("Invalid purchase claimStatus");
   }
+  if (record.invoiceUrl !== undefined && (!/^https:\/\//.test(String(record.invoiceUrl)) || String(record.invoiceUrl).length > 2048)) {
+    throw new TypeError("Invalid invoice URL");
+  }
+  if (record.invoicePayload !== undefined && (typeof record.invoicePayload !== "string" || record.invoicePayload.length > 256)) {
+    throw new TypeError("Invalid invoice payload");
+  }
   if (record.authorizationStatus === "PENDING" && record.claimStatus === "GRANT_CLAIMED") {
     throw new TypeError("Pending purchase cannot be already claimed");
   }
@@ -181,6 +187,28 @@ export class InMemoryPurchaseStore {
 
   savePurchase(record) {
     return this._insert(record, "AUTHORIZED");
+  }
+
+  setInvoiceForPurchase(purchaseId, invoiceUrl, invoicePayload) {
+    const id = stableId(purchaseId, "purchaseId");
+    const url = String(invoiceUrl || "").trim();
+    const payload = String(invoicePayload || "").trim();
+    if (!/^https:\/\//.test(url)) throw new TypeError("Invalid invoice URL");
+    if (!payload) throw new TypeError("Invoice payload is required");
+
+    const existing = this.purchases.get(id);
+    if (!existing) return { status: "NOT_FOUND" };
+    if (existing.authorizationStatus !== "PENDING") return { status: "NOT_PENDING", record: clone(existing) };
+    if (existing.invoiceUrl && existing.invoiceUrl !== url) return { status: "CONFLICT", record: clone(existing) };
+
+    const next = clone({
+      ...existing,
+      invoiceUrl: existing.invoiceUrl || url,
+      invoicePayload: existing.invoicePayload || payload
+    });
+    validateRecord(next);
+    this.purchases.set(id, next);
+    return { status: "UPDATED", record: clone(next) };
   }
 
   createPendingPurchase(record) {

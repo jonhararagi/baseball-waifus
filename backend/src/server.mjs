@@ -14,6 +14,7 @@ import {
   createTelegramStarsProviderAdapterFromConfig
 } from "./telegram_stars_adapter.mjs";
 import { evaluatePurchaseReadiness, purchaseReadinessSatisfied } from "./purchase_readiness.mjs";
+import { createTelegramStarsInvoiceServiceFromConfig } from "./telegram_stars_invoice_service.mjs";
 import { PurchaseAuthority, PURCHASE_AUTHORITY_RESULT } from "./purchase_authority.mjs";
 import { AuthorityError, isAuthorityError } from "./errors.mjs";
 
@@ -125,7 +126,8 @@ export function createAuthorityServer({
   purchaseStore = null,
   purchaseVerifier = null,
   purchaseAuthority = null,
-  purchaseProviderAdapter = null
+  purchaseProviderAdapter = null,
+  telegramStarsInvoiceService = null
 } = {}) {
   const activeStore = store || createPersistenceStore(config);
   const activeSigner = signer || (config.rewardSigningPrivateKeyPem ? createAttestationSigner({ privateKeyPem: config.rewardSigningPrivateKeyPem }) : null);
@@ -146,6 +148,8 @@ export function createAuthorityServer({
     providerVerifier: activePurchaseVerifier,
     production: config.production
   });
+  const activeTelegramStarsInvoiceService = telegramStarsInvoiceService
+    || createTelegramStarsInvoiceServiceFromConfig(config);
 
   const server = http.createServer(async (request, response) => {
     const origin = corsOrigin(request, config);
@@ -210,6 +214,53 @@ export function createAuthorityServer({
           }
         }, origin);
       }
+      const purchaseInvoiceMatch = url.pathname.match(new RegExp("^/v1/purchases/([^/]+)/invoice$"));
+      if (request.method === "POST" && purchaseInvoiceMatch) {
+        const auth = await authenticateRequest(request, config);
+        const body = await readJson(request);
+        if (Object.keys(body || {}).length > 0) {
+          throw new AuthorityError(400, "CLIENT_AUTHORITY_FORBIDDEN", "Invoice endpoint accepts no client authority fields");
+        }
+        const purchase = activePurchaseAuthority.getPendingPurchaseForInvoice({
+          purchaseId: decodeURIComponent(purchaseInvoiceMatch[1]),
+          playerId: auth.playerId
+        });
+        if (!purchase) {
+          return jsonResponse(response, 404, { status: "NOT_FOUND", error: "NOT_FOUND" }, origin);
+        }
+        const created = await activeTelegramStarsInvoiceService.createInvoice({ purchase });
+        if (!purchase.invoiceUrl && typeof activePurchaseStore.setInvoiceForPurchase === "function") {
+          const persisted = activePurchaseStore.setInvoiceForPurchase(
+            purchase.purchaseId,
+            created.invoiceUrl,
+            created.invoicePayload
+          );
+          if (persisted.status === "NOT_FOUND") {
+            return jsonResponse(response, 404, { status: "NOT_FOUND", error: "NOT_FOUND" }, origin);
+          }
+          if (persisted.status === "NOT_PENDING") {
+            throw new AuthorityError(409, "PURCHASE_NOT_PENDING", "Purchase is no longer pending");
+          }
+          if (persisted.status === "CONFLICT") {
+            throw new AuthorityError(409, "INVOICE_CONFLICT", "Purchase already has a different invoice");
+          }
+          return jsonResponse(response, 200, {
+            purchase_id: purchase.purchaseId,
+            provider: purchase.provider,
+            invoice_payload: persisted.record.invoicePayload,
+            invoice_url: persisted.record.invoiceUrl,
+            reused: Boolean(created.reused)
+          }, origin);
+        }
+        return jsonResponse(response, 200, {
+          purchase_id: purchase.purchaseId,
+          provider: purchase.provider,
+          invoice_payload: created.invoicePayload,
+          invoice_url: created.invoiceUrl,
+          reused: Boolean(created.reused)
+        }, origin);
+      }
+
       const callbackMatch = url.pathname.match(new RegExp("^/v1/purchases/provider-callback$"));
       if (request.method === "POST" && callbackMatch) {
         const { rawBody, body } = await readRawJson(request);
@@ -268,7 +319,13 @@ export function createAuthorityServer({
       }
       return jsonResponse(response, 404, { error: "NOT_FOUND", message: "Endpoint not found" }, origin);
     } catch (error) {
-      const authorityError = isAuthorityError(error) ? error : new AuthorityError(500, "INTERNAL_ERROR", "Internal authority service error");
+      const authorityError = isAuthorityError(error)
+        ? error
+        : (
+          ["PROVIDER_UNAVAILABLE", "PROVIDER_INVALID_RESPONSE", "PROVIDER_REJECTED", "PROVIDER_INVALID_INVOICE"].includes(error?.code)
+            ? new AuthorityError(503, "TELEGRAM_INVOICE_UNAVAILABLE", "Telegram invoice provider is unavailable")
+            : new AuthorityError(500, "INTERNAL_ERROR", "Internal authority service error")
+        );
       return jsonResponse(response, authorityError.status, { error: authorityError.code, message: authorityError.message }, origin);
     }
   });
