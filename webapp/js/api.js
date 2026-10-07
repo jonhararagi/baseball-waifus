@@ -124,6 +124,67 @@ export class BaseballWaifusApi {
     return this.baseUrl.length > 0;
   }
 
+  async createPendingPurchase(productId, idempotencyKey = "") {
+    if (!this.configured()) throw new Error("Purchase API base URL is not configured");
+    const product = String(productId || "").trim();
+    if (!product) throw new Error("productId is required");
+    const headers = {
+      ...this._headers(),
+      "content-type": "application/json"
+    };
+    if (idempotencyKey) headers["Idempotency-Key"] = String(idempotencyKey);
+    const response = await requestWithTimeout(
+      this.baseUrl + "/v1/purchases",
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ product_id: product })
+      },
+      this.timeoutMs
+    );
+    const payload = await parseResponse(response);
+    if (!isPendingPurchaseDTO(payload)) throw new Error("Invalid pending purchase response");
+    return payload;
+  }
+
+  async createPurchaseInvoice(purchaseId) {
+    if (!this.configured()) throw new Error("Purchase API base URL is not configured");
+    const id = encodeURIComponent(String(purchaseId || ""));
+    if (!id) throw new Error("purchaseId is required");
+    const response = await requestWithTimeout(
+      this.baseUrl + "/v1/purchases/" + id + "/invoice",
+      {
+        method: "POST",
+        headers: {
+          ...this._headers(),
+          "content-type": "application/json"
+        },
+        body: "{}"
+      },
+      this.timeoutMs
+    );
+    const payload = await parseResponse(response);
+    if (!isPurchaseInvoiceDTO(payload)) throw new Error("Invalid purchase invoice response");
+    return payload;
+  }
+
+  async getPurchaseStatus(purchaseId) {
+    if (!this.configured()) throw new Error("Purchase API base URL is not configured");
+    const id = encodeURIComponent(String(purchaseId || ""));
+    if (!id) throw new Error("purchaseId is required");
+    const response = await requestWithTimeout(
+      this.baseUrl + "/v1/purchases/" + id,
+      {
+        method: "GET",
+        headers: this._headers()
+      },
+      this.timeoutMs
+    );
+    const payload = await parseResponse(response);
+    if (!isPurchaseStatusDTO(payload)) throw new Error("Invalid purchase status response");
+    return payload;
+  }
+
   async getCombatInit(matchId) {
     if (!this.configured()) {
       throw new Error("Combat API base URL is not configured");
@@ -207,3 +268,47 @@ export function isTurnResultDTO(payload) {
     && isObject(payload.state)
   );
 }
+
+
+const PURCHASE_STATUSES = Object.freeze([
+  "PENDING",
+  "AUTHORIZED_GRANT",
+  "GRANT_CLAIMED",
+  "GRANT_ALREADY_CLAIMED"
+]);
+
+export function isPendingPurchaseDTO(payload) {
+  return Boolean(
+    isObject(payload)
+    && payload.status === "PENDING"
+    && typeof payload.purchase_id === "string"
+    && payload.purchase_id.length > 0
+    && typeof payload.product_id === "string"
+    && payload.product_id.length > 0
+    && typeof payload.provider === "string"
+    && typeof payload.currency === "string"
+    && Number.isFinite(Number(payload.amount))
+  );
+}
+
+export function isPurchaseInvoiceDTO(payload) {
+  return Boolean(
+    isObject(payload)
+    && typeof payload.purchase_id === "string"
+    && payload.purchase_id.length > 0
+    && typeof payload.provider === "string"
+    && typeof payload.invoice_payload === "string"
+    && /^https:\/\//.test(String(payload.invoice_url || ""))
+  );
+}
+
+export function isPurchaseStatusDTO(payload) {
+  return Boolean(
+    isObject(payload)
+    && typeof payload.purchase_id === "string"
+    && payload.purchase_id.length > 0
+    && PURCHASE_STATUSES.includes(String(payload.status || ""))
+  );
+}
+
+export { PURCHASE_STATUSES };
