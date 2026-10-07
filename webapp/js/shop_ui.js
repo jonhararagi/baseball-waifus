@@ -1,5 +1,4 @@
 import { isDevelopmentEnvironment, requestScrapPurchase, EconomyBoostManager } from "./economy.js";
-import { authorizePurchaseGrant } from "./purchase_authority.js";
 
 const PACKS = [
   { id: "scrap_5000", amount: 5000, stars: 50, label: "SCRAP x5.000" },
@@ -10,14 +9,6 @@ const BOOSTS = [
   { id: "focus", turns: 10, cost: 1500, label: "FOCUS +20ms", detail: "Amplía 20ms el margen efectivo del Timing Ring durante 10 bateos" }
 ];
 
-function resolvePurchaseAuthority(result, requestedGrant) {
-  return authorizePurchaseGrant({
-    paymentResult: result,
-    authorityGrant: result?.authority_grant || null,
-    requestedGrant,
-    environment: isDevelopmentEnvironment() ? "development" : "production"
-  });
-}
 
 export class ShopUI {
   constructor({ root, controller, webApp = null, shopManager = null, onBalanceChange = null } = {}) {
@@ -44,20 +35,36 @@ export class ShopUI {
     const pack = PACKS.find((item) => item.id === id);
     if (!pack) return;
     this.setStatus("ABRIENDO INVOICE DE TELEGRAM STARS...");
-    const result = this.shopManager ? await this.shopManager.buyScrapPack(pack.id) : await requestScrapPurchase(pack.amount, { webApp: this.webApp });
-    if (!result.ok) { this.setStatus("COMPRA NO COMPLETADA // " + result.status.toUpperCase()); return; }
+    const result = this.shopManager
+      ? await this.shopManager.buyScrapPack(pack.id)
+      : (isDevelopmentEnvironment()
+        ? await requestScrapPurchase(pack.amount, { webApp: this.webApp })
+        : { ok: false, status: "purchase_api_unavailable" });
 
-    const authority = resolvePurchaseAuthority(result, { kind: "SCRAP", amount: pack.amount });
-    if (!authority.allowed) {
-      this.setStatus("COMPRA RECIBIDA // GRANT NO AUTORIZADO");
-      return authority;
+    if (!result.ok) {
+      this.setStatus("COMPRA NO COMPLETADA // " + String(result.status || "failed").toUpperCase());
+      return result;
     }
 
-    this.controller?.addScrap?.(pack.amount);
-    const confirmation = authority.mode === "SIMULATED_DEMO_ONLY" ? "SIMULACION DEMO // +" : "+";
-    this.setStatus(confirmation + pack.amount.toLocaleString("es-AR") + " SCRAP // GRANT AUTORIZADO");
-    this.render(); this.onBalanceChange?.();
-    return authority;
+    if (result.economicSideEffect === true && isDevelopmentEnvironment()) {
+      this.controller?.addScrap?.(pack.amount);
+      this.setStatus("SIMULACION DEMO // +" + pack.amount.toLocaleString("es-AR") + " SCRAP");
+      this.render();
+      this.onBalanceChange?.();
+      return result;
+    }
+
+    if (result.authorityStatus === "AUTHORIZED_GRANT") {
+      this.setStatus("PAGO CONFIRMADO // RECOMPENSA AUTORIZADA // ACREDITACION PENDIENTE");
+    } else if (result.authorityStatus === "GRANT_CLAIMED" || result.authorityStatus === "GRANT_ALREADY_CLAIMED") {
+      this.setStatus("PAGO CONFIRMADO // RECOMPENSA YA ACREDITADA");
+    } else if (result.authorityStatus === "PENDING" || result.authorityStatus === "UNKNOWN") {
+      this.setStatus("PAGO RECIBIDO // ESPERANDO AUTORIDAD");
+    } else {
+      this.setStatus("PAGO RECIBIDO // GRANT NO AUTORIZADO");
+    }
+    this.render();
+    return result;
   }
   async buyBoost(id) {
     const boost = BOOSTS.find((item) => item.id === id);
@@ -65,21 +72,30 @@ export class ShopUI {
     if (!this.shopManager) { this.setStatus("STARS SHOP UNAVAILABLE"); return; }
     this.setStatus("ABRIENDO INVOICE DE TELEGRAM STARS...");
     const result = await this.shopManager.buyBoost(boost.id);
-    if (!result.ok) { this.setStatus("COMPRA NO COMPLETADA // " + result.status.toUpperCase()); return; }
-
-    const authority = resolvePurchaseAuthority(result, { kind: "BOOST", id: boost.id, turns: boost.turns });
-    if (!authority.allowed) {
-      this.setStatus("COMPRA RECIBIDA // GRANT NO AUTORIZADO");
-      return authority;
+    if (!result.ok) {
+      this.setStatus("COMPRA NO COMPLETADA // " + String(result.status || "failed").toUpperCase());
+      return result;
     }
 
-    this.boosts.grant(boost.id, boost.turns);
-    const confirmation = authority.mode === "SIMULATED_DEMO_ONLY"
-      ? boost.label + " ACTIVADO // DEMO"
-      : boost.label + " ACTIVADO // GRANT AUTORIZADO";
-    this.setStatus(confirmation);
-    this.render(); this.onBalanceChange?.();
-    return authority;
+    if (result.economicSideEffect === true && isDevelopmentEnvironment()) {
+      this.boosts.grant(boost.id, boost.turns);
+      this.setStatus(boost.label + " ACTIVADO // DEMO");
+      this.render();
+      this.onBalanceChange?.();
+      return result;
+    }
+
+    if (result.authorityStatus === "AUTHORIZED_GRANT") {
+      this.setStatus("PAGO CONFIRMADO // RECOMPENSA AUTORIZADA // ACREDITACION PENDIENTE");
+    } else if (result.authorityStatus === "GRANT_CLAIMED" || result.authorityStatus === "GRANT_ALREADY_CLAIMED") {
+      this.setStatus("PAGO CONFIRMADO // RECOMPENSA YA ACREDITADA");
+    } else if (result.authorityStatus === "PENDING" || result.authorityStatus === "UNKNOWN") {
+      this.setStatus("PAGO RECIBIDO // ESPERANDO AUTORIDAD");
+    } else {
+      this.setStatus("PAGO RECIBIDO // GRANT NO AUTORIZADO");
+    }
+    this.render();
+    return result;
   }
   getScrapMultiplier() { return this.boosts.getScrapMultiplier(); }
   getTimingGraceMs() { return this.boosts.getTimingGraceMs(); }
