@@ -398,9 +398,9 @@ console.log("purchase_checkout_test: PASS");
       authorized: true
     }),
     applyPurchaseGrant: async () => ({
+      ...statusDto,
       status: "GRANT_ALREADY_APPLIED",
       fulfillment_id: "purchase-grant:purchase-injection",
-      ...statusDto,
       amount: 999999,
       grant_amount: 999999,
       player_id: "attacker"
