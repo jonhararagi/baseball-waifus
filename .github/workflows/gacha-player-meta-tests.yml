@@ -28,6 +28,7 @@ on:
       - "webapp/js/share_bridge.js"
       - "webapp/js/app.js"
       - "tests/telegram_shop_integration_test.mjs"
+      - "webapp/js/purchase_checkout_test.mjs"
       - ".github/workflows/gacha-player-meta-tests.yml"
   workflow_dispatch:
 
@@ -66,6 +67,7 @@ jobs:
           node --experimental-default-type=module webapp/js/player_meta_roster_integration_test.mjs
           node --experimental-default-type=module webapp/js/tma_bridge_test.mjs
           node --experimental-default-type=module tests/telegram_shop_integration_test.mjs
+          node --experimental-default-type=module webapp/js/purchase_checkout_test.mjs
 
       - name: Validate integration syntax
         shell: bash
@@ -88,6 +90,7 @@ jobs:
           node --experimental-default-type=module --check webapp/js/api.js
           node --experimental-default-type=module --check webapp/js/tma_bridge_test.mjs
           node --experimental-default-type=module --check tests/telegram_shop_integration_test.mjs
+          node --experimental-default-type=module --check webapp/js/purchase_checkout_test.mjs
           node --experimental-default-type=module --check webapp/js/share_bridge.js
           node --experimental-default-type=module --check webapp/js/haptics_bridge.js
           node --experimental-default-type=module --check webapp/js/shopManager.js
