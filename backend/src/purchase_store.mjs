@@ -1,6 +1,12 @@
 import fs from "node:fs";
 import path from "node:path";
 import { randomUUID, createHash } from "node:crypto";
+import {
+  createInitialPlayerMetaState,
+  createPlayerIdentity,
+  PlayerMetaAuthority,
+  validatePlayerMetaState
+} from "../../webapp/js/player_meta_state.js";
 
 const SCHEMA_VERSION = 1;
 
@@ -74,7 +80,49 @@ function validateRecord(record) {
 }
 
 function emptyDocument() {
-  return { schemaVersion: SCHEMA_VERSION, purchases: {}, transactions: {}, fulfillments: {} };
+  return { schemaVersion: SCHEMA_VERSION, purchases: {}, transactions: {}, fulfillments: {}, playerMeta: {} };
+}
+
+const GRANT_CURRENCY_MAP = Object.freeze({
+  scrap: "SCRAP",
+  fragments: "FRAGMENTS"
+});
+
+function playerMetaIdentity(playerId) {
+  const id = stableId(playerId, "playerId");
+  if (id.startsWith("telegram:")) {
+    return createPlayerIdentity({
+      playerId: id,
+      provider: "telegram",
+      telegramUserId: id.slice("telegram:".length)
+    });
+  }
+  return createPlayerIdentity({ playerId: id, provider: "local" });
+}
+
+function grantCurrencyForKind(grantKind) {
+  const currency = GRANT_CURRENCY_MAP[String(grantKind || "").toLowerCase()];
+  if (!currency) throw new PurchaseStoreError("Unsupported purchase grant kind");
+  return currency;
+}
+
+function buildFulfillment(record, fulfillmentId, now = new Date().toISOString()) {
+  const fulfillment = {
+    fulfillmentId,
+    purchaseId: record.purchaseId,
+    playerId: record.playerId,
+    productId: record.productId,
+    grantKind: record.grantKind,
+    grantAmount: record.grantAmount,
+    currency: record.currency,
+    provider: record.provider,
+    providerTransactionId: record.providerTransactionId,
+    status: "GRANT_FULFILLED",
+    createdAt: now,
+    fulfilledAt: now
+  };
+  validateFulfillment(fulfillment);
+  return fulfillment;
 }
 
 function normalizePersistedRecord(record) {
@@ -112,6 +160,8 @@ function validateDocument(document) {
   if (!document.transactions || typeof document.transactions !== "object" || Array.isArray(document.transactions)) throw new TypeError("Invalid transactions collection");
   if (document.fulfillments === undefined) document.fulfillments = {};
   if (!document.fulfillments || typeof document.fulfillments !== "object" || Array.isArray(document.fulfillments)) throw new TypeError("Invalid fulfillments collection");
+  if (document.playerMeta === undefined) document.playerMeta = {};
+  if (!document.playerMeta || typeof document.playerMeta !== "object" || Array.isArray(document.playerMeta)) throw new TypeError("Invalid playerMeta collection");
   for (const [purchaseId, record] of Object.entries(document.purchases)) {
     if (stableId(purchaseId, "purchaseId") !== purchaseId) throw new TypeError("Invalid purchase key");
     const normalizedRecord = normalizePersistedRecord(record);
@@ -123,6 +173,11 @@ function validateDocument(document) {
     if (stableId(key, "transactionKey") !== key) throw new TypeError("Invalid transaction key");
     stableId(purchaseId, "purchaseId");
     if (!document.purchases[purchaseId]) throw new TypeError("Transaction points to missing purchase");
+  }
+  for (const [playerId, state] of Object.entries(document.playerMeta)) {
+    if (stableId(playerId, "playerId") !== playerId) throw new TypeError("Invalid playerMeta key");
+    validatePlayerMetaState(state);
+    if (state.identity.playerId !== playerId) throw new TypeError("PlayerMeta identity mismatch");
   }
   for (const [fulfillmentId, fulfillment] of Object.entries(document.fulfillments)) {
     if (stableId(fulfillmentId, "fulfillmentId") !== fulfillmentId) throw new TypeError("Invalid fulfillment key");
@@ -182,7 +237,51 @@ export class InMemoryPurchaseStore {
     this.purchases = new Map();
     this.transactions = new Map();
     this.fulfillments = new Map();
+    this.playerMeta = new Map();
     this.isDurable = false;
+  }
+
+  loadPlayerMeta(playerId) {
+    const owner = stableId(playerId, "playerId");
+    const document = this._readDocument();
+    const state = document.playerMeta[owner];
+    return state ? clone(state) : createInitialPlayerMetaState(playerMetaIdentity(owner));
+  }
+
+  applyPurchaseGrant(purchaseId, playerId) {
+    const id = stableId(purchaseId, "purchaseId");
+    const owner = stableId(playerId, "playerId");
+    const document = this._readDocument();
+    const record = document.purchases[id];
+    if (!record || record.playerId !== owner) return { status: "NOT_FOUND" };
+    if (record.authorizationStatus !== "AUTHORIZED") return { status: "NOT_AUTHORIZED" };
+    if (record.claimStatus !== "GRANT_CLAIMED") return { status: "CLAIM_REQUIRED" };
+
+    const fulfillmentId = "purchase-grant:" + id;
+    const existing = document.fulfillments[fulfillmentId];
+    if (existing) return { status: "GRANT_ALREADY_APPLIED", record: clone(existing) };
+
+    const currency = grantCurrencyForKind(record.grantKind);
+    const authority = new PlayerMetaAuthority(
+      document.playerMeta[owner]
+        ? clone(document.playerMeta[owner])
+        : createInitialPlayerMetaState(playerMetaIdentity(owner))
+    );
+    const transaction = authority.dispatchBatch([
+      { type: "ADD_CURRENCY", currency, amount: record.grantAmount },
+      { type: "RECORD_REWARD", sourceEventId: fulfillmentId }
+    ]);
+    if (!transaction.ok) throw new PurchaseStoreError(transaction.reason || "PLAYER_META_GRANT_REJECTED");
+
+    const fulfillment = buildFulfillment(record, fulfillmentId);
+    document.playerMeta[owner] = transaction.snapshot;
+    document.fulfillments[fulfillmentId] = fulfillment;
+    this._writeDocument(document);
+    return {
+      status: "GRANT_APPLIED",
+      record: clone(fulfillment),
+      playerMeta: clone(transaction.snapshot)
+    };
   }
 
   loadPurchase(purchaseId) {
@@ -288,6 +387,43 @@ export class InMemoryPurchaseStore {
     return { status: "GRANT_CLAIMED", record: clone(record) };
   }
 
+  loadPlayerMeta(playerId) {
+    const owner = stableId(playerId, "playerId");
+    const state = this.playerMeta.get(owner);
+    if (state) return clone(state);
+    return createInitialPlayerMetaState(playerMetaIdentity(owner));
+  }
+
+  applyPurchaseGrant(purchaseId, playerId) {
+    const id = stableId(purchaseId, "purchaseId");
+    const owner = stableId(playerId, "playerId");
+    const record = this.purchases.get(id);
+    if (!record || record.playerId !== owner) return { status: "NOT_FOUND" };
+    if (record.authorizationStatus !== "AUTHORIZED") return { status: "NOT_AUTHORIZED" };
+    if (record.claimStatus !== "GRANT_CLAIMED") return { status: "CLAIM_REQUIRED" };
+
+    const fulfillmentId = "purchase-grant:" + id;
+    const existing = this.fulfillments.get(fulfillmentId);
+    if (existing) return { status: "GRANT_ALREADY_APPLIED", record: clone(existing) };
+
+    const currency = grantCurrencyForKind(record.grantKind);
+    const authority = new PlayerMetaAuthority(this.loadPlayerMeta(owner));
+    const transaction = authority.dispatchBatch([
+      { type: "ADD_CURRENCY", currency, amount: record.grantAmount },
+      { type: "RECORD_REWARD", sourceEventId: fulfillmentId }
+    ]);
+    if (!transaction.ok) throw new PurchaseStoreError(transaction.reason || "PLAYER_META_GRANT_REJECTED");
+
+    const fulfillment = buildFulfillment(record, fulfillmentId);
+    this.playerMeta.set(owner, transaction.snapshot);
+    this.fulfillments.set(fulfillmentId, clone(fulfillment));
+    return {
+      status: "GRANT_APPLIED",
+      record: clone(fulfillment),
+      playerMeta: clone(transaction.snapshot)
+    };
+  }
+
   fulfillPurchase(purchaseId, playerId) {
     const id = stableId(purchaseId, "purchaseId");
     const owner = stableId(playerId, "playerId");
@@ -299,21 +435,7 @@ export class InMemoryPurchaseStore {
     if (record.authorizationStatus !== "AUTHORIZED") return { status: "NOT_AUTHORIZED" };
     if (record.claimStatus !== "GRANT_CLAIMED") return { status: "CLAIM_REQUIRED" };
 
-    const fulfillment = {
-      fulfillmentId,
-      purchaseId: record.purchaseId,
-      playerId: record.playerId,
-      productId: record.productId,
-      grantKind: record.grantKind,
-      grantAmount: record.grantAmount,
-      currency: record.currency,
-      provider: record.provider,
-      providerTransactionId: record.providerTransactionId,
-      status: "GRANT_FULFILLED",
-      createdAt: new Date().toISOString(),
-      fulfilledAt: new Date().toISOString()
-    };
-    validateFulfillment(fulfillment);
+    const fulfillment = buildFulfillment(record, fulfillmentId);
     this.fulfillments.set(fulfillmentId, clone(fulfillment));
     return { status: "GRANT_FULFILLED", record: clone(fulfillment) };
   }
