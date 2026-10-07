@@ -132,8 +132,13 @@ function validateDocument(document) {
     if (stableId(fulfillmentId, "fulfillmentId") !== fulfillmentId) throw new TypeError("Invalid fulfillment key");
     validateFulfillment(fulfillment);
     if (fulfillment.fulfillmentId !== fulfillmentId) throw new TypeError("Fulfillment identity mismatch");
-    if (!document.purchases[fulfillment.purchaseId]) throw new TypeError("Fulfillment points to missing purchase");
+    const purchase = document.purchases[fulfillment.purchaseId];
+    if (!purchase) throw new TypeError("Fulfillment points to missing purchase");
     if (fulfillment.status !== "GRANT_FULFILLED") throw new TypeError("Unsupported fulfillment status");
+    if (purchase.claimStatus !== "GRANT_CLAIMED") throw new TypeError("Fulfillment requires claimed purchase");
+    if (fulfillment.playerId !== purchase.playerId || fulfillment.productId !== purchase.productId) {
+      throw new TypeError("Fulfillment ownership/product mismatch");
+    }
   }
   return true;
 }
