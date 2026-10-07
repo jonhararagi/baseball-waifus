@@ -175,7 +175,25 @@ test("duplicate provider callback after application remains idempotent", async (
     assert.equal(auth.applyGrant({ playerId: purchase.playerId, purchaseId: purchase.purchaseId }).status, PURCHASE_AUTHORITY_RESULT.GRANT_APPLIED);
     const restarted = authority(new PersistentPurchaseStore({ filePath }));
     const callback = await restarted.authorizeProviderCallback({ body: { ignored: true } }).catch(() => null);
-    assert.equal(callback, null);
+    const callbackVerifier = createPurchaseProviderVerifier({
+      verifyReceipt: async () => ({ status: PURCHASE_PROVIDER_VERIFICATION.REJECTED }),
+      verifyPurchaseCallback: async () => ({
+        status: PURCHASE_PROVIDER_VERIFICATION.VERIFIED,
+        purchaseId: purchase.purchaseId,
+        playerId: purchase.playerId,
+        productId: purchase.productId,
+        amount: purchase.amount,
+        currency: purchase.currency,
+        provider: purchase.provider,
+        transactionId: purchase.providerTransactionId,
+        receiptFingerprint: purchase.receiptFingerprint,
+        grantKind: purchase.grantKind,
+        grantAmount: purchase.grantAmount
+      })
+    });
+    const callbackAuthority = new PurchaseAuthority({ store: restarted.store, providerVerifier: callbackVerifier });
+    const callback = await callbackAuthority.authorizeProviderCallback({ body: { callback: true } });
+    assert.equal(callback.status, PURCHASE_AUTHORITY_RESULT.DUPLICATE_NO_OP);
     const retry = restarted.applyGrant({ playerId: purchase.playerId, purchaseId: purchase.purchaseId });
     assert.equal(retry.status, PURCHASE_AUTHORITY_RESULT.GRANT_ALREADY_APPLIED);
   } finally {
