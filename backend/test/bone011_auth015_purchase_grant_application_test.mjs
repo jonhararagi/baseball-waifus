@@ -98,7 +98,7 @@ test("unclaimed and unauthorized purchases cannot grant", () => {
     receiptFingerprint: fingerprint("pending:apply-pending"),
     transactionKey: "test-provider:pending:apply-pending"
   };
-  store.savePurchase(pending);
+  store.createPendingPurchase(pending);
   assert.throws(
     () => authority(store).applyGrant({ playerId: purchase.playerId, purchaseId: pending.purchaseId }),
     /not authorized/
