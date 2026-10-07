@@ -10617,3 +10617,35 @@ BONE-006 permanece CLOSED.
 BONE-010 permanece CLOSED.  
 BONE-011 permanece OPEN / IN PROGRESS.  
 GLOBAL GATE permanece CERRADO.
+
+
+---
+
+## BONE-011-AUTH-015-R · SERVER-SIDE PURCHASE GRANT APPLICATION AUTHORITY
+
+Fecha: 2026-10-06  
+HEAD BASE: `4ea0194fa23565e2841fd88e13af81ebee5ab19f`  
+HEAD AFTER: `14eedc65ca4aca1eeec34626dcdc7edf67444f3e`  
+TIMER: ~2–3 horas  
+RESULT: PASS / CHECKPOINT CLOSED
+
+Se añadió `POST /v1/purchases/:purchaseId/apply` para transformar una compra `GRANT_CLAIMED` en una aplicación económica server-side.
+
+La transición usa `PlayerMetaAuthority.dispatchBatch` con `ADD_CURRENCY + RECORD_REWARD` y persiste Player Meta, reward ledger y fulfillment en el mismo documento de `PurchaseStore`.
+
+Evidence:
+- first application = `GRANT_APPLIED`;
+- repeated application = `GRANT_ALREADY_APPLIED`;
+- restart recovery = PASS;
+- concurrent application = exactly one effective grant;
+- duplicate provider callback remains idempotent;
+- identity isolation and client authority injection rejection = PASS;
+- PENDING/UNCLAIMED/unknown purchases do not receive economy;
+- GitHub Actions Run `37559199877` = SUCCESS;
+- Job `112592385178` = SUCCESS;
+- backend suite = `147 PASS / 0 FAIL`;
+- container smoke = PASS.
+
+No se modificaron gameplay, balance, Gacha, pity, combat ni BONE-004. BONE-005 y BONE-006 permanecen CLOSED. BONE-011 permanece OPEN / IN PROGRESS. GLOBAL GATE CERRADO.
+
+Production remains NOT CONFIGURED / NOT DEPLOYED.

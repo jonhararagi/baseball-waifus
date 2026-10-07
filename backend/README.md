@@ -87,3 +87,12 @@ The endpoint never authorizes or claims a purchase. A verified `successful_payme
 Telegram Bot Token is injected only through external runtime configuration. No token is stored in the repository or returned by the API.
 
 The repository contains no production Telegram credentials and no deployed provider. Tests inject a simulated HTTP provider.
+
+
+## Server-side purchase grant application
+
+After an authorized purchase is claimed, `POST /v1/purchases/:purchaseId/apply` applies the persisted purchase grant through the existing `PlayerMetaAuthority`.
+
+The endpoint accepts no client economic authority fields. The purchase record supplies the grant amount and grant kind. The operation records `purchase-grant:<purchaseId>` in Player Meta's reward ledger and writes the corresponding fulfillment in the same durable PurchaseStore document.
+
+Repeated application returns `GRANT_ALREADY_APPLIED` and does not duplicate the balance.

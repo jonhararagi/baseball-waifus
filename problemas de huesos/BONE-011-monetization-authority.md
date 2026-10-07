@@ -1072,3 +1072,103 @@ GLOBAL GATE: CERRADO.
 
 GAMEPLAY: NO CHANGE.  
 BALANCE: NO CHANGE.
+
+
+## BONE-011-AUTH-015-R · SERVER-SIDE PURCHASE GRANT APPLICATION AUTHORITY
+
+Fecha: 2026-10-06  
+HEAD BASE VALIDADO: `4ea0194fa23565e2841fd88e13af81ebee5ab19f`  
+HEAD AFTER: `14eedc65ca4aca1eeec34626dcdc7edf67444f3e`  
+TIMER: ~2–3 horas  
+RESULT: PASS / CHECKPOINT CLOSED
+
+Se completó la aplicación económica server-side de una compra previamente autorizada y reclamada.
+
+### Frontera
+
+`POST /v1/purchases/:purchaseId/apply`
+
+El request acepta únicamente un body vacío. La identidad se toma de la autenticación y la economía se deriva exclusivamente del purchase persistido.
+
+Secuencia:
+
+`AUTHORIZED_GRANT → GRANT_CLAIMED → GRANT_APPLIED`
+
+### Player Meta + Reward Ledger
+
+`PurchaseStore` reutiliza `PlayerMetaAuthority`.
+
+La aplicación ejecuta una sola transición:
+
+`ADD_CURRENCY + RECORD_REWARD`
+
+mediante `dispatchBatch`, y persiste en el mismo documento durable:
+
+- `playerMeta`;
+- `fulfillments`;
+- purchase state.
+
+La identidad idempotente continúa siendo:
+
+`purchase-grant:<purchaseId>`
+
+El purchase sigue siendo la fuente de verdad para `grantAmount`, `grantKind`, `playerId` y demás datos económicos.
+
+No se creó un segundo economy store ni un segundo reward ledger.
+
+### Exactly-once / restart / concurrency
+
+First application:
+`GRANT_APPLIED`
+
+Repeated application:
+`GRANT_ALREADY_APPLIED`
+
+Tras reconstruir `PersistentPurchaseStore`, el retry conserva un único grant y un único reward-ledger entry.
+
+Dos aplicaciones concurrentes sobre la misma compra producen exactamente un único grant efectivo y un único fulfillment.
+
+### Security
+
+Se rechazan como autoridad de cliente los campos económicos/identidad de aplicación, incluyendo:
+
+`playerId`, `amount`, `resource`, `grant`, `fulfillmentId`.
+
+Purchase desconocido, ownership ajeno, estado PENDING y estado UNCLAIMED no aplican economía.
+
+### Validation
+
+GitHub Actions Run `37559199877` = SUCCESS.  
+Job `112592385178` = SUCCESS.
+
+Backend suite:
+`147 PASS / 0 FAIL`
+
+Incluye las suites AUTH-015, AUTH-014, AUTH-007, AUTH-009, AUTH-010-R, AUTH-011, AUTH-012, persistence, production config y authority regression.
+
+Container smoke:
+PASS.
+
+### Scope
+
+GAMEPLAY: NO CHANGE.  
+BALANCE: NO CHANGE.  
+GACHA: NO CHANGE.  
+COMBAT: NO CHANGE.  
+BONE-004: OPEN / BLOCKED / unchanged.  
+BONE-005: CLOSED / unchanged.  
+BONE-006: CLOSED / unchanged.  
+BONE-010: CLOSED / unchanged.  
+BONE-011: OPEN / IN PROGRESS.  
+GLOBAL GATE: CERRADO.
+
+### Production
+
+IMPLEMENTED: YES.  
+CONFIGURED: NO.  
+DEPLOYED: NO.  
+REAL TELEGRAM BOT: NO.  
+REAL CREDENTIALS: NO.  
+PRODUCTION EVIDENCE: NO.
+
+AUTH-015-R no implica cierre de BONE-011 completo ni deployment productivo.
