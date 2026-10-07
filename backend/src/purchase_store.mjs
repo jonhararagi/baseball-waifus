@@ -241,49 +241,6 @@ export class InMemoryPurchaseStore {
     this.isDurable = false;
   }
 
-  loadPlayerMeta(playerId) {
-    const owner = stableId(playerId, "playerId");
-    const document = this._readDocument();
-    const state = document.playerMeta[owner];
-    return state ? clone(state) : createInitialPlayerMetaState(playerMetaIdentity(owner));
-  }
-
-  applyPurchaseGrant(purchaseId, playerId) {
-    const id = stableId(purchaseId, "purchaseId");
-    const owner = stableId(playerId, "playerId");
-    const document = this._readDocument();
-    const record = document.purchases[id];
-    if (!record || record.playerId !== owner) return { status: "NOT_FOUND" };
-    if (record.authorizationStatus !== "AUTHORIZED") return { status: "NOT_AUTHORIZED" };
-    if (record.claimStatus !== "GRANT_CLAIMED") return { status: "CLAIM_REQUIRED" };
-
-    const fulfillmentId = "purchase-grant:" + id;
-    const existing = document.fulfillments[fulfillmentId];
-    if (existing) return { status: "GRANT_ALREADY_APPLIED", record: clone(existing) };
-
-    const currency = grantCurrencyForKind(record.grantKind);
-    const authority = new PlayerMetaAuthority(
-      document.playerMeta[owner]
-        ? clone(document.playerMeta[owner])
-        : createInitialPlayerMetaState(playerMetaIdentity(owner))
-    );
-    const transaction = authority.dispatchBatch([
-      { type: "ADD_CURRENCY", currency, amount: record.grantAmount },
-      { type: "RECORD_REWARD", sourceEventId: fulfillmentId }
-    ]);
-    if (!transaction.ok) throw new PurchaseStoreError(transaction.reason || "PLAYER_META_GRANT_REJECTED");
-
-    const fulfillment = buildFulfillment(record, fulfillmentId);
-    document.playerMeta[owner] = transaction.snapshot;
-    document.fulfillments[fulfillmentId] = fulfillment;
-    this._writeDocument(document);
-    return {
-      status: "GRANT_APPLIED",
-      record: clone(fulfillment),
-      playerMeta: clone(transaction.snapshot)
-    };
-  }
-
   loadPurchase(purchaseId) {
     const record = this.purchases.get(stableId(purchaseId, "purchaseId"));
     return record ? clone(record) : null;
@@ -487,6 +444,49 @@ export class PersistentPurchaseStore {
       try { fs.rmSync(temporaryPath, { force: true }); } catch {}
       throw new PurchaseStoreError("Atomic purchase persistence write failed", error);
     }
+  }
+
+  loadPlayerMeta(playerId) {
+    const owner = stableId(playerId, "playerId");
+    const document = this._readDocument();
+    const state = document.playerMeta[owner];
+    return state ? clone(state) : createInitialPlayerMetaState(playerMetaIdentity(owner));
+  }
+
+  applyPurchaseGrant(purchaseId, playerId) {
+    const id = stableId(purchaseId, "purchaseId");
+    const owner = stableId(playerId, "playerId");
+    const document = this._readDocument();
+    const record = document.purchases[id];
+    if (!record || record.playerId !== owner) return { status: "NOT_FOUND" };
+    if (record.authorizationStatus !== "AUTHORIZED") return { status: "NOT_AUTHORIZED" };
+    if (record.claimStatus !== "GRANT_CLAIMED") return { status: "CLAIM_REQUIRED" };
+
+    const fulfillmentId = "purchase-grant:" + id;
+    const existing = document.fulfillments[fulfillmentId];
+    if (existing) return { status: "GRANT_ALREADY_APPLIED", record: clone(existing) };
+
+    const currency = grantCurrencyForKind(record.grantKind);
+    const authority = new PlayerMetaAuthority(
+      document.playerMeta[owner]
+        ? clone(document.playerMeta[owner])
+        : createInitialPlayerMetaState(playerMetaIdentity(owner))
+    );
+    const transaction = authority.dispatchBatch([
+      { type: "ADD_CURRENCY", currency, amount: record.grantAmount },
+      { type: "RECORD_REWARD", sourceEventId: fulfillmentId }
+    ]);
+    if (!transaction.ok) throw new PurchaseStoreError(transaction.reason || "PLAYER_META_GRANT_REJECTED");
+
+    const fulfillment = buildFulfillment(record, fulfillmentId);
+    document.playerMeta[owner] = transaction.snapshot;
+    document.fulfillments[fulfillmentId] = fulfillment;
+    this._writeDocument(document);
+    return {
+      status: "GRANT_APPLIED",
+      record: clone(fulfillment),
+      playerMeta: clone(transaction.snapshot)
+    };
   }
 
   loadPurchase(purchaseId) {
