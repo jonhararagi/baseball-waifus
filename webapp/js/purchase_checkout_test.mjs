@@ -195,4 +195,37 @@ assert.equal(demo.ok, true);
 assert.equal(demo.simulated, true);
 assert.equal(demo.economicSideEffect, true);
 
+
+let attempts = 0;
+let firstKey = "";
+const retryStorage = {
+  data: new Map(),
+  getItem(k) { return this.data.has(k) ? this.data.get(k) : null; },
+  setItem(k,v) { this.data.set(k, String(v)); }
+};
+const retryApi = {
+  configured: () => true,
+  createPendingPurchase: async (_productId, key) => {
+    attempts += 1;
+    firstKey ||= key;
+    if (attempts === 1) throw new Error("temporary request failure");
+    assert.equal(key, firstKey);
+    return { status:"PENDING", purchase_id:"purchase-retry-001", product_id:"scrap_5000", provider:"telegram-stars", currency:"XTR", amount:50 };
+  },
+  createPurchaseInvoice: async () => ({ purchase_id:"purchase-retry-001", provider:"telegram-stars", invoice_payload:"payload", invoice_url:"https://t.me/$/retry" }),
+  getPurchaseStatus: async () => ({ status:"PENDING", purchase_id:"purchase-retry-001", product_id:"scrap_5000" })
+};
+const retryManager = new ShopManager({
+  api: retryApi,
+  telegramBridge: { openInvoice: () => false },
+  storage: retryStorage
+});
+await retryManager.buyScrapPack("scrap_5000");
+const stored = JSON.parse(retryStorage.getItem("baseball_waifus_purchase_recovery_v1"));
+assert.equal(stored.scrap_5000.idempotencyKey, firstKey);
+assert.equal(stored.scrap_5000.purchaseId, null);
+await retryManager.buyScrapPack("scrap_5000");
+assert.equal(attempts, 2);
+assert.equal(JSON.parse(retryStorage.getItem("baseball_waifus_purchase_recovery_v1")).scrap_5000.purchaseId, "purchase-retry-001");
+
 console.log("purchase_checkout_test: PASS");
