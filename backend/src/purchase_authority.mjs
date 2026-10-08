@@ -89,6 +89,14 @@ function samePurchase(a, b) {
     a.grantAmount === b.grantAmount);
 }
 
+function isPromiseLike(value) {
+  return value && typeof value.then === "function";
+}
+
+function mapMaybe(value, handler) {
+  return isPromiseLike(value) ? value.then(handler) : handler(value);
+}
+
 function resultFromRecord(status, record) {
   return {
     status,
@@ -130,9 +138,7 @@ export class PurchaseAuthority {
 
     const productId = stableId(body.product_id, "product_id");
     const product = getTelegramStarsProduct(productId);
-    if (!product) {
-      throw new AuthorityError(404, "UNKNOWN_PRODUCT", "Product is not available for Telegram Stars");
-    }
+    if (!product) throw new AuthorityError(404, "UNKNOWN_PRODUCT", "Product is not available for Telegram Stars");
 
     const key = String(idempotencyKey || "").trim();
     if (key && (!/^[A-Za-z0-9._:-]+$/.test(key) || key.length > 256)) {
@@ -142,28 +148,6 @@ export class PurchaseAuthority {
     const generatedPurchaseId = key
       ? "purchase-" + createHash("sha256").update(ownerId + ":" + key, "utf8").digest("hex")
       : "purchase-" + randomUUID();
-
-    const existing = this.store.loadPurchase(generatedPurchaseId);
-    if (existing) {
-      if (
-        existing.playerId !== ownerId
-        || existing.productId !== product.productId
-        || existing.amount !== product.amount
-        || existing.currency !== product.currency
-        || existing.provider !== product.provider
-        || existing.grantKind !== product.grantKind
-        || existing.grantAmount !== product.grantAmount
-      ) {
-        throw new AuthorityError(409, "IDEMPOTENCY_CONFLICT", "Purchase idempotency key is bound to different purchase data");
-      }
-
-      return {
-        status: PURCHASE_AUTHORITY_RESULT.PENDING,
-        created: false,
-        amount: existing.amount,
-        ...resultFromRecord(PURCHASE_AUTHORITY_RESULT.PENDING, existing)
-      };
-    }
 
     const record = {
       purchaseId: generatedPurchaseId,
@@ -181,51 +165,77 @@ export class PurchaseAuthority {
       createdAt: new Date().toISOString()
     };
 
-    if (typeof this.store.createPendingPurchase !== "function") {
-      throw new AuthorityError(503, "PENDING_PURCHASE_NOT_SUPPORTED", "Purchase store does not support pending purchases");
-    }
-
-    const created = this.store.createPendingPurchase(record);
-    if (!created.created) {
-      const sameOwner = created.record?.playerId === ownerId;
-      const sameProduct = created.record?.productId === product.productId;
-      const samePrice = created.record?.amount === product.amount && created.record?.currency === product.currency;
-      if (!sameOwner || !sameProduct || !samePrice) {
-        throw new AuthorityError(409, "IDEMPOTENCY_CONFLICT", "Purchase creation collided with different purchase data");
+    const existingValue = this.store.loadPurchase(generatedPurchaseId);
+    return mapMaybe(existingValue, (existing) => {
+      if (existing) {
+        if (
+          existing.playerId !== ownerId
+          || existing.productId !== product.productId
+          || existing.amount !== product.amount
+          || existing.currency !== product.currency
+          || existing.provider !== product.provider
+          || existing.grantKind !== product.grantKind
+          || existing.grantAmount !== product.grantAmount
+        ) {
+          throw new AuthorityError(409, "IDEMPOTENCY_CONFLICT", "Purchase idempotency key is bound to different purchase data");
+        }
+        return {
+          status: PURCHASE_AUTHORITY_RESULT.PENDING,
+          created: false,
+          amount: existing.amount,
+          ...resultFromRecord(PURCHASE_AUTHORITY_RESULT.PENDING, existing)
+        };
       }
-    }
 
-    return {
-      status: PURCHASE_AUTHORITY_RESULT.PENDING,
-      created: Boolean(created.created),
-      amount: created.record.amount,
-      ...resultFromRecord(PURCHASE_AUTHORITY_RESULT.PENDING, created.record)
-    };
+      if (typeof this.store.createPendingPurchase !== "function") {
+        throw new AuthorityError(503, "PENDING_PURCHASE_NOT_SUPPORTED", "Purchase store does not support pending purchases");
+      }
+
+      return mapMaybe(this.store.createPendingPurchase(record), (created) => {
+        if (!created.created) {
+          const sameOwner = created.record?.playerId === ownerId;
+          const sameProduct = created.record?.productId === product.productId;
+          const samePrice = created.record?.amount === product.amount && created.record?.currency === product.currency;
+          if (!sameOwner || !sameProduct || !samePrice) {
+            throw new AuthorityError(409, "IDEMPOTENCY_CONFLICT", "Purchase creation collided with different purchase data");
+          }
+        }
+
+        return {
+          status: PURCHASE_AUTHORITY_RESULT.PENDING,
+          created: Boolean(created.created),
+          amount: created.record.amount,
+          ...resultFromRecord(PURCHASE_AUTHORITY_RESULT.PENDING, created.record)
+        };
+      });
+    });
   }
 
   getPendingPurchaseForInvoice({ playerId, purchaseId } = {}) {
     const ownerId = stableId(playerId, "player_id");
     const id = stableId(purchaseId, "purchase_id");
-    const record = this.store.loadPurchase(id);
-    if (!record || record.playerId !== ownerId) return null;
-    if (record.authorizationStatus !== "PENDING") {
-      throw new AuthorityError(409, "PURCHASE_NOT_PENDING", "Invoice creation is allowed only for pending purchases");
-    }
-    return record;
+    return mapMaybe(this.store.loadPurchase(id), (record) => {
+      if (!record || record.playerId !== ownerId) return null;
+      if (record.authorizationStatus !== "PENDING") {
+        throw new AuthorityError(409, "PURCHASE_NOT_PENDING", "Invoice creation is allowed only for pending purchases");
+      }
+      return record;
+    });
   }
 
   getStatus({ playerId, purchaseId } = {}) {
     const ownerId = stableId(playerId, "player_id");
     const id = stableId(purchaseId, "purchase_id");
-    const record = this.store.loadPurchase(id);
-    if (!record || record.playerId !== ownerId) return null;
-    if (record.authorizationStatus === "PENDING") {
-      return resultFromRecord(PURCHASE_AUTHORITY_RESULT.PENDING, record);
-    }
-    const status = record.claimStatus === "GRANT_CLAIMED"
-      ? PURCHASE_AUTHORITY_RESULT.GRANT_CLAIMED
-      : PURCHASE_AUTHORITY_RESULT.AUTHORIZED_GRANT;
-    return resultFromRecord(status, record);
+    return mapMaybe(this.store.loadPurchase(id), (record) => {
+      if (!record || record.playerId !== ownerId) return null;
+      if (record.authorizationStatus === "PENDING") {
+        return resultFromRecord(PURCHASE_AUTHORITY_RESULT.PENDING, record);
+      }
+      const status = record.claimStatus === "GRANT_CLAIMED"
+        ? PURCHASE_AUTHORITY_RESULT.GRANT_CLAIMED
+        : PURCHASE_AUTHORITY_RESULT.AUTHORIZED_GRANT;
+      return resultFromRecord(status, record);
+    });
   }
 
   claim({ playerId, purchaseId, body = {} } = {}) {
@@ -243,67 +253,70 @@ export class PurchaseAuthority {
     ];
     const supplied = Object.keys(body).filter((key) => forbiddenFields.includes(key));
     if (supplied.length > 0 || Object.keys(body).length > 0) {
-      throw new AuthorityError(
-        400,
-        "CLIENT_AUTHORITY_FORBIDDEN",
-        "Claim endpoint accepts no client authority fields"
-      );
+      throw new AuthorityError(400, "CLIENT_AUTHORITY_FORBIDDEN", "Claim endpoint accepts no client authority fields");
     }
 
     if (typeof this.store.claimPurchase !== "function") {
       throw new AuthorityError(503, "CLAIM_NOT_SUPPORTED", "Purchase store does not support one-time claims");
     }
 
-    const result = this.store.claimPurchase(id, ownerId);
-    if (result.status === "NOT_FOUND") return null;
-    if (result.status === "GRANT_ALREADY_CLAIMED") {
-      return resultFromRecord(PURCHASE_AUTHORITY_RESULT.GRANT_ALREADY_CLAIMED, result.record);
-    }
-    return resultFromRecord(PURCHASE_AUTHORITY_RESULT.GRANT_CLAIMED, result.record);
+    return mapMaybe(this.store.claimPurchase(id, ownerId), (result) => {
+      if (result.status === "NOT_FOUND") return null;
+      if (result.status === "GRANT_ALREADY_CLAIMED") {
+        return resultFromRecord(PURCHASE_AUTHORITY_RESULT.GRANT_ALREADY_CLAIMED, result.record);
+      }
+      return resultFromRecord(PURCHASE_AUTHORITY_RESULT.GRANT_CLAIMED, result.record);
+    });
   }
 
   _persistVerifiedRecord(record) {
-    const existing = this.store.loadPurchase(record.purchaseId);
-    if (existing?.authorizationStatus === "PENDING") {
-      if (typeof this.store.authorizePendingPurchase !== "function") {
-        return {
-          status: PURCHASE_AUTHORITY_RESULT.UNAVAILABLE,
-          reason: "PENDING_PURCHASE_PROMOTION_NOT_SUPPORTED"
-        };
+    return mapMaybe(this.store.loadPurchase(record.purchaseId), (existing) => {
+      if (existing?.authorizationStatus === "PENDING") {
+        if (typeof this.store.authorizePendingPurchase !== "function") {
+          return {
+            status: PURCHASE_AUTHORITY_RESULT.UNAVAILABLE,
+            reason: "PENDING_PURCHASE_PROMOTION_NOT_SUPPORTED"
+          };
+        }
+
+        return mapMaybe(this.store.authorizePendingPurchase(record), (promoted) => {
+          if (promoted.status === "CONFLICT") {
+            return { status: PURCHASE_AUTHORITY_RESULT.REJECTED, reason: "IDEMPOTENCY_CONFLICT" };
+          }
+          if (promoted.status === "AUTHORIZED_GRANT") {
+            return resultFromRecord(PURCHASE_AUTHORITY_RESULT.AUTHORIZED_GRANT, promoted.record);
+          }
+          if (promoted.status === "ALREADY_AUTHORIZED") {
+            return resultFromRecord(PURCHASE_AUTHORITY_RESULT.DUPLICATE_NO_OP, promoted.record);
+          }
+          if (promoted.status === "NOT_FOUND") {
+            return { status: PURCHASE_AUTHORITY_RESULT.REJECTED, reason: "PURCHASE_NOT_FOUND" };
+          }
+          return this._persistVerifiedRecord(record);
+        });
       }
 
-      const promoted = this.store.authorizePendingPurchase(record);
-      if (promoted.status === "CONFLICT") {
-        return {
-          status: PURCHASE_AUTHORITY_RESULT.REJECTED,
-          reason: "IDEMPOTENCY_CONFLICT"
-        };
-      }
-      if (promoted.status === "AUTHORIZED_GRANT") {
-        return resultFromRecord(PURCHASE_AUTHORITY_RESULT.AUTHORIZED_GRANT, promoted.record);
-      }
-      if (promoted.status === "ALREADY_AUTHORIZED") {
-        return resultFromRecord(PURCHASE_AUTHORITY_RESULT.DUPLICATE_NO_OP, promoted.record);
-      }
-      if (promoted.status === "NOT_FOUND") {
-        return {
-          status: PURCHASE_AUTHORITY_RESULT.REJECTED,
-          reason: "PURCHASE_NOT_FOUND"
-        };
-      }
-    }
-
-    const saved = this.store.savePurchase(record);
-    if (!saved.created) {
-      if (!samePurchase(saved.record, record)) {
-        return {
-          status: PURCHASE_AUTHORITY_RESULT.REJECTED,
-          reason: "IDEMPOTENCY_CONFLICT"
-        };
-      }
-      return resultFromRecord(PURCHASE_AUTHORITY_RESULT.DUPLICATE_NO_OP, saved.record);
-    }
-    return resultFromRecord(PURCHASE_AUTHORITY_RESULT.AUTHORIZED_GRANT, saved.record);
+      return mapMaybe(this.store.savePurchase(record), (saved) => {
+        if (!saved.created) {
+          const current = saved.record;
+          if (
+            current.playerId !== record.playerId
+            || current.productId !== record.productId
+            || current.amount !== record.amount
+            || current.currency !== record.currency
+            || current.provider !== record.provider
+            || current.providerTransactionId !== record.providerTransactionId
+            || current.receiptFingerprint !== record.receiptFingerprint
+            || current.grantKind !== record.grantKind
+            || current.grantAmount !== record.grantAmount
+          ) {
+            return { status: PURCHASE_AUTHORITY_RESULT.REJECTED, reason: "IDEMPOTENCY_CONFLICT" };
+          }
+          return resultFromRecord(PURCHASE_AUTHORITY_RESULT.DUPLICATE_NO_OP, current);
+        }
+        return resultFromRecord(PURCHASE_AUTHORITY_RESULT.AUTHORIZED_GRANT, saved.record);
+      });
+    });
   }
 
   applyGrant({ playerId, purchaseId, body = {} } = {}) {
@@ -316,36 +329,37 @@ export class PurchaseAuthority {
       throw new AuthorityError(503, "GRANT_APPLICATION_NOT_SUPPORTED", "Purchase store does not support server-side grant application");
     }
 
-    const result = this.store.applyPurchaseGrant(id, ownerId);
-    if (result.status === "NOT_FOUND") return null;
-    if (result.status === "CLAIM_REQUIRED") {
-      throw new AuthorityError(409, "CLAIM_REQUIRED", "Purchase must be claimed before grant application");
-    }
-    if (result.status === "NOT_AUTHORIZED") {
-      throw new AuthorityError(409, "PURCHASE_NOT_AUTHORIZED", "Purchase is not authorized for grant application");
-    }
+    return mapMaybe(this.store.applyPurchaseGrant(id, ownerId), (result) => {
+      if (result.status === "NOT_FOUND") return null;
+      if (result.status === "CLAIM_REQUIRED") {
+        throw new AuthorityError(409, "CLAIM_REQUIRED", "Purchase must be claimed before grant application");
+      }
+      if (result.status === "NOT_AUTHORIZED") {
+        throw new AuthorityError(409, "PURCHASE_NOT_AUTHORIZED", "Purchase is not authorized for grant application");
+      }
 
-    const record = result.record;
-    const base = {
-      status: result.status === "GRANT_ALREADY_APPLIED"
-        ? PURCHASE_AUTHORITY_RESULT.GRANT_ALREADY_APPLIED
-        : PURCHASE_AUTHORITY_RESULT.GRANT_APPLIED,
-      fulfillment_id: record.fulfillmentId,
-      purchase_id: record.purchaseId,
-      player_id: record.playerId,
-      product_id: record.productId,
-      grant_kind: record.grantKind,
-      grant_amount: record.grantAmount,
-      currency: record.currency,
-      provider: record.provider,
-      provider_transaction_id: record.providerTransactionId
-    };
-    if (result.playerMeta) {
-      base.balance_after = result.playerMeta.currencies[
-        String(record.grantKind).toLowerCase() === "scrap" ? "SCRAP" : "FRAGMENTS"
-      ];
-    }
-    return base;
+      const record = result.record;
+      const base = {
+        status: result.status === "GRANT_ALREADY_APPLIED"
+          ? PURCHASE_AUTHORITY_RESULT.GRANT_ALREADY_APPLIED
+          : PURCHASE_AUTHORITY_RESULT.GRANT_APPLIED,
+        fulfillment_id: record.fulfillmentId,
+        purchase_id: record.purchaseId,
+        player_id: record.playerId,
+        product_id: record.productId,
+        grant_kind: record.grantKind,
+        grant_amount: record.grantAmount,
+        currency: record.currency,
+        provider: record.provider,
+        provider_transaction_id: record.providerTransactionId
+      };
+      if (result.playerMeta) {
+        base.balance_after = result.playerMeta.currencies[
+          String(record.grantKind).toLowerCase() === "scrap" ? "SCRAP" : "FRAGMENTS"
+        ];
+      }
+      return base;
+    });
   }
 
   fulfill({ playerId, purchaseId, body = {} } = {}) {
@@ -358,46 +372,44 @@ export class PurchaseAuthority {
       throw new AuthorityError(503, "FULFILLMENT_NOT_SUPPORTED", "Purchase store does not support fulfillment");
     }
 
-    const purchase = this.store.loadPurchase(id);
-    if (!purchase || purchase.playerId !== ownerId) {
-      return null;
-    }
-    const result = this.store.fulfillPurchase(id, ownerId);
-    if (result.status === "NOT_FOUND") return null;
-    if (result.status === "CLAIM_REQUIRED") {
-      throw new AuthorityError(409, "CLAIM_REQUIRED", "Purchase must be claimed before fulfillment");
-    }
-    if (result.status === "NOT_AUTHORIZED") {
-      throw new AuthorityError(409, "PURCHASE_NOT_AUTHORIZED", "Purchase is not authorized for fulfillment");
-    }
-    if (result.status === "GRANT_ALREADY_FULFILLED") {
-      const record = result.record;
-      return {
-        status: PURCHASE_AUTHORITY_RESULT.GRANT_ALREADY_FULFILLED,
-        fulfillment_id: record.fulfillmentId,
-        purchase_id: record.purchaseId,
-        product_id: record.productId,
-        grant_kind: record.grantKind,
-        grant_amount: record.grantAmount,
-        currency: record.currency,
-        provider: record.provider,
-        provider_transaction_id: record.providerTransactionId
-      };
-    }
-
-    const record = result.record;
-    return {
-      status: PURCHASE_AUTHORITY_RESULT.GRANT_FULFILLED,
-      fulfillment_id: record.fulfillmentId,
-      purchase_id: record.purchaseId,
-      product_id: record.productId,
-      grant_kind: record.grantKind,
-      grant_amount: record.grantAmount,
-      currency: record.currency,
-      provider: record.provider,
-      provider_transaction_id: record.providerTransactionId,
-      fulfilled_at: record.fulfilledAt
-    };
+    return mapMaybe(this.store.loadPurchase(id), (purchase) => {
+      if (!purchase || purchase.playerId !== ownerId) return null;
+      return mapMaybe(this.store.fulfillPurchase(id, ownerId), (result) => {
+        if (result.status === "NOT_FOUND") return null;
+        if (result.status === "CLAIM_REQUIRED") {
+          throw new AuthorityError(409, "CLAIM_REQUIRED", "Purchase must be claimed before fulfillment");
+        }
+        if (result.status === "NOT_AUTHORIZED") {
+          throw new AuthorityError(409, "PURCHASE_NOT_AUTHORIZED", "Purchase is not authorized for fulfillment");
+        }
+        const record = result.record;
+        if (result.status === "GRANT_ALREADY_FULFILLED") {
+          return {
+            status: PURCHASE_AUTHORITY_RESULT.GRANT_ALREADY_FULFILLED,
+            fulfillment_id: record.fulfillmentId,
+            purchase_id: record.purchaseId,
+            product_id: record.productId,
+            grant_kind: record.grantKind,
+            grant_amount: record.grantAmount,
+            currency: record.currency,
+            provider: record.provider,
+            provider_transaction_id: record.providerTransactionId
+          };
+        }
+        return {
+          status: PURCHASE_AUTHORITY_RESULT.GRANT_FULFILLED,
+          fulfillment_id: record.fulfillmentId,
+          purchase_id: record.purchaseId,
+          product_id: record.productId,
+          grant_kind: record.grantKind,
+          grant_amount: record.grantAmount,
+          currency: record.currency,
+          provider: record.provider,
+          provider_transaction_id: record.providerTransactionId,
+          fulfilled_at: record.fulfilledAt
+        };
+      });
+    });
   }
 
   _missingProviderResult() {
@@ -409,7 +421,7 @@ export class PurchaseAuthority {
 
   async authorize({ playerId, purchaseId, body }) {
     const request = normalizeRequest(playerId, purchaseId, body);
-    const existingPurchase = this.store.loadPurchase(request.purchaseId);
+    const existingPurchase = await this.store.loadPurchase(request.purchaseId);
     if (existingPurchase) {
       if (existingPurchase.playerId !== request.playerId ||
           existingPurchase.productId !== request.productId ||
@@ -425,7 +437,7 @@ export class PurchaseAuthority {
       return resultFromRecord(PURCHASE_AUTHORITY_RESULT.DUPLICATE_NO_OP, existingPurchase);
     }
 
-    const existingTransaction = this.store.loadByTransaction(request.provider, request.transactionId);
+    const existingTransaction = await this.store.loadByTransaction(request.provider, request.transactionId);
     if (existingTransaction) {
       const same = existingTransaction.playerId === request.playerId &&
         existingTransaction.productId === request.productId &&

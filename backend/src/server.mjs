@@ -196,7 +196,7 @@ export function createAuthorityServer({
       if (request.method === "POST" && url.pathname === "/v1/purchases") {
         const auth = await authenticateRequest(request, config);
         const body = await readJson(request);
-        const result = activePurchaseAuthority.createPending({
+        const result = await activePurchaseAuthority.createPending({
           playerId: auth.playerId,
           body,
           idempotencyKey: request.headers?.["idempotency-key"] || ""
@@ -225,7 +225,7 @@ export function createAuthorityServer({
         if (Object.keys(body || {}).length > 0) {
           throw new AuthorityError(400, "CLIENT_AUTHORITY_FORBIDDEN", "Invoice endpoint accepts no client authority fields");
         }
-        const purchase = activePurchaseAuthority.getPendingPurchaseForInvoice({
+        const purchase = await activePurchaseAuthority.getPendingPurchaseForInvoice({
           purchaseId: decodeURIComponent(purchaseInvoiceMatch[1]),
           playerId: auth.playerId
         });
@@ -280,7 +280,7 @@ export function createAuthorityServer({
       if (request.method === "POST" && grantMatch) {
         const auth = await authenticateRequest(request, config);
         const body = await readJson(request);
-        const result = activePurchaseAuthority.applyGrant({
+        const result = await activePurchaseAuthority.applyGrant({
           purchaseId: decodeURIComponent(grantMatch[1]),
           playerId: auth.playerId,
           body
@@ -293,7 +293,7 @@ export function createAuthorityServer({
       if (request.method === "POST" && fulfillmentMatch) {
         const auth = await authenticateRequest(request, config);
         const body = await readJson(request);
-        const result = activePurchaseAuthority.fulfill({
+        const result = await activePurchaseAuthority.fulfill({
           purchaseId: decodeURIComponent(fulfillmentMatch[1]),
           playerId: auth.playerId,
           body
@@ -307,7 +307,7 @@ export function createAuthorityServer({
       const purchaseStatusMatch = url.pathname.match(new RegExp("^/v1/purchases/([^/]+)$"));
       if (request.method === "GET" && purchaseStatusMatch) {
         const auth = await authenticateRequest(request, config);
-        const result = activePurchaseAuthority.getStatus({
+        const result = await activePurchaseAuthority.getStatus({
           purchaseId: decodeURIComponent(purchaseStatusMatch[1]),
           playerId: auth.playerId
         });
