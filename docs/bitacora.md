@@ -10811,3 +10811,64 @@ GLOBAL GATE = CERRADO.
 ### Next checkpoint
 
 PRODUCTION ACTIVATION + REAL DEPLOYMENT + HEALTH + READINESS + AUTHORITY SMOKE TEST, una vez resuelto el managed persistence implementation gap y provisionada la infraestructura externa.
+
+
+---
+
+## BONE-011-AUTH-029 · PRODUCTION PROVIDER DECISION AND HANDOFF
+
+Fecha: 2026-10-08  
+HEAD BEFORE: `2459c02ef1f575e2913bf3f1c8ca8b9b27654849`  
+TIMER: 45–90 minutos  
+RESULT: PASS / DECISION PERSISTED
+
+Se formalizó la decisión de infraestructura de producción:
+
+- PRIMARY HOSTING PROVIDER = Render.
+- FALLBACK PROVIDER = NOT SELECTED.
+- DATABASE = Managed PostgreSQL.
+- REGISTRY = GHCR.
+- DEPLOYMENT MODEL = Docker / OCI container.
+- IMMUTABLE IMAGE = `ghcr.io/jonhararagi/baseball-waifus/basewarriors-authority@sha256:<digest>`, digest todavía NOT VERIFIED.
+
+La decisión es de proyecto y no constituye provisioning:
+
+`SELECTED != CONFIGURED != DEPLOYED != VERIFIED`
+
+### Handoff
+
+Se creó `docs/production-infrastructure-decision.md` con:
+
+- arquitectura Render → Authority container → Managed PostgreSQL;
+- GHCR → immutable digest → Render;
+- runtime variables y clasificación SECRET/PUBLIC CONFIG/REQUIRED;
+- DOMAIN = NOT_CONFIGURED;
+- HTTPS = PENDING PROVISIONING;
+- Telegram bot/webhook = EXTERNAL / NOT_CONFIGURED;
+- monitoring = NOT_CONFIGURED;
+- PostgreSQL backup/restore = EXTERNAL / REQUIRED;
+- rollback por image digest;
+- checklist completa para AUTH-030, intencionalmente sin casillas marcadas.
+
+No se crearon cuentas, servicios, bases de datos, dominios, credentials ni secretos.
+
+### Consistency
+
+Provider contract = PASS_STATIC.  
+Runbook consistency = PASS_STATIC.  
+Docker/OCI contract = PASS_STATIC.  
+Managed PostgreSQL contract = PASS_STATIC.  
+Configuration contract = PASS_STATIC.
+
+El workflow de deployment existente no fue modificado y no se inició deployment.
+
+### Estado
+
+BONE-004 = OPEN / BLOCKED.  
+BONE-005 = CLOSED.  
+BONE-006 = CLOSED.  
+BONE-010 = CLOSED.  
+BONE-011 = OPEN / IN PROGRESS.  
+GLOBAL GATE = CERRADO.
+
+NEXT: `BONE-011-AUTH-030 · PRODUCTION INFRASTRUCTURE PROVISIONING`.

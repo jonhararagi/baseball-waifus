@@ -1574,3 +1574,73 @@ AUTH-021 = PARTIAL, porque el inventario de infraestructura ya es reproducible p
 BONE-004 permanece OPEN / BLOCKED.  
 BONE-011 permanece OPEN / IN PROGRESS.  
 GLOBAL GATE permanece CERRADO.
+
+
+## BONE-011-AUTH-029 · PRODUCTION PROVIDER DECISION AND HANDOFF
+
+Fecha: 2026-10-08  
+HEAD BEFORE: `2459c02ef1f575e2913bf3f1c8ca8b9b27654849`  
+TIMER: 45–90 minutos  
+RESULT: PASS / DECISION PERSISTED
+
+### Decisión
+
+El proyecto selecciona formalmente:
+
+- PRIMARY HOSTING PROVIDER = Render.
+- FALLBACK PROVIDER = NOT SELECTED.
+- DATABASE = Managed PostgreSQL.
+- REGISTRY = GHCR.
+- DEPLOYMENT MODEL = Docker / OCI container.
+
+La selección es contractual. No implica que exista una cuenta, servicio, database, dominio, secret, billing o deployment de Render.
+
+### Infraestructura objetivo
+
+`Web/PWA → HTTPS → Render production service → BaseWarriors Authority container → Managed PostgreSQL`
+
+`GHCR → immutable image@sha256:<digest> → Render production service`
+
+`Telegram → HTTPS webhook → Authority Backend`
+
+### Estado externo
+
+- IMAGE STATUS = NOT VERIFIED.
+- DOMAIN = NOT_CONFIGURED.
+- HTTPS = PENDING PROVISIONING.
+- Production bot = EXTERNAL / NOT_CONFIGURED.
+- Webhook = EXTERNAL / NOT_CONFIGURED.
+- Monitoring = NOT_CONFIGURED.
+- Managed PostgreSQL backups/restore = EXTERNAL / REQUIRED.
+
+### Handoff
+
+Se creó:
+
+`docs/production-infrastructure-decision.md`
+
+con la matriz completa de runtime variables, contrato Docker/OCI, Managed PostgreSQL, imagen inmutable, rollback y checklist de AUTH-030.
+
+No se selecciona ni implementa provider-specific deployment code en AUTH-029.
+
+No se crearon cuentas, secrets, credentials, databases, domains ni webhooks.
+
+### Semántica de estados
+
+`SELECTED != CONFIGURED != DEPLOYED != VERIFIED`
+
+Por tanto:
+
+`SELECTED = YES`  
+`CONFIGURED = NO`  
+`DEPLOYED = NO`  
+`VERIFIED = NO`
+
+BONE-004 = OPEN / BLOCKED.  
+BONE-005 = CLOSED.  
+BONE-006 = CLOSED.  
+BONE-010 = CLOSED.  
+BONE-011 = OPEN / IN PROGRESS.  
+GLOBAL GATE = CERRADO.
+
+NEXT: `BONE-011-AUTH-030 · PRODUCTION INFRASTRUCTURE PROVISIONING`.
