@@ -48,16 +48,20 @@ test("production fails without explicit origins", () => {
   assert.throws(() => validateProductionConfig(loadConfig(productionEnv({ ALLOWED_ORIGINS: "" }))), /ALLOWED_ORIGINS/);
 });
 
-test("production creates the managed provider without development fallback", () => {
-  const instance = createAuthorityServer({ config: loadConfig(productionEnv()) });
-  assert.equal(instance.store.constructor.name, "ManagedCombatStore");
-  assert.equal(instance.purchaseStore.constructor.name, "ManagedPurchaseStore");
-  assert.equal(instance.store.isDurable, true);
-  assert.equal(instance.purchaseStore.isDurable, true);
-  assert.equal(instance.store.isOperational, false);
-  assert.equal(instance.purchaseStore.isOperational, false);
-  void instance.store.close();
-  void instance.purchaseStore.close();
+test("production provider selection creates managed durable stores without development fallback", () => {
+  const config = loadConfig(productionEnv());
+  const combatStore = createPersistenceStore(config);
+  const purchaseStore = createPurchaseStore(config);
+  assert.equal(combatStore.constructor.name, "ManagedCombatStore");
+  assert.equal(purchaseStore.constructor.name, "ManagedPurchaseStore");
+  assert.equal(combatStore.isDurable, true);
+  assert.equal(purchaseStore.isDurable, true);
+  assert.equal(combatStore.isOperational, false);
+  assert.equal(purchaseStore.isOperational, false);
+  assert.equal(persistenceReadiness(config, combatStore), false);
+  assert.equal(purchasePersistenceReadiness(config, purchaseStore), false);
+  void combatStore.close();
+  void purchaseStore.close();
 });
 
 test("health/readiness exposes no secret material", async () => {
