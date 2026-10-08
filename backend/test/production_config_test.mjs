@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { loadConfig, validateProductionConfig } from "../src/config.mjs";
+import { createPersistenceStore, persistenceReadiness } from "../src/persistence_provider.mjs";
+import { createPurchaseStore, purchasePersistenceReadiness } from "../src/purchase_persistence_provider.mjs";
+import { ManagedCombatStore } from "../src/managed_combat_store.mjs";
+import { ManagedPurchaseStore } from "../src/managed_purchase_store.mjs";
 import { createAuthorityServer } from "../src/server.mjs";
 import { createEphemeralTestSigner } from "../src/attestation_signer.mjs";
 import { InMemoryCombatStore } from "../src/combat_store.mjs";
