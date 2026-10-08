@@ -17,7 +17,7 @@ function productionEnv(overrides = {}) {
     TELEGRAM_BOT_TOKEN: "test-bot-token",
     ALLOWED_ORIGINS: "https://example.github.io",
     AUTHORITY_PERSISTENCE_PROVIDER: "managed",
-    AUTHORITY_PERSISTENCE_DSN: "external://provider-not-connected",
+    AUTHORITY_PERSISTENCE_DSN: "postgres://db.example/basewarriors",
     ...overrides
   };
 }
@@ -48,8 +48,16 @@ test("production fails without explicit origins", () => {
   assert.throws(() => validateProductionConfig(loadConfig(productionEnv({ ALLOWED_ORIGINS: "" }))), /ALLOWED_ORIGINS/);
 });
 
-test("production startup does not fall back to filesystem", () => {
-  assert.throws(() => createAuthorityServer({ config: loadConfig(productionEnv()) }), /Managed production persistence is not configured/);
+test("production creates the managed provider without development fallback", () => {
+  const instance = createAuthorityServer({ config: loadConfig(productionEnv()) });
+  assert.equal(instance.store.constructor.name, "ManagedCombatStore");
+  assert.equal(instance.purchaseStore.constructor.name, "ManagedPurchaseStore");
+  assert.equal(instance.store.isDurable, true);
+  assert.equal(instance.purchaseStore.isDurable, true);
+  assert.equal(instance.store.isOperational, false);
+  assert.equal(instance.purchaseStore.isOperational, false);
+  void instance.store.close();
+  void instance.purchaseStore.close();
 });
 
 test("health/readiness exposes no secret material", async () => {
