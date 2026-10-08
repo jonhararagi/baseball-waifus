@@ -189,7 +189,7 @@ export class ManagedPurchaseStore {
     const id = stableId(purchaseId, "purchaseId");
     const url = String(invoiceUrl || "").trim();
     const payload = String(invoicePayload || "").trim();
-    if (!/^https:///.test(url)) throw new TypeError("Invalid invoice URL");
+    if (!/^https:\/\//.test(url)) throw new TypeError("Invalid invoice URL");
     if (!payload) throw new TypeError("Invoice payload is required");
 
     return this._mutate((state) => {
