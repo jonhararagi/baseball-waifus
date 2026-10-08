@@ -644,7 +644,7 @@ test("R2 · production with non-durable purchase persistence is not ready", asyn
   }
 });
 
-test("R3 · production purchase authority is ready with configured provider and durable injected store", async () => {
+test("R3 · production rejects development filesystem purchase persistence", async () => {
   const directory = await mkdtemp(join(tmpdir(), "basewarriors-purchase-readiness-"));
   const purchaseStore = new PersistentPurchaseStore({ filePath: join(directory, "purchases.json") });
   const instance = createAuthorityServer(readinessServerParts({
@@ -654,11 +654,11 @@ test("R3 · production purchase authority is ready with configured provider and 
   await new Promise((resolve) => instance.server.listen(0, resolve));
   try {
     const response = await fetch("http://127.0.0.1:" + instance.server.address().port + "/ready");
-    assert.equal(response.status, 200);
+    assert.equal(response.status, 503);
     const body = await response.json();
-    assert.equal(body.ready, true);
+    assert.equal(body.ready, false);
     assert.equal(body.purchase_authority, true);
-    assert.equal(body.purchase_persistence, true);
+    assert.equal(body.purchase_persistence, false);
     assert.equal(body.purchase_provider, true);
   } finally {
     await new Promise((resolve) => instance.server.close(resolve));
@@ -734,7 +734,7 @@ test("R7 · readiness evaluation never invokes receipt verification or authoriza
     providerVerifier
   });
   const directory = await mkdtemp(join(tmpdir(), "basewarriors-purchase-readiness-noop-"));
-  const purchaseStore = new PersistentPurchaseStore({ filePath: join(directory, "purchases.json") });
+  const purchaseStore = { isDurable: true, isOperational: true };
   const status = evaluatePurchaseReadiness({
     config: productionReadinessConfig(),
     purchaseAuthority,
