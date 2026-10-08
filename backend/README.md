@@ -14,9 +14,9 @@ Required runtime configuration:
 - AUTHORITY_PERSISTENCE_PROVIDER=managed
 - AUTHORITY_PERSISTENCE_DSN
 
-Production rejects wildcard CORS and never accepts the filesystem provider as a production authority.
+Production rejects wildcard CORS, never falls back to memory/filesystem, and fails closed when the managed database cannot initialize.
 
-The repository intentionally contains no managed-database adapter. External provider wiring must be supplied before a production process can start.
+The repository includes provider-neutral PostgreSQL-compatible managed adapters; external runtime configuration still supplies the DSN and credentials.
 
 ## Persistence boundary
 
