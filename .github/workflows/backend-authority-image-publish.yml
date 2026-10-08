@@ -1,0 +1,113 @@
+name: BaseWarriors Authority Image Publish
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE_NAME: ghcr.io/jonhararagi/baseball-waifus/basewarriors-authority
+
+jobs:
+  publish:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm install --no-audit --no-fund
+
+      - name: Backend tests
+        working-directory: backend
+        run: npm test
+
+      - name: Backend production syntax validation
+        working-directory: backend
+        run: |
+          node --check src/config.mjs
+          node --check src/auth.mjs
+          node --check src/combat_service.mjs
+          node --check src/postgres_persistence.mjs
+          node --check src/managed_combat_store.mjs
+          node --check src/server.mjs
+
+      - name: Prepare minimal Docker context
+        run: |
+          CONTEXT="$RUNNER_TEMP/basewarriors-authority-context"
+          rm -rf "$CONTEXT"
+          mkdir -p "$CONTEXT/backend" "$CONTEXT/webapp/js"
+          cp backend/Dockerfile backend/.dockerignore backend/package.json "$CONTEXT/backend/"
+          cp -R backend/src "$CONTEXT/backend/src"
+          cp webapp/js/combat_core.js webapp/js/reward_authority.js webapp/js/player_meta_state.js "$CONTEXT/webapp/js/"
+          echo "$CONTEXT" >> "$GITHUB_ENV"
+
+      - name: Build container
+        run: |
+          docker buildx build             --platform linux/amd64             --load             --tag "$IMAGE_NAME:$GITHUB_SHA"             --file "$CONTEXT/backend/Dockerfile"             "$CONTEXT"
+
+      - name: Verify image secret safety
+        run: |
+          test "$(docker history --no-trunc "$IMAGE_NAME:$GITHUB_SHA" | grep -Ei 'REWARD_SIGNING_PRIVATE_KEY|TELEGRAM_BOT_TOKEN|AUTHORITY_PERSISTENCE_DSN' || true)" = ""
+          docker run --rm "$IMAGE_NAME:$GITHUB_SHA" sh -c '
+            test ! -e /app/.env &&
+            test ! -e /app/.env.production &&
+            test ! -e /app/private.key &&
+            test -z "$(find /app -type f \\( -name "*.pem" -o -name "*.key" -o -name "*.p12" -o -name "*.pfx" -o -name "*.jwk" \\) -print -quit)"
+          '
+
+      - name: Container smoke
+        run: |
+          docker run -d --rm             --name basewarriors-authority-publish-smoke             -e NODE_ENV=test             -e PORT=8787             -p 8787:8787             "$IMAGE_NAME:$GITHUB_SHA"
+          trap 'docker rm -f basewarriors-authority-publish-smoke >/dev/null 2>&1 || true' EXIT
+          for attempt in $(seq 1 20); do
+            if curl --fail --silent http://127.0.0.1:8787/health >/tmp/basewarriors-health.json; then
+              break
+            fi
+            sleep 1
+          done
+          grep -q '"ok":true' /tmp/basewarriors-health.json
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push immutable commit-tagged image
+        id: push
+        run: |
+          PUSH_OUTPUT="$(
+            docker push "$IMAGE_NAME:$GITHUB_SHA" 2>&1
+          )"
+          printf '%s\n' "$PUSH_OUTPUT"
+          DIGEST="$(printf '%s\n' "$PUSH_OUTPUT" | awk '/digest: sha256:/ {print $2; exit}')"
+          test -n "$DIGEST"
+          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
+          echo "IMAGE=$IMAGE_NAME:$GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+          echo "DIGEST=$DIGEST" >> "$GITHUB_STEP_SUMMARY"
+          echo "IMMUTABLE_REFERENCE=$IMAGE_NAME@$DIGEST" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Post-publish verification by digest
+        env:
+          DIGEST: ${{ steps.push.outputs.digest }}
+        run: |
+          test -n "$DIGEST"
+          docker pull "$IMAGE_NAME@$DIGEST"
+          ACTUAL="$(docker image inspect "$IMAGE_NAME@$DIGEST" --format '{{index .RepoDigests 0}}')"
+          test "$ACTUAL" = "$IMAGE_NAME@$DIGEST"
+          docker run --rm "$IMAGE_NAME@$DIGEST" sh -c '
+            test ! -e /app/.env &&
+            test ! -e /app/.env.production &&
+            test ! -e /app/private.key
+          '
+          echo "Verified: $IMAGE_NAME@$DIGEST" >> "$GITHUB_STEP_SUMMARY"
