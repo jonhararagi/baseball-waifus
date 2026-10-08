@@ -37,10 +37,12 @@ CREATE TABLE IF NOT EXISTS bw_purchase_state (
   schema_version integer NOT NULL,
   revision bigint NOT NULL,
   state jsonb NOT NULL
-);
+)`;
+
+const SCHEMA_SEED_SQL = `
 INSERT INTO bw_purchase_state(singleton, schema_version, revision, state)
 VALUES (true, ${MANAGED_PERSISTENCE_SCHEMA_VERSION}, 0, $1::jsonb)
-ON CONFLICT (singleton) DO NOTHING;
+ON CONFLICT (singleton) DO NOTHING
 `;
 
 function clone(value) {
@@ -79,7 +81,8 @@ export class ManagedPurchaseStore {
   async initialize() {
     try {
       await this.pool.query("SELECT 1");
-      await this.pool.query(SCHEMA_SQL, [JSON.stringify(EMPTY_DOCUMENT)]);
+      await this.pool.query(SCHEMA_SQL);
+      await this.pool.query(SCHEMA_SEED_SQL, [JSON.stringify(EMPTY_DOCUMENT)]);
       const result = await this.pool.query(
         "SELECT schema_version FROM bw_purchase_state WHERE singleton=true"
       );
