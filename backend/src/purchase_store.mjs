@@ -634,3 +634,17 @@ export class PersistentPurchaseStore {
     return { status: "GRANT_FULFILLED", record: clone(fulfillment) };
   }
 }
+
+
+export {
+  SCHEMA_VERSION as PURCHASE_PERSISTENCE_SCHEMA_VERSION,
+  validateDocument,
+  validateRecord,
+  validateFulfillment,
+  buildFulfillment,
+  grantCurrencyForKind,
+  pendingReceiptFingerprint,
+  playerMetaIdentity,
+  samePendingPurchase,
+  transactionKey
+};
