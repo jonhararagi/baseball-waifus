@@ -42,8 +42,13 @@ jobs:
           node --check src/purchase_store.mjs
           node --check src/purchase_persistence_provider.mjs
           node --check src/purchase_authority.mjs
+          node --check src/postgres_persistence.mjs
+          node --check src/managed_combat_store.mjs
+          node --check src/managed_purchase_store.mjs
           node --check src/server.mjs
 
+      - name: Install backend dependencies
+        run: npm install --no-audit --no-fund
       - name: Backend authority tests
         run: npm test
 

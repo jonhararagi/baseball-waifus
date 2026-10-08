@@ -376,6 +376,19 @@ export function createAuthorityServer({
 export async function startServer(config = loadConfig()) {
   if (config.production) validateProductionConfig(config);
   const created = createAuthorityServer({ config });
+  const initializers = [created.store, created.purchaseStore]
+    .filter((store) => typeof store?.initialize === "function")
+    .map((store) => store.initialize());
+  try {
+    await Promise.all(initializers);
+  } catch (error) {
+    await Promise.all(
+      [created.store, created.purchaseStore]
+        .filter((store) => typeof store?.close === "function")
+        .map((store) => store.close().catch(() => undefined))
+    );
+    throw error;
+  }
   await new Promise((resolve) => created.server.listen(config.port, resolve));
   return created;
 }

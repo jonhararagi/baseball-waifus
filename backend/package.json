@@ -5,5 +5,8 @@
   "scripts": {
     "test": "node --test test/*.mjs",
     "validate:production-config": "node test/production_config_test.mjs"
+  },
+  "dependencies": {
+    "pg": "8.13.1"
   }
 }
