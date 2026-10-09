@@ -1117,7 +1117,7 @@ async function run() {
       const browserVersion = await cdp.send("Browser.getVersion");
       const playerMetaKey = "baseball_waifus_player_meta_v1:local-player";
 
-      const readRewardState = async () => cdpEvaluate(cdp, `(() => { const canvas = document.querySelector("#gameCanvas"); const d = canvas?.dataset || {}; const gacha = window.BaseballWaifusGacha?.getStatus?.() || null; const raw = localStorage.getItem("baseball_waifus_player_meta_v1:local-player"); let persisted = null; try { const persistedRecord = raw ? JSON.parse(raw) : null; persisted = "+ PLAYER_META_EXTRACTOR_SOURCE +"(persistedRecord); } catch { persisted = null; } return { battlePhase:d.combatBattlePhase||"", tacticalTurn:d.combatTacticalTurn===""?null:Number(d.combatTacticalTurn), timingActive:d.combatTimingActive==="true", timingGrade:d.combatTimingGrade||"", combatResult:d.combatResult||"", presentationPhase:d.combatStagePresentationPhase||"", presentationActive:d.combatPresentationActive==="true", playerStamina:d.combatPlayerStamina===""?null:Number(d.combatPlayerStamina), scrap:Number(gacha?.scavenger_scrap??NaN), persistedScrap:Number(persisted?.currencies?.SCRAP??NaN), rewardLedger:persisted?.rewardLedger||null, rewardLedgerKeys:persisted?.rewardLedger?Object.keys(persisted.rewardLedger):[], playerMetaRawPresent:Boolean(raw) }; })()`);
+      const readRewardState = async () => cdpEvaluate(cdp, `(() => { const canvas = document.querySelector("#gameCanvas"); const d = canvas?.dataset || {}; const gacha = window.BaseballWaifusGacha?.getStatus?.() || null; const raw = localStorage.getItem("baseball_waifus_player_meta_v1:local-player"); let persisted = null; try { const persistedRecord = raw ? JSON.parse(raw) : null; persisted = ${PLAYER_META_EXTRACTOR_SOURCE}(persistedRecord); } catch { persisted = null; } return { battlePhase:d.combatBattlePhase||"", tacticalTurn:d.combatTacticalTurn===""?null:Number(d.combatTacticalTurn), timingActive:d.combatTimingActive==="true", timingGrade:d.combatTimingGrade||"", combatResult:d.combatResult||"", presentationPhase:d.combatStagePresentationPhase||"", presentationActive:d.combatPresentationActive==="true", playerStamina:d.combatPlayerStamina===""?null:Number(d.combatPlayerStamina), scrap:Number(gacha?.scavenger_scrap??NaN), persistedScrap:Number(persisted?.currencies?.SCRAP??NaN), rewardLedger:persisted?.rewardLedger||null, rewardLedgerKeys:persisted?.rewardLedger?Object.keys(persisted.rewardLedger):[], playerMetaRawPresent:Boolean(raw) }; })()`);
 
       const mark = async (name, condition, timeoutMs = 6000) => {
         const deadline = Date.now() + timeoutMs;
@@ -1331,7 +1331,7 @@ async function run() {
         const gacha = window.BaseballWaifusGacha?.getStatus?.() || null;
         const raw = localStorage.getItem("baseball_waifus_player_meta_v1:local-player");
         let persisted = null;
-        try { const persistedRecord = raw ? JSON.parse(raw) : null; persisted = "+ PLAYER_META_EXTRACTOR_SOURCE +"(persistedRecord); } catch {}
+        try { const persistedRecord = raw ? JSON.parse(raw) : null; persisted = ${PLAYER_META_EXTRACTOR_SOURCE}(persistedRecord); } catch {}
         const rect = canvas?.getBoundingClientRect();
         return {
           battlePhase:d.combatBattlePhase||"",
