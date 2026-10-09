@@ -36,15 +36,56 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Prepare runtime data
+      - name: Prepare static site for browser probes
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p webapp/data
-          cp data/characters_queue.json webapp/data/characters_queue.json
-          cp data/game_schemas_recycled.json webapp/data/game_schemas_recycled.json
-          test -s webapp/data/characters_queue.json
-          test -s webapp/data/game_schemas_recycled.json
+          rm -rf site
+          mkdir -p site
+          cp -R webapp/. site/
+
+          mkdir -p site/assets/characters/expressions site/assets/characters/approved
+          cp -R assets/characters/expressions/. site/assets/characters/expressions/
+          cp -R assets/characters/approved/. site/assets/characters/approved/
+
+          mkdir -p site/data
+          cp data/characters_queue.json site/data/characters_queue.json
+          cp data/game_schemas_recycled.json site/data/game_schemas_recycled.json
+          test -s site/data/characters_queue.json
+          test -s site/data/game_schemas_recycled.json
+          test -s site/assets/characters/expressions/bw001_neutral.svg
+
+          mkdir -p site/assets/production
+          cp -R assets/production/. site/assets/production/
+          test -s site/assets/production/cards/bw001--normal.svg
+          test -s site/assets/production/sprites/bw001_idle.png
+          test -s site/assets/production/presentation/bw001--profile.svg
+          test -s site/assets/production/presentation/bw001--victory.svg
+
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path("site/assets/production")
+          allowed = {".png", ".jpg", ".jpeg", ".webp", ".avif", ".svg"}
+
+          def collect(folder):
+              items = []
+              base = root / folder
+              for path in sorted(base.rglob("*")):
+                  if path.is_file() and path.suffix.lower() in allowed:
+                      descriptor = {
+                          "id": path.stem,
+                          "path": "./assets/production/%s" % path.relative_to(root).as_posix()
+                      }
+                      descriptor["card_hd_url" if folder == "cards" else "sprite_url"] = descriptor["path"]
+                      items.append(descriptor)
+              return items
+
+          manifest = {"version": 2, "sprites": collect("sprites"), "cards": collect("cards")}
+          (root / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+          PY
+          test -s site/assets/production/manifest.json
       - name: Locate Chrome
         id: chrome
         shell: bash
@@ -74,7 +115,7 @@ jobs:
       - name: BONE-004 Native Chromium Reward Authority Validation
         shell: bash
         env:
-          SITE_DIR: webapp
+          SITE_DIR: site
           BROWSER_BIN: ${{ steps.chrome.outputs.browser_bin }}
         run: |
           set -euo pipefail
@@ -90,7 +131,7 @@ jobs:
       - name: Run T097 reward handoff proof
         shell: bash
         env:
-          T072_SITE_DIR: webapp
+          T072_SITE_DIR: site
           T072_EVIDENCE_DIR: browser-evidence/T097/$GITHUB_SHA/$GITHUB_RUN_ID
           T097_REWARD_HANDOFF: "1"
           BROWSER_BIN: ${{ steps.chrome.outputs.browser_bin }}
@@ -102,7 +143,7 @@ jobs:
         if: always()
         shell: bash
         env:
-          T072_SITE_DIR: webapp
+          T072_SITE_DIR: site
           T072_EVIDENCE_DIR: browser-evidence/T101/$GITHUB_SHA/$GITHUB_RUN_ID
           T101_DEFEAT_PROOF: "1"
           T104_PERSISTENCE_PROOF: "1"
@@ -116,7 +157,7 @@ jobs:
         if: always()
         shell: bash
         env:
-          T072_SITE_DIR: webapp
+          T072_SITE_DIR: site
           T072_EVIDENCE_DIR: browser-evidence/T109/$GITHUB_SHA/$GITHUB_RUN_ID
           T109_REWARD_BOUNDARY: "1"
           BROWSER_BIN: ${{ steps.chrome.outputs.browser_bin }}
@@ -129,7 +170,7 @@ jobs:
         if: always()
         shell: bash
         env:
-          T072_SITE_DIR: webapp
+          T072_SITE_DIR: site
           T072_EVIDENCE_DIR: browser-evidence/T111/$GITHUB_SHA/$GITHUB_RUN_ID
           T111_TERMINAL_BOUNDARY: "1"
           BROWSER_BIN: ${{ steps.chrome.outputs.browser_bin }}
@@ -142,7 +183,7 @@ jobs:
         if: always()
         shell: bash
         env:
-          T072_SITE_DIR: webapp
+          T072_SITE_DIR: site
           T072_EVIDENCE_DIR: browser-evidence/T117/$GITHUB_SHA/$GITHUB_RUN_ID
           T117_TERMINAL_TIMING_DIAGNOSTIC: "1"
           BROWSER_BIN: ${{ steps.chrome.outputs.browser_bin }}
@@ -163,7 +204,7 @@ jobs:
         if: always()
         shell: bash
         env:
-          T072_SITE_DIR: webapp
+          T072_SITE_DIR: site
           T072_EVIDENCE_DIR: browser-evidence/T118/$GITHUB_SHA/$GITHUB_RUN_ID
           T118_NON_HIT_REWARD_VALIDATION: "1"
           BROWSER_BIN: ${{ steps.chrome.outputs.browser_bin }}
@@ -184,7 +225,7 @@ jobs:
         if: always()
         shell: bash
         env:
-          T072_SITE_DIR: webapp
+          T072_SITE_DIR: site
           T072_EVIDENCE_DIR: browser-evidence/T114-R/$GITHUB_SHA/$GITHUB_RUN_ID
           T114R_TERMINAL_INPUT_RECOVERY: "1"
           BROWSER_BIN: ${{ steps.chrome.outputs.browser_bin }}
