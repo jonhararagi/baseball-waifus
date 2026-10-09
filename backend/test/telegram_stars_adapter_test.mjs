@@ -229,7 +229,9 @@ test("L · config seam marks Telegram Stars credential without exposing its valu
   assert.equal(config.purchaseProvider, TELEGRAM_STARS_PROVIDER);
   assert.equal(config.purchaseProviderCredentialConfigured, true);
   assert.equal(config.purchaseProviderConfigConfigured, true);
-  assert.equal("telegramStarsWebhookSecret" in config, false);
+  assert.equal("telegramStarsWebhookSecret" in config, true);
+  assert.equal(config.telegramStarsWebhookSecret, secret);
+  assert.equal(Object.getOwnPropertyDescriptor(config, "telegramStarsWebhookSecret").enumerable, false);
   assert.equal(config.telegramStarsWebhookSecretConfigured, true);
   assert.doesNotMatch(JSON.stringify(config), /telegram-stars-test-webhook-secret/);
 });
