@@ -14,12 +14,12 @@
 
 ## HEAD / REPOSITORY STATE
 
-- **HEAD at audit start:** `63925adaec7a45274abe2cff8dd921287f7adf70`
-- **HEAD commit:** `docs: add production owner activation gate`
-- **Parent:** `c25383b9e020eb5369cb196b3711523f67d2667d`
-- **Latest commit files:** only `docs/production-owner-activation-gate.md`.
+- **CONT-002 HEAD BEFORE:** `2ac887fea2907e43b278f874ae955c86c5448e2e`
+- **Commit at CONT-002 start:** `docs: persist obrero continuity checkpoint`
+- **Parent at CONT-002 start:** `63925adaec7a45274abe2cff8dd921287f7adf70`
+- **Prior owner-gate checkpoint:** HEAD `63925adaec7a45274abe2cff8dd921287f7adf70`, commit `docs: add production owner activation gate`; this is retained as history.
 - **Working tree:** not directly observable through the available GitHub repository connector; no local checkout was used.
-- **Checkpoint commit:** this document is being persisted separately. On resume, re-read `main` and use its actual HEAD rather than assuming the audit SHA is still current.
+- **CONT-002 commit:** this documentation checkpoint is persisted by the commit that contains this entry. Verify the actual `main` HEAD when resuming; the final report records the SHA returned by GitHub.
 
 ## LAST VERIFIED STEP
 
@@ -64,7 +64,7 @@ Required evidence/actions:
 
 Secret/environment APIs are not exposed through the current repository connector. Their values were not read, copied or inferred. The owner gate records them as required and not verified. No secret values are included in this checkpoint.
 
-## FILES / COMMITS / TESTS
+## PRIOR CHECKPOINT FILES / COMMITS / TESTS · OWNER ACTIVATION GATE
 
 - **Files modified in this checkpoint:** `docs/obrero-continuity.md` only.
 - **Runtime changes:** none.
@@ -97,3 +97,59 @@ At that time, verify `main` afresh, continue from the actual external state, use
 `GLOBAL GATE = CERRADO`
 
 No product features are authorized while the critical bone gate remains closed.
+
+
+---
+
+## CONT-002 · CURRENT BONE STATUS AND CONTINUITY RECONCILIATION
+
+**Date:** 2026-10-09  
+**HEAD BEFORE:** `2ac887fea2907e43b278f874ae955c86c5448e2e`  
+**HEAD AFTER:** recorded as the `main` commit containing this CONT-002 checkpoint; exact SHA was verified externally in the final report.  
+**Status:** `WAITING_FOR_OWNER_ACTION`  
+**Evidence level:** `PASS_STATIC` for repository/code reconciliation; AUTH-023 remains historical `PASS_REAL` CI evidence only.
+
+### Reconciliation saved
+
+- `backend/src/managed_combat_store.mjs`: present; PostgreSQL combat state and reward ledger are managed through transactional/revision-aware operations.
+- `backend/src/managed_purchase_store.mjs`: present; purchase state, transactions, fulfillments and server-applied Player Meta are persisted through PostgreSQL transactions.
+- `backend/src/postgres_persistence.mjs`: present; PostgreSQL pool, managed DSN validation and transaction helper.
+- `backend/src/persistence_provider.mjs` and `backend/src/purchase_persistence_provider.mjs`: select the managed stores in production.
+- AUTH-021's managed-persistence implementation gap is historical and superseded by AUTH-022.
+- AUTH-023 Run `37747902639` / Job `113213689936` is a historical CI PASS at `8efeaadddb09ef8683934263308a6810698e2849`, PostgreSQL 16.15, 157 PASS / 0 FAIL / 0 SKIPPED. The five commits from that SHA to CONT-002 base do not modify `backend/**`.
+- GHCR publish workflow exists, but publication/digest remains NOT VERIFIED. No claim of external image publication is made.
+
+### Current external blockers
+
+- Render: `SELECTED / NOT PROVISIONED`.
+- Managed PostgreSQL production instance: `NOT PROVISIONED / NOT VERIFIED`.
+- Production secrets and variables: `NOT VERIFIED`; the current GitHub connector does not expose the Secrets/Environment-value APIs. Values were neither read nor copied.
+- Domain, DNS, HTTPS/TLS: `NOT CONFIGURED`.
+- Telegram production webhook: `NOT CONFIGURED`.
+- Production deployment, health/readiness and authenticated authority/purchase smoke: `NOT RUN`.
+- Monitoring and managed PostgreSQL backup/restore: `NOT CONFIGURED / NOT VERIFIED`.
+
+### CONT-002 record
+
+- **BASE SHA:** `2ac887fea2907e43b278f874ae955c86c5448e2e`
+- **Status:** `PASS_STATIC`
+- **Files modified:** `problemas de huesos/BONE-004-offline-reward-authority.md`, `problemas de huesos/BONE-011-monetization-authority.md`, `docs/bitacora.md`, `docs/obrero-continuity.md`.
+- **Commits:** one documentation commit for the reconciliation; exact SHA in final report.
+- **Tests executed now:** none. No backend tests, workflows, image publication, provisioning or deployment were executed.
+- **BONE-004:** `OPEN / BLOCKED`.
+- **BONE-011:** `OPEN / IN PROGRESS`.
+- **BONE-005 / BONE-006:** `CLOSED`.
+- **GLOBAL GATE:** `CERRADO`.
+
+### Cause / attempts / needs
+
+**CAUSE:** external infrastructure/access is not materially verified. The code implementation gap is resolved, but provider provisioning and production activation are still external blockers.
+
+**ATTEMPTS:** one static continuity reconciliation. AUTH-025/AUTH-030 and the production workflow were not retried; no workflow was launched.
+
+**NEEDS:** authorized Render access, production service, managed PostgreSQL, usable immutable GHCR digest, external runtime secrets/variables, domain/DNS/HTTPS, Telegram webhook, monitoring and backup/restore, then authorized deployment and real production smoke.
+
+### Resume decision
+
+`WAITING_FOR_OWNER_ACTION`. Do not create a new AUTH identifier or repeat the same blocked provisioning task until the owner gate records a material, verifiable external change. When `PRODUCTION ACCESS READY` is proven, resume the existing handoff `BONE-011-AUTH-032 · PRODUCTION PROVISIONING AND DEPLOYMENT`.
+

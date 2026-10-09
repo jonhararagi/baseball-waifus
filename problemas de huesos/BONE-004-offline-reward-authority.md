@@ -3,6 +3,50 @@
 PRIORIDAD: P0
 ESTADO: BLOCKED
 
+## CURRENT OPERATIONAL STATUS
+
+**Audit base HEAD:** `2ac887fea2907e43b278f874ae955c86c5448e2e`  
+**Status:** `OPEN / BLOCKED`  
+**Global gate:** `CERRADO`
+
+Este resumen describe el estado operativo actual del repositorio. Los checkpoints de abajo se conservan como historial; las afirmaciones anteriores a AUTH-022/AUTH-023 que indicaban que no existía un managed persistence adapter están supersedidas por la implementación y validación posterior.
+
+### Implemented in repository
+
+- Authority backend Node.js ESM, con estado y resolución de combate server-side reutilizando `webapp/js/combat_core.js`.
+- Contrato de attestation `SERVER_COMBAT_ATTESTATION_V1`, signer ECDSA P-256/SHA-256 y verificación cliente.
+- Telegram init-data server verification; la identidad autenticada se deriva de datos verificados, no de `initDataUnsafe`.
+- PostgreSQL persistence module en `backend/src/postgres_persistence.mjs`.
+- `ManagedCombatStore` y su wiring productivo en `backend/src/persistence_provider.mjs`.
+- `ManagedPurchaseStore` y su wiring en `backend/src/purchase_persistence_provider.mjs`.
+- Configuración productiva fail-closed, Docker/OCI y workflows de publicación/contracto de deployment.
+
+### Historical validation, not production evidence
+
+GitHub Actions Run `37747902639` = `SUCCESS`, Job `113213689936`, checkout HEAD `8efeaadddb09ef8683934263308a6810698e2849`.
+
+La ejecución utilizó PostgreSQL `16.15` y registró **157 PASS / 0 FAIL / 0 SKIPPED**. Incluyó integración real en CI para inicialización de schema, recuperación al cerrar/reabrir stores, concurrencia, idempotencia, rollback transaccional, persistencia de combate/compras y container build/smoke.
+
+El compare desde ese HEAD de CI hasta el audit base `2ac887fea2907e43b278f874ae955c86c5448e2e` contiene cinco commits, pero **ninguno modifica archivos `backend/**`**. Los cambios posteriores fueron workflow de publicación y documentación; por ello la validación de CI sigue aplicando al código backend actual. Es evidencia de PostgreSQL de integración en CI, no de una instancia productiva externa.
+
+### External production state
+
+- **Hosting:** Render `SELECTED / NOT PROVISIONED`.
+- **Managed PostgreSQL productivo:** `NOT PROVISIONED / NOT VERIFIED`.
+- **GHCR image publication / immutable digest:** `NOT VERIFIED`. La existencia del workflow no prueba una publicación.
+- **Production secrets:** `NOT VERIFIED`; la conexión GitHub disponible no expone APIs de secrets/environment values. No se leyeron ni registraron valores.
+- **Domain / DNS / HTTPS:** `NOT CONFIGURED`.
+- **Telegram production webhook:** `NOT CONFIGURED`.
+- **Production deployment:** `NOT RUN`.
+- **Production health/readiness and authority smoke:** `NOT RUN`.
+- **Client verification against deployed production backend:** `NOT RUN`.
+
+**Cause:** faltan recursos/configuración externos verificables, no una ausencia actual del adapter PostgreSQL en el repositorio.  
+**Needs:** Render access/service provisioned, managed PostgreSQL productivo, imagen GHCR inmutable accesible, runtime secrets/configuration, domain/DNS/HTTPS, Telegram webhook, monitoring/backups/restore y deployment real seguido de smoke de producción.
+
+BONE-004 permanece `OPEN / BLOCKED`. Esto no modifica BONE-005 ni BONE-006. AUTH-021 y los diagnósticos previos continúan abajo como evidencia histórica, sin borrar sus resultados.
+
+
 El cliente puede ejecutar combate local cuando no existe API y producir resultados locales.
 
 Eso sirve para demo y QA, pero no puede ser autoridad economica comercial.

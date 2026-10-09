@@ -3,6 +3,50 @@
 PRIORIDAD: P0
 ESTADO: OPEN
 
+## CURRENT OPERATIONAL STATUS
+
+**Audit base HEAD:** `2ac887fea2907e43b278f874ae955c86c5448e2e`  
+**BONE-011:** `OPEN / IN PROGRESS`  
+**Related BONE-004:** `OPEN / BLOCKED`  
+**GLOBAL GATE:** `CERRADO`
+
+Este resumen supersede únicamente diagnósticos operativos antiguos; todos los checkpoints históricos se conservan. En particular, el `IMPLEMENTATION GAP` registrado por AUTH-021 para la existencia/wiring del managed persistence adapter fue superado por AUTH-022 y validado por AUTH-023. El provisioning externo sigue sin demostrarse.
+
+### Implemented
+
+- `ManagedCombatStore` en `backend/src/managed_combat_store.mjs`.
+- `ManagedPurchaseStore` en `backend/src/managed_purchase_store.mjs`.
+- PostgreSQL pool, DSN validation y transacciones en `backend/src/postgres_persistence.mjs`.
+- Wiring `AUTHORITY_PERSISTENCE_PROVIDER=managed` en los persistence providers de combate y compras, con inicialización y readiness fail-closed.
+- Reward ledger persistente, revision/concurrency checks y compra/fulfillment transaccional en los contratos existentes.
+- Workflow de publicación GHCR implementado en `.github/workflows/backend-authority-image-publish.yml`.
+- Runbook, decisión de proveedor y owner activation gate documentados.
+
+### AUTH-022 / AUTH-023 evidence
+
+**AUTH-022:** los adapters de PostgreSQL gestionado y su wiring están incorporados en el árbol actual.
+
+**AUTH-023 historical CI:** GitHub Actions Run `37747902639`, Job `113213689936`, checkout HEAD `8efeaadddb09ef8683934263308a6810698e2849` = `SUCCESS`. PostgreSQL `16.15`; **157 PASS / 0 FAIL / 0 SKIPPED**. La suite cubrió combate, compras, restart recovery, idempotencia, concurrencia, rollback e inicialización de schema; container build y smoke en el entorno aislado de CI también pasaron.
+
+Compare `8efeaadddb09ef8683934263308a6810698e2849...`2ac887fea2907e43b278f874ae955c86c5448e2e` muestra cinco commits posteriores que no modificaron `backend/**`; por ello esta es evidencia histórica aún pertinente al código backend actual. No constituye evidencia de PostgreSQL productivo ni de deployment externo.
+
+### External infrastructure / deployment
+
+- **Hosting:** Render `SELECTED / NOT PROVISIONED`.
+- **Managed PostgreSQL productivo:** `NOT PROVISIONED / NOT VERIFIED`.
+- **GHCR image publication and digest:** `NOT VERIFIED`; workflow existente no equivale a una publicación.
+- **Production secrets/variables:** `NOT VERIFIED`; la conexión GitHub disponible no expone el contenido/presencia segura de Secrets/Environment values. No se leyeron ni registraron valores.
+- **Domain / DNS / HTTPS:** `NOT CONFIGURED`.
+- **Production Telegram bot/webhook:** `NOT CONFIGURED`.
+- **Deployment:** `NOT RUN`.
+- **Production health/readiness, authenticated combat/purchase and client verification:** `NOT RUN`.
+- **Monitoring, backup, restore:** `NOT CONFIGURED / NOT VERIFIED`.
+
+**External blocker:** Render access/service provisioning, immutable GHCR image+digest, managed PostgreSQL productivo, external runtime secrets/variables, domain/DNS/HTTPS, Telegram webhook, deployment permissions and operational monitoring/backup/restore.
+
+**Next action:** remain `WAITING_FOR_OWNER_ACTION`. No repetir AUTH-025/AUTH-030 ni abrir otro identificador de provisioning mientras no exista un cambio externo material y verificable. Cuando el owner gate `PRODUCTION ACCESS READY` esté probado, continuar por el handoff documentado `BONE-011-AUTH-032`.
+
+
 El cliente abre invoice y el callback puede disparar acreditacion local de Scrap o boosts.
 
 Eso no puede ser la autoridad economica definitiva en un producto comercial.

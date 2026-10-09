@@ -10872,3 +10872,52 @@ BONE-011 = OPEN / IN PROGRESS.
 GLOBAL GATE = CERRADO.
 
 NEXT: `BONE-011-AUTH-030 · PRODUCTION INFRASTRUCTURE PROVISIONING`.
+
+
+---
+
+## CONT-002 · CURRENT BONE STATUS AND CONTINUITY RECONCILIATION
+
+Fecha: 2026-10-09  
+BASE SHA VALIDADO: `2ac887fea2907e43b278f874ae955c86c5448e2e`  
+HEAD AFTER: commit documental que registra CONT-002 en `main`; el SHA exacto se registra en el reporte final y debe verificarse de nuevo al reanudar.  
+RESULT: `PASS_STATIC`  
+TIMER: 45–75 minutos
+
+### Current implementation vs historical status
+
+- `ManagedCombatStore` y `ManagedPurchaseStore` están implementados en `backend/src/` y conectados mediante los persistence providers correspondientes.
+- `backend/src/postgres_persistence.mjs` contiene la frontera PostgreSQL compartida, validación DSN y helper transaccional.
+- AUTH-021 documentó un implementation gap que era cierto en ese checkpoint histórico. AUTH-022 lo superó al incorporar los adapters/wiring managed.
+- AUTH-023 quedó validado por GitHub Actions Run `37747902639`, Job `113213689936`: PostgreSQL `16.15`, **157 PASS / 0 FAIL / 0 SKIPPED**, container build/smoke de CI PASS.
+- El CI se ejecutó en `8efeaadddb09ef8683934263308a6810698e2849`. El compare hasta BASE SHA `2ac887fea2907e43b278f874ae955c86c5448e2e` muestra cinco commits posteriores y ningún cambio en `backend/**`; la evidencia es histórica pero permanece aplicable al código backend actual.
+- La publicación real de la imagen GHCR sigue `NOT VERIFIED`; la existencia de `.github/workflows/backend-authority-image-publish.yml` solo demuestra que existe el workflow.
+- Render = `SELECTED / NOT PROVISIONED`; managed PostgreSQL productivo = `NOT PROVISIONED / NOT VERIFIED`; production secrets = `NOT VERIFIED`; domain/DNS/HTTPS y Telegram webhook = `NOT CONFIGURED`; deployment y smoke productivo = `NOT RUN`.
+
+### Evidence classification
+
+- **PASS_STATIC:** adapter/provider wiring, config fail-closed, deployment contract/runbook y continuidad son coherentes con el código actual.
+- **PASS_REAL histórico CI:** Run `37747902639`, Job `113213689936`, PostgreSQL 16.15, suite 157/0/0 y container smoke en CI.
+- **NOT VERIFIED:** GHCR publication/digest, production secret usability, external database, host/domain/HTTPS, webhook.
+- **NOT RUN:** production deployment, production health/readiness y authenticated combat/purchase smoke.
+- No se repitieron tests ni workflows durante CONT-002. No se usó la evidencia histórica como si fuera una ejecución nueva.
+
+### Bone / gate state
+
+- BONE-004 = `OPEN / BLOCKED`.
+- BONE-005 = `CLOSED`.
+- BONE-006 = `CLOSED`.
+- BONE-011 = `OPEN / IN PROGRESS`.
+- GLOBAL GATE = `CERRADO`.
+
+### Cause / attempts / needs
+
+**CAUSE:** provisioning externo y acceso operativo todavía no están comprobados; la conexión GitHub disponible no permite verificar de forma segura Secrets/Environment values. El implementation gap histórico de managed persistence ya está resuelto en el código.
+
+**ATTEMPTS:** una reconciliación documental/estática en HEAD `2ac887fea2907e43b278f874ae955c86c5448e2e`; revisión de providers, workflows, runbook, decisión de infraestructura, owner activation gate y comparación con el SHA del CI AUTH-023. No se reintentaron AUTH-025/AUTH-030 ni se lanzaron workflows.
+
+**NEEDS:** sesión Render autorizada; servicio Render productivo; Managed PostgreSQL provisionado y operativo; imagen GHCR accesible por digest inmutable; configuración externa de secrets/variables; domain/DNS/HTTPS; Telegram bot/webhook; monitoring y backup/restore; deployment autorizado y smoke real posterior.
+
+**NEXT ACTION:** `WAITING_FOR_OWNER_ACTION`. No crear otra tarea de provisioning ni repetir un retry equivalente hasta que exista un cambio externo material y verificable. Tras satisfacer el owner gate existente, retomar `BONE-011-AUTH-032 · PRODUCTION PROVISIONING AND DEPLOYMENT`.
+
+No se tocaron código, runtime, gameplay, economía, rewards, Gacha, adapters PostgreSQL, Dockerfile ni workflows.
