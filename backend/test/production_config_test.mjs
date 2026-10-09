@@ -171,6 +171,39 @@ test("production provider selection creates managed durable stores without devel
   void purchaseStore.close();
 });
 
+test("server uses the validated injected webhook secret, not process.env", () => {
+  const previous = process.env.TELEGRAM_STARS_WEBHOOK_SECRET;
+  delete process.env.TELEGRAM_STARS_WEBHOOK_SECRET;
+  try {
+    const secret = "injected-config-stars-secret";
+    const instance = createAuthorityServer({
+      config: loadConfig(productionEnv({ TELEGRAM_STARS_WEBHOOK_SECRET: secret })),
+      store: new InMemoryCombatStore(),
+      signer: createEphemeralTestSigner(),
+      purchaseStore: {
+        isDurable: true,
+        isOperational: true,
+        loadPurchase() { return null; }
+      }
+    });
+    assert.equal(instance.purchaseProviderAdapter.getStatus().state, PURCHASE_PROVIDER_ADAPTER_STATUS.READY);
+    assert.equal(instance.purchaseProviderAdapter.getStatus().credentials_configured, true);
+    assert.doesNotMatch(JSON.stringify(instance.purchaseProviderAdapter.getStatus()), new RegExp(secret));
+  } finally {
+    if (previous === undefined) delete process.env.TELEGRAM_STARS_WEBHOOK_SECRET;
+    else process.env.TELEGRAM_STARS_WEBHOOK_SECRET = previous;
+  }
+});
+
+test("deployment workflow validates Telegram Stars provider and external secret", async () => {
+  const fs = await import("node:fs/promises");
+  const workflow = await fs.readFile(new URL("../../.github/workflows/backend-authority-deploy.yml", import.meta.url), "utf8");
+  assert.ok(workflow.includes('PURCHASE_PROVIDER: ${{ vars.PURCHASE_PROVIDER }}'));
+  assert.ok(workflow.includes('TELEGRAM_STARS_WEBHOOK_SECRET: ${{ secrets.TELEGRAM_STARS_WEBHOOK_SECRET }}'));
+  assert.ok(workflow.includes('test "$PURCHASE_PROVIDER" = "telegram-stars"'));
+  assert.ok(workflow.includes("validateProductionConfig(loadConfig(process.env))"));
+});
+
 test("health/readiness exposes no secret material", async () => {
   const instance = createAuthorityServer({
     config: loadConfig({ NODE_ENV: "test", PORT: "0", ALLOWED_ORIGINS: "*" }),
