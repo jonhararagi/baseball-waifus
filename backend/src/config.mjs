@@ -21,16 +21,15 @@ export function loadConfig(env = process.env) {
   const persistenceDsn = env.AUTHORITY_PERSISTENCE_DSN ? String(env.AUTHORITY_PERSISTENCE_DSN) : "";
   const allowedOrigins = splitList(env.ALLOWED_ORIGINS, nodeEnv === "production" ? [] : ["*"]);
 
-  const purchaseProvider = String(env.PURCHASE_PROVIDER || "").trim();
+  const purchaseProvider = String(env.PURCHASE_PROVIDER || "").trim().toLowerCase();
   const purchaseProviderEndpoint = String(env.PURCHASE_PROVIDER_ENDPOINT || "").trim();
   const purchaseProviderCredentialConfigured = Boolean(
     String(env.PURCHASE_PROVIDER_CREDENTIAL || "").trim()
   );
-  const telegramStarsWebhookSecretConfigured = Boolean(
-    String(env.TELEGRAM_STARS_WEBHOOK_SECRET || "").trim()
-  );
+  const telegramStarsWebhookSecret = String(env.TELEGRAM_STARS_WEBHOOK_SECRET || "").trim();
+  const telegramStarsWebhookSecretConfigured = Boolean(telegramStarsWebhookSecret);
 
-  return Object.freeze({
+  const config = {
     nodeEnv,
     production: nodeEnv === "production",
     test: nodeEnv === "test",
@@ -64,7 +63,17 @@ export function loadConfig(env = process.env) {
     purchaseProviderConfigConfigured: purchaseProvider === "telegram-stars"
       ? Boolean(purchaseProvider && telegramStarsWebhookSecretConfigured)
       : Boolean(purchaseProvider && purchaseProviderEndpoint)
+  };
+
+  // Keep the secret available to in-process adapters without including it in JSON/log serialization.
+  Object.defineProperty(config, "telegramStarsWebhookSecret", {
+    value: telegramStarsWebhookSecret,
+    enumerable: false,
+    configurable: false,
+    writable: false
   });
+
+  return Object.freeze(config);
 }
 
 export function validateProductionConfig(config) {
@@ -84,6 +93,16 @@ export function validateProductionConfig(config) {
     throw new Error("Production persistence requires AUTHORITY_PERSISTENCE_PROVIDER=managed");
   }
   if (!config.persistenceDsn) missing.push("AUTHORITY_PERSISTENCE_DSN");
+
+  if (!config.purchaseProvider) {
+    missing.push("PURCHASE_PROVIDER");
+  } else if (config.purchaseProvider !== "telegram-stars") {
+    throw new Error("Production PURCHASE_PROVIDER must be telegram-stars; unsupported provider");
+  }
+
+  if (config.purchaseProvider === "telegram-stars" && !config.telegramStarsWebhookSecretConfigured) {
+    missing.push("TELEGRAM_STARS_WEBHOOK_SECRET");
+  }
 
   if (missing.length) {
     throw new Error("Production configuration missing: " + missing.join(", "));

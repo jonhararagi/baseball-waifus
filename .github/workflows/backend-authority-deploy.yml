@@ -39,6 +39,8 @@ jobs:
           ALLOWED_ORIGINS: ${{ vars.AUTHORITY_ALLOWED_ORIGINS }}
           AUTHORITY_PERSISTENCE_PROVIDER: ${{ vars.AUTHORITY_PERSISTENCE_PROVIDER }}
           AUTHORITY_PERSISTENCE_DSN: ${{ secrets.AUTHORITY_PERSISTENCE_DSN }}
+          PURCHASE_PROVIDER: ${{ vars.PURCHASE_PROVIDER }}
+          TELEGRAM_STARS_WEBHOOK_SECRET: ${{ secrets.TELEGRAM_STARS_WEBHOOK_SECRET }}
         run: |
           test -n "$REWARD_SIGNING_PRIVATE_KEY"
           test -n "$TELEGRAM_BOT_TOKEN"
@@ -46,6 +48,9 @@ jobs:
           test "$ALLOWED_ORIGINS" != "*"
           test "$AUTHORITY_PERSISTENCE_PROVIDER" = "managed"
           test -n "$AUTHORITY_PERSISTENCE_DSN"
+          test -n "$PURCHASE_PROVIDER"
+          test "$PURCHASE_PROVIDER" = "telegram-stars"
+          test -n "$TELEGRAM_STARS_WEBHOOK_SECRET"
       - name: Build reproducible backend image
         run: |
           CONTEXT="$RUNNER_TEMP/basewarriors-authority-context"

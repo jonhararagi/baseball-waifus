@@ -142,7 +142,7 @@ export function createAuthorityServer({
       config.purchaseProvider === "telegram-stars"
         ? createTelegramStarsProviderAdapterFromConfig(config, {
           purchaseStore: activePurchaseStore,
-          webhookSecret: process.env.TELEGRAM_STARS_WEBHOOK_SECRET || ""
+          webhookSecret: config.telegramStarsWebhookSecret || ""
         })
         : createPurchaseProviderAdapterFromConfig(config)
     ));
