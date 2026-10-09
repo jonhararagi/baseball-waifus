@@ -3,6 +3,9 @@ import { createServer } from "node:http";
 import { readFileSync, statSync, mkdtempSync, rmSync } from "node:fs";
 import { join, normalize, extname } from "node:path";
 import { tmpdir } from "node:os";
+import { CombatService } from "../../backend/src/combat_service.mjs";
+import { InMemoryCombatStore } from "../../backend/src/combat_store.mjs";
+import { createEphemeralTestSigner } from "../../backend/src/attestation_signer.mjs";
 
 const siteDir = process.env.SITE_DIR || process.argv[2] || "site";
 const browserBin = process.env.BROWSER_BIN || "chromium";
@@ -153,100 +156,128 @@ try {
   console.log("LOCAL_RESULT = DEMO_ONLY");
   console.log("LOCAL_REWARD = BLOCKED");
 
-  const serverExpression = String.raw`(async () => {
-    const authority = await import("./js/reward_authority.js");
-    const playerId = window.__BW_BONE004_TEST__.getPlayerId();
-    const matchId = "bone004-browser-match";
-    const turnId = "bone004-browser-turn";
-    const nonce = "bone004-browser-nonce";
-    const outcome = "VICTORY";
-    const result = "VICTORY";
-    const keys = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
-    const publicKeyJwk = await crypto.subtle.exportKey("jwk", keys.publicKey);
-    const canonical = authority.canonicalizeServerCombatAttestationPayload({ matchId, playerId, turnId, outcome, result, nonce });
-    const signatureBuffer = await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, keys.privateKey, new TextEncoder().encode(canonical));
-    let binary = "";
-    for (const byte of new Uint8Array(signatureBuffer)) binary += String.fromCharCode(byte);
-    const signature = btoa(binary).split("=")[0].split("+").join("-").split("/").join("_");
-    const attestation = {
-      version: authority.SERVER_COMBAT_ATTESTATION_V1,
-      algorithm: "ECDSA_P256_SHA256",
-      match_id: matchId,
-      player_id: playerId,
-      turn_id: turnId,
-      outcome,
-      result,
-      nonce,
-      signature
-    };
-    const context = {
-      version: authority.SERVER_COMBAT_ATTESTATION_V1,
-      matchId,
-      playerId,
-      nonce,
-      publicKeyJwk
-    };
-    const turnResult = {
-      type: "TurnResultDTO",
-      match_id: matchId,
-      turn_id: turnId,
-      result,
-      outcome,
-      match_end: true,
-      state: { match_complete: true, outcome }
-    };
+  const playerId = await evaluate("window.__BW_BONE004_TEST__.getPlayerId()");
+  if (typeof playerId !== "string" || !playerId.trim()) throw new Error("Browser PlayerMeta identity unavailable");
 
-    const forgedResult = await window.__BW_BONE004_TEST__.serverTerminalResult({
-      ...turnResult,
-      reward_attestation: { ...attestation, signature: "" }
-    }, context);
-    const forgedScrap = window.__BW_BONE004_TEST__.getPlayerMetaScrap();
-    if (forgedScrap !== 0 || forgedResult !== null) throw new Error("Forged server result changed economy");
+  // Produce the terminal result and signature in Node using the real backend service.
+  const backendStore = new InMemoryCombatStore();
+  const backendSigner = createEphemeralTestSigner();
+  const combatService = new CombatService({ store: backendStore, signer: backendSigner });
+  const matchId = "bone004-backend-match";
+  const terminalSeed = backendStore.createMatch({ matchId, playerId });
+  terminalSeed.phase = "CLIMAX";
+  terminalSeed.bossHp = 20;
+  terminalSeed.internalEnergy = 100;
+  terminalSeed.tacticalEffectiveness = 100;
+  terminalSeed.playerStamina = 100;
+  backendStore.saveMatch(terminalSeed, { expectedRevision: terminalSeed.revision });
 
-    const tamperedResult = await window.__BW_BONE004_TEST__.serverTerminalResult({
-      ...turnResult,
-      outcome: "DEFEAT",
-      result: "DEFEAT",
-      state: { match_complete: true, outcome: "DEFEAT" },
-      reward_attestation: attestation
-    }, context);
-    const tamperedScrap = window.__BW_BONE004_TEST__.getPlayerMetaScrap();
-    if (tamperedScrap !== 0 || tamperedResult !== null) throw new Error("Tampered result changed economy");
+  const authorityInit = await combatService.init(matchId, playerId);
+  const serverTurnResult = await combatService.applyTurn({
+    matchId,
+    playerId,
+    body: {
+      action: { type: "BAT" },
+      timing_grade: "GREAT",
+      turn_id: authorityInit.state.turn_id
+    }
+  });
 
-    const validPipeline = await window.__BW_BONE004_TEST__.serverTerminalResult({
-      ...turnResult,
-      reward_attestation: attestation
-    }, context);
-    const validScrap = window.__BW_BONE004_TEST__.getPlayerMetaScrap();
-    if (!validPipeline?.applied?.ok || validPipeline.applied.duplicate || validScrap !== 100) throw new Error("Valid server attestation did not grant canonical reward");
+  if (!serverTurnResult.victory || serverTurnResult.outcome !== "VICTORY") {
+    throw new Error("CombatService did not produce the expected terminal victory");
+  }
+  if (!serverTurnResult.reward_attestation) {
+    throw new Error("CombatService did not return a backend-signed attestation");
+  }
+  if (
+    serverTurnResult.match_id !== matchId
+    || serverTurnResult.reward_attestation.match_id !== matchId
+    || serverTurnResult.reward_attestation.player_id !== playerId
+    || serverTurnResult.reward_attestation.turn_id !== serverTurnResult.turn_id
+    || serverTurnResult.reward_attestation.nonce !== authorityInit.reward_authority.nonce
+  ) {
+    throw new Error("Backend turn result and attestation context do not match");
+  }
 
-    const duplicatePipeline = await window.__BW_BONE004_TEST__.serverTerminalResult({
-      ...turnResult,
-      reward_attestation: attestation
-    }, context);
-    const duplicateScrap = window.__BW_BONE004_TEST__.getPlayerMetaScrap();
-    if (!duplicatePipeline?.applied?.duplicate || duplicateScrap !== 100) throw new Error("Duplicate reward was not a no-op");
+  const authorityContext = {
+    version: authorityInit.reward_authority.version,
+    matchId: authorityInit.match_id,
+    playerId,
+    nonce: authorityInit.reward_authority.nonce,
+    publicKeyJwk: authorityInit.reward_authority.public_key_jwk
+  };
 
-    return {
-      forged: true,
-      tampered: true,
-      validAttestation: true,
-      validReward: true,
-      scrapAfterValid: validScrap,
-      duplicate: true,
-      scrapAfterDuplicate: duplicateScrap,
-      playerMetaConsistent: duplicateScrap === 100
-    };
-  })()`;
+  console.log("BACKEND_SIGNER = NODE_EPHEMERAL_P256");
+  console.log("SERVER_MATCH_ID = " + serverTurnResult.match_id);
+  console.log("SERVER_PLAYER_ID = " + playerId);
+  console.log("SERVER_TURN_ID = " + serverTurnResult.turn_id);
+  console.log("SERVER_OUTCOME = " + serverTurnResult.outcome);
+  console.log("SERVER_RESULT = " + serverTurnResult.result);
+  console.log("SERVER_ATTESTATION = " + serverTurnResult.reward_attestation.version);
+  console.log("SERVER_SIGNATURE_ALGORITHM = " + serverTurnResult.reward_attestation.algorithm);
+
+  const serverExpression = "(async () => {"
+    + "const hooks = window.__BW_BONE004_TEST__;"
+    + "const turnResult = " + JSON.stringify(serverTurnResult) + ";"
+    + "const context = " + JSON.stringify(authorityContext) + ";"
+    + "const scrap = () => hooks.getPlayerMetaScrap();"
+    + "if (scrap() !== 0) throw new Error('Economic state was not zero before backend handoff');"
+
+    + "const unsigned = await hooks.serverTerminalResult({ ...turnResult, reward_attestation: { ...turnResult.reward_attestation, signature: '' } }, context);"
+    + "if (unsigned !== null || scrap() !== 0) throw new Error('Missing signature was not rejected');"
+
+    + "const tampered = await hooks.serverTerminalResult({ ...turnResult, outcome: 'DEFEAT', result: 'DEFEAT', state: { ...turnResult.state, outcome: 'DEFEAT' } }, context);"
+    + "if (tampered !== null || scrap() !== 0) throw new Error('Tampered terminal result was not rejected');"
+
+    + "const wrongPlayer = await hooks.serverTerminalResult(turnResult, { ...context, playerId: 'bone004-wrong-player' });"
+    + "if (wrongPlayer !== null || scrap() !== 0) throw new Error('Wrong-player context was not rejected');"
+
+    + "const wrongMatch = await hooks.serverTerminalResult(turnResult, { ...context, matchId: 'bone004-other-match' });"
+    + "if (wrongMatch !== null || scrap() !== 0) throw new Error('Wrong-match context was not rejected');"
+
+    + "const wrongNonce = await hooks.serverTerminalResult(turnResult, { ...context, nonce: context.nonce + '-wrong' });"
+    + "if (wrongNonce !== null || scrap() !== 0) throw new Error('Wrong-nonce context was not rejected');"
+
+    + "const accepted = await hooks.serverTerminalResult(turnResult, context);"
+    + "const afterFirst = scrap();"
+    + "if (!accepted?.applied?.ok || accepted.applied.duplicate || afterFirst !== 100) throw new Error('Backend attestation did not grant exactly +100 SCRAP');"
+
+    + "const duplicate = await hooks.serverTerminalResult(turnResult, context);"
+    + "const afterDuplicate = scrap();"
+    + "if (!duplicate?.applied?.duplicate || afterDuplicate !== 100) throw new Error('Duplicate reward was not an economic no-op');"
+
+    + "return {"
+    + "missingSignatureRejected: true,"
+    + "tamperedResultRejected: true,"
+    + "wrongPlayerRejected: true,"
+    + "wrongMatchRejected: true,"
+    + "wrongNonceRejected: true,"
+    + "attestationAccepted: true,"
+    + "firstRewardAccepted: true,"
+    + "scrapAfterFirst: afterFirst,"
+    + "duplicateNoOp: true,"
+    + "scrapAfterDuplicate: afterDuplicate,"
+    + "playerMetaConsistent: afterDuplicate === 100"
+    + "};"
+    + "})()";
   const serverResult = await evaluate(serverExpression);
 
-  if (!serverResult?.forged || !serverResult?.tampered) throw new Error("Forgery/tamper cases incomplete");
-  console.log("FORGED_SERVER_RESULT = REJECTED");
+  if (
+    !serverResult?.missingSignatureRejected
+    || !serverResult?.tamperedResultRejected
+    || !serverResult?.wrongPlayerRejected
+    || !serverResult?.wrongMatchRejected
+    || !serverResult?.wrongNonceRejected
+  ) throw new Error("Backend-signed negative binding cases incomplete");
+  console.log("MISSING_SIGNATURE = REJECTED");
   console.log("TAMPERED_RESULT = REJECTED");
-  console.log("VALID_SERVER_ATTESTATION = ACCEPTED");
-  console.log("VALID_REWARD = ACCEPTED");
-  console.log("SCRAP_AFTER_VALID = " + serverResult.scrapAfterValid);
-  console.log("DUPLICATE_REWARD = NO_OP");
+  console.log("WRONG_PLAYER_CONTEXT = REJECTED");
+  console.log("WRONG_MATCH_CONTEXT = REJECTED");
+  console.log("WRONG_NONCE_CONTEXT = REJECTED");
+  console.log("VALID_BACKEND_ATTESTATION = " + (serverResult.attestationAccepted ? "ACCEPTED" : "REJECTED"));
+  console.log("FIRST_REWARD = " + (serverResult.firstRewardAccepted ? "ACCEPTED" : "REJECTED"));
+  console.log("SCRAP_AFTER_FIRST = " + serverResult.scrapAfterFirst);
+  console.log("DUPLICATE_REWARD = " + (serverResult.duplicateNoOp ? "NO_OP" : "FAILED"));
   console.log("SCRAP_AFTER_DUPLICATE = " + serverResult.scrapAfterDuplicate);
   console.log("PLAYER_META = " + (serverResult.playerMetaConsistent ? "CONSISTENT" : "INCONSISTENT"));
   console.log("BONE-004 BROWSER PROBE = PASS");
