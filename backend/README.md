@@ -13,8 +13,10 @@ Required runtime configuration:
 - ALLOWED_ORIGINS
 - AUTHORITY_PERSISTENCE_PROVIDER=managed
 - AUTHORITY_PERSISTENCE_DSN
+- PURCHASE_PROVIDER=telegram-stars
+- TELEGRAM_STARS_WEBHOOK_SECRET
 
-Production rejects wildcard CORS, never falls back to memory/filesystem, and fails closed when the managed database cannot initialize.
+Production rejects wildcard CORS, never falls back to memory/filesystem, and fails closed when the managed database cannot initialize. The production config gate also requires `PURCHASE_PROVIDER=telegram-stars` and an externally supplied `TELEGRAM_STARS_WEBHOOK_SECRET`; missing or unsupported purchase provider configuration prevents startup.
 
 The repository includes provider-neutral PostgreSQL-compatible managed adapters; external runtime configuration still supplies the DSN and credentials.
 
@@ -67,7 +69,7 @@ States:
 - `CONFIGURED_UNAVAILABLE`
 - `READY`
 
-Provider selection and credential presence are external configuration only. No real provider credentials are stored in the repository.
+Provider selection and credential presence are external configuration only. No real provider credentials are stored in the repository. Production currently accepts only the integrated `telegram-stars` callback contract; the generic provider adapter remains unavailable for arbitrary provider names in production.
 
 Production remains NOT CONFIGURED until a real provider adapter, production credentials, durable production operations and external deployment are supplied.
 
@@ -96,3 +98,15 @@ After an authorized purchase is claimed, `POST /v1/purchases/:purchaseId/apply` 
 The endpoint accepts no client economic authority fields. The purchase record supplies the grant amount and grant kind. The operation records `purchase-grant:<purchaseId>` in Player Meta's reward ledger and writes the corresponding fulfillment in the same durable PurchaseStore document.
 
 Repeated application returns `GRANT_ALREADY_APPLIED` and does not duplicate the balance.
+
+
+## Telegram Stars production configuration gate
+
+`loadConfig(env)` captures `TELEGRAM_STARS_WEBHOOK_SECRET` for the in-process adapter through a non-enumerable property. `createAuthorityServer()` consumes that validated configuration and does not independently reread `process.env`.
+
+The production workflow requires these externally managed settings without echoing their values:
+
+- `PURCHASE_PROVIDER=telegram-stars`
+- `TELEGRAM_STARS_WEBHOOK_SECRET`
+
+Presence alone does not establish that Telegram callbacks are arriving or that purchases are operational. `/ready` still requires the provider adapter to be `READY` and managed purchase persistence to be operational. No payments or production webhook were activated by AUTH-037.

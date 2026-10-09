@@ -26,6 +26,7 @@ Estado actual confirmado en la documentación de infraestructura:
 - **Production secrets:** requeridos externamente, no verificables desde la conexión GitHub disponible.
 - **Domain / HTTPS:** no configurados.
 - **Telegram production webhook:** no configurado.
+- **Telegram Stars purchase configuration:** gate interno actualizado por AUTH-037; runtime values aún no configurados/verificados externamente.
 - **Monitoring / backup:** no configurados.
 
 La regla de continuidad es:
@@ -33,6 +34,12 @@ La regla de continuidad es:
 `SELECTED != CONFIGURED != DEPLOYED != VERIFIED`
 
 Por protocolo, **AUTH-030 no debe repetirse como diagnóstico** y no se debe reintentar un deployment hasta que el propietario habilite el acceso operativo indicado en este gate.
+
+### AUTH-037 · Purchase runtime gate (2026-10-09)
+
+El backend ahora exige que la configuración productiva declare `PURCHASE_PROVIDER=telegram-stars` y que el secret runtime `TELEGRAM_STARS_WEBHOOK_SECRET` esté presente. El adapter recibe el secreto desde la misma configuración cargada y validada; el valor no forma parte de la serialización JSON de esa configuración ni de readiness.
+
+Esto únicamente cierra el gap interno de configuración. No demuestra presencia externa, webhook activo, provider operativo ni pagos funcionales. Esos puntos continúan en el owner gate.
 
 ## OWNER ACTION MATRIX
 
@@ -45,6 +52,7 @@ Por protocolo, **AUTH-030 no debe repetirse como diagnóstico** y no se debe rei
 | GHCR image digest | Fijar una referencia inmutable para producción | GHCR / deployment config | Digest `sha256:...` visible y utilizado por el service | **REQUIRED / NOT VERIFIED** |
 | Production secrets | Configurar secretos runtime sin exponer valores | Render Secret Environment / secret manager | Presencia/utilización segura, sin imprimir valores | **REQUIRED / NOT VERIFIED** |
 | ALLOWED_ORIGINS | Configurar el origen HTTPS exacto de la WebApp productiva | Render public environment/config | Valor presente, no wildcard y coincide con la WebApp real | **REQUIRED / NOT CONFIGURED** |
+| PURCHASE_PROVIDER | Configurar el provider integrado en producción como `telegram-stars` | Render public/runtime configuration | Valor exacto verificado; provider ausente/no soportado impide startup | **REQUIRED / NOT CONFIGURED** |
 | Domain | Obtener hostname público estable para API | DNS / Render / domain registrar | URL real resolvible y asociada al backend | **REQUIRED / NOT CONFIGURED** |
 | DNS | Publicar los registros necesarios | DNS provider | Resolución DNS verificable | **REQUIRED / NOT CONFIGURED** |
 | HTTPS/TLS | Activar certificado TLS válido sobre el backend | Render / edge / domain | Endpoint HTTPS válido y certificado verificable | **REQUIRED / NOT CONFIGURED** |
@@ -63,12 +71,13 @@ Solo se documentan nombres y contratos. **Nunca guardar valores en el repositori
 |---|---|---|---:|---|
 | `REWARD_SIGNING_PRIVATE_KEY` | Render secret/runtime environment | Owner infrastructure/security | Yes | Presencia utilizable; no se imprime el valor; startup/signing real lo consume |
 | `TELEGRAM_BOT_TOKEN` | Render secret/runtime environment | Owner Telegram/backend | Yes | Presencia utilizable; Telegram auth real lo consume sin exponer el token |
+| `TELEGRAM_STARS_WEBHOOK_SECRET` | Render secret/runtime environment | Owner Telegram/monetization | Yes | Presencia utilizable; adapter lo consume desde configuración interna y no lo expone |
 | `AUTHORITY_PERSISTENCE_DSN` | Render secret/runtime environment | Owner database | Yes | Presencia utilizable; conexión PostgreSQL real y readiness |
 | `AUTHORITY_PERSISTENCE_PROVIDER=managed` | Render public/runtime configuration | Owner infrastructure | Yes | Valor exacto `managed` visible en configuración no secreta |
 | `ALLOWED_ORIGINS` | Render public/runtime configuration | Owner web/infrastructure | Yes | Origin HTTPS exacto, sin `*`, verificable contra la WebApp |
 | `NODE_ENV=production` | Render public/runtime configuration | Owner infrastructure | Yes | Runtime reporta production; no fallback a development |
 
-También forman parte del contrato productivo documentado en el runbook las variables de Telegram Stars/purchases cuando se active esa autoridad. No se deben reutilizar valores de prueba ni crear secretos ficticios.
+El contrato productivo actual requiere `PURCHASE_PROVIDER=telegram-stars` y el secret `TELEGRAM_STARS_WEBHOOK_SECRET`. Su presencia debe verificarse de forma segura en el entorno externo, sin imprimir valores. No se deben reutilizar valores de prueba ni crear secretos ficticios.
 
 ## RENDER ACCESS GATE
 

@@ -10921,3 +10921,39 @@ TIMER: 45–75 minutos
 **NEXT ACTION:** `WAITING_FOR_OWNER_ACTION`. No crear otra tarea de provisioning ni repetir un retry equivalente hasta que exista un cambio externo material y verificable. Tras satisfacer el owner gate existente, retomar `BONE-011-AUTH-032 · PRODUCTION PROVISIONING AND DEPLOYMENT`.
 
 No se tocaron código, runtime, gameplay, economía, rewards, Gacha, adapters PostgreSQL, Dockerfile ni workflows.
+
+
+---
+
+## BONE-011-AUTH-037 · PURCHASE PROVIDER FAIL-CLOSED CONFIGURATION GATE
+
+**Fecha:** 2026-10-09  
+**HEAD BEFORE:** `71fd7e3f591835d4e4a918a5b7ac8e1fa321c0f4`  
+**Código/tests validados:** `81e22b681d30192340dc7d773d0f09da264e6ed7`  
+**TIMER:** 1–2 horas  
+**RESULT:** PASS para configuración productiva interna.
+
+`validateProductionConfig()` ahora exige `PURCHASE_PROVIDER=telegram-stars` y `TELEGRAM_STARS_WEBHOOK_SECRET` junto con los gates existentes de signing, Telegram auth, CORS y Managed PostgreSQL. Un provider ausente/desconocido o una configuración incompleta impide el startup productivo.
+
+El server usa el secreto que `loadConfig(env)` cargó para el proceso y ya no lo relee desde `process.env` dentro del constructor del adapter. La propiedad es no enumerable para evitar que la serialización JSON ordinaria la incorpore. Readiness conserva flags seguros y no declara al provider READY solo por la presencia de variables.
+
+### Evidencia
+
+- Backend GitHub Actions Run `37922233961` = SUCCESS.
+- Backend tests = **167 PASS / 0 FAIL**.
+- Syntax, PostgreSQL-backed integration suite, container build smoke y container `/health` smoke = PASS.
+- Config/readiness tests cubren provider ausente/no soportado, webhook secret ausente, falta de Bot Token/signing key, wildcard/empty origins, no-managed persistence, provider no disponible, provider READY bajo fixtures controlados y managed persistence no operativa.
+- El workflow de deployment existente usa `vars.PURCHASE_PROVIDER` y `secrets.TELEGRAM_STARS_WEBHOOK_SECRET`, y valida el contrato de producción antes del build/handoff.
+- No se ejecutó deployment, no se configuraron Secrets/vars reales y no se realizaron pagos.
+
+### Estado externo
+
+Render sigue SELECTED / NOT PROVISIONED; Managed PostgreSQL productivo, secrets/variables, domain/DNS/HTTPS, imagen GHCR por digest y Telegram webhook siguen NOT VERIFIED / NOT CONFIGURED. Production deployment y smoke real siguen NOT RUN.
+
+BONE-004 = OPEN / BLOCKED.  
+BONE-005 = CLOSED.  
+BONE-006 = CLOSED.  
+BONE-011 = OPEN / IN PROGRESS.  
+GLOBAL GATE = CERRADO.
+
+NEXT: WAITING_FOR_OWNER_ACTION. No repetir provisioning sin un cambio externo material y verificable.

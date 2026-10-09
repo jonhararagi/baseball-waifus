@@ -1688,3 +1688,71 @@ BONE-011 = OPEN / IN PROGRESS.
 GLOBAL GATE = CERRADO.
 
 NEXT: `BONE-011-AUTH-030 · PRODUCTION INFRASTRUCTURE PROVISIONING`.
+
+
+## BONE-011-AUTH-037 · PURCHASE PROVIDER FAIL-CLOSED CONFIGURATION GATE
+
+**Fecha:** 2026-10-09  
+**HEAD BEFORE:** `71fd7e3f591835d4e4a918a5b7ac8e1fa321c0f4`  
+**Implementation / test checkpoint:** `81e22b681d30192340dc7d773d0f09da264e6ed7`  
+**TIMER:** 1–2 horas  
+**RESULT:** PASS para el gap interno de configuración. BONE-011 continúa OPEN / IN PROGRESS.
+
+### Contrato productivo
+
+La inspección confirmó que el único provider de compras integrado en el server para el callback descrito es `telegram-stars`. El adapter genérico está presente para mantener la frontera extensible, pero sus instancias creadas solo desde configuración se quedan `CONFIGURED_UNAVAILABLE`; no constituyen otro provider productivo operativo.
+
+`validateProductionConfig()` ahora exige:
+
+- `PURCHASE_PROVIDER=telegram-stars`;
+- `TELEGRAM_STARS_WEBHOOK_SECRET`;
+- los requisitos ya existentes de signing key, Telegram auth, allowlist CORS explícita y persistence gestionada.
+
+El provider ausente y los nombres no soportados fallan cerradamente. No se imprime el valor de provider ni ningún valor secreto en errores.
+
+### Configuración y secret boundary
+
+- `loadConfig(env)` captura el secreto Telegram Stars para uso interno en memoria como propiedad no enumerable.
+- `createAuthorityServer()` pasa ese valor cargado al adapter; ya no relee `process.env.TELEGRAM_STARS_WEBHOOK_SECRET` directamente.
+- La serialización JSON del objeto de configuración no contiene ese secreto.
+- Readiness y respuestas HTTP mantienen únicamente flags/status, sin Bot Token, webhook secret, signing key o DSN.
+- Dockerfile no inyecta estos valores mediante ARG/ENV.
+- El workflow existente `.github/workflows/backend-authority-deploy.yml` comprueba `vars.PURCHASE_PROVIDER`, `secrets.TELEGRAM_STARS_WEBHOOK_SECRET` y ejecuta el mismo validador de configuración productiva. No se añadieron workflows ni se ejecutó deployment.
+
+### Tests / CI
+
+**GitHub Actions Run `37922233961` = SUCCESS** en el checkout `81e22b681d30192340dc7d773d0f09da264e6ed7`.
+
+- Backend tests: **167 PASS / 0 FAIL**.
+- Backend syntax: PASS.
+- PostgreSQL-backed authority/integration suite: PASS dentro del workflow.
+- Container build smoke image: PASS.
+- Backend container `/health` smoke: PASS.
+- Docker image secret-file check: PASS.
+- Config tests: provider ausente, provider desconocido, webhook secret faltante, signing key faltante, Bot Token faltante, wildcard/empty origins y persistence no-managed.
+- Readiness tests: provider `NOT_CONFIGURED`, provider configurado pero no disponible, provider `READY` con store disponible, y persistencia managed no operativa.
+- Secret-safety tests: no serialización del webhook secret; readiness no expone valores; JWK no contiene private key; workflow y Docker no inyectan secrets en build.
+
+La prueba controlada de provider READY no es una afirmación de producción: es una prueba determinista del contrato. No se ejecutaron pagos ni webhook productivo.
+
+### Documentación / estado externo
+
+El contrato fue alineado en runbook, decisión de infraestructura, owner activation gate y README del backend. El provisioning externo permanece sin cambio:
+
+- Render: SELECTED / NOT PROVISIONED.
+- Managed PostgreSQL productivo: NOT PROVISIONED / NOT VERIFIED.
+- Secrets/variables externas: NOT VERIFIED.
+- Domain/DNS/HTTPS y webhook Telegram: NOT CONFIGURED.
+- Deployment y smoke productivo: NOT RUN.
+
+**BONE-004:** OPEN / BLOCKED / sin cambio.  
+**BONE-005:** CLOSED / sin cambio.  
+**BONE-006:** CLOSED / sin cambio.  
+**BONE-011:** OPEN / IN PROGRESS.  
+**GLOBAL GATE:** CERRADO.
+
+**CAUSE (remaining external blocker):** la configuración productiva externa continúa sin ser accesible/verificable. AUTH-037 resolvió el gap interno que permitía omitir los requisitos del provider de compras.
+
+**ATTEMPTS:** una implementación, una corrección de fixture de compatibilidad y validación final CI en Run `37922233961`.
+
+**NEEDS:** entorno Render autorizado; variables runtime reales; Managed PostgreSQL operativo; dominio/DNS/HTTPS; imagen GHCR por digest; webhook Telegram productivo; deployment autorizado y smoke autenticado real.

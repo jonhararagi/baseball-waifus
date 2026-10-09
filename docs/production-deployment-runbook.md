@@ -1,7 +1,7 @@
 # BaseWarriors: Meta-Strike · Production Deployment Runbook
 
 Estado: HANDOFF / NO DEPLOYMENT
-Fecha de revisión: 2026-10-08
+Fecha de revisión: 2026-10-09
 Fuente: código y workflows actuales de main
 
 Este runbook define el camino operativo para activar el Authority Backend cuando exista infraestructura externa autorizada. No selecciona proveedor, no crea infraestructura y no contiene secretos.
@@ -35,12 +35,14 @@ La publicación real no se considera existente hasta que haya evidencia de un wo
 | ALLOWED_ORIGINS | Sí | No | No | Sí | vacío en production | Vacío o * rechazado |
 | AUTHORITY_PERSISTENCE_PROVIDER | Sí | No | No | Sí | vacío | Debe ser managed |
 | AUTHORITY_PERSISTENCE_DSN | Sí | No | Sí | No | vacío | Debe existir y ser PostgreSQL válido |
-| PURCHASE_PROVIDER | Monetización | Sí | No | Sí | vacío | Para Stars debe ser telegram-stars |
-| TELEGRAM_STARS_WEBHOOK_SECRET | Readiness de compras | Sí si compras no activas | Sí | No | vacío | Sin él Stars no queda READY |
-| PURCHASE_PROVIDER_ENDPOINT | No para telegram-stars | Sí | No | Sí | vacío | Depende de otro provider |
-| PURCHASE_PROVIDER_CREDENTIAL | Depende del provider | Sí | Sí | No | vacío | Depende del provider |
+| PURCHASE_PROVIDER | Sí en production | No | No | Sí | vacío | Debe ser telegram-stars; ausente/no soportado bloquea startup |
+| TELEGRAM_STARS_WEBHOOK_SECRET | Sí en production | No | Sí | No | vacío | Si falta, la configuración productiva falla cerrada |
+| PURCHASE_PROVIDER_ENDPOINT | Solo dev/test genérico | Sí | No | Sí | vacío | No sustituye al provider integrado en production |
+| PURCHASE_PROVIDER_CREDENTIAL | Solo dev/test genérico | Sí | Sí | No | vacío | No habilita un provider productivo alternativo |
 
 Regla absoluta: ningún secret se almacena en Git, Dockerfile, frontend o documentación.
+
+El gate productivo actual solo acepta `PURCHASE_PROVIDER=telegram-stars` y exige `TELEGRAM_STARS_WEBHOOK_SECRET`. `loadConfig()` conserva el secreto únicamente para uso interno del proceso en una propiedad no enumerable; el server usa esa configuración validada y no vuelve a leer `process.env` dentro del adapter. La presencia del secreto no demuestra un webhook activo ni que el proveedor esté operativo: `/ready` sigue dependiendo del adapter y de los stores operativos.
 
 ## 3. Container contract
 

@@ -105,6 +105,8 @@ Production runtime must receive:
 | REWARD_SIGNING_PRIVATE_KEY | SECRET | Yes | Yes |
 | TELEGRAM_BOT_TOKEN | SECRET | Yes | Yes |
 | TELEGRAM_INIT_DATA_MAX_AGE_SECONDS | PUBLIC CONFIG | Yes | No |
+| PURCHASE_PROVIDER | PUBLIC CONFIG | Yes | No |
+| TELEGRAM_STARS_WEBHOOK_SECRET | SECRET | Yes | Yes |
 | ALLOWED_ORIGINS | PUBLIC CONFIG | Yes | No |
 | AUTHORITY_PERSISTENCE_PROVIDER | PUBLIC CONFIG | Yes | No |
 | AUTHORITY_PERSISTENCE_DSN | SECRET | Yes | Yes |
@@ -236,6 +238,9 @@ All boxes remain intentionally unchecked:
 - [ ] GitHub/host secrets configured
 - [ ] reward signing key configured
 - [ ] Telegram Bot Token configured
+- [ ] PURCHASE_PROVIDER=telegram-stars configured
+- [ ] TELEGRAM_STARS_WEBHOOK_SECRET configured externally
+- [ ] Telegram Stars provider readiness verified
 - [ ] ALLOWED_ORIGINS configured
 - [ ] domain configured
 - [ ] HTTPS active
@@ -270,3 +275,14 @@ No external provisioning was performed.
 `BONE-011-AUTH-030 · PRODUCTION INFRASTRUCTURE PROVISIONING`
 
 AUTH-030 is the first checkpoint authorized to act on real external infrastructure.
+
+## AUTH-037 · Purchase configuration gate update (2026-10-09)
+
+The production application configuration now enforces the currently integrated purchase callback provider:
+
+- `PURCHASE_PROVIDER=telegram-stars`
+- `TELEGRAM_STARS_WEBHOOK_SECRET` must be supplied from external runtime secret management.
+
+Missing or unsupported `PURCHASE_PROVIDER`, a missing Stars webhook secret, missing Bot Token/signing key, wildcard origins, or non-managed persistence rejects production configuration before listening.
+
+This is an internal fail-closed contract only. The provider, secrets, managed database, host, HTTPS and Telegram webhook remain externally **NOT CONFIGURED / NOT VERIFIED**. No production values are stored here and no deployment is implied.

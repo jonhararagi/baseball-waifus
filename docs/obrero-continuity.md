@@ -153,3 +153,48 @@ No product features are authorized while the critical bone gate remains closed.
 
 `WAITING_FOR_OWNER_ACTION`. Do not create a new AUTH identifier or repeat the same blocked provisioning task until the owner gate records a material, verifiable external change. When `PRODUCTION ACCESS READY` is proven, resume the existing handoff `BONE-011-AUTH-032 · PRODUCTION PROVISIONING AND DEPLOYMENT`.
 
+
+
+---
+
+## AUTH-037 · PURCHASE PROVIDER CONFIGURATION CHECKPOINT
+
+**Fecha:** 2026-10-09  
+**Base HEAD:** `71fd7e3f591835d4e4a918a5b7ac8e1fa321c0f4`  
+**Validated HEAD:** `81e22b681d30192340dc7d773d0f09da264e6ed7`  
+**Workflow:** `37922233961` = SUCCESS  
+**Status:** internal gate PASS; external production remains WAITING_FOR_OWNER_ACTION.
+
+### Reconciled implementation
+
+- Production configuration now requires `PURCHASE_PROVIDER=telegram-stars` and the external secret `TELEGRAM_STARS_WEBHOOK_SECRET`.
+- Unsupported/missing provider and missing webhook secret fail before the production server listens.
+- The Telegram Stars adapter receives the loaded configuration value. It no longer directly reads `process.env` after config injection.
+- The webhook secret is stored as a non-enumerable in-process property and does not appear in ordinary config JSON serialization, readiness payloads or provider status.
+- Deployment contract workflow includes the provider variable, webhook secret and production config validator.
+- Run `37922233961`: 167 backend tests PASS, syntax PASS, PostgreSQL-backed integration PASS, container build/smoke PASS.
+
+### External state unchanged
+
+- Render: SELECTED / NOT PROVISIONED.
+- Managed PostgreSQL production: NOT PROVISIONED / NOT VERIFIED.
+- Production Secrets/Environment variables: NOT VERIFIED.
+- Domain/DNS/HTTPS: NOT CONFIGURED.
+- Telegram production webhook: NOT CONFIGURED.
+- Deployment and production smoke: NOT RUN.
+
+### Cause / attempts / needs
+
+**CAUSE:** production provider/runtime configuration remains external and is not provisioned/verified. The internal config contract gap is closed; external production access is not.
+
+**ATTEMPTS:** one AUTH-037 implementation checkpoint, compatibility-test update, and CI validation in Run `37922233961`. No deployment workflow run, payment, provisioning or production smoke was executed.
+
+**NEEDS:** authorized Render access, runtime `PURCHASE_PROVIDER=telegram-stars`, Telegram Bot Token, signing key, Stars webhook secret, Managed PostgreSQL DSN/provider operational, explicit allowlisted origin, stable HTTPS endpoint, image digest and Telegram webhook; then authorized deploy and production smoke.
+
+`BONE-004 = OPEN / BLOCKED`  
+`BONE-005 = CLOSED`  
+`BONE-006 = CLOSED`  
+`BONE-011 = OPEN / IN PROGRESS`  
+`GLOBAL GATE = CERRADO`
+
+`WAITING_FOR_OWNER_ACTION` remains the next status. Do not create another AUTH provisioning task while the existing external blocker is unchanged.
