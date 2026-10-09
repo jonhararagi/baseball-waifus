@@ -28,7 +28,7 @@ Este resumen supersede únicamente diagnósticos operativos antiguos; todos los 
 
 **AUTH-023 historical CI:** GitHub Actions Run `37747902639`, Job `113213689936`, checkout HEAD `8efeaadddb09ef8683934263308a6810698e2849` = `SUCCESS`. PostgreSQL `16.15`; **157 PASS / 0 FAIL / 0 SKIPPED**. La suite cubrió combate, compras, restart recovery, idempotencia, concurrencia, rollback e inicialización de schema; container build y smoke en el entorno aislado de CI también pasaron.
 
-Compare `8efeaadddb09ef8683934263308a6810698e2849...`2ac887fea2907e43b278f874ae955c86c5448e2e` muestra cinco commits posteriores que no modificaron `backend/**`; por ello esta es evidencia histórica aún pertinente al código backend actual. No constituye evidencia de PostgreSQL productivo ni de deployment externo.
+Compare `8efeaadddb09ef8683934263308a6810698e2849...2ac887fea2907e43b278f874ae955c86c5448e2e` muestra cinco commits posteriores que no modificaron `backend/**`; por ello esta es evidencia histórica aún pertinente al código backend actual. No constituye evidencia de PostgreSQL productivo ni de deployment externo.
 
 ### External infrastructure / deployment
 

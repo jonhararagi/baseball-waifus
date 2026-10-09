@@ -105,7 +105,7 @@ No product features are authorized while the critical bone gate remains closed.
 
 **Date:** 2026-10-09  
 **HEAD BEFORE:** `2ac887fea2907e43b278f874ae955c86c5448e2e`  
-**HEAD AFTER:** recorded as the `main` commit containing this CONT-002 checkpoint; exact SHA was verified externally in the final report.  
+**Primary checkpoint commit:** `f0980c2cd444ea26fb6d91c2c3bb1aca5da6140a` (`docs: reconcile current production authority status`). A small follow-up documentation commit fixes a Markdown range delimiter; always verify the current `main` HEAD when resuming.  
 **Status:** `WAITING_FOR_OWNER_ACTION`  
 **Evidence level:** `PASS_STATIC` for repository/code reconciliation; AUTH-023 remains historical `PASS_REAL` CI evidence only.
 
