@@ -381,3 +381,62 @@ This proves the container artifact and local smoke contract only. It is not evid
 **STATUS:** BONE-004 remains BLOCKED.
 
 No code, gameplay, balance, reward, Gacha, persistence contract or frontend API configuration was changed.
+
+
+---
+
+## BONE-004-CLIENT-HANDOFF-E2E
+
+**Fecha:** 2026-10-09  
+**HEAD BEFORE:** `19b3bb1221fec7e51a3f37dd4d0bf426b9816640`  
+**IMPLEMENTATION / WORKFLOW HEAD:** `11cfa84658af106c30d5fd2132c432d3de96b0ed`  
+**Implementation commit:** `3508a6fb56ff856de8b27f4fbf40a048191e6bc4`  
+**Workflow commit:** `11cfa84658af106c30d5fd2132c432d3de96b0ed`  
+**Workflow:** T097 Normal Combat Reward Handoff CDP QA  
+**Run:** `37965246970`  
+**Job:** `113937857145`  
+**Checkout SHA:** `11cfa84658af106c30d5fd2132c432d3de96b0ed`  
+**BONE-004 E2E result:** `PASS_REAL`  
+**Overall workflow result:** `FAIL` due to unrelated legacy browser probes; do not record global CI as PASS.
+
+### Backend-to-client evidence
+
+The Chromium probe no longer generates the positive test signature in the browser. The Node-side probe imports the actual `CombatService`, `InMemoryCombatStore`, and `createEphemeralTestSigner()`, prepares a terminal match, then hands the returned `TurnResultDTO` and server-produced attestation to the existing `window.__BW_BONE004_TEST__.serverTerminalResult` hook in `app.js`.
+
+Run `37965246970`, step **BONE-004 Reward Authority Contract** = SUCCESS:
+- `bone004_reward_authority_test.mjs`: PASS.
+- `backend/test/attestation_compatibility_test.mjs`: 1/1 PASS, backend ECDSA signature accepted by the client Web Crypto verifier.
+
+The same run, step **BONE-004 Native Chromium Reward Authority Validation** = SUCCESS. The browser artifact/log recorded:
+
+- `LOCAL_RESULT = DEMO_ONLY`; `LOCAL_REWARD = BLOCKED`; Player Meta Scrap remains 0.
+- `BACKEND_SIGNER = NODE_EPHEMERAL_P256`.
+- Server match/player/turn binding: `bone004-backend-match` / authenticated test identity `local-player` / `turn-001`.
+- Server result: `VICTORY` / `HOME_RUN`.
+- Attestation: `SERVER_COMBAT_ATTESTATION_V1`, `ECDSA_P256_SHA256`.
+- Missing signature, tampered result, wrong player context, wrong match context and wrong nonce context: all rejected without changing economy.
+- Valid backend attestation accepted by the real browser Web Crypto verifier and `app.js` reward pipeline.
+- First grant: `+100 SCRAP`; duplicate: `NO_OP`; Scrap after first and duplicate handoff: `100`.
+- `PLAYER_META = CONSISTENT`; `BONE-004 BROWSER PROBE = PASS`.
+
+The test uses an ephemeral test key only. It does not represent a production key, production endpoint, HTTPS deployment or production smoke.
+
+### Overall workflow failure and scope distinction
+
+Run `37965246970` concluded `FAILURE`, despite both BONE-004-specific steps being successful. The subsequent legacy `character_journey_browser_probe.mjs` checks failed on T097/T101/T109/T111/T117/T114-R-family assertions. The reported failures include stale top-level `persistedScrap` expectations when Player Meta is serialized in the revision envelope and an Aiko asset-path mismatch.
+
+This is demonstrably pre-existing for the legacy probes: Run `37550518856` on `847edd53f98ca75f0f76309f553e1611b598596c` already failed T097, T101, T109, T111, T117 and T114-R with the same assertions. The current task did not modify `character_journey_browser_probe.mjs`, Player Meta persistence, assets, combat rules or economy. These unrelated failures were not changed or hidden.
+
+### Scope / production status
+
+- Runtime changes: only the BONE-004 QA probe imports the actual backend signer/service; no gameplay runtime changed.
+- Workflow change: existing `.github/workflows/t097-reward-handoff-cdp.yml` now explicitly runs the backend/client compatibility test and watches the backend modules used by the probe.
+- Gameplay: NO CHANGE.
+- Balance/reward amount: NO CHANGE.
+- BONE-004: `OPEN / BLOCKED`; local integration is proven, production is not.
+- BONE-005: `CLOSED`.
+- BONE-006: `CLOSED`.
+- BONE-011: `OPEN / IN PROGRESS`.
+- Global gate: `CERRADO`.
+- Production status: `NOT VERIFIED`; external provider, production secrets, HTTPS deployment and production smoke remain outstanding.
+- Next production handoff: `BONE-011-AUTH-032 · PRODUCTION PROVISIONING AND DEPLOYMENT`, only after the owner gate has materially and verifiably changed.

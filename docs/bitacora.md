@@ -11000,3 +11000,44 @@ BONE-006 = CLOSED.
 BONE-011 = OPEN / IN PROGRESS.
 GLOBAL GATE = CERRADO.
 NEXT ACTION = WAITING_FOR_OWNER_ACTION; retomar BONE-011-AUTH-032 solo cuando el owner gate de producción sea verificablemente READY.
+
+
+---
+
+## BONE-004-CLIENT-HANDOFF-E2E · SERVER SIGNER TO CLIENT REWARD PIPELINE
+
+**Fecha:** 2026-10-09  
+**Base HEAD:** `19b3bb1221fec7e51a3f37dd4d0bf426b9816640`  
+**Validated implementation/workflow HEAD:** `11cfa84658af106c30d5fd2132c432d3de96b0ed`  
+**Commits:** `3508a6fb56ff856de8b27f4fbf40a048191e6bc4`, `11cfa84658af106c30d5fd2132c432d3de96b0ed`  
+**Workflow/run/job:** T097 Normal Combat Reward Handoff CDP QA / `37965246970` / `113937857145`  
+**Workflow checkout SHA:** equals validated HEAD `11cfa84658af106c30d5fd2132c432d3de96b0ed`.
+
+### BONE-004 handoff result
+
+**E2E browser result: `PASS_REAL`.** The real backend `CombatService` plus `createEphemeralTestSigner()` produced the terminal `TurnResultDTO` and ECDSA attestation in Node. Chromium then passed those values through the existing QA hook into the real `app.js` verifier and `applyCombatRewardPipeline`/Player Meta flow.
+
+Evidence from Run `37965246970`:
+- BONE-004 Reward Authority Contract = SUCCESS.
+- Backend/client `attestation_compatibility_test.mjs` = 1/1 PASS.
+- BONE-004 Native Chromium Reward Authority Validation = SUCCESS.
+- Local demo reward remains blocked at Scrap 0.
+- Server result `VICTORY / HOME_RUN`, version `SERVER_COMBAT_ATTESTATION_V1`, algorithm `ECDSA_P256_SHA256`.
+- Missing signature, altered result, wrong-player context, wrong-match context and wrong-nonce context rejected.
+- First verified reward grants +100 SCRAP; second delivery is duplicate/no-op; final Scrap remains 100.
+- Browser log ends `BONE-004 BROWSER PROBE = PASS`.
+
+### Full workflow status
+
+The full workflow concluded `FAILURE` after later legacy browser probes, so this run is **not** recorded as global CI PASS. The unrelated failures include persisted Player Meta envelope assumptions in character-journey probes and an Aiko asset-path assertion.
+
+Pre-existing status is supported by Run `37550518856` on `847edd53f98ca75f0f76309f553e1611b598596c`, which already failed the T097/T101/T109/T111/T117/T114-R probes with the same categories of assertion. Neither `webapp/js/character_journey_browser_probe.mjs` nor Player Meta/runtime/asset paths were modified by this task. No out-of-scope repair was attempted.
+
+**Game rules/balance/economy values:** unchanged.  
+**BONE-004:** `OPEN / BLOCKED`; this is local backend-to-client integration evidence only, not production evidence.  
+**BONE-005:** `CLOSED`.  
+**BONE-006:** `CLOSED`.  
+**BONE-011:** `OPEN / IN PROGRESS`.  
+**GLOBAL GATE:** `CERRADO`.  
+**PRODUCTION:** `NOT VERIFIED`.  
+**NEXT PRODUCTION HANDOFF:** `BONE-011-AUTH-032` after a material, verifiable owner-gate change.
