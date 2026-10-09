@@ -10957,3 +10957,46 @@ BONE-011 = OPEN / IN PROGRESS.
 GLOBAL GATE = CERRADO.
 
 NEXT: WAITING_FOR_OWNER_ACTION. No repetir provisioning sin un cambio externo material y verificable.
+---
+
+## CONT-003 · FINAL CI EVIDENCE RECONCILIATION
+
+Fecha: 2026-10-09
+HEAD validado al iniciar la reconciliación: 91b0ede8be40d1b86fe6e5f6c55b399f83f95101
+RESULT: PASS_STATIC (reconciliación documental de evidencia CI ya existente).
+Tests/workflows ejecutados durante CONT-003: ninguno.
+
+### Run anterior · 37922233961
+
+- Workflow: BaseWarriors Backend Authority Tests; event: push; branch: main.
+- SHA ejecutado: 81e22b681d30192340dc7d773d0f09da264e6ed7.
+- Job: 113792655927 = SUCCESS.
+- Suite backend en los logs: 167 tests, 167 pass, 0 fail, 0 cancelled, 0 skipped.
+- PostgreSQL de integración en CI estuvo healthy; los logs confirman schema initialization, combat durability tras close/reopen, stale-writer rejection con reward ledger exactly-once, purchase durability/idempotency/concurrency tras restart y rollback sin estado parcial.
+- Container build = SUCCESS; el smoke ejecutó el contenedor en NODE_ENV=test y comprobó GET /health en loopback, además de las comprobaciones de ausencia de archivos secretos obvios en la imagen.
+
+### Run final · 37922573542
+
+- Workflow: BaseWarriors Backend Authority Tests; event: push; branch: main.
+- SHA ejecutado: 91b0ede8be40d1b86fe6e5f6c55b399f83f95101, idéntico al HEAD actual validado.
+- Job: 113793783507 = SUCCESS.
+- Suite backend en los logs: 167 tests, 167 pass, 0 fail, 0 cancelled, 0 skipped.
+- PostgreSQL de integración en CI volvió a confirmar schema initialization, combat durability tras restart, stale writer/reward exactly-once, purchase durability/idempotency/concurrency y transaction rollback.
+- Container build = SUCCESS; smoke en contenedor de test comprobó GET /health en loopback y el contenido sensible obvio no presente.
+
+### Reconciliación de SHA y alcance
+
+El compare entre 81e22b681d30192340dc7d773d0f09da264e6ed7 y 91b0ede8be40d1b86fe6e5f6c55b399f83f95101 muestra un único commit posterior: 91b0ede8be40d1b86fe6e5f6c55b399f83f95101 (docs: record purchase provider production gate). Los cambios entre ambos SHA son documentación (incluye backend/README.md); no cambió backend runtime ni la suite ejecutada. El run final, por separado, valida el HEAD documental exacto.
+
+### Límite de la evidencia
+
+Los runs prueban CI y un PostgreSQL efímero de integración, no Managed PostgreSQL productivo. El container smoke se ejecutó en modo test sobre loopback; no es un deployment ni un smoke HTTPS productivo. No existe evidencia de /ready en una instancia externa, autenticación/combat contra una URL productiva, pago real, webhook activo, publicación GHCR por digest o deployment externo.
+
+Estado externo documentado sin cambios: Render SELECTED / NOT PROVISIONED; Managed PostgreSQL productivo NOT PROVISIONED / NOT VERIFIED; secrets/variables externas NOT VERIFIED; domain/DNS/HTTPS y Telegram webhook NOT CONFIGURED; production deployment/smoke NOT RUN.
+
+BONE-004 = OPEN / BLOCKED.
+BONE-005 = CLOSED.
+BONE-006 = CLOSED.
+BONE-011 = OPEN / IN PROGRESS.
+GLOBAL GATE = CERRADO.
+NEXT ACTION = WAITING_FOR_OWNER_ACTION; retomar BONE-011-AUTH-032 solo cuando el owner gate de producción sea verificablemente READY.

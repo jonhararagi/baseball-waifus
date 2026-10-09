@@ -198,3 +198,31 @@ No product features are authorized while the critical bone gate remains closed.
 `GLOBAL GATE = CERRADO`
 
 `WAITING_FOR_OWNER_ACTION` remains the next status. Do not create another AUTH provisioning task while the existing external blocker is unchanged.
+---
+
+## CONT-003 · FINAL CI EVIDENCE RECONCILIATION
+
+**Date:** 2026-10-09
+**HEAD validated:** 91b0ede8be40d1b86fe6e5f6c55b399f83f95101
+**Result:** PASS_STATIC; documentary reconciliation only.
+**Tests/workflows run during CONT-003:** none.
+
+Separate historical evidence:
+
+- Run `37922233961`, job `113792655927`, executed SHA `81e22b681d30192340dc7d773d0f09da264e6ed7`: SUCCESS; 167 tests, 167 pass, 0 fail, 0 cancelled, 0 skipped. PostgreSQL integration subtests, container build and test-mode loopback `/health` smoke all passed.
+- Run `37922573542`, job `113793783507`, executed SHA `91b0ede8be40d1b86fe6e5f6c55b399f83f95101`: SUCCESS; 167 tests, 167 pass, 0 fail, 0 cancelled, 0 skipped. PostgreSQL integration subtests, container build and test-mode loopback `/health` smoke all passed.
+- Both run metadata records identify branch `main` and event `push`; the final run SHA equals the HEAD validated for this reconciliation.
+- Compare between the two SHAs identifies one intervening commit, `91b0ede8...`, with documentation-only changes (including `backend/README.md`). No backend runtime or test source changed between the two runs.
+
+These are CI results, not production readiness. PostgreSQL was an ephemeral GitHub Actions integration service. The container smoke was run with `NODE_ENV=test` and requested `/health` on loopback; it does not prove managed production persistence, external HTTPS, `/ready`, payment/webhook operation or production combat/attestation.
+
+External state remains unchanged: Render SELECTED / NOT PROVISIONED; production Managed PostgreSQL NOT PROVISIONED / NOT VERIFIED; production secrets/variables NOT VERIFIED; domain/DNS/HTTPS and Telegram webhook NOT CONFIGURED; external deployment and production smoke NOT RUN.
+
+`BONE-004 = OPEN / BLOCKED`  
+`BONE-005 = CLOSED`  
+`BONE-006 = CLOSED`  
+`BONE-011 = OPEN / IN PROGRESS`  
+`GLOBAL GATE = CERRADO`  
+`NEXT = WAITING_FOR_OWNER_ACTION`
+
+Preserve the existing handoff `BONE-011-AUTH-032 · PRODUCTION PROVISIONING AND DEPLOYMENT`; do not retry the blocked provisioning/deployment flow until a material, verifiable external owner-access change occurs.
