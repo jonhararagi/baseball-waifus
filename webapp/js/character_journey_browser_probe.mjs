@@ -1513,7 +1513,7 @@ async function run() {
       const playerMetaKey = "baseball_waifus_player_meta_v1:local-player";
       const expectedBattleId = "battle:demo-bw001-vs-bw002";
 
-      const readRuntime = async () => cdpEvaluate(cdp, "(() => { const canvas=document.querySelector('#gameCanvas'); const d=canvas?.dataset||{}; const gacha=window.BaseballWaifusGacha?.getStatus?.()||null; const raw=localStorage.getItem('baseball_waifus_player_meta_v1:local-player'); let persisted=null; try { persisted=raw ? "+ PLAYER_META_EXTRACTOR_SOURCE +"(JSON.parse(raw)) : null; } catch {} return { battlePhase:d.combatBattlePhase||'', tacticalTurn:d.combatTacticalTurn===''?null:Number(d.combatTacticalTurn), timingActive:d.combatTimingActive==='true', timingGrade:d.combatTimingGrade||'', combatResult:d.combatResult||'', presentationPhase:d.combatStagePresentationPhase||'', presentationActive:d.combatPresentationActive==='true', scrap:Number(gacha?.scavenger_scrap??NaN), persistedScrap:Number(persisted?.currencies?.SCRAP??NaN), rewardLedger:persisted?.rewardLedger||{}, rewardLedgerKeys:persisted?.rewardLedger?Object.keys(persisted.rewardLedger):[], playerMetaRawPresent:Boolean(raw), playerMeta:persisted }; })()");
+      const readRuntime = async () => cdpEvaluate(cdp, "(() => { const canvas=document.querySelector('#gameCanvas'); const d=canvas?.dataset||{}; const gacha=window.BaseballWaifusGacha?.getStatus?.()||null; const raw=localStorage.getItem('baseball_waifus_player_meta_v1:local-player'); let persisted=null; try { persisted=raw ? "+ PLAYER_META_EXTRACTOR_SOURCE +"(JSON.parse(raw)) : null; } catch {} return { battlePhase:d.combatBattlePhase||'', tacticalTurn:d.combatTacticalTurn===''?null:Number(d.combatTacticalTurn), timingActive:d.combatTimingActive==='true', timingGrade:d.combatTimingGrade||'', combatResult:d.combatResult||'', presentationPhase:d.combatStagePresentationPhase||'', presentationActive:d.combatPresentationActive==='true', rewardStatus:document.querySelector('#gacha-status')?.textContent?.trim()||'', scrap:Number(gacha?.scavenger_scrap??NaN), persistedScrap:Number(persisted?.currencies?.SCRAP??NaN), rewardLedger:persisted?.rewardLedger||{}, rewardLedgerKeys:persisted?.rewardLedger?Object.keys(persisted.rewardLedger):[], playerMetaRawPresent:Boolean(raw), playerMeta:persisted }; })()");
 
       const mark = async (name, condition, timeoutMs = 6000) => {
         const deadline = Date.now() + timeoutMs;
@@ -1612,18 +1612,22 @@ async function run() {
         s => s.battlePhase === "VICTORY" && s.combatResult === "VICTORY",
         5000
       );
-      requireCondition(victory.scrap === beforeTerminal.scrap + 100, "T114-R Victory reward amount/order invalid", { beforeTerminal, victory });
-      requireCondition(victory.persistedScrap === beforeTerminal.persistedScrap + 100, "T114-R persisted victory reward amount invalid", { beforeTerminal, victory });
-      requireCondition(victory.rewardLedgerKeys.length === beforeTerminal.rewardLedgerKeys.length + 1, "T114-R victory reward ledger did not gain exactly one terminal application", { beforeTerminal, victory });
-      requireCondition(victory.rewardLedger?.[expectedBattleId] === true, "T114-R expected victory ledger entry missing", victory);
+      // ?qa=t097 is LOCAL_DEMO: preserve the real terminal transition but never grant an economic reward.
+      requireCondition(victory.scrap === beforeTerminal.scrap, "T114-R LOCAL_DEMO Scrap changed at terminal", { beforeTerminal, victory });
+      requireCondition(victory.persistedScrap === beforeTerminal.persistedScrap, "T114-R LOCAL_DEMO persisted Scrap changed at terminal", { beforeTerminal, victory });
+      requireCondition(victory.rewardLedgerKeys.length === beforeTerminal.rewardLedgerKeys.length, "T114-R LOCAL_DEMO reward ledger changed at terminal", { beforeTerminal, victory });
+      requireCondition(victory.rewardLedger?.[expectedBattleId] !== true, "T114-R LOCAL_DEMO falsely recorded an authoritative battle reward", victory);
+      requireCondition(/LOCAL_RESULT|DEMO_ONLY|REWARD BLOCKED/i.test(victory.rewardStatus), "T114-R LOCAL_DEMO reward block is not visible", victory);
 
-      const rewardApplication = {
+      const terminalObservation = {
         at_ms: Date.now() - runStartedAt,
         scrap: victory.scrap,
         persistedScrap: victory.persistedScrap,
         rewardLedgerKeys: victory.rewardLedgerKeys,
         battlePhase: victory.battlePhase,
-        combatResult: victory.combatResult
+        combatResult: victory.combatResult,
+        rewardStatus: victory.rewardStatus,
+        reward: "BLOCKED_LOCAL_DEMO"
       };
 
       const returnState = await mark(
@@ -1637,8 +1641,22 @@ async function run() {
         5000
       );
       requireCondition(completeState.battlePhase === "VICTORY", "T114-R victory terminal state changed during return", completeState);
-      requireCondition(completeState.scrap === victory.scrap, "T114-R Scrap changed again after terminal return", { victory, completeState });
-      requireCondition(completeState.rewardLedgerKeys.length === 1, "T114-R reward ledger changed after terminal return", completeState);
+      requireCondition(completeState.scrap === beforeTerminal.scrap, "T114-R LOCAL_DEMO Scrap changed after terminal return", { beforeTerminal, victory, completeState });
+      requireCondition(completeState.persistedScrap === beforeTerminal.persistedScrap, "T114-R LOCAL_DEMO persisted Scrap changed after terminal return", { beforeTerminal, victory, completeState });
+      requireCondition(completeState.rewardLedgerKeys.length === beforeTerminal.rewardLedgerKeys.length, "T114-R LOCAL_DEMO reward ledger changed after terminal return", completeState);
+
+      await cdp.send("Page.navigate", { url });
+      await waitFor(async () => (await cdpEvaluate(cdp, "document.readyState")) === "complete", {
+        timeoutMs: 30000, label: "T114-R reload document ready"
+      });
+      await waitFor(async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#home-view') && !document.querySelector('#home-view').hidden)"), {
+        timeoutMs: 30000, label: "T114-R Home visible after reload"
+      });
+      const reloaded = await readRuntime();
+      requireCondition(reloaded.scrap === beforeTerminal.scrap, "T114-R LOCAL_DEMO Scrap changed after reload", { beforeTerminal, reloaded });
+      requireCondition(reloaded.persistedScrap === beforeTerminal.persistedScrap, "T114-R LOCAL_DEMO persisted Scrap changed after reload", { beforeTerminal, reloaded });
+      requireCondition(reloaded.rewardLedgerKeys.length === beforeTerminal.rewardLedgerKeys.length, "T114-R LOCAL_DEMO ledger changed after reload", { beforeTerminal, reloaded });
+      requireCondition(reloaded.rewardLedger?.[expectedBattleId] !== true, "T114-R LOCAL_DEMO reward ledger contains a battle grant after reload", reloaded);
 
       const sameOriginErrors = pageExceptions
         .map((item) => item?.exception?.description || item?.text || "")
@@ -1659,7 +1677,7 @@ async function run() {
         harness: "existing character_journey_browser_probe.mjs via T114R_TERMINAL_INPUT_RECOVERY=1",
         playerMetaKey,
         expectedBattleId,
-        checkpoints: { initial, beforeTerminal, victory, rewardApplication, returnState, completeState },
+        checkpoints: { initial, beforeTerminal, victory, terminalObservation, returnState, completeState, reloaded },
         timingInput: {
           method: "CDP Input.dispatchMouseEvent",
           elapsedMs: elapsedAtInput,
@@ -1668,10 +1686,13 @@ async function run() {
         terminalBoundary: {
           lastNonTerminal: "CLIMAX/TIMING ACTIVE",
           terminalResult: "VICTORY",
-          rewardObservedAfterTerminal: true,
+          rewardObservedAfterTerminal: false,
+          rewardBoundary: "LOCAL_DEMO_BLOCKED",
           scrapBefore: beforeTerminal.scrap,
           scrapAfter: victory.scrap,
-          expectedDelta: 100
+          expectedDelta: 0,
+          ledgerBefore: beforeTerminal.rewardLedgerKeys.length,
+          ledgerAfterReload: reloaded.rewardLedgerKeys.length
         },
         consoleErrors: consoleErrors.map((entry) => ({ text:entry.text, url:entry.url, source:entry.source })),
         pageErrors: sameOriginErrors
@@ -1684,11 +1705,13 @@ async function run() {
       console.log("VICTORY = PASS_REAL");
       console.log("COMBAT RESULT = VICTORY");
       console.log("MATCH END = PASS_REAL_BY_TERMINAL_RESULT");
-      console.log("REWARD APPLICATION = PASS_REAL");
+      console.log("REWARD HANDOFF = LOCAL_DEMO_BLOCKED");
+      console.log("REWARD = [] (LOCAL_DEMO)");
       console.log("SCRAP AFTER TERMINAL = " + victory.scrap);
-      console.log("EXPECTED REWARD = +100 SCRAP");
-      console.log("DUPLICATION = PASS_REAL");
+      console.log("PERSISTED SCRAP AFTER TERMINAL = " + victory.persistedScrap);
+      console.log("LEDGER AFTER RELOAD = " + reloaded.rewardLedgerKeys.length);
       console.log("RETURN = PASS_REAL");
+      console.log("RELOAD = PASS_REAL");
       console.log("TERMINAL BOUNDARY = PASS_REAL");
       console.log("PLAYER META = PASS_REAL");
       return;
