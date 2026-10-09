@@ -12,6 +12,10 @@ on:
       - "webapp/js/reward_authority.js"
       - "webapp/js/bone004_reward_authority_test.mjs"
       - "webapp/js/bone004_browser_probe.mjs"
+      - "backend/src/combat_service.mjs"
+      - "backend/src/combat_store.mjs"
+      - "backend/src/attestation_signer.mjs"
+      - "backend/test/attestation_compatibility_test.mjs"
       - "webapp/js/reward_resolver.js"
       - "webapp/js/player_meta_reward_adapter.js"
       - "webapp/js/player_meta_state.js"
@@ -66,6 +70,7 @@ jobs:
           set -euo pipefail
           node --experimental-default-type=module --check webapp/js/reward_authority.js
           node --experimental-default-type=module webapp/js/bone004_reward_authority_test.mjs
+          node --test backend/test/attestation_compatibility_test.mjs
       - name: BONE-004 Native Chromium Reward Authority Validation
         shell: bash
         env:
