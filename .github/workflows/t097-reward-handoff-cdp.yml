@@ -83,9 +83,19 @@ jobs:
               return items
 
           manifest = {"version": 2, "sprites": collect("sprites"), "cards": collect("cards")}
-          (root / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+          (root / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
           PY
-          test -s site/assets/production/manifest.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          path = Path("site/assets/production/manifest.json")
+          raw = path.read_bytes()
+          manifest = json.loads(raw.decode("utf-8"))
+          assert isinstance(manifest, dict), "manifest root must be an object"
+          assert {"version", "sprites", "cards"}.issubset(manifest), "manifest keys missing"
+          assert isinstance(manifest["sprites"], list) and isinstance(manifest["cards"], list), "manifest collections must be arrays"
+          assert raw.endswith(b"\n"), "manifest must end with a real newline"
+          PY
       - name: Locate Chrome
         id: chrome
         shell: bash
@@ -105,6 +115,11 @@ jobs:
         run: |
           set -euo pipefail
           node --check webapp/js/character_journey_browser_probe.mjs
+      - name: Validate Player Meta envelope extractor
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test webapp/js/player_meta_envelope_test.mjs
       - name: BONE-004 Reward Authority Contract
         shell: bash
         run: |

@@ -5,6 +5,7 @@ import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { stat, readFile } from "node:fs/promises";
 import { extname, normalize, relative, resolve, join } from "node:path";
 import { tmpdir } from "node:os";
+import { extractPlayerMetaState } from "./player_meta_envelope.mjs";
 
 const T073_PRESENTATION = process.env.T073_PRESENTATION === "1";
 const T074_ART = process.env.T074_ART === "1";
@@ -768,7 +769,7 @@ async function run() {
       const playerMetaKey = "baseball_waifus_player_meta_v1:local-player";
       const expectedBattleId = "battle:demo-bw001-vs-bw002";
 
-      const readRuntime = async () => cdpEvaluate(cdp, "(() => { const canvas = document.querySelector('#gameCanvas'); const d = canvas?.dataset || {}; const gacha = window.BaseballWaifusGacha?.getStatus?.() || null; const raw = localStorage.getItem('baseball_waifus_player_meta_v1:local-player'); let persisted = null; try { const persistedRecord = raw ? JSON.parse(raw) : null; persisted = persistedRecord?.schemaVersion === 1 && Number.isSafeInteger(persistedRecord?.revision) && persistedRecord?.state && typeof persistedRecord.state === 'object' ? persistedRecord.state : persistedRecord?.currencies && persistedRecord?.rewardLedger && typeof persistedRecord.currencies === 'object' ? persistedRecord : null; } catch { persisted = null; } return { battlePhase: d.combatBattlePhase || '', tacticalTurn: d.combatTacticalTurn === '' ? null : Number(d.combatTacticalTurn), timingActive: d.combatTimingActive === 'true', timingGrade: d.combatTimingGrade || '', combatResult: d.combatResult || '', presentationPhase: d.combatStagePresentationPhase || '', presentationActive: d.combatPresentationActive === 'true', rewardStatus: document.querySelector('#gacha-status')?.textContent?.trim() || '', scrap: Number(gacha?.scavenger_scrap ?? NaN), fragments: Number(gacha?.fragments ?? NaN), inventorySize: Number(gacha?.inventory_size ?? NaN), playerMetaRawPresent: Boolean(raw), persistedScrap: Number(persisted?.currencies?.SCRAP ?? NaN), rewardLedger: persisted?.rewardLedger || null, rewardLedgerKeys: persisted?.rewardLedger ? Object.keys(persisted.rewardLedger) : [], playerMeta: persisted }; })()");
+      const readRuntime = async () => cdpEvaluate(cdp, "(() => { const canvas = document.querySelector('#gameCanvas'); const d = canvas?.dataset || {}; const gacha = window.BaseballWaifusGacha?.getStatus?.() || null; const raw = localStorage.getItem('baseball_waifus_player_meta_v1:local-player'); let persisted = null; try { const persistedRecord = raw ? JSON.parse(raw) : null; persisted = (function extractPlayerMetaState(record, { allowDirect = true } = {}) { if (!record || typeof record !== 'object' || Array.isArray(record)) throw new TypeError('Player Meta record must be an object'); let state; if (Object.prototype.hasOwnProperty.call(record, 'state')) { if (record.schemaVersion !== 1 || !Number.isSafeInteger(record.revision) || record.revision < 0 || !record.state || typeof record.state !== 'object' || Array.isArray(record.state)) throw new TypeError('Invalid Player Meta persistence envelope'); state = record.state; } else if (allowDirect && record.currencies && typeof record.currencies === 'object' && record.rewardLedger && typeof record.rewardLedger === 'object') { state = record; } else throw new TypeError('Unsupported Player Meta persistence record'); if (!state.currencies || typeof state.currencies !== 'object' || Array.isArray(state.currencies) || !Number.isSafeInteger(state.currencies.SCRAP) || state.currencies.SCRAP < 0 || !state.rewardLedger || typeof state.rewardLedger !== 'object' || Array.isArray(state.rewardLedger)) throw new TypeError('Invalid Player Meta state payload'); return state; })(persistedRecord); } catch { persisted = null; } return { battlePhase: d.combatBattlePhase || '', tacticalTurn: d.combatTacticalTurn === '' ? null : Number(d.combatTacticalTurn), timingActive: d.combatTimingActive === 'true', timingGrade: d.combatTimingGrade || '', combatResult: d.combatResult || '', presentationPhase: d.combatStagePresentationPhase || '', presentationActive: d.combatPresentationActive === 'true', rewardStatus: document.querySelector('#gacha-status')?.textContent?.trim() || '', scrap: Number(gacha?.scavenger_scrap ?? NaN), fragments: Number(gacha?.fragments ?? NaN), inventorySize: Number(gacha?.inventory_size ?? NaN), playerMetaRawPresent: Boolean(raw), persistedScrap: Number(persisted?.currencies?.SCRAP ?? NaN), rewardLedger: persisted?.rewardLedger || null, rewardLedgerKeys: persisted?.rewardLedger ? Object.keys(persisted.rewardLedger) : [], playerMeta: persisted }; })()");
 
       const mark = async (name, condition, timeoutMs = 6000) => {
         const deadline = Date.now() + timeoutMs;
@@ -874,10 +875,10 @@ async function run() {
       checkpoints["REWARD HANDOFF"] = await readRuntime();
       timeline.push({ at_ms: Date.now() - runStartedAt, label:"REWARD HANDOFF", ...checkpoints["REWARD HANDOFF"] });
 
-      requireCondition(victory.scrap === 100, "T097 victory did not apply the existing 100 Scrap reward", victory);
-      requireCondition(victory.persistedScrap === 100, "T097 victory Scrap is not persisted in Player Meta", victory);
-      requireCondition(victory.rewardLedgerKeys.length === 1 && victory.rewardLedgerKeys[0] === expectedBattleId, "T097 reward ledger does not contain exactly one completed battle reward", victory);
-      requireCondition(victory.rewardLedger?.[expectedBattleId] === true, "T097 reward ledger entry is not true", victory);
+      requireCondition(victory.scrap === 0, "T097 LOCAL_DEMO must not grant Scrap", victory);
+      requireCondition(victory.persistedScrap === 0, "T097 LOCAL_DEMO persisted Scrap must remain 0", victory);
+      requireCondition(victory.rewardLedgerKeys.length === 0, "T097 LOCAL_DEMO reward ledger must remain empty", victory);
+      requireCondition(/LOCAL_RESULT|DEMO_ONLY|REWARD BLOCKED/i.test(victory.rewardStatus), "T097 LOCAL_DEMO reward authority block is not visible", victory);
       // Reward handoff is authoritative in Player Meta state/ledger; HUD text is presentation-only.
 
       const returnState = await mark(
@@ -890,9 +891,9 @@ async function run() {
         (state) => state.presentationPhase === "COMPLETE" && state.presentationActive === false,
         5000
       );
-      requireCondition(completeState.scrap === 100, "T097 Scrap balance changed after RETURN", completeState);
-      requireCondition(completeState.persistedScrap === 100, "T097 persisted Scrap changed after RETURN", completeState);
-      requireCondition(completeState.rewardLedgerKeys.length === 1, "T097 reward ledger changed after RETURN", completeState);
+      requireCondition(completeState.scrap === 0, "T097 LOCAL_DEMO Scrap changed after RETURN", completeState);
+      requireCondition(completeState.persistedScrap === 0, "T097 LOCAL_DEMO persisted Scrap changed after RETURN", completeState);
+      requireCondition(completeState.rewardLedgerKeys.length === 0, "T097 LOCAL_DEMO reward ledger changed after RETURN", completeState);
 
       await cdp.send("Page.navigate", { url: t097Url });
       await waitFor(
@@ -907,9 +908,9 @@ async function run() {
       checkpoints["RELOAD"] = { at_ms: Date.now() - runStartedAt, ...reloaded };
       timeline.push({ at_ms: Date.now() - runStartedAt, label:"RELOAD", ...reloaded });
 
-      requireCondition(reloaded.scrap === 100, "T097 persisted Scrap was not rehydrated after reload", reloaded);
-      requireCondition(reloaded.persistedScrap === 100, "T097 Player Meta persistence did not survive reload", reloaded);
-      requireCondition(reloaded.rewardLedgerKeys.length === 1 && reloaded.rewardLedger[expectedBattleId] === true, "T097 reward ledger did not survive reload", reloaded);
+      requireCondition(reloaded.scrap === 0, "T097 LOCAL_DEMO Scrap changed after reload", reloaded);
+      requireCondition(reloaded.persistedScrap === 0, "T097 LOCAL_DEMO persisted Scrap changed after reload", reloaded);
+      requireCondition(reloaded.rewardLedgerKeys.length === 0, "T097 LOCAL_DEMO reward ledger is not empty after reload", reloaded);
       requireCondition(reloaded.rewardStatus !== "REWARD ERROR", "T097 reward error state detected after reload", reloaded);
 
       const sameOriginErrors = pageExceptions
@@ -935,8 +936,9 @@ async function run() {
         timeline,
         reward: {
           type: "SCRAP",
-          amount: 100,
-          source: "existing T062_REWARD_TABLE VICTORY entry"
+          amount: 0,
+          grant: "BLOCKED_LOCAL_DEMO",
+          source: "LOCAL_DEMO must not grant economic reward"
         },
         persistence: {
           mechanism: "PlayerMetaPersistenceAdapter/localStorage",
@@ -957,9 +959,9 @@ async function run() {
 
       console.log("T097 BROWSER AUTOMATION = PASS_REAL");
       console.log("VICTORY = PASS_REAL");
-      console.log("REWARD HANDOFF = PASS_REAL");
-      console.log("REWARD = +100 SCRAP");
-      console.log("PLAYER STATE = SCRAP 0 -> 100");
+      console.log("REWARD HANDOFF = LOCAL_DEMO_BLOCKED");
+      console.log("REWARD = [] (LOCAL_DEMO)");
+      console.log("PLAYER STATE = SCRAP 0 -> 0");
       console.log("PERSISTENCE = PASS_REAL");
       console.log("DUPLICATION = PASS_REAL");
       console.log("RETURN = PASS_REAL");
@@ -975,7 +977,7 @@ async function run() {
       const playerMetaKey = "baseball_waifus_player_meta_v1:local-player";
       const expectedBattleId = "battle:demo-bw001-vs-bw002";
 
-      const readRuntime = async () => cdpEvaluate(cdp, "(() => { const canvas = document.querySelector('#gameCanvas'); const d = canvas?.dataset || {}; const gacha = window.BaseballWaifusGacha?.getStatus?.() || null; const raw = localStorage.getItem('baseball_waifus_player_meta_v1:local-player'); let persisted = null; try { const persistedRecord = raw ? JSON.parse(raw) : null; persisted = persistedRecord?.schemaVersion === 1 && Number.isSafeInteger(persistedRecord?.revision) && persistedRecord?.state && typeof persistedRecord.state === 'object' ? persistedRecord.state : persistedRecord?.currencies && persistedRecord?.rewardLedger && typeof persistedRecord.currencies === 'object' ? persistedRecord : null; } catch { persisted = null; } return { battlePhase:d.combatBattlePhase||'', tacticalTurn:d.combatTacticalTurn===''?null:Number(d.combatTacticalTurn), timingActive:d.combatTimingActive==='true', timingGrade:d.combatTimingGrade||'', combatResult:d.combatResult||'', presentationPhase:d.combatStagePresentationPhase||'', presentationActive:d.combatPresentationActive==='true', playerStamina:d.combatPlayerStamina===''?null:Number(d.combatPlayerStamina), playerStaminaMax:d.combatPlayerStaminaMax===''?null:Number(d.combatPlayerStaminaMax), scrap:Number(gacha?.scavenger_scrap??NaN), persistedScrap:Number(persisted?.currencies?.SCRAP??NaN), rewardLedger:persisted?.rewardLedger||null, rewardLedgerKeys:persisted?.rewardLedger?Object.keys(persisted.rewardLedger):[], playerMetaRawPresent:Boolean(raw) }; })()");
+      const readRuntime = async () => cdpEvaluate(cdp, "(() => { const canvas = document.querySelector('#gameCanvas'); const d = canvas?.dataset || {}; const gacha = window.BaseballWaifusGacha?.getStatus?.() || null; const raw = localStorage.getItem('baseball_waifus_player_meta_v1:local-player'); let persisted = null; try { const persistedRecord = raw ? JSON.parse(raw) : null; persisted = (function extractPlayerMetaState(record, { allowDirect = true } = {}) { if (!record || typeof record !== 'object' || Array.isArray(record)) throw new TypeError('Player Meta record must be an object'); let state; if (Object.prototype.hasOwnProperty.call(record, 'state')) { if (record.schemaVersion !== 1 || !Number.isSafeInteger(record.revision) || record.revision < 0 || !record.state || typeof record.state !== 'object' || Array.isArray(record.state)) throw new TypeError('Invalid Player Meta persistence envelope'); state = record.state; } else if (allowDirect && record.currencies && typeof record.currencies === 'object' && record.rewardLedger && typeof record.rewardLedger === 'object') { state = record; } else throw new TypeError('Unsupported Player Meta persistence record'); if (!state.currencies || typeof state.currencies !== 'object' || Array.isArray(state.currencies) || !Number.isSafeInteger(state.currencies.SCRAP) || state.currencies.SCRAP < 0 || !state.rewardLedger || typeof state.rewardLedger !== 'object' || Array.isArray(state.rewardLedger)) throw new TypeError('Invalid Player Meta state payload'); return state; })(persistedRecord); } catch { persisted = null; } return { battlePhase:d.combatBattlePhase||'', tacticalTurn:d.combatTacticalTurn===''?null:Number(d.combatTacticalTurn), timingActive:d.combatTimingActive==='true', timingGrade:d.combatTimingGrade||'', combatResult:d.combatResult||'', presentationPhase:d.combatStagePresentationPhase||'', presentationActive:d.combatPresentationActive==='true', playerStamina:d.combatPlayerStamina===''?null:Number(d.combatPlayerStamina), playerStaminaMax:d.combatPlayerStaminaMax===''?null:Number(d.combatPlayerStaminaMax), scrap:Number(gacha?.scavenger_scrap??NaN), persistedScrap:Number(persisted?.currencies?.SCRAP??NaN), rewardLedger:persisted?.rewardLedger||null, rewardLedgerKeys:persisted?.rewardLedger?Object.keys(persisted.rewardLedger):[], playerMetaRawPresent:Boolean(raw) }; })()");
 
       const mark = async (name, condition, timeoutMs = 6000) => {
         const deadline = Date.now() + timeoutMs;
@@ -1065,7 +1067,7 @@ async function run() {
       const complete=await mark("RETURN COMPLETE", s => s.presentationPhase === "COMPLETE" && s.presentationActive === false, 5000);
       requireCondition(complete.battlePhase === "DEFEAT" && complete.playerStamina === 0, "T101 terminal state changed after return", complete);
       requireCondition(complete.scrap === 0 && complete.persistedScrap === 0, "T101 defeat awarded victory Scrap", complete);
-      requireCondition(complete.rewardLedgerKeys.length === 1 && complete.rewardLedgerKeys[0] === expectedBattleId && complete.rewardLedger?.[expectedBattleId] === true, "T101 defeat ledger identity missing or duplicated", complete);
+      requireCondition(complete.rewardLedgerKeys.length === 0, "T101 local defeat must leave reward ledger empty", complete);
       const actionControl=await cdpEvaluate(cdp, "(() => { const b=document.querySelector('#action-bat'); return {exists:Boolean(b),disabled:Boolean(b?.disabled)}; })()");
       requireCondition(actionControl.exists, "T101 post-terminal BATEAR control is missing", actionControl);
       const postTerminalBefore=await readRuntime();
@@ -1091,7 +1093,7 @@ async function run() {
       checkpoints.RELOAD={at_ms:Date.now()-runStartedAt,...reloaded};
       timeline.push({at_ms:Date.now()-runStartedAt,label:"RELOAD",...reloaded});
       requireCondition(reloaded.scrap === 0 && reloaded.persistedScrap === 0, "T101 reload produced victory Scrap", reloaded);
-      requireCondition(reloaded.rewardLedgerKeys.length === 1 && reloaded.rewardLedger?.[expectedBattleId] === true, "T101 defeat ledger did not survive reload consistently", reloaded);
+      requireCondition(reloaded.rewardLedgerKeys.length === 0, "T101 local defeat reward ledger must remain empty after reload", reloaded);
       const sameOriginErrors=pageExceptions.map(item => item?.exception?.description || item?.text || "").filter(Boolean).filter(entry => entry.includes(baseUrl) || entry.includes("/js/"));
       requireCondition(sameOriginErrors.length === 0, "T101 same-origin runtime exceptions detected", sameOriginErrors);
       const evidence={task:"T101",sha:process.env.GITHUB_SHA||"local",runId:process.env.GITHUB_RUN_ID||"local",browser:BROWSER_BIN,browserVersion:{product:browserVersion?.product||"",revision:browserVersion?.revision||"",userAgent:browserVersion?.userAgent||""},harness:"existing character_journey_browser_probe.mjs via T101_DEFEAT_PROOF=1",expectedBattleId,initial,rounds,defeat,returnComplete:complete,reloaded,postTerminalActionGuard:{control:actionControl,functional:true,before:postTerminalBefore,after:postTerminalAfter},persistence:{mechanism:"PlayerMetaPersistenceAdapter/localStorage",key:playerMetaKey,reloadVerified:true},reward:{expected:[],scrapBefore:initial.scrap,scrapAfter:complete.scrap,scrapAfterReload:reloaded.scrap},duplication:{ledgerBeforeReload:complete.rewardLedgerKeys.length,ledgerAfterReload:reloaded.rewardLedgerKeys.length},timeline,consoleErrors:consoleErrors.map(entry=>({text:entry.text,url:entry.url,source:entry.source})),pageErrors:sameOriginErrors};
@@ -1114,7 +1116,7 @@ async function run() {
       const browserVersion = await cdp.send("Browser.getVersion");
       const playerMetaKey = "baseball_waifus_player_meta_v1:local-player";
 
-      const readRewardState = async () => cdpEvaluate(cdp, `(() => { const canvas = document.querySelector("#gameCanvas"); const d = canvas?.dataset || {}; const gacha = window.BaseballWaifusGacha?.getStatus?.() || null; const raw = localStorage.getItem("baseball_waifus_player_meta_v1:local-player"); let persisted = null; try { const persistedRecord = raw ? JSON.parse(raw) : null; persisted = persistedRecord?.schemaVersion === 1 && Number.isSafeInteger(persistedRecord?.revision) && persistedRecord?.state && typeof persistedRecord.state === 'object' ? persistedRecord.state : persistedRecord?.currencies && persistedRecord?.rewardLedger && typeof persistedRecord.currencies === 'object' ? persistedRecord : null; } catch { persisted = null; } return { battlePhase:d.combatBattlePhase||"", tacticalTurn:d.combatTacticalTurn===""?null:Number(d.combatTacticalTurn), timingActive:d.combatTimingActive==="true", timingGrade:d.combatTimingGrade||"", combatResult:d.combatResult||"", presentationPhase:d.combatStagePresentationPhase||"", presentationActive:d.combatPresentationActive==="true", playerStamina:d.combatPlayerStamina===""?null:Number(d.combatPlayerStamina), scrap:Number(gacha?.scavenger_scrap??NaN), persistedScrap:Number(persisted?.currencies?.SCRAP??NaN), rewardLedger:persisted?.rewardLedger||null, rewardLedgerKeys:persisted?.rewardLedger?Object.keys(persisted.rewardLedger):[], playerMetaRawPresent:Boolean(raw) }; })()`);
+      const readRewardState = async () => cdpEvaluate(cdp, `(() => { const canvas = document.querySelector("#gameCanvas"); const d = canvas?.dataset || {}; const gacha = window.BaseballWaifusGacha?.getStatus?.() || null; const raw = localStorage.getItem("baseball_waifus_player_meta_v1:local-player"); let persisted = null; try { const persistedRecord = raw ? JSON.parse(raw) : null; persisted = (function extractPlayerMetaState(record, { allowDirect = true } = {}) { if (!record || typeof record !== 'object' || Array.isArray(record)) throw new TypeError('Player Meta record must be an object'); let state; if (Object.prototype.hasOwnProperty.call(record, 'state')) { if (record.schemaVersion !== 1 || !Number.isSafeInteger(record.revision) || record.revision < 0 || !record.state || typeof record.state !== 'object' || Array.isArray(record.state)) throw new TypeError('Invalid Player Meta persistence envelope'); state = record.state; } else if (allowDirect && record.currencies && typeof record.currencies === 'object' && record.rewardLedger && typeof record.rewardLedger === 'object') { state = record; } else throw new TypeError('Unsupported Player Meta persistence record'); if (!state.currencies || typeof state.currencies !== 'object' || Array.isArray(state.currencies) || !Number.isSafeInteger(state.currencies.SCRAP) || state.currencies.SCRAP < 0 || !state.rewardLedger || typeof state.rewardLedger !== 'object' || Array.isArray(state.rewardLedger)) throw new TypeError('Invalid Player Meta state payload'); return state; })(persistedRecord); } catch { persisted = null; } return { battlePhase:d.combatBattlePhase||"", tacticalTurn:d.combatTacticalTurn===""?null:Number(d.combatTacticalTurn), timingActive:d.combatTimingActive==="true", timingGrade:d.combatTimingGrade||"", combatResult:d.combatResult||"", presentationPhase:d.combatStagePresentationPhase||"", presentationActive:d.combatPresentationActive==="true", playerStamina:d.combatPlayerStamina===""?null:Number(d.combatPlayerStamina), scrap:Number(gacha?.scavenger_scrap??NaN), persistedScrap:Number(persisted?.currencies?.SCRAP??NaN), rewardLedger:persisted?.rewardLedger||null, rewardLedgerKeys:persisted?.rewardLedger?Object.keys(persisted.rewardLedger):[], playerMetaRawPresent:Boolean(raw) }; })()`);
 
       const mark = async (name, condition, timeoutMs = 6000) => {
         const deadline = Date.now() + timeoutMs;
@@ -1180,7 +1182,7 @@ async function run() {
         await cdp.send("Input.dispatchMouseEvent", { type:"mousePressed", x, y, button:"left", buttons:1, clickCount:1 });
         await cdp.send("Input.dispatchMouseEvent", { type:"mouseReleased", x, y, button:"left", buttons:0, clickCount:1 });
 
-        const afterTiming = await mark("ROUND " + round + " RESULT", s => s.timingActive === false && ["TACTICAL","VICTORY","DEFEAT"].includes(s.battlePhase), 5000);
+        const afterTiming = await mark("ROUND " + round + " RESULT", s => s.timingActive === false && ["TACTICAL","VICTORY","DEFEAT"].includes(s.battlePhase) && (!T118_NON_HIT_REWARD_VALIDATION || s.timingGrade === "MISS"), 5000);
         if (T118_NON_HIT_REWARD_VALIDATION) {
           requireCondition(afterTiming.timingGrade === "MISS", "T118 Timing Grade was not MISS", afterTiming);
           requireCondition(afterTiming.combatResult === "STRIKE", "T118 Combat Result was not STRIKE", afterTiming);
@@ -1328,7 +1330,7 @@ async function run() {
         const gacha = window.BaseballWaifusGacha?.getStatus?.() || null;
         const raw = localStorage.getItem("baseball_waifus_player_meta_v1:local-player");
         let persisted = null;
-        try { const persistedRecord = raw ? JSON.parse(raw) : null; persisted = persistedRecord?.schemaVersion === 1 && Number.isSafeInteger(persistedRecord?.revision) && persistedRecord?.state && typeof persistedRecord.state === 'object' ? persistedRecord.state : persistedRecord?.currencies && persistedRecord?.rewardLedger && typeof persistedRecord.currencies === 'object' ? persistedRecord : null; } catch {}
+        try { const persistedRecord = raw ? JSON.parse(raw) : null; persisted = (function extractPlayerMetaState(record, { allowDirect = true } = {}) { if (!record || typeof record !== 'object' || Array.isArray(record)) throw new TypeError('Player Meta record must be an object'); let state; if (Object.prototype.hasOwnProperty.call(record, 'state')) { if (record.schemaVersion !== 1 || !Number.isSafeInteger(record.revision) || record.revision < 0 || !record.state || typeof record.state !== 'object' || Array.isArray(record.state)) throw new TypeError('Invalid Player Meta persistence envelope'); state = record.state; } else if (allowDirect && record.currencies && typeof record.currencies === 'object' && record.rewardLedger && typeof record.rewardLedger === 'object') { state = record; } else throw new TypeError('Unsupported Player Meta persistence record'); if (!state.currencies || typeof state.currencies !== 'object' || Array.isArray(state.currencies) || !Number.isSafeInteger(state.currencies.SCRAP) || state.currencies.SCRAP < 0 || !state.rewardLedger || typeof state.rewardLedger !== 'object' || Array.isArray(state.rewardLedger)) throw new TypeError('Invalid Player Meta state payload'); return state; })(persistedRecord); } catch {}
         const rect = canvas?.getBoundingClientRect();
         return {
           battlePhase:d.combatBattlePhase||"",
@@ -1510,7 +1512,7 @@ async function run() {
       const playerMetaKey = "baseball_waifus_player_meta_v1:local-player";
       const expectedBattleId = "battle:demo-bw001-vs-bw002";
 
-      const readRuntime = async () => cdpEvaluate(cdp, "(() => { const canvas=document.querySelector('#gameCanvas'); const d=canvas?.dataset||{}; const gacha=window.BaseballWaifusGacha?.getStatus?.()||null; const raw=localStorage.getItem('baseball_waifus_player_meta_v1:local-player'); let persisted=null; try { persisted=raw ? JSON.parse(raw) : null; } catch {} return { battlePhase:d.combatBattlePhase||'', tacticalTurn:d.combatTacticalTurn===''?null:Number(d.combatTacticalTurn), timingActive:d.combatTimingActive==='true', timingGrade:d.combatTimingGrade||'', combatResult:d.combatResult||'', presentationPhase:d.combatStagePresentationPhase||'', presentationActive:d.combatPresentationActive==='true', scrap:Number(gacha?.scavenger_scrap??NaN), persistedScrap:Number(persisted?.currencies?.SCRAP??NaN), rewardLedger:persisted?.rewardLedger||{}, rewardLedgerKeys:persisted?.rewardLedger?Object.keys(persisted.rewardLedger):[], playerMetaRawPresent:Boolean(raw), playerMeta:persisted }; })()");
+      const readRuntime = async () => cdpEvaluate(cdp, "(() => { const canvas=document.querySelector('#gameCanvas'); const d=canvas?.dataset||{}; const gacha=window.BaseballWaifusGacha?.getStatus?.()||null; const raw=localStorage.getItem('baseball_waifus_player_meta_v1:local-player'); let persisted=null; try { persisted=raw ? (function extractPlayerMetaState(record, { allowDirect = true } = {}) { if (!record || typeof record !== 'object' || Array.isArray(record)) throw new TypeError('Player Meta record must be an object'); let state; if (Object.prototype.hasOwnProperty.call(record, 'state')) { if (record.schemaVersion !== 1 || !Number.isSafeInteger(record.revision) || record.revision < 0 || !record.state || typeof record.state !== 'object' || Array.isArray(record.state)) throw new TypeError('Invalid Player Meta persistence envelope'); state = record.state; } else if (allowDirect && record.currencies && typeof record.currencies === 'object' && record.rewardLedger && typeof record.rewardLedger === 'object') { state = record; } else throw new TypeError('Unsupported Player Meta persistence record'); if (!state.currencies || typeof state.currencies !== 'object' || Array.isArray(state.currencies) || !Number.isSafeInteger(state.currencies.SCRAP) || state.currencies.SCRAP < 0 || !state.rewardLedger || typeof state.rewardLedger !== 'object' || Array.isArray(state.rewardLedger)) throw new TypeError('Invalid Player Meta state payload'); return state; })(JSON.parse(raw)) : null; } catch {} return { battlePhase:d.combatBattlePhase||'', tacticalTurn:d.combatTacticalTurn===''?null:Number(d.combatTacticalTurn), timingActive:d.combatTimingActive==='true', timingGrade:d.combatTimingGrade||'', combatResult:d.combatResult||'', presentationPhase:d.combatStagePresentationPhase||'', presentationActive:d.combatPresentationActive==='true', scrap:Number(gacha?.scavenger_scrap??NaN), persistedScrap:Number(persisted?.currencies?.SCRAP??NaN), rewardLedger:persisted?.rewardLedger||{}, rewardLedgerKeys:persisted?.rewardLedger?Object.keys(persisted.rewardLedger):[], playerMetaRawPresent:Boolean(raw), playerMeta:persisted }; })()");
 
       const mark = async (name, condition, timeoutMs = 6000) => {
         const deadline = Date.now() + timeoutMs;
