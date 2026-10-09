@@ -490,6 +490,8 @@ export class CombatRenderer {
     this._presentClimaxTransition(resolution.transition);
 
     this.lastTiming = timing;
+    // Publish the resolved timing immediately; cinematic time-freeze can skip the normal dataset sync.
+    this._syncCombatStageDataset();
     this.audioBridge?.playTimingResult?.(timing.grade);
     this._activateEyeFocus(200);
     this._triggerTimingPreview(timing);
