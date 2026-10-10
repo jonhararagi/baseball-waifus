@@ -116,15 +116,20 @@ function lifecycleSnapshot(method) {
 function recordFirstDivergence(method, before, after) {
   for (const row of after?.identityDivergences || []) {
     const key = row.actorId;
+    if (seenDivergence.has(key)) continue;
     const wasAlreadySameDivergence = (before?.identityDivergences || []).some(item => item.actorId === key
       && item.stageObjectRefId === row.stageObjectRefId && item.formationObjectRefId === row.formationObjectRefId);
-    if (wasAlreadySameDivergence || seenDivergence.has(key)) continue;
     seenDivergence.add(key);
-    record("T101.actorIdentity.firstDivergence", {
-      operation: method, actorId: row.actorId, stageObjectRefId: row.stageObjectRefId,
-      formationObjectRefId: row.formationObjectRefId, stageState: row.stageState, formationState: row.formationState,
+    record("T101.actorIdentity.firstDivergenceObserved", {
+      operation: method, actorId: row.actorId,
+      stageObjectRefId: row.stageObjectRefId, formationObjectRefId: row.formationObjectRefId,
+      stageState: row.stageState, formationState: row.formationState,
+      observedDivergentBeforeOperation: wasAlreadySameDivergence,
+      firstDivergenceInsideOperation: !wasAlreadySameDivergence,
       before, after,
-      causalInterpretation: "first divergence observed by enabled trace; not proof of origin if already divergent before this wrapper"
+      causalInterpretation: wasAlreadySameDivergence
+        ? "already divergent at the start of this operation; originating mutation predates this observation"
+        : "identity divergence first observed after this operation; inspect its arguments and before/after object maps"
     });
   }
 }
