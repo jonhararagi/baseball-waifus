@@ -255,7 +255,8 @@ function readTimingWindowDirect() {
       durationMs: Number.isFinite(Number(timing.durationMs)) ? Number(timing.durationMs) : null,
       hitWindowMs: Number.isFinite(Number(timing.hitWindowMs)) ? Number(timing.hitWindowMs) : null,
       greatWindowMs: Number.isFinite(Number(timing.greatWindowMs)) ? Number(timing.greatWindowMs) : null,
-      windowId: String(timing.id || timing.windowId || "")
+      windowId: String(timing.id || timing.windowId || ""),
+      elapsedMs: Number.isFinite(Number(timing.startedAt)) ? performance.now() - Number(timing.startedAt) : null
     } : null,
     lastTiming: safe(renderer?.lastTiming ?? null)
   };
@@ -354,9 +355,14 @@ wrap(CombatRenderer?.prototype, "resolveTimingInput", "T118.resolveTimingInput",
 });
 function input(event) {
   if (!/pointer|mouse|touch|click/i.test(event.type)) return;
+  // Window capture runs before the canvas target handler resolves timing.
+  const harnessBaselineSeq = root.sequence;
+  const harnessBaselineEventCount = root.events.length;
+  const timingSnapshot = readTimingWindowDirect();
   record("T118.dom-input", {
     eventType: event.type, target: event.target?.id ?? event.target?.tagName ?? null,
-    x: event.clientX ?? null, y: event.clientY ?? null, isTrusted: event.isTrusted
+    x: event.clientX ?? null, y: event.clientY ?? null, isTrusted: event.isTrusted,
+    harnessBaselineSeq, harnessBaselineEventCount, timingSnapshot
   });
 }
 for (const type of ["pointerdown", "pointerup", "mousedown", "mouseup", "click", "touchstart", "touchend"]) window.addEventListener(type, input, true);

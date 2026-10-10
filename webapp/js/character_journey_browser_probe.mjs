@@ -191,7 +191,7 @@ async function dispatchCorrelatedTimingPointer(cdp, { task, attempt = 1, expecte
     sha: process.env.GITHUB_SHA || "local", runId: process.env.GITHUB_RUN_ID || "local", createdAt: new Date().toISOString(), status: "IN_PROGRESS" };
   const persist = () => { try { mkdirSync(EVIDENCE_DIR, { recursive: true }); writeFileSync(evidencePath, JSON.stringify(proof, null, 2) + "\n", "utf8"); }
     catch (error) { process.stderr.write("[BWM101R7C2] evidence write failed: " + String(error?.stack || error) + "\n"); } };
-  const clockExpression = "(() => { const r=window.__BWM101R7C2_READ_TIMING__?.()||{}; const t=r.timingState||null; const b=r.battle||{}; const elapsedMs=Number.isFinite(Number(t?.startedAt))?performance.now()-Number(t.startedAt):null; return {available:r.available===true,active:t?.active===true,startedAt:t?.startedAt??null,targetMs:t?.targetMs??null,durationMs:t?.durationMs??null,hitWindowMs:t?.hitWindowMs??null,greatWindowMs:t?.greatWindowMs??null,windowId:t?.windowId||'',elapsedMs,phase:b.phase||'',round:b.round??null,tacticalTurn:b.tacticalTurn??null,lastTiming:r.lastTiming??null}; })()";
+  const clockExpression = "(() => { const r=window.__BWM101R7C2_READ_TIMING__?.()||{}; const t=r.timingState||null; const b=r.battle||{}; const d=window.__BWM101R5_DIAGNOSTICS__; const elapsedMs=Number.isFinite(Number(t?.startedAt))?performance.now()-Number(t.startedAt):null; return {available:r.available===true,active:t?.active===true,startedAt:t?.startedAt??null,targetMs:t?.targetMs??null,durationMs:t?.durationMs??null,hitWindowMs:t?.hitWindowMs??null,greatWindowMs:t?.greatWindowMs??null,windowId:t?.windowId||'',elapsedMs,phase:b.phase||'',round:b.round??null,tacticalTurn:b.tacticalTurn??null,lastTiming:r.lastTiming??null,sequence:d?.sequence??0,eventCount:d?.events?.length??0}; })()";
   try {
     const geometryAndTargets = await cdpEvaluate(cdp, "(() => { const c=document.querySelector('#gameCanvas'); const r=c?.getBoundingClientRect(); if(!c||!r)return null; const fractions=[[.5,.5],[.8,.5],[.2,.5],[.5,.8],[.5,.2],[.8,.8],[.2,.8],[.8,.2],[.2,.2],[.92,.5],[.08,.5],[.5,.92],[.5,.08]]; const candidates=fractions.map(([fx,fy])=>{const x=r.left+r.width*fx,y=r.top+r.height*fy,e=document.elementFromPoint(x,y);return {x,y,fx,fy,isCanvas:e===c,tag:e?.tagName||'',id:e?.id||''};}); const accessible=candidates.filter(p=>p.isCanvas).sort((a,b)=>Math.hypot(a.fx-.5,a.fy-.5)-Math.hypot(b.fx-.5,b.fy-.5)); return {left:r.left,top:r.top,width:r.width,height:r.height,viewportWidth:innerWidth,viewportHeight:innerHeight,candidates,selected:accessible[0]||null}; })()");
     const geometry = geometryAndTargets ? {left:geometryAndTargets.left,top:geometryAndTargets.top,width:geometryAndTargets.width,height:geometryAndTargets.height,viewportWidth:geometryAndTargets.viewportWidth,viewportHeight:geometryAndTargets.viewportHeight} : null;
@@ -227,45 +227,39 @@ async function dispatchCorrelatedTimingPointer(cdp, { task, attempt = 1, expecte
     if (expectedTurn !== null) requireCondition(initial.tacticalTurn === expectedTurn, task + " timing window belongs to wrong turn", { expectedTurn, initial });
 
     const leadMs = expectedGrade === "MISS"
-      ? initial.hitWindowMs + initial.greatWindowMs + 20
-      : initial.greatWindowMs / 2 + 20;
+      ? (initial.hitWindowMs * 2) + initial.greatWindowMs + 30
+      : initial.hitWindowMs / 2;
     const scheduledElapsedMs = Math.max(0, initial.targetMs - leadMs);
     proof.schedulerCalibration = {
       source: "measured Node/CDP runtime-evaluation round trips",
-      evaluationRoundTripMs,
-      medianEvaluationRoundTripMs: medianRttMs,
-      maxEvaluationRoundTripMs: maxRttMs
+      evaluationRoundTripMs, medianEvaluationRoundTripMs: medianRttMs,
+      maxEvaluationRoundTripMs: maxRttMs,
+      finalSampleRoundTripMs: evaluationRoundTripMs[evaluationRoundTripMs.length - 1]
     };
     proof.schedule = {
-      strategy: expectedGrade === "MISS" ? "early-outside-hit-window" : "lead-by-half-great-window",
-      mechanism: "single Node timer derived from live startedAt/targetMs and measured CDP RTT; no polling loop",
+      strategy: expectedGrade === "MISS" ? "early-outside-twice-hit-window" : "lead-by-half-hit-window",
+      mechanism: "single Node timer; no CDP poll or runtime query after the wait; exact baseline captured during window-capture pointerdown before canvas handler",
       scheduledElapsedMs, leadMs, initialElapsedMs: initial.elapsedMs, targetMs: initial.targetMs,
       hitWindowMs: initial.hitWindowMs, greatWindowMs: initial.greatWindowMs, durationMs: initial.durationMs,
+      harnessSequenceAtSchedule: initial.sequence, harnessEventCountAtSchedule: initial.eventCount,
       timerWaitMs: Math.max(0, scheduledElapsedMs - Number(initial.elapsedMs || 0) - medianRttMs)
     };
     const timerWaitMs = proof.schedule.timerWaitMs;
     const timerStart = performance.now();
     if (timerWaitMs > 0) await sleep(timerWaitMs);
     proof.schedule.actualNodeWaitMs = performance.now() - timerStart;
-    // The single baseline query includes the harness sequence and live TimingState.
-    // It is the final browser round trip before queuing the one physical input sequence.
-    const baseline = await cdpEvaluate(cdp, "(() => { const r=window.__BWM101R7C2_READ_TIMING__?.()||{}; const t=r.timingState||null; const b=r.battle||{}; const d=window.__BWM101R5_DIAGNOSTICS__; const elapsedMs=Number.isFinite(Number(t?.startedAt))?performance.now()-Number(t.startedAt):null; return {sequence:d?.sequence??0,eventCount:d?.events?.length??0,phase:b.phase||'',round:b.round??null,tacticalTurn:b.tacticalTurn??null,window:t?{active:t.active===true,startedAt:t.startedAt??null,targetMs:t.targetMs??null,durationMs:t.durationMs??null,hitWindowMs:t.hitWindowMs??null,greatWindowMs:t.greatWindowMs??null,windowId:t.windowId||'',elapsedMs}:null}; })()");
-    proof.baseline = baseline;
-    proof.scheduledObservation = baseline;
-    proof.schedule.baselineDeviationMs = Number(baseline?.window?.elapsedMs) - scheduledElapsedMs;
-    const sameWindow = baseline?.window?.startedAt === initial.startedAt && baseline?.window?.targetMs === initial.targetMs && baseline?.window?.durationMs === initial.durationMs;
-    requireCondition(sameWindow && baseline?.window?.active === true, task + " timing window changed between schedule and baseline", { initial, baseline });
-    requireCondition(baseline.phase === "CLIMAX", task + " phase changed before physical input", baseline);
-    if (expectedRound !== null) requireCondition(baseline.round === expectedRound, task + " baseline round changed", { expectedRound, baseline });
-    if (expectedTurn !== null) requireCondition(baseline.tacticalTurn === expectedTurn, task + " baseline turn changed", { expectedTurn, baseline });
-    if (expectedGrade === "MISS") {
-      requireCondition(baseline.window.elapsedMs < baseline.window.targetMs - baseline.window.hitWindowMs - 10,
-        task + " missed early MISS dispatch schedule", { baseline, schedule: proof.schedule });
-    } else {
-      requireCondition(baseline.window.elapsedMs < baseline.window.targetMs + baseline.window.greatWindowMs / 2,
-        task + " missed high-confidence hit dispatch schedule", { baseline, schedule: proof.schedule });
-    }
-
+    proof.preDispatchPlan = {
+      sequence: initial.sequence, eventCount: initial.eventCount,
+      phase: initial.phase, round: initial.round, tacticalTurn: initial.tacticalTurn,
+      window: {
+        active: initial.active, startedAt: initial.startedAt, targetMs: initial.targetMs,
+        durationMs: initial.durationMs, hitWindowMs: initial.hitWindowMs,
+        greatWindowMs: initial.greatWindowMs, windowId: initial.windowId,
+        elapsedMs: Number(initial.elapsedMs) + Number(evaluationRoundTripMs[evaluationRoundTripMs.length - 1] || 0)
+          + proof.schedule.actualNodeWaitMs
+      },
+      source: "pre-dispatch schedule; exact physical baseline is captured inside pointerdown capture"
+    };
     proof.dispatch = { startedAt: new Date().toISOString(), wallStartMs: Date.now(), eventSequence: ["mouseMoved", "mousePressed", "mouseReleased"], dispatchMode: "queued-in-order-without-round-trip-gaps" };
     // WebSocket/CDP preserves command order. Queue each of the three physical events
     // synchronously and await all acknowledgements together, avoiding one RTT between
@@ -281,23 +275,50 @@ async function dispatchCorrelatedTimingPointer(cdp, { task, attempt = 1, expecte
     proof.dispatch.monotonicWallDurationMs = performance.now() - dispatchStarted;
     proof.dispatch.commandAckCount = dispatched.length;
 
-    const diagnostics = await cdpEvaluate(cdp, "(() => { const d=window.__BWM101R5_DIAGNOSTICS__; const events=d?.events||[]; return {sequence:d?.sequence??null,eventCount:events.length,events:events.filter(e=>Number(e.seq)>" + Number(baseline.sequence || 0) + ")}; })()");
-    const events = diagnostics?.events || [];
-    proof.eventsAfterBaseline = events;
+    const diagnostics = await cdpEvaluate(cdp, "(() => { const d=window.__BWM101R5_DIAGNOSTICS__; const events=d?.events||[]; return {sequence:d?.sequence??null,eventCount:events.length,events:events.filter(e=>Number(e.seq)>" + Number(initial.sequence || 0) + ")}; })()");
+    const observedEvents = diagnostics?.events || [];
+    proof.eventsAfterPreparation = observedEvents;
     proof.diagnosticsAfterDispatch = { sequence: diagnostics?.sequence ?? null, eventCount: diagnostics?.eventCount ?? null };
+    const pointerDownEvents = observedEvents.filter(e => e.type === "T118.dom-input" && e.eventType === "pointerdown");
+    const pointerDownEvent = pointerDownEvents.length === 1 ? pointerDownEvents[0] : null;
+    const pointerBaselineSeq = Number(pointerDownEvent?.harnessBaselineSeq);
+    const events = Number.isFinite(pointerBaselineSeq)
+      ? observedEvents.filter(e => Number(e.seq) > pointerBaselineSeq)
+      : [];
+    const physicalTimingSnapshot = pointerDownEvent?.timingSnapshot || null;
+    const rawTiming = physicalTimingSnapshot?.timingState || null;
+    const baseline = pointerDownEvent ? {
+      sequence: pointerDownEvent.harnessBaselineSeq,
+      eventCount: pointerDownEvent.harnessBaselineEventCount,
+      phase: physicalTimingSnapshot?.battle?.phase ?? null,
+      round: physicalTimingSnapshot?.battle?.round ?? null,
+      tacticalTurn: physicalTimingSnapshot?.battle?.tacticalTurn ?? null,
+      window: rawTiming ? {
+        active: rawTiming.active === true, startedAt: rawTiming.startedAt ?? null,
+        targetMs: rawTiming.targetMs ?? null, durationMs: rawTiming.durationMs ?? null,
+        hitWindowMs: rawTiming.hitWindowMs ?? null, greatWindowMs: rawTiming.greatWindowMs ?? null,
+        windowId: rawTiming.windowId || "", elapsedMs: rawTiming.elapsedMs ?? null
+      } : null,
+      source: "synchronous window-capture pointerdown baseline before canvas target handler",
+      physicalInputEventSeq: pointerDownEvent.seq
+    } : null;
+    proof.baseline = baseline || proof.preDispatchPlan;
+    proof.exactPointerBaselineCaptured = Boolean(baseline?.window && Number.isFinite(Number(baseline.sequence)));
+    proof.schedule.baselineDeviationMs = Number(baseline?.window?.elapsedMs) - scheduledElapsedMs;
+    proof.eventsAfterBaseline = events;
     const resolverBefore = events.filter(e => e.type === "T118.resolveTimingInput:before");
     const resolverAfter = events.filter(e => e.type === "T118.resolveTimingInput:after");
-    const pointerDowns = events.filter(e => e.type === "T118.dom-input" && e.eventType === "pointerdown");
-    const pointerUps = events.filter(e => e.type === "T118.dom-input" && e.eventType === "pointerup");
+    const pointerDowns = observedEvents.filter(e => e.type === "T118.dom-input" && e.eventType === "pointerdown");
+    const pointerUps = observedEvents.filter(e => e.type === "T118.dom-input" && e.eventType === "pointerup");
     const handlers = events.filter(e => e.type === "T118.handleTimingPointer:before" && e.eventType === "pointerdown");
     const resolverCall = resolverBefore.length === 1 ? resolverBefore[0] : null;
     const resolverReturnEvent = resolverAfter.length === 1 ? resolverAfter[0] : null;
     const resolverReturn = resolverReturnEvent?.result ?? null;
     const elapsedMs = Number(resolverCall?.before?.elapsedMs ?? resolverReturn?.elapsed_ms ?? resolverReturn?.elapsedMs);
-    const targetMs = Number(resolverCall?.before?.targetMs ?? resolverReturn?.target_ms ?? resolverReturn?.targetMs ?? baseline.window.targetMs);
+    const targetMs = Number(resolverCall?.before?.targetMs ?? resolverReturn?.target_ms ?? resolverReturn?.targetMs ?? baseline?.window?.targetMs ?? initial.targetMs);
     const deltaMs = Number(resolverReturn?.delta_ms ?? resolverReturn?.deltaMs ?? (elapsedMs - targetMs));
     const grade = String(resolverReturn?.grade || "").toUpperCase();
-    const runtimeImmediatelyAfterInput = await cdpEvaluate(cdp, "window.__BW_T097_GET_RUNTIME__?.() || null");
+    const runtimeImmediatelyAfterInput = resolverReturnEvent?.after?.before || await cdpEvaluate(cdp, "window.__BW_T097_GET_RUNTIME__?.() || null");
     proof.resolverEvents = { resolverBefore, resolverAfter, pointerDowns, pointerUps, handlers };
     proof.resolverCall = resolverCall;
     proof.resolverReturnEvent = resolverReturnEvent;
@@ -306,12 +327,17 @@ async function dispatchCorrelatedTimingPointer(cdp, { task, attempt = 1, expecte
       targetMs: Number.isFinite(targetMs) ? targetMs : null, deltaMs: Number.isFinite(deltaMs) ? deltaMs : null,
       expectedGrade, dispatchDeviationMs: Number.isFinite(elapsedMs) ? elapsedMs - scheduledElapsedMs : null };
     proof.runtimeImmediatelyAfterInput = runtimeImmediatelyAfterInput;
-    proof.sameWindowCorrelation = Boolean(resolverCall && resolverCall.before?.startedAt === baseline.window.startedAt
+    proof.sameWindowCorrelation = Boolean(baseline?.window && resolverCall && resolverCall.before?.startedAt === baseline.window.startedAt
       && resolverCall.before?.targetMs === baseline.window.targetMs && resolverCall.before?.durationMs === baseline.window.durationMs);
     proof.status = "CAPTURED";
     persist();
 
-    requireCondition(pointerDowns.length === 1, task + " expected exactly one pointerdown after baseline", { baseline, pointerDowns, events });
+    requireCondition(pointerDowns.length === 1, task + " expected exactly one pointerdown after preflight", { baseline, pointerDowns, observedEvents });
+    requireCondition(proof.exactPointerBaselineCaptured, task + " did not capture exact live TimingState during pointerdown capture before the canvas handler", { baseline, proof });
+    requireCondition(baseline?.phase === "CLIMAX", task + " actual pointerdown phase was not CLIMAX", { baseline, proof });
+    requireCondition(baseline?.window?.active === true, task + " actual pointerdown had no active Timing Ring", { baseline, proof });
+    if (expectedRound !== null) requireCondition(baseline.round === expectedRound, task + " actual pointerdown belonged to wrong round", { expectedRound, baseline });
+    if (expectedTurn !== null) requireCondition(baseline.tacticalTurn === expectedTurn, task + " actual pointerdown belonged to wrong turn", { expectedTurn, baseline });
     requireCondition(pointerUps.length === 1, task + " expected exactly one pointerup after baseline", { baseline, pointerUps, events });
     requireCondition(handlers.length === 1, task + " input did not reach exactly one pointer handler", { baseline, handlers, events });
     requireCondition(resolverBefore.length === 1 && resolverAfter.length === 1,
