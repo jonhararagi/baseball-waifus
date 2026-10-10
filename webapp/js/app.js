@@ -542,6 +542,13 @@ if (new URLSearchParams(window.location.search).get("qa") === "t097") {
     const stage = renderer.combatStage;
     return {
       battle,
+      timingWindow: renderer.timingState ? {
+        active: Boolean(renderer.timingState.active),
+        startedAt: Number.isFinite(Number(renderer.timingState.startedAt)) ? Number(renderer.timingState.startedAt) : null,
+        targetMs: Number.isFinite(Number(renderer.timingState.targetMs)) ? Number(renderer.timingState.targetMs) : null,
+        durationMs: Number.isFinite(Number(renderer.timingState.durationMs)) ? Number(renderer.timingState.durationMs) : null,
+        windowId: String(renderer.timingState.id || renderer.timingState.windowId || "")
+      } : null,
       timing: renderer.lastTiming ? { ...renderer.lastTiming } : null,
       lastTurn: renderer.lastTurn ? { ...renderer.lastTurn } : null,
       stage: stage ? {
