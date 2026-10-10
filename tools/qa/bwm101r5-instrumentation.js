@@ -2,38 +2,355 @@ import { CharacterActor2D5, CombatStage } from "../combat_stage.js";
 import { CharacterFormation2D5 } from "../character_formation_2d5.js";
 import { CombatPresentationDirector } from "../combat_presentation_director.js";
 import { CombatRenderer } from "../combat.js";
-const K="__BWM101R5_DIAGNOSTICS__", root=window[K]||(window[K]={version:"BWM-101-R7-C1",startedAt:new Date().toISOString(),sequence:0,events:[],instrumentationErrors:[],status:"ACTIVE"});
-function safe(v){try{return JSON.parse(JSON.stringify(v,(_k,x)=>typeof x==="bigint"?String(x):x));}catch(e){return {serializationError:String(e)};}}
-function actor(a){return a?{actorId:a.actorId??a.id??null,team:a.team??a.teamId??a.side??null,state:a.getPresentationState?.()??a.presentationState??a.state??null,visible:a.visible??null}:null;}
-function state(r){return {battlePhase:r?.battlePhase??null,tacticalTurn:r?.tacticalTurn??null,timingState:safe(r?.timingState??null),timingActive:r?.timingState?.active??null,combatResult:r?.combatResult??r?.state?.combatResult??null,scrap:r?.playerMeta?.state?.currencies?.SCRAP??r?.scrap??null,ledger:safe(r?.playerMeta?.state?.rewardLedger??r?.rewardLedger??null),lastTiming:safe(r?.lastTiming??null),presentation:r?.combatPresentation?{active:r.combatPresentation.active??null,phase:r.combatPresentation.phase??null,sequenceId:r.combatPresentation.sequenceId??null,stepIndex:r.combatPresentation.stepIndex??null}:null};}
-function record(type,data){const e=Object.assign({prefix:"[BWM101R5]",seq:++root.sequence,type,at:performance.now(),wallTime:new Date().toISOString()},safe(data||{}));root.events.push(e);if(root.events.length>12000)root.events.splice(0,root.events.length-12000);try{console.debug("[BWM101R5]"+JSON.stringify(e));}catch{}return e;}
-const objectRefs=new WeakMap();let nextObjectRef=1;
-function objectRefId(value){if(!value||(typeof value!=="object"&&typeof value!=="function"))return null;let id=objectRefs.get(value);if(!id){id="actor-ref-"+nextObjectRef++;objectRefs.set(value,id);}return id;}
-function mapSnapshot(map){if(!(map instanceof Map))return null;return [...map.entries()].map(([key,value])=>({key:String(key),actorId:value?.actorId??value?.id??null,objectRefId:objectRefId(value),state:value?.presentationState??value?.state??null}));}
-function lifecycleSnapshot(owner,args){const d=owner?.director||owner?.presentationDirector||owner?.combatPresentationDirector||null;const stage=owner?.stage||owner?.combatStage||d?.stage||null;const formation=owner?.runtimeFormation||owner?.formation||owner?.characterFormation||d?.runtimeFormation||d?.formation||null;return {ownerRefId:objectRefId(owner),args:safe(args),active:d?.active??owner?.active??null,phase:d?.phase??null,sequenceId:d?.sequenceId??null,stepIndex:d?.stepIndex??null,stageRefId:objectRefId(stage),stageActors:mapSnapshot(stage?.actors),formationRefId:objectRefId(formation),formationActors:mapSnapshot(formation?.actors)};}
-for(const [proto,method,tag] of [[CombatStage?.prototype,"setActors","T101.lifecycle.CombatStage.setActors"],[CombatPresentationDirector?.prototype,"setStage","T101.lifecycle.CombatPresentationDirector.setStage"],[CombatPresentationDirector?.prototype,"_createRuntimeFormation","T101.lifecycle.CombatPresentationDirector._createRuntimeFormation"],[CombatPresentationDirector?.prototype,"_ensureRuntimeFormation","T101.lifecycle.CombatPresentationDirector._ensureRuntimeFormation"],[CharacterFormation2D5?.prototype,"populate","T101.lifecycle.CharacterFormation2D5.populate"],[CharacterFormation2D5?.prototype,"attach","T101.lifecycle.CharacterFormation2D5.attach"],[CharacterFormation2D5?.prototype,"clear","T101.lifecycle.CharacterFormation2D5.clear"]]){
- wrap(proto,method,tag,(owner,args)=>lifecycleSnapshot(owner,args));
+
+const K = "__BWM101R5_DIAGNOSTICS__";
+const root = window[K] || (window[K] = {
+  version: "BWM-101-R7-C2", startedAt: new Date().toISOString(), sequence: 0,
+  events: [], instrumentationErrors: [], status: "ACTIVE", droppedEvents: 0
+});
+const objectRefs = new WeakMap();
+let nextObjectRef = 1;
+const seenDivergence = new Set();
+const ensureSignatures = new WeakMap();
+const refs = { stage: null, director: null, formation: null };
+
+function safe(value) {
+  try { return JSON.parse(JSON.stringify(value, (_key, item) => typeof item === "bigint" ? String(item) : item)); }
+  catch (error) { return { serializationError: String(error) }; }
+}
+function objectRefId(value) {
+  if (!value || (typeof value !== "object" && typeof value !== "function")) return null;
+  let id = objectRefs.get(value);
+  if (!id) { id = "object-ref-" + nextObjectRef++; objectRefs.set(value, id); }
+  return id;
+}
+function actorInfo(value) {
+  return value ? {
+    actorId: value.actorId ?? value.id ?? null,
+    objectRefId: objectRefId(value),
+    team: value.team ?? value.teamId ?? value.side ?? null,
+    state: value.presentationState ?? value.state ?? null,
+    visible: value.visible ?? null
+  } : null;
+}
+function record(type, data = {}) {
+  const event = Object.assign({
+    prefix: "[BWM101R7C2]", seq: ++root.sequence, type,
+    at: performance.now(), wallTime: new Date().toISOString()
+  }, safe(data));
+  root.events.push(event);
+  if (root.events.length > 8000) {
+    const removed = root.events.length - 8000;
+    root.events.splice(0, removed);
+    root.droppedEvents = Number(root.droppedEvents || 0) + removed;
+  }
+  try { console.debug("[BWM101R7C2]" + JSON.stringify(event)); } catch {}
+  return event;
+}
+function mapSnapshot(map) {
+  if (!(map instanceof Map)) return null;
+  return [...map.entries()].map(([key, value]) => ({ key: String(key), ...actorInfo(value) }));
+}
+function actorArgsSnapshot(args) {
+  const output = [];
+  args.forEach((value, argIndex) => {
+    const items = Array.isArray(value) ? value : value && typeof value === "object" && (value.actorId || value.id) ? [value] : [];
+    if (items.length) output.push({ argIndex, length: items.length, actors: items.map(actorInfo) });
+    else if (value === null || ["string", "number", "boolean", "undefined"].includes(typeof value)) output.push({ argIndex, value: value === undefined ? null : value });
+    else if (Array.isArray(value)) output.push({ argIndex, length: value.length, actors: [] });
+  });
+  return output;
+}
+function getOwnerContext(owner, method, args, phase = "snapshot", result = undefined) {
+  if (owner instanceof CombatStage) refs.stage = owner;
+  if (owner instanceof CombatPresentationDirector) {
+    refs.director = owner;
+    if (owner.stage) refs.stage = owner.stage;
+  }
+  if (owner instanceof CharacterFormation2D5) refs.formation = owner;
+  if (owner instanceof CombatPresentationDirector && owner.formation) refs.formation = owner.formation;
+  if (method === "_createRuntimeFormation" && phase === "after" && result instanceof CharacterFormation2D5) refs.formation = result;
+
+  const director = owner instanceof CombatPresentationDirector ? owner : refs.director;
+  const stage = owner instanceof CombatStage ? owner : director?.stage || refs.stage;
+  let formation = owner instanceof CharacterFormation2D5 ? owner : director?.formation || refs.formation;
+  if (method === "_createRuntimeFormation" && phase === "after" && result instanceof CharacterFormation2D5) formation = result;
+  const stageMap = stage?.actors instanceof Map ? stage.actors : null;
+  const formationMap = formation?.actors instanceof Map ? formation.actors : null;
+  const stageActors = mapSnapshot(stageMap);
+  const formationActors = mapSnapshot(formationMap);
+  const stageById = stageMap || new Map();
+  const formationById = formationMap || new Map();
+  const divergence = [];
+  for (const [actorId, stageActor] of stageById.entries()) {
+    const formationActor = formationById.get(actorId);
+    if (formationActor && formationActor !== stageActor) {
+      divergence.push({
+        actorId: String(actorId),
+        stageObjectRefId: objectRefId(stageActor),
+        stageState: stageActor.presentationState ?? stageActor.state ?? null,
+        formationObjectRefId: objectRefId(formationActor),
+        formationState: formationActor.presentationState ?? formationActor.state ?? null,
+        sameReference: false
+      });
+    }
+  }
+  const directorState = director ? {
+    active: director.active ?? null, phase: director.phase ?? null,
+    sequenceId: director.sequenceId ?? null, stepIndex: director.stepIndex ?? null
+  } : null;
+  return {
+    method, phase, ownerRefId: objectRefId(owner), ownerType: owner?.constructor?.name || null,
+    arguments: actorArgsSnapshot(args),
+    incomingStageRefId: method === "setStage" ? objectRefId(args?.[0]) : null,
+    returnedFormationRefId: method === "_createRuntimeFormation" && phase === "after" ? objectRefId(result) : null,
+    directorRefId: objectRefId(director), directorState,
+    stageRefId: objectRefId(stage), stageActors,
+    formationRefId: objectRefId(formation), formationActors,
+    identityDivergences: divergence
+  };
+}
+function lifecycleSnapshot(method) {
+  return (owner, args, meta = {}) => getOwnerContext(owner, method, args, meta.phase || "snapshot", meta.result);
+}
+function recordFirstDivergence(method, before, after) {
+  for (const row of after?.identityDivergences || []) {
+    const key = row.actorId;
+    const wasAlreadySameDivergence = (before?.identityDivergences || []).some(item => item.actorId === key
+      && item.stageObjectRefId === row.stageObjectRefId && item.formationObjectRefId === row.formationObjectRefId);
+    if (wasAlreadySameDivergence || seenDivergence.has(key)) continue;
+    seenDivergence.add(key);
+    record("T101.actorIdentity.firstDivergence", {
+      operation: method, actorId: row.actorId, stageObjectRefId: row.stageObjectRefId,
+      formationObjectRefId: row.formationObjectRefId, stageState: row.stageState, formationState: row.formationState,
+      before, after,
+      causalInterpretation: "first divergence observed by enabled trace; not proof of origin if already divergent before this wrapper"
+    });
+  }
+}
+function wrap(proto, method, type, snapshot) {
+  if (!proto || typeof proto[method] !== "function") {
+    root.instrumentationErrors.push({ method, type, error: "method missing" });
+    return;
+  }
+  const original = proto[method];
+  if (original.__bwm101r7c2Wrapped) return;
+  function wrapped(...args) {
+    const before = snapshot ? snapshot(this, args, { phase: "before" }) : {};
+    const call = record(type + ":before", { method, args: actorArgsSnapshot(args), before });
+    try {
+      const result = Reflect.apply(original, this, args);
+      if (this instanceof CombatStage) refs.stage = this;
+      if (this instanceof CombatPresentationDirector) {
+        refs.director = this;
+        if (this.stage) refs.stage = this.stage;
+        if (method === "_createRuntimeFormation" && result instanceof CharacterFormation2D5) refs.formation = result;
+        else if (this.formation) refs.formation = this.formation;
+      }
+      if (this instanceof CharacterFormation2D5) refs.formation = this;
+      const after = snapshot ? snapshot(this, args, { phase: "after", result }) : {};
+      const compactResult = result instanceof CharacterFormation2D5
+        ? { type: "CharacterFormation2D5", objectRefId: objectRefId(result), actors: mapSnapshot(result.actors) }
+        : safe(result);
+      record(type + ":after", {
+        method, callSeq: call.seq, result: compactResult,
+        resultObjectRefId: result && typeof result === "object" ? objectRefId(result) : null,
+        after
+      });
+      recordFirstDivergence(type, before, after);
+      return result;
+    } catch (error) {
+      const after = snapshot ? snapshot(this, args, { phase: "exception" }) : {};
+      record(type + ":exception", {
+        method, callSeq: call.seq, before,
+        error: { name: error?.name || "Error", message: String(error?.message || error), stack: String(error?.stack || "") },
+        after
+      });
+      recordFirstDivergence(type, before, after);
+      throw error;
+    }
+  }
+  Object.defineProperty(wrapped, "__bwm101r7c2Wrapped", { value: true });
+  Object.defineProperty(wrapped, "name", { value: original.name, configurable: true });
+  proto[method] = wrapped;
+}
+function wrapEnsure(proto) {
+  const method = "_ensureRuntimeFormation", type = "T101.lifecycle.CombatPresentationDirector._ensureRuntimeFormation";
+  const original = proto?.[method];
+  if (typeof original !== "function") {
+    root.instrumentationErrors.push({ method, type, error: "method missing" });
+    return;
+  }
+  if (original.__bwm101r7c2Wrapped) return;
+  const signature = snapshot => JSON.stringify({
+    stageRefId: snapshot?.stageRefId,
+    stageActors: (snapshot?.stageActors || []).map(item => [item.actorId || item.key, item.objectRefId]),
+    formationRefId: snapshot?.formationRefId,
+    formationActors: (snapshot?.formationActors || []).map(item => [item.actorId || item.key, item.objectRefId]),
+    divergence: snapshot?.identityDivergences
+  });
+  function wrapped(...args) {
+    const before = getOwnerContext(this, method, args);
+    const beforeSignature = signature(before);
+    const beforeFormation = this.formation;
+    const startedAt = performance.now();
+    try {
+      const result = Reflect.apply(original, this, args);
+      refs.director = this;
+      if (this.stage) refs.stage = this.stage;
+      if (this.formation) refs.formation = this.formation;
+      const after = getOwnerContext(this, method, args);
+      const afterSignature = signature(after);
+      const priorObserved = ensureSignatures.get(this);
+      const changed = result !== beforeFormation || this.formation !== beforeFormation || beforeSignature !== afterSignature;
+      const decisionChanged = priorObserved !== beforeSignature || priorObserved !== afterSignature;
+      // One compound before/after event on change/new relationship, not every frame.
+      if (changed || decisionChanged) {
+        record(type + ":decision", {
+          method, elapsedCallMs: performance.now() - startedAt,
+          resultObjectRefId: result && typeof result === "object" ? objectRefId(result) : null,
+          formationWasAbsent: !beforeFormation,
+          referenceChanged: before?.formationRefId !== after?.formationRefId,
+          before, after
+        });
+        recordFirstDivergence(type, before, after);
+      }
+      ensureSignatures.set(this, afterSignature);
+      return result;
+    } catch (error) {
+      const after = getOwnerContext(this, method, args);
+      record(type + ":exception", {
+        method, before, after,
+        error: { name: error?.name || "Error", message: String(error?.message || error), stack: String(error?.stack || "") }
+      });
+      throw error;
+    }
+  }
+  Object.defineProperty(wrapped, "__bwm101r7c2Wrapped", { value: true });
+  Object.defineProperty(wrapped, "name", { value: original.name, configurable: true });
+  proto[method] = wrapped;
+}
+function readOnlyRuntimeState(renderer) {
+  const authority = renderer?.combatRuntime?.state || null;
+  return {
+    battlePhase: authority?.phase ?? null, tacticalTurn: authority?.tacticalTurn ?? null,
+    combatResult: authority?.combatResult ?? null, lastTiming: safe(renderer?.lastTiming ?? null),
+    presentation: renderer?.combatPresentation ? {
+      active: renderer.combatPresentation.active ?? null, phase: renderer.combatPresentation.phase ?? null,
+      sequenceId: renderer.combatPresentation.sequenceId ?? null, stepIndex: renderer.combatPresentation.stepIndex ?? null
+    } : null
+  };
 }
 
-function wrap(proto,method,type,snapshot){if(!proto||typeof proto[method]!=="function"){root.instrumentationErrors.push({method,type,error:"method missing"});return;}const original=proto[method];if(original.__bwm101r5Wrapped)return;function wrapped(...args){const before=snapshot?snapshot(this,args):{},call=record(type+":before",{method,args:safe(args),before});try{const result=Reflect.apply(original,this,args);record(type+":after",{method,callSeq:call.seq,result:safe(result),after:snapshot?snapshot(this,args):{}});return result;}catch(error){record(type+":exception",{method,callSeq:call.seq,before,error:{name:error?.name||"Error",message:String(error?.message||error),stack:String(error?.stack||"")},after:snapshot?snapshot(this,args):{}});throw error;}}Object.defineProperty(wrapped,"__bwm101r5Wrapped",{value:true});Object.defineProperty(wrapped,"name",{value:original.name,configurable:true});proto[method]=wrapped;}
-wrap(CharacterActor2D5?.prototype,"transitionTo","T101.actor.transitionTo",(a,args)=>({actor:actor(a),requestedState:args[0]??null,eventId:window.__BWM_CURRENT_PRESENTATION_EVENT_ID__??null,turn:window.__BWM_CURRENT_TACTICAL_TURN__??null,stackAtCall:new Error("BWM101R5 transition origin").stack}));
-for(const method of ["startFromPresentationEvent","_finishFormationActorsForReplacement","_emitStep"])wrap(CombatPresentationDirector?.prototype,method,"T101.director."+method,(d,args)=>{const s={active:d.active,phase:d.phase,sequenceId:d.sequenceId,stepIndex:d.stepIndex,result:d.result},r=d.renderer||d.combatRenderer||null,stage=d.stage||d.combatStage||r?.combatStage||null,f=d.runtimeFormation||d.formation||r?.characterFormation||null,ev=args[0]?.payload?args[0]:d.currentEvent||null,id=ev?.payload?.attacker_id??ev?.attacker_id??s?.result?.attackerId??null,sa=id?stage?.getActor?.(String(id)):null,fa=id?(f?.getActor?.(String(id))||f?.actors?.get?.(String(id))):null;return {active:d.active??s.active??null,phase:d.phase??s.phase??null,sequenceId:d.sequenceId??s.sequenceId??null,stepIndex:d.stepIndex??s.stepIndex??null,eventId:ev?.eventId??d.sequenceId??null,eventType:ev?.type??null,attackerId:id,targetId:ev?.payload?.target_id??ev?.target_id??null,result:safe(ev?.payload?.result??ev?.payload?.outcome??s.result??null),stageActor:actor(sa),formationActor:actor(fa),sameActorIdentity:sa&&fa?sa===fa:null,formationStates:f?.actors?[...f.actors.values()].map(actor):null,args:safe(args)};});
-wrap(CombatRenderer?.prototype,"_handleCombatPresentationStep","T101.renderer.presentationStep",(r,args)=>({event:safe(args[0]),phase:r.combatPresentation?.phase??null,stepIndex:r.combatPresentation?.stepIndex??null,turn:r.tacticalTurn??null,actorId:args[0]?.result?.attackerId??args[0]?.result?.attacker_id??r.combatStage?.selectedActorId??null,actor:actor(r.combatStage?.getActor?.(String(args[0]?.result?.attackerId??args[0]?.result?.attacker_id??r.combatStage?.selectedActorId??""))),state:state(r)}));
-wrap(CombatRenderer?.prototype,"resolveTimingInput","T118.resolveTimingInput",(r,args)=>{const t=r.timingState||null,now=performance.now(),storage={};try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(/player.?meta|reward|scrap|ledger/i.test(k||""))storage[k]=localStorage.getItem(k);}}catch{}return {source:args[0]??"pointer",timingState:safe(t),active:t?.active??null,startedAt:t?.startedAt??null,elapsedMs:t?.startedAt==null?null:now-t.startedAt,targetMs:t?.targetMs??t?.target_ms??null,durationMs:t?.durationMs??t?.duration_ms??null,window:safe(t?.timingWindow??t?.window??null),phase:r.battlePhase??null,tacticalTurn:r.tacticalTurn??null,before:state(r),persistedRewardState:storage,stackAtCall:new Error("BWM101R5 resolver origin").stack};});
-function input(e){if(!/pointer|mouse|touch|click/i.test(e.type))return;record("T118.dom-input",{eventType:e.type,target:e.target?.id??e.target?.tagName??null,x:e.clientX??null,y:e.clientY??null,isTrusted:e.isTrusted});}
-for(const t of ["pointerdown","pointerup","mousedown","mouseup","click","touchstart","touchend"])window.addEventListener(t,input,true);
-if (!Object.getOwnPropertyDescriptor(CombatRenderer.prototype,"handleTimingPointer")) {
- Object.defineProperty(CombatRenderer.prototype,"handleTimingPointer",{
-  configurable:true,
-  set(fn){
-   const wrappedHandler=function(event){
-    record("T118.handleTimingPointer:before",{eventType:event?.type??null,isTrusted:event?.isTrusted??null,target:event?.target?.id??event?.target?.tagName??null,timingActive:this.timingState?.active??null,timingState:safe(this.timingState??null),state:state(this)});
-    try{const result=Reflect.apply(fn,this,[event]);record("T118.handleTimingPointer:after",{eventType:event?.type??null,timingActive:this.timingState?.active??null,state:state(this)});return result;}
-    catch(error){record("T118.handleTimingPointer:exception",{eventType:event?.type??null,error:{name:error?.name||"Error",message:String(error?.message||error),stack:String(error?.stack||"")}});throw error;}
-   };
-   Object.defineProperty(this,"handleTimingPointer",{value:wrappedHandler,writable:true,configurable:true});
-  },
-  get(){return undefined;}
- });
+wrap(CharacterActor2D5?.prototype, "transitionTo", "T101.actor.transitionTo", (actor, args) => ({
+  actor: actorInfo(actor), requestedState: args[0] ?? null,
+  eventId: window.__BWM_CURRENT_PRESENTATION_EVENT_ID__ ?? null,
+  turn: window.__BWM_CURRENT_TACTICAL_TURN__ ?? null,
+  identity: getOwnerContext(actor, "transitionTo", args),
+  stackAtCall: new Error("BWM101R7C2 transition origin").stack
+}));
+wrap(CombatStage?.prototype, "setActors", "T101.lifecycle.CombatStage.setActors", lifecycleSnapshot("setActors"));
+wrap(CombatPresentationDirector?.prototype, "setStage", "T101.lifecycle.CombatPresentationDirector.setStage", lifecycleSnapshot("setStage"));
+wrap(CombatPresentationDirector?.prototype, "_createRuntimeFormation", "T101.lifecycle.CombatPresentationDirector._createRuntimeFormation", lifecycleSnapshot("_createRuntimeFormation"));
+wrapEnsure(CombatPresentationDirector?.prototype);
+wrap(CharacterFormation2D5?.prototype, "populate", "T101.lifecycle.CharacterFormation2D5.populate", lifecycleSnapshot("populate"));
+wrap(CharacterFormation2D5?.prototype, "attach", "T101.lifecycle.CharacterFormation2D5.attach", lifecycleSnapshot("attach"));
+wrap(CharacterFormation2D5?.prototype, "clear", "T101.lifecycle.CharacterFormation2D5.clear", lifecycleSnapshot("clear"));
+
+for (const method of ["startFromPresentationEvent", "_finishFormationActorsForReplacement", "_emitStep"]) {
+  wrap(CombatPresentationDirector?.prototype, method, "T101.director." + method, (director, args) => {
+    const event = args[0]?.payload ? args[0] : null;
+    const id = event?.payload?.attacker_id ?? event?.attacker_id ?? director?.result?.attackerId ?? null;
+    const stage = director?.stage || refs.stage;
+    const formation = director?.formation || refs.formation;
+    const stageActor = id != null && stage?.actors instanceof Map ? stage.actors.get(String(id)) : null;
+    const formationActor = id != null && formation?.actors instanceof Map ? formation.actors.get(String(id)) : null;
+    return {
+      ...getOwnerContext(director, method, args),
+      eventId: event?.eventId ?? director?.sequenceId ?? null, eventType: event?.type ?? null,
+      attackerId: id, targetId: event?.payload?.target_id ?? event?.target_id ?? null,
+      stageActor: actorInfo(stageActor), formationActor: actorInfo(formationActor),
+      sameActorIdentity: stageActor && formationActor ? stageActor === formationActor : null,
+      stackAtCall: new Error("BWM101R7C2 director origin").stack
+    };
+  });
 }
-record("harness.ready",{wrapped:["CharacterActor2D5.transitionTo","CombatPresentationDirector.startFromPresentationEvent","CombatPresentationDirector._finishFormationActorsForReplacement","CombatPresentationDirector._emitStep","CombatRenderer._handleCombatPresentationStep","CombatRenderer.resolveTimingInput"],instrumentationErrors:root.instrumentationErrors});
+wrap(CombatRenderer?.prototype, "_handleCombatPresentationStep", "T101.renderer.presentationStep", (renderer, args) => {
+  const id = args[0]?.result?.attackerId ?? args[0]?.result?.attacker_id ?? renderer?.combatStage?.selectedActorId ?? null;
+  const actor = id != null && renderer?.combatStage?.actors instanceof Map ? renderer.combatStage.actors.get(String(id)) : null;
+  return {
+    event: safe(args[0]), turn: renderer?.combatRuntime?.state?.tacticalTurn ?? null,
+    actorId: id, actor: actorInfo(actor), identity: getOwnerContext(renderer, "_handleCombatPresentationStep", args),
+    presentation: renderer?.combatPresentation ? {
+      active: renderer.combatPresentation.active ?? null, phase: renderer.combatPresentation.phase ?? null,
+      sequenceId: renderer.combatPresentation.sequenceId ?? null, stepIndex: renderer.combatPresentation.stepIndex ?? null
+    } : null
+  };
+});
+wrap(CombatRenderer?.prototype, "resolveTimingInput", "T118.resolveTimingInput", (renderer, args) => {
+  const timing = renderer?.timingState || null;
+  const now = performance.now();
+  const storage = {};
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (/player.?meta|reward|scrap|ledger/i.test(key || "")) storage[key] = localStorage.getItem(key);
+    }
+  } catch {}
+  return {
+    source: args[0] ?? "pointer", timingState: safe(timing), active: timing?.active ?? null,
+    startedAt: timing?.startedAt ?? null, elapsedMs: timing?.startedAt == null ? null : now - timing.startedAt,
+    targetMs: timing?.targetMs ?? null, durationMs: timing?.durationMs ?? null,
+    hitWindowMs: timing?.hitWindowMs ?? null, greatWindowMs: timing?.greatWindowMs ?? null,
+    phase: renderer?.combatRuntime?.state?.phase ?? null,
+    tacticalTurn: renderer?.combatRuntime?.state?.tacticalTurn ?? null,
+    before: readOnlyRuntimeState(renderer), persistedRewardState: storage,
+    stackAtCall: new Error("BWM101R7C2 resolver origin").stack
+  };
+});
+function input(event) {
+  if (!/pointer|mouse|touch|click/i.test(event.type)) return;
+  record("T118.dom-input", {
+    eventType: event.type, target: event.target?.id ?? event.target?.tagName ?? null,
+    x: event.clientX ?? null, y: event.clientY ?? null, isTrusted: event.isTrusted
+  });
+}
+for (const type of ["pointerdown", "pointerup", "mousedown", "mouseup", "click", "touchstart", "touchend"]) window.addEventListener(type, input, true);
+
+if (!Object.getOwnPropertyDescriptor(CombatRenderer.prototype, "handleTimingPointer")) {
+  Object.defineProperty(CombatRenderer.prototype, "handleTimingPointer", {
+    configurable: true,
+    set(fn) {
+      const wrappedHandler = function(event) {
+        record("T118.handleTimingPointer:before", {
+          eventType: event?.type ?? null, isTrusted: event?.isTrusted ?? null,
+          target: event?.target?.id ?? event?.target?.tagName ?? null,
+          timingState: safe(this.timingState ?? null), state: readOnlyRuntimeState(this)
+        });
+        try {
+          const result = Reflect.apply(fn, this, [event]);
+          record("T118.handleTimingPointer:after", { eventType: event?.type ?? null, state: readOnlyRuntimeState(this) });
+          return result;
+        } catch (error) {
+          record("T118.handleTimingPointer:exception", {
+            eventType: event?.type ?? null,
+            error: { name: error?.name || "Error", message: String(error?.message || error), stack: String(error?.stack || "") }
+          });
+          throw error;
+        }
+      };
+      Object.defineProperty(this, "handleTimingPointer", { value: wrappedHandler, writable: true, configurable: true });
+    },
+    get() { return undefined; }
+  });
+}
+record("harness.ready", {
+  wrapped: [
+    "CharacterActor2D5.transitionTo", "CombatStage.setActors", "CombatPresentationDirector.setStage",
+    "CombatPresentationDirector._createRuntimeFormation", "CombatPresentationDirector._ensureRuntimeFormation",
+    "CharacterFormation2D5.populate", "CharacterFormation2D5.attach", "CharacterFormation2D5.clear",
+    "CombatPresentationDirector.startFromPresentationEvent", "CombatPresentationDirector._finishFormationActorsForReplacement",
+    "CombatPresentationDirector._emitStep", "CombatRenderer._handleCombatPresentationStep", "CombatRenderer.resolveTimingInput"
+  ],
+  instrumentationErrors: root.instrumentationErrors
+});
