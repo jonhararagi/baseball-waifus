@@ -11084,3 +11084,49 @@ PR #51 está abierto para revisión; CI de Chromium y Visual QA se activaron al 
 **Pruebas de este turno:** no ejecutadas localmente; la integración GitHub de esta sesión permite editar y consultar archivos, pero no ejecutar el checkout del repositorio en un runner local. En el SHA `6d22e4bb2a6f46e9d9c59fe831c56b46e36d6c79`, los workflows T097 y Visual QA fueron iniciados por el evento `pull_request`; su resultado aún no estaba disponible al registrar esta actualización. No se declara ningún test como aprobado sin el resultado del runner.
 
 **Temporizador BWM-099:** inspección y corrección de probes estimadas en 4–8 horas. Provisión externa, despliegue, secrets y smoke productivo: duración no confirmada hasta conocer el proveedor y la disponibilidad de los recursos.
+
+
+---
+
+## BWM-100 · CI EVIDENCE RECONCILIATION & PR #51 REVIEW
+
+**Fecha:** 2026-10-10  
+**Estado:** PARTIAL / PR NEEDS CORRECTIONS; producción BLOCKED  
+**HEAD de main verificado:** `988c0fa3c7c17077d18e5f7f0722726cae39a197`  
+**HEAD de rama verificado:** `0bc9eb4cf99c5be91f2c746e8ed5a9c8eabbb944`  
+**PR #51:** abierto, sin fusionar, `mergeable=true`, 7 commits, 3 archivos cambiados. No hay reviews registradas en la consulta.  
+**Comparación:** rama 7 commits por delante, 0 por detrás de main.
+
+### CI del HEAD exacto
+
+- **T097 Local Demo Reward Boundary CDP QA**, Run [38029414270](https://github.com/jonhararagi/baseball-waifus/actions/runs/38029414270), evento `pull_request`, SHA `0bc9eb4cf99c5be91f2c746e8ed5a9c8eabbb944`: **FAILURE**.
+  - Sintaxis del probe: PASS.
+  - BONE-004 Reward Authority Contract y compatibilidad de attestation: PASS.
+  - BONE-004 Native Chromium Reward Authority Validation: PASS.
+  - T097 demo boundary: PASS. El log demuestra victoria local, SCRAP 0→0, ledger sin cambios, RETURN y reload sin recompensa.
+  - T101: FAIL por excepciones reales de runtime `Invalid CharacterActor2D5 transition: ACTION -> FOCUS` en `combat_stage.js:222`, invocadas desde `combat.js` al resolver timing/presentación. No es un fallo de la nueva aserción del ledger. Debe investigarse como regresión/defecto de presentación antes de aprobar el PR.
+  - T109 mid-turn boundary: PASS.
+  - T111 terminal boundary: PASS.
+  - T117 terminal timing diagnostic: PASS; esto no prueba handoff conectado.
+  - T118: FAIL en una aserción previa: `T118 Timing Grade was not MISS`; el estado observado es `TACTICAL / STRIKE`, `timingGrade=""`, timing inactivo y SCRAP/ledger sin cambios. El cambio posterior para comprobar `round1.afterTiming` no llega a ejecutarse porque falla antes en `resolveNonTerminalMiss()`. La corrección de lectura temporal es insuficiente; no cambiar la expectativa hasta demostrar el contrato/input correcto.
+  - T114-R: FAIL por timeout esperando una condición `VICTORY` que exige también `combatResult === "VICTORY"`. El estado observado es `battlePhase="VICTORY"`, `combatResult="HOME_RUN"`, timingGrade GREAT, SCRAP 0 y ledger vacío. El probe mezcla una fase terminal válida con un literal de resultado incorrecto o un contrato no confirmado. Inspeccionar el modelo de resultados y adaptar el test al contrato real, sin alterar el juego.
+  - Los artefactos de T097/T101/T109/T111/T117/T118/T114-R se subieron. El job global falla debido a T101, T118 y T114-R.
+- **Baseball Waifus Visual QA**, Run [38029414216](https://github.com/jonhararagi/baseball-waifus/actions/runs/38029414216), mismo SHA `0bc9eb4cf99c5be91f2c746e8ed5a9c8eabbb944`: **SUCCESS**. Incluye `p10-release-gate` y los jobs de QA de personajes/integración; no sustituye el workflow de reward boundary.
+- **Combined commit status:** el endpoint de status no devolvió estados individuales publicados. Se usan los resultados concretos de workflow anteriores, no se infiere un gate global en verde.
+- **Pruebas locales:** NOT RUN en esta sesión. La sintaxis y los probes citados se ejecutaron en GitHub Actions.
+
+### Revisión de código y dictamen
+
+- HEAD inicial/base coincide con main; la rama no avanzó desde el SHA informado. No se sobrescribió trabajo posterior.
+- El diff se limita a `.github/workflows/t097-reward-handoff-cdp.yml`, `webapp/js/character_journey_browser_probe.mjs` y esta bitácora.
+- La prueba T097 ahora prueba explícitamente la frontera negativa del modo demo y no se presenta como evidencia de recompensa conectada.
+- **No aprobar aún el PR #51.** T101 descubre una excepción de runtime que no debe esconderse como ruido; T118 no alcanza la aserción corregida y sigue observando un resultado distinto del esperado; T114-R demuestra que la condición terminal del probe no coincide con el resultado observado. Requieren una corrección acotada y otra ejecución de CI.
+- No se realizaron cambios de código adicionales durante BWM-100, para no alterar las expectativas a ciegas ni expandir el alcance de revisión. Solo se agrega esta reconciliación de evidencia.
+
+### Bloqueos y siguiente paso
+
+La integración de recompensa contra un backend productivo continúa **BLOCKED**: no existe evidencia de endpoint desplegado, persistencia gestionada activa o smoke test autenticado contra una instancia real. No se fusionó ni desplegó nada.
+
+Siguiente tarea recomendada: **BWM-101 · Fix T101 presentation transition + reconcile T118/T114-R result contracts**, limitada a investigar la transición ACTION→FOCUS en el director de presentación, comprobar el DTO real de Timing MISS y el resultado terminal HOME_RUN, corregir únicamente el contrato o la transición que se demuestre incorrecta, y repetir T097/T101/T118/T114-R en Chromium. No modificar autenticación, firma, economía o balance.
+
+**Temporizador BWM-100:** la reconciliación CI y revisión de diff quedó realizada dentro de la ventana de 1–3 horas. Correcciones adicionales de runtime/probes y nueva CI quedan fuera de BWM-100; estimación preliminar 2–4 horas, sujeta a la causa de la transición ACTION→FOCUS.
