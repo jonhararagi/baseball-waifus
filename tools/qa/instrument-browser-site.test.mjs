@@ -2,12 +2,12 @@ import test from "node:test";import assert from "node:assert/strict";import {mkd
 const script=fileURLToPath(new URL("./instrument-browser-site.mjs",import.meta.url));
 function fixture(){
  const r=mkdtempSync(join(tmpdir(),"bwm101r7c2-"));mkdirSync(join(r,"js"),{recursive:true});
- writeFileSync(join(r,"js","app.js"),'import "./main.js";\\n');
- writeFileSync(join(r,"js","main.js"),"export const ok=true;\\n");
- writeFileSync(join(r,"js","combat_stage.js"),"  transitionTo(nextState) {\\n  setActors(actors = []) {\\n");
- writeFileSync(join(r,"js","combat_presentation_director.js"),"  _finishFormationActorsForReplacement() {\\n  startFromPresentationEvent(event) {\\n  _emitStep(reason) {\\n  setStage(stage) {\\n  _createRuntimeFormation() {\\n  _ensureRuntimeFormation() {\\n");
- writeFileSync(join(r,"js","character_formation_2d5.js"),"  populate(actors = []) {\\n  attach(actor, slotIndex = 0) {\\n  clear() {\\n");
- writeFileSync(join(r,"js","combat.js"),'  resolveTimingInput(source = "pointer") {\\n  _handleCombatPresentationStep(event) {\\n');
+ writeFileSync(join(r,"js","app.js"),'import "./main.js";\n');
+ writeFileSync(join(r,"js","main.js"),"export const ok=true;\n");
+ writeFileSync(join(r,"js","combat_stage.js"),"  transitionTo(nextState) {\n  setActors(actors = []) {\n");
+ writeFileSync(join(r,"js","combat_presentation_director.js"),"  _finishFormationActorsForReplacement() {\n  startFromPresentationEvent(event) {\n  _emitStep(reason) {\n  setStage(stage) {\n  _createRuntimeFormation() {\n  _ensureRuntimeFormation() {\n");
+ writeFileSync(join(r,"js","character_formation_2d5.js"),"  populate(actors = []) {\n  attach(actor, slotIndex = 0) {\n  clear() {\n");
+ writeFileSync(join(r,"js","combat.js"),'  resolveTimingInput(source = "pointer") {\n  _handleCombatPresentationStep(event) {\n');
  return r;
 }
 const run=r=>spawnSync(process.execPath,[script,r],{encoding:"utf8"});
