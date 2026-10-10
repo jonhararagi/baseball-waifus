@@ -42,6 +42,29 @@ function progressToAction(director, stage) {
   assert.equal(director.phase, "ACTION");
   assert.equal(stage.getActor("bw001").presentationState, "ACTION");
 }
+test("legacy formation reuse deterministically reproduces ACTION -> FOCUS after stage replacement", () => {
+  const originalEnsure = CombatPresentationDirector.prototype._ensureRuntimeFormation;
+  CombatPresentationDirector.prototype._ensureRuntimeFormation = function legacyEnsure() {
+    if (!this.formation) this.formation = this._createRuntimeFormation();
+    return this.formation;
+  };
+  try {
+    const stage = new CombatStage({ actors: stageActors("legacy-1") });
+    const director = buildDirector(stage);
+    director.startFromPresentationEvent(resultEvent("legacy-identity-1"));
+    progressToAction(director, stage);
+    stage.setActors(stageActors("legacy-2"));
+    assert.doesNotThrow(() => director.startFromPresentationEvent(resultEvent("legacy-identity-2")));
+    progressToAction(director, stage);
+    assert.throws(
+      () => director.startFromPresentationEvent(resultEvent("legacy-identity-3")),
+      /Invalid CharacterActor2D5 transition: ACTION -> FOCUS/
+    );
+  } finally {
+    CombatPresentationDirector.prototype._ensureRuntimeFormation = originalEnsure;
+  }
+});
+
 test("stage replacement while a presentation is active reuses the new stage actor generation", () => {
   const stage = new CombatStage({ actors: stageActors("generation-1") });
   const director = buildDirector(stage);
