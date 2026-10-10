@@ -1225,7 +1225,7 @@ async function run() {
         // Capture the active Timing Ring identity and diagnostic baseline before
         // injecting one physical pointer input. The grade assertion uses the R5
         // wrapper's return DTO, never the transient canvas dataset.
-        const timingInputContext = await cdpEvaluate(cdp, "(() => { const r=window.__BW_T097_GET_RUNTIME__?.()||{}; const t=r.battle?.timingState||null; const d=window.__BWM101R5_DIAGNOSTICS__; return {sequence:d?.sequence??null,eventCount:d?.events?.length??0,phase:r.battle?.phase||r.battle?.battlePhase||'',tacticalTurn:r.battle?.tacticalTurn??null,window:t?{startedAt:t.startedAt??null,targetMs:t.targetMs??null,durationMs:t.durationMs??null}:null}; })()");
+        const timingInputContext = await cdpEvaluate(cdp, "(() => { const r=window.__BW_T097_GET_RUNTIME__?.()||{}; const t=r.timingWindow||null; const d=window.__BWM101R5_DIAGNOSTICS__; return {sequence:d?.sequence??null,eventCount:d?.events?.length??0,phase:r.battle?.phase||r.battle?.battlePhase||'',tacticalTurn:r.battle?.tacticalTurn??null,window:t?{active:t.active,startedAt:t.startedAt??null,targetMs:t.targetMs??null,durationMs:t.durationMs??null,windowId:t.windowId||''}:null}; })()");
         requireCondition(timingInputContext?.window && Number.isFinite(Number(timingInputContext.window.startedAt)), "T118 active Timing Ring window identity unavailable", timingInputContext);
         await cdp.send("Input.setIgnoreInputEvents", { ignore:false });
         await cdp.send("Input.dispatchMouseEvent", { type:"mouseMoved", x, y, button:"none", buttons:0 });
