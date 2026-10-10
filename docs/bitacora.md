@@ -11041,3 +11041,74 @@ Pre-existing status is supported by Run `37550518856` on `847edd53f98ca75f0f7630
 **GLOBAL GATE:** `CERRADO`.  
 **PRODUCTION:** `NOT VERIFIED`.  
 **NEXT PRODUCTION HANDOFF:** `BONE-011-AUTH-032` after a material, verifiable owner-gate change.
+
+
+---
+
+## BWM-098 · RELEASE READINESS & REWARD PIPELINE AUDIT
+
+**Fecha:** 2026-10-10  
+**HEAD inicial de `main`:** `988c0fa3c7c17077d18e5f7f0722726cae39a197`  
+**Rama de auditoría:** `bwm-098-release-readiness-audit`  
+**Resultado:** `PARTIAL / RELEASE BLOCKED`  
+**Tipo de cambio:** documentación de auditoría solamente. No se modificó gameplay, seguridad, economía ni balance.
+
+### Evidencia de CI en el HEAD auditado
+
+- [T097 Normal Combat Reward Handoff CDP QA, Run 37996496065](https://github.com/jonhararagi/baseball-waifus/actions/runs/37996496065): `FAILURE` en `988c0fa3c7c17077d18e5f7f0722726cae39a197`.
+  - `BONE-004 Reward Authority Contract`: SUCCESS.
+  - `BONE-004 Native Chromium Reward Authority Validation`: SUCCESS.
+  - `Run T097 reward handoff proof`: FAILURE. El combate local alcanzó `VICTORY / HOME_RUN`, pero Player Meta quedó en `SCRAP=0`, ledger vacío y estado `LOCAL_RESULT // DEMO_ONLY // REWARD BLOCKED`.
+  - `Run T101 normal combat defeat proof`: FAILURE. Ledger vacío; no hay evidencia de una aplicación de recompensa autorizada en esa ruta.
+  - `T109 mid-turn reward boundary proof`: SUCCESS; Scrap y ledger permanecieron sin cambios durante turnos no terminales.
+  - `T111 terminal reward boundary proof`: SUCCESS.
+  - `T117 terminal timing diagnostic`: SUCCESS, pero la recompensa terminal quedó `NOT_REACHED`.
+  - `T118 non-hit terminal reward validation`: FAILURE por el estado observado `TACTICAL / STRIKE` con `timingGrade=""`, no por una concesión indebida de recompensa.
+  - `T114-R2 historical T096 terminal timing recovery`: FAILURE. El probe interpreta mal el envelope persistido: la forma actual es `{schemaVersion, revision, state:{...}}`, mientras esta ruta lee `currencies` y `rewardLedger` en el nivel superior.
+- [Telegram Mini App deployment, Run 37996496074](https://github.com/jonhararagi/baseball-waifus/actions/runs/37996496074): SUCCESS. Esto valida el workflow de publicación estática, no el backend de autoridad.
+- [Visual QA, Run 37996496037](https://github.com/jonhararagi/baseball-waifus/actions/runs/37996496037): FAILURE global; la mayoría de los jobs visibles pasan, pero `student-4v4-integration-visual-qa` falla. Fuera del alcance de reparación de BWM-098.
+- [T094 deterministic combat CDP, Run 37996495967](https://github.com/jonhararagi/baseball-waifus/actions/runs/37996495967): SUCCESS.
+- [T095 timing input diagnostic, Run 37996495956](https://github.com/jonhararagi/baseball-waifus/actions/runs/37996495956): SUCCESS.
+- [T078 Combat Stage Browser QA, Run 37996495880](https://github.com/jonhararagi/baseball-waifus/actions/runs/37996495880): SUCCESS.
+- [T079 Character-Combat 2.5D Browser QA, Run 37996495876](https://github.com/jonhararagi/baseball-waifus/actions/runs/37996495876): SUCCESS.
+- [T077 Combat Presentation Browser QA, Run 37996495877](https://github.com/jonhararagi/baseball-waifus/actions/runs/37996495877): FAILURE.
+- La última suite backend completa localizada fue Run `37922573542` sobre `91b0ede8be40d1b86fe6e5f6c55b399f83f95101`, con 167/167 tests PASS, PostgreSQL de integración y container smoke. No es el HEAD auditado, por lo que no se considera validación completa de `988c0fa3c7c17077d18e5f7f0722726cae39a197`.
+- El estado combinado de commit de GitHub no devolvió status checks publicados para `988c0fa3c7c17077d18e5f7f0722726cae39a197`; se usaron los workflow runs individuales anteriores como evidencia.
+
+### Contratos y límites comprobados
+
+- El contrato cliente `SERVER_COMBAT_ATTESTATION_V1` define `ECDSA_P256_SHA256` y liga versión, match, player, turno, outcome, result y nonce.
+- `backend/src/attestation_signer.mjs` firma la serialización canónica usando ECDSA P-256/SHA-256 y formato IEEE-P1363, compatible con Web Crypto del cliente.
+- `webapp/js/reward_authority.js` verifica firma y bindings; `webapp/js/reward_pipeline.js` exige `authorityProof` antes de conceder recompensas. Las pruebas negativas cubren firma ausente, resultado alterado, player/match/nonce incorrectos y entrega duplicada.
+- El probe BONE-004 ejecuta un `CombatService` con firmante efímero de prueba y pasa el resultado firmado a Chromium mediante un hook de QA. Verifica concesión única de +100 SCRAP y rechazo de firma ausente/manipulada y contextos incorrectos. Es una prueba de integración de contrato con firmante efímero, no una prueba de servicio desplegado ni de configuración productiva.
+- `webapp/js/api.js` permite configurar la API mediante `window.BASEBALL_WAIFUS_API_BASE_URL`; si está vacía, el cliente continúa en demo/local. La ruta de combate normal que prueba T097 no demuestra una entrega firmada real: la evidencia muestra el bloqueo correcto de su resultado local.
+- `backend/src/auth.mjs` valida Telegram init data del lado servidor fuera de `NODE_ENV=test`, con hash HMAC, edad y user ID. La identidad de prueba `x-test-player-id` está limitada a modo test.
+- La documentación de arquitectura declara backend de producción, proveedor y almacenamiento secreto/clave productivos como no configurados. El backend exige autenticación verificable, firma privada, persistencia gestionada y proveedor de compra configurado. `/ready` debe fallar cerrado sin persistencia/configuración productiva.
+- El workflow de pruebas backend se dispara en `main` por cambios en `backend/**`, `webapp/js/combat_core.js`, `webapp/js/reward_authority.js` o el propio workflow. No se encontró una ejecución de la suite backend completa en el HEAD actual; la prueba T097 sí ejecutó el contrato de autoridad y compatibilidad.
+
+### Diagnóstico y decisión de cambio
+
+No se modificó código de producción ni se cambiaron tests para convertir fallos en verdes. La falla de T097 no debe arreglarse concediendo recompensas a resultados locales ni debilitando la verificación. El bloqueo requiere integrar el flujo de combate normal con una API desplegada/configurada y definir el handoff real entre resultado terminal, attestation, Player Meta y persistencia durable. Además, el proveedor y los secretos de producción siguen siendo dependencias externas.
+
+Hay un defecto acotado en el probe T114-R: su lectura de persistencia no desempaqueta `record.state`. No se cambió aisladamente porque, al superar esa primera aserción, el mismo probe sigue esperando una recompensa local que la frontera de autoridad bloquea correctamente; modificar solo el parser produciría una prueba todavía semánticamente incorrecta y no resolvería el bloqueo real. Debe corregirse junto con la separación explícita entre prueba de combate local y prueba de handoff firmado.
+
+### Pruebas ejecutadas durante BWM-098
+
+- Lectura estática de README, bitácora, contrato de autoridad, signer, auth, combat service, API del cliente, probes y workflows.
+- Inspección de logs reales de GitHub Actions para Run `37996496065` y de resúmenes de los workflows de `988c0fa3c7c17077d18e5f7f0722726cae39a197`.
+- No se ejecutaron comandos de test local: este entorno no tiene acceso de red a GitHub ni checkout local del repositorio.
+- No se ejecutó ni se intentó deployment, pago, provisioning, cambio de secrets ni operación destructiva.
+
+### Estado y siguiente tarea
+
+- **BWM-098:** `PARTIAL`; auditoría de repositorio/CI y contratos completada, release readiness no aprobada.
+- **BONE-004:** `OPEN / BLOCKED` para producción. La integración de contrato con signer efímero sí tiene evidencia de prueba.
+- **BONE-005:** `CLOSED` según historial, pero eso no equivale a almacenamiento productivo desplegado.
+- **BONE-011:** `OPEN / IN PROGRESS`; el gate productivo sigue cerrado.
+- **Producción:** `NOT VERIFIED`. No declarar release-ready.
+
+**Siguiente tarea recomendada (no duplicada):** `BWM-099 · NORMAL COMBAT SERVER-AUTHORITY HANDOFF DESIGN & INTEGRATION PLAN`. Primero definir el flujo de integración para que la partida normal use una API autenticada cuando esté configurada, maneje timeout/respuestas incompletas en fail-closed, valide la attestation terminal y aplique Player Meta solo tras verificación; mantener el modo demo incapaz de conceder recompensas autoritativas. Incluir pruebas CDP para ambos modos y especificar el requisito de persistencia gestionada antes de producción. No seleccionar ni aprovisionar proveedor sin autorización del owner.
+
+**Avance de BWM-098: 85% de ejecución de auditoría.** Criterio: 5 dominios auditados (repositorio/CI, contrato de firma, autoridad cliente, autenticación, readiness/persistencia); los cinco tienen evidencia estática o de workflow, pero la validación end-to-end productiva es 0/1 y no se realizaron pruebas locales en este entorno. El porcentaje mide esta tarea, no el avance global del juego.
+
+**Temporizador:** auditoría dentro del intervalo objetivo de 45–90 minutos. Próxima tarea BWM-099 estimada en 4–8 horas para diseño de integración y pruebas acotadas; no incluye provisioning externo ni deployment productivo.
