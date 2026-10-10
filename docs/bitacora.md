@@ -11282,3 +11282,63 @@ Diagnóstico T101 y T118: aún no existe evidencia nueva de R5. T101 se evaluar�
 No se cambia main, no se crea otra rama/PR, no se modifica runtime de combate, SCRAP, economía, recompensas, ledger, gacha, pity, autenticación, firmas ni idempotencia. El PR #51 permanece sin fusionar.
 
 **Temporizador BWM-101-R5:** estimación inicial de implementación e integración 2–4 horas; hasta 1–2 horas adicionales para análisis/repetición de CI. Tiempo realmente invertido: no medido de forma fiable por el entorno de herramientas. Tiempo pendiente: CI, recuperación y análisis de artefactos, estimado provisionalmente en 1–3 horas según los resultados. No es una estimación del lanzamiento multiplataforma global.
+
+
+## BWM-101-R5 · Reconciliación de CI y evidencia causal verificada
+
+**Fecha:** 2026-10-10. **Estado:** PARTIAL; harness y captura PASS, regresiones T101/T118 y otras rutas con fallos observados. **Rama:** bwm-099-normal-combat-authority-handoff. **PR #51:** abierto, sin fusionar. **main:** 988c0fa3c7c17077d18e5f7f0722726cae39a197. **SHA de código probado:** 114c271598003bb16705af44737eb3b9dd2939f2. En el evento pull_request, el runner informa el merge SHA bda24a0e4be3d799138983252746795ab8033122; ambos identifican el código probado en el run.
+
+### CI y artefactos
+
+- [T097 Local Demo Reward Boundary CDP QA, run 38050459328](https://github.com/jonhararagi/baseball-waifus/actions/runs/38050459328): FAILURE global, fiel a las aserciones.
+- [Visual QA, run 38050459401](https://github.com/jonhararagi/baseball-waifus/actions/runs/38050459401): SUCCESS en el SHA de código 114c271598003bb16705af44737eb3b9dd2939f2.
+- [BWM-101-R5 causal traces](https://github.com/jonhararagi/baseball-waifus/actions/runs/38050459328/artifacts/11669047649): contiene las cuatro evidencias T101/T118 con run ID, SHA evaluado, timestamp y estado.
+- [T101 browser evidence](https://github.com/jonhararagi/baseball-waifus/actions/runs/38050459328/artifacts/11669207347).
+- [T118 browser evidence](https://github.com/jonhararagi/baseball-waifus/actions/runs/38050459328/artifacts/11668514513).
+- [T097 evidence](https://github.com/jonhararagi/baseball-waifus/actions/runs/38050459328/artifacts/11669047652), [T109 evidence](https://github.com/jonhararagi/baseball-waifus/actions/runs/38050459328/artifacts/11669187356), [T111 evidence](https://github.com/jonhararagi/baseball-waifus/actions/runs/38050459328/artifacts/11669382203), [T117 evidence](https://github.com/jonhararagi/baseball-waifus/actions/runs/38050459328/artifacts/11669197401), [T114-R2 evidence](https://github.com/jonhararagi/baseball-waifus/actions/runs/38050459328/artifacts/11669152503) y [BONE-004 evidence](https://github.com/jonhararagi/baseball-waifus/actions/runs/38050459328/artifacts/11669217062).
+
+### Diagnóstico T101
+
+La instrumentación sobre site/ produjo una traza de 881 eventos repartidos en capturas previas a navegación. El resumen registró cuatro excepciones de transición ACTION → FOCUS durante la reproducción. El stack sigue el recorrido CharacterActor2D5.transitionTo → CharacterActor2D5.setPresentationState → CombatRenderer._handleCombatPresentationStep → CombatPresentationDirector._emitStep → CombatPresentationDirector.startFromPresentationEvent.
+
+En una excepción concreta, el actor del escenario tenía actorId bw001 y estado ACTION, mientras que el actor de la formación con el mismo actorId bw001 estaba en IDLE; la comparación de identidad devolvió false. El evento de presentación era ATTACKER_FOCUS y la secuencia era combat-presentation:bw001:bw002:STRIKE. Esto constituye evidencia de que escenario y formación mantienen objetos distintos para el mismo ID durante la transición fallida. Es una pista causal fuerte para investigar el ciclo de vida/sincronización de actores, no una corrección implementada ni una demostración de causa raíz completa. La excepción se conserva; no se cambió la máquina de estados.
+
+### Diagnóstico T118
+
+La traza confirma que el input llegó a handleTimingPointer y que resolveTimingInput se llamó una vez y devolvió un objeto real con grade MISS, source pointer, elapsed_ms 155, target_ms 720, delta_ms -565, great_window_ms 79 y hit_window_ms 173. La llamada no fue inferida por timeout ni por canvas.dataset. El estado posterior volvió a TACTICAL, lastTiming conservó MISS, SCRAP siguió en 0 y rewardLedger permaneció vacío.
+
+La aserción existente falla porque inspecciona timingGrade, que aparece vacío después de iniciar la transición de presentación; el objeto devuelto por el resolver sí acredita MISS. No se alteró la aserción ni el resolver. El resumen registró handlerReachCount=1, resolverCallCount=1, resolverReturnCount=1, observedMissReturns=1 e inputObservedWithoutHandler=false.
+
+### Matriz de pruebas del SHA 114c271598003bb16705af44737eb3b9dd2939f2
+
+| Componente | Resultado real | Observación |
+|---|---|---|
+| Harness: fixtures, ancla ausente/duplicada, segunda ejecución | PASS | El paso Validate and instrument temporary site for BWM-101-R5 terminó success e inspeccionó el manifiesto |
+| Instrumentación en copia site/ | PASS | No se editaron archivos de runtime de combate; manifiesto y wrappers se generaron en la copia temporal |
+| T101 | FAIL | Cuatro excepciones ACTION → FOCUS capturadas; identidad de actor de escenario y formación difiere |
+| T118 | FAIL | El retorno real es MISS; la aserción posterior consulta un campo transitorio vacío |
+| T097 | FAIL | Timeout esperando VICTORY; el estado observado quedó TACTICAL/STRIKE, SCRAP 0 y ledger vacío |
+| T109 | PASS | La prueba de frontera no terminal terminó correctamente |
+| T111 | PASS | La prueba de frontera terminal terminó correctamente |
+| T117 | PASS | El diagnóstico de timing terminal terminó correctamente |
+| T114-R2 | FAIL | Timeout esperando VICTORY; el estado observado quedó TACTICAL/STRIKE, SCRAP 0 y ledger vacío |
+| BONE-004 contrato y Chromium nativo | PASS | Ambos pasos terminaron success en este run |
+| Visual QA | PASS | Run separado 38050459401, mismo SHA de código 114c |
+| Backend productivo autenticado | BLOCKED | No se ejecutó smoke contra backend productivo |
+
+T097 y T114-R2 tuvieron resultados distintos en una ejecución anterior cercana; en este SHA fallaron con el estado descrito arriba. Se documenta el resultado de este run y no se reutiliza el anterior para convertir el fallo en PASS. El workflow publicó los artefactos con if: always() y mantuvo el job global en FAILURE.
+
+### Estado de R4, cambios y límites
+
+El error original de la operación de escritura de R4 no pudo recuperarse y permanece **NO VERIFICABLE**. Durante R5 hubo una primera implementación de harness con sintaxis defectuosa; CI la detectó. Se corrigió el ancla/escape, se volvió a ejecutar y el paso de harness pasó. Después se amplió la captura para conservar el buffer T101 entre navegaciones; esa ampliación está incluida en el SHA 114c y se ejercitó en el run 38050459328.
+
+Archivos R5: tools/qa/instrument-browser-site.mjs, tools/qa/bwm101r5-instrumentation.js, tools/qa/instrument-browser-site.test.mjs, .github/workflows/t097-reward-handoff-cdp.yml, webapp/js/character_journey_browser_probe.mjs y docs/bitacora.md. El cambio de probe es instrumentación del runner; no modifica reglas de combate, transición, timing, economía ni recompensas. El commit documental que incorpora esta reconciliación no cambia el código probado; por eso el SHA de código probado y el HEAD posterior de documentación se reportan por separado.
+
+### Siguiente acción recomendada
+
+1. En una tarea separada, investigar el ciclo de vida del actor bw001 entre CombatStage y CharacterFormation, usando el orden de eventos/estados de la traza, sin relajar ACTION → FOCUS.
+2. Corregir la observación T118 del probe para asertar sobre el DTO retornado capturado, manteniendo las verificaciones de SCRAP y ledger; no modificar la regla del resolver.
+3. Repetir T097/T101/T118/T114-R2 en el SHA de la siguiente tarea y analizar por qué T097/T114-R2 quedaron en TACTICAL/STRIKE en esta ejecución.
+4. No aprobar ni fusionar PR #51 hasta revisar la excepción T101 y los fallos de los probes.
+
+**Temporizador BWM-101-R5:** estimación inicial 2–4 h de implementación/integración y 1–2 h para análisis/repetición de CI. Tiempo realmente invertido en esta sesión: aproximadamente 25–35 minutos de trabajo efectivo de herramientas, medido de forma aproximada por las marcas de tiempo de CI. Tiempo pendiente para diagnosticar T101, reconciliar T118/T097/T114-R2 y repetir regresiones: reservar 1–3 h, condicionado a la causa del ciclo de presentación. No se deriva una estimación global de lanzamiento multiplataforma a partir de este bloque.
