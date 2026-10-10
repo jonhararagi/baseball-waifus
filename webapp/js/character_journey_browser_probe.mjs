@@ -1467,7 +1467,7 @@ async function run() {
         tactical,
         rounds: [round1, round2],
         finalState,
-        timingInput: { method: "CDP Input.dispatchMouseEvent", waitMs: 120, expectedGrade: "MISS" },
+        timingInput: { method: "CDP Input.dispatchMouseEvent", sequence: ["mouseMoved","mousePressed","mouseReleased"], scheduledAttempts: [round1.timingInputEvidence, round2.timingInputEvidence], expectedGrade: "MISS" },
         rewardBoundary: { midCombatScrapUnchanged:true, persistedScrapUnchanged:true, rewardLedgerUnchanged:true, terminalNotReached:true },
         at_ms: Date.now() - runStartedAt
       };
@@ -1818,7 +1818,8 @@ async function run() {
         timingInput: {
           method: "CDP Input.dispatchMouseEvent",
           elapsedMs: elapsedAtInput,
-          targetBand: "T096 recovered 620ms sleep / canvas center"
+          targetBand: "live timingState startedAt/targetMs/greatWindowMs scheduled pointer input",
+          timingAttempt
         },
         terminalBoundary: {
           lastNonTerminal: "CLIMAX/TIMING ACTIVE",
