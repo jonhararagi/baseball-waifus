@@ -245,6 +245,7 @@ async function run() {
   const consoleErrors = [];
   const pageExceptions = [];
   const network = { requests: [], responses: [] };
+  let r5ProbeFailure = null;
 
   try {
     browser = spawn(BROWSER_BIN, [
@@ -2449,6 +2450,7 @@ async function run() {
     else if (T073_PRESENTATION) console.log("T073 CHARACTER PRESENTATION = PASS_REAL");
     else console.log("T072 BROWSER JOURNEY = PASS_REAL");
   } catch (error) {
+    r5ProbeFailure = String(error?.stack || error);
     writeFileSync(
       join(EVIDENCE_DIR, "t072-browser-failure.json"),
       JSON.stringify({
@@ -2471,6 +2473,20 @@ async function run() {
     );
     throw error;
   } finally {
+    const r5Task=process.env.BWM101R5_TASK, r5Root=process.env.BWM101R5_EVIDENCE_ROOT;
+    if(["T101","T118"].includes(r5Task)&&r5Root){
+      try{
+        let diagnostics=null;
+        if(cdp){const serialized=await cdpEvaluate(cdp,"window.__BWM101R5_DIAGNOSTICS__ ? JSON.stringify(window.__BWM101R5_DIAGNOSTICS__) : null");if(serialized)diagnostics=typeof serialized==="string"?JSON.parse(serialized):serialized;}
+        const root=resolve(r5Root);mkdirSync(root,{recursive:true});
+        const common={task:r5Task,sha:process.env.GITHUB_SHA||"local",runId:process.env.GITHUB_RUN_ID||"local",runAttempt:process.env.GITHUB_RUN_ATTEMPT||"local",timestamp:new Date().toISOString(),probeStatus:r5ProbeFailure?"FAIL":"COMPLETED",probeFailure:r5ProbeFailure,instrumentationAvailable:Boolean(diagnostics),instrumentationErrors:diagnostics?.instrumentationErrors||[],pageExceptions:pageExceptions.map(x=>x?.exception?.description||x?.text||""),consoleErrors:consoleErrors.map(x=>({text:x.text,url:x.url,source:x.source}))};
+        if(!diagnostics)common.captureFailure="Runner could not retrieve page trace before browser close; capture unavailable, not PASS.";
+        const trace=r5Task==="T101"?"t101-transition-trace.json":"t118-timing-trace.json", summaryName=r5Task==="T101"?"t101-transition-summary.json":"t118-resolution-summary.json", events=diagnostics?.events||[];
+        writeFileSync(join(root,trace),JSON.stringify({...common,diagnostics},null,2)+"\n","utf8");
+        const summary={...common,eventCount:events.length,transitionExceptionCount:events.filter(e=>e.type==="T101.actor.transitionTo:exception").length,actionToFocusCount:events.filter(e=>e.type==="T101.actor.transitionTo:exception"&&/ACTION -> FOCUS/.test(e.error?.message||"")).length,resolverCallCount:events.filter(e=>e.type==="T118.resolveTimingInput:before").length,resolverReturnCount:events.filter(e=>e.type==="T118.resolveTimingInput:after").length,observedMissReturns:events.filter(e=>e.type==="T118.resolveTimingInput:after"&&String(e.result?.grade||e.result?.timing?.grade||"").toUpperCase()==="MISS").length,status:!diagnostics?"INSTRUMENTATION_FAILURE":r5ProbeFailure?"PROBE_FAILED_TRACE_PRESERVED":"CAPTURED"};
+        writeFileSync(join(root,summaryName),JSON.stringify(summary,null,2)+"\n","utf8");if(!diagnostics)process.stderr.write("[BWM101R5] trace unavailable; marked failure\n");
+      }catch(e){try{mkdirSync(resolve(r5Root),{recursive:true});writeFileSync(join(resolve(r5Root),"instrumentation-capture-failure.json"),JSON.stringify({task:r5Task,sha:process.env.GITHUB_SHA||"local",runId:process.env.GITHUB_RUN_ID||"local",timestamp:new Date().toISOString(),error:String(e?.stack||e),originalProbeFailure:r5ProbeFailure},null,2)+"\n","utf8");}catch{}process.stderr.write("[BWM101R5] evidence capture failed: "+String(e?.stack||e)+"\n");}
+    }
     try { cdp?.close(); } catch {}
     try { browser?.kill("SIGTERM"); } catch {}
     try { server?.close(); } catch {}

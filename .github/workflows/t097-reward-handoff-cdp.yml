@@ -89,6 +89,15 @@ jobs:
           (root / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
           PY
           test -s site/assets/production/manifest.json
+
+      - name: Validate and instrument temporary site for BWM-101-R5
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test tools/qa/instrument-browser-site.test.mjs
+          node tools/qa/instrument-browser-site.mjs site
+          node --input-type=module -e 'import { readFileSync } from "node:fs"; const m=JSON.parse(readFileSync("site/bwm-101-r5-instrumentation-manifest.json","utf8")); if (m.status !== "PASS" || m.checks.length !== 6 || m.checks.some(x => !x.passed)) throw new Error("BWM-101-R5 manifest validation failed"); console.log("BWM101R5 MANIFEST PASS", JSON.stringify({version:m.harnessVersion,checks:m.checks.length}));'
+
       - name: Locate Chrome
         id: chrome
         shell: bash
@@ -148,6 +157,8 @@ jobs:
         env:
           T072_SITE_DIR: site
           T072_EVIDENCE_DIR: browser-evidence/T101/$GITHUB_SHA/$GITHUB_RUN_ID
+          BWM101R5_TASK: T101
+          BWM101R5_EVIDENCE_ROOT: browser-evidence/BWM-101-R5/T101
           T101_DEFEAT_PROOF: "1"
           T104_PERSISTENCE_PROOF: "1"
           BROWSER_BIN: ${{ steps.chrome.outputs.browser_bin }}
@@ -209,6 +220,8 @@ jobs:
         env:
           T072_SITE_DIR: site
           T072_EVIDENCE_DIR: browser-evidence/T118/$GITHUB_SHA/$GITHUB_RUN_ID
+          BWM101R5_TASK: T118
+          BWM101R5_EVIDENCE_ROOT: browser-evidence/BWM-101-R5/T118
           T118_NON_HIT_REWARD_VALIDATION: "1"
           BROWSER_BIN: ${{ steps.chrome.outputs.browser_bin }}
         run: |
@@ -267,6 +280,13 @@ jobs:
           name: t101-defeat-browser-cdp-evidence
           path: browser-evidence/T101/
           if-no-files-found: warn
+      - name: Upload BWM-101-R5 causal traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bwm-101-r5-causal-traces
+          path: browser-evidence/BWM-101-R5/
+          if-no-files-found: error
       - name: Upload T097 evidence
         if: always()
         uses: actions/upload-artifact@v4

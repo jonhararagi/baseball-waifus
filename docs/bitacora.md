@@ -11237,3 +11237,48 @@ No se alteraron economía, SCRAP, gacha, pity, daño, turnos, balance, autentica
 Reproducir T101 con trazas de actor/sequence/evento y T118 con un registro que una input físico, actividad de Timing Ring y resultado inmediato. Después ejecutar la matriz completa en un SHA que contenga las correcciones. El contrato de recuperación tras recarga debe añadirse o validarse antes de cerrar T114-R.
 
 **Temporizador BWM-101-R1:** la reconciliación inicial y el ajuste contractual de T114-R quedaron aplicados. Estimación restante: 2–5 horas para instrumentación, diagnóstico seguro y regresiones; si la máquina de estados o el ciclo de timing requieren una corrección más amplia, detenerse y reestimar.
+
+
+## BWM-101-R5 · Harness incremental y trazas causales T101/T118
+
+**Fecha:** 2026-10-10. **Estado al registrar el cambio:** pendiente de CI en el SHA nuevo. **Rama:** bwm-099-normal-combat-authority-handoff. **PR:** [#51](https://github.com/jonhararagi/baseball-waifus/pull/51), abierto y sin fusionar. **main verificado:** 988c0fa3c7c17077d18e5f7f0722726cae39a197. **HEAD inicial:** a847e8b35028222566c725cd5feb4a415a2b0542.
+
+### Recuperación de R4
+
+No se encontró un registro recuperable que identifique la operación exacta que falló en R4. La rama remota no contiene un commit de implementación R4; el error original queda como **NO VERIFICABLE**, sin atribuirlo a una causa supuesta.
+
+### Cambios de R5
+
+- tools/qa/instrument-browser-site.mjs valida seis anclas exactas en la copia site/, copia el módulo temporal y lo importa antes del código de la aplicación. Escribe un manifiesto con SHA-256 de fuentes, rutas, versión y resultados.
+- tools/qa/bwm101r5-instrumentation.js envuelve transición, director de presentación, pasos de renderer y resolver. Cada wrapper llama una sola vez a la implementación original, mantiene argumentos/retorno y vuelve a lanzar la misma excepción.
+- tools/qa/instrument-browser-site.test.mjs comprueba instalación, ancla ausente, ancla duplicada e idempotencia con fixtures temporales.
+- El workflow existente ejecuta tests e instrumentación después de preparar site/ y publica las trazas R5 con if: always().
+- El probe intenta guardar trazas y resúmenes en finally con SHA, run, timestamp, estado, excepciones y conteos. Si no puede recuperar el buffer, registra fallo de instrumentación.
+
+### Cómo repetir
+
+El workflow existente ejecuta:
+
+    node --test tools/qa/instrument-browser-site.test.mjs
+    node tools/qa/instrument-browser-site.mjs site
+
+Solo se modifica la copia temporal site/. Los archivos de producción webapp/ no se editan para introducir wrappers. No se corrigen transiciones, no se fuerza MISS y no se relajan las aserciones.
+
+### Matriz pendiente de ejecución en SHA R5
+
+| Componente | Estado antes de ejecutar el workflow |
+|---|---|
+| Pruebas del harness | NOT RUN |
+| T101 traza de transición | NOT RUN |
+| T118 retorno real del resolver | NOT RUN |
+| T114-R2 | NOT RUN |
+| T097/T109/T111/T117 | NOT RUN |
+| BONE-004 | NOT RUN para SHA R5 |
+| Visual QA | NOT RUN para SHA R5 |
+| Backend productivo | BLOCKED, sin smoke autenticado acreditado |
+
+Diagnóstico T101 y T118: aún no existe evidencia nueva de R5. T101 se evaluará únicamente a partir de las transiciones y excepciones registradas. T118 contará como MISS solo si el retorno real del método envuelto expone grade MISS. Las ejecuciones históricas no se consideran validación de R5.
+
+No se cambia main, no se crea otra rama/PR, no se modifica runtime de combate, SCRAP, economía, recompensas, ledger, gacha, pity, autenticación, firmas ni idempotencia. El PR #51 permanece sin fusionar.
+
+**Temporizador BWM-101-R5:** estimación inicial de implementación e integración 2–4 horas; hasta 1–2 horas adicionales para análisis/repetición de CI. Tiempo realmente invertido: no medido de forma fiable por el entorno de herramientas. Tiempo pendiente: CI, recuperación y análisis de artefactos, estimado provisionalmente en 1–3 horas según los resultados. No es una estimación del lanzamiento multiplataforma global.
