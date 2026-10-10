@@ -871,8 +871,8 @@ async function run() {
         (state) => state.battlePhase === "VICTORY" && Boolean(state.combatResult),
         5000
       );
-      checkpoints["REWARD HANDOFF"] = await readRuntime();
-      timeline.push({ at_ms: Date.now() - runStartedAt, label:"REWARD HANDOFF", ...checkpoints["REWARD HANDOFF"] });
+      checkpoints["DEMO REWARD BOUNDARY"] = await readRuntime();
+      timeline.push({ at_ms: Date.now() - runStartedAt, label:"DEMO REWARD BOUNDARY", ...checkpoints["DEMO REWARD BOUNDARY"] });
 
       requireCondition(victory.scrap === 100, "T097 victory did not apply the existing 100 Scrap reward", victory);
       requireCondition(victory.persistedScrap === 100, "T097 victory Scrap is not persisted in Player Meta", victory);
