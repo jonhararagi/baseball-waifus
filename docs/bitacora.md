@@ -11361,7 +11361,7 @@ Archivos R5: tools/qa/instrument-browser-site.mjs, tools/qa/bwm101r5-instrumenta
 
 ### Límites de validación
 
-- Commits de implementación: `03632bc3fc18f0f6f14e07c6ea6e5594f6f8d149`, `59dc7054b66eaf7789c49df9eb439d2b1c47c63c`.
+- Commits de implementación: `03632bc3fc18f0f6f14e07c6ea6e5594f6f8d149`, `59dc7054b66eaf7789c49df9eb439d2b1c47c63c`, `40e4bf83656bf33f34971334cbb360cc019739f5` (corrección de alcance de evidencia T118).
 - Los archivos se escribieron exclusivamente en la rama de trabajo existente; `main` no se modificó.
 - No se ejecutaron aquí Chromium, la matriz completa ni los workflows de GitHub Actions. El código queda **IMPLEMENTADO / CI PENDIENTE**, no PASS_REAL.
 - No se cambiaron reglas de combate, timing, stamina, daño, recompensas, SCRAP, gacha, autenticación ni criptografía.
