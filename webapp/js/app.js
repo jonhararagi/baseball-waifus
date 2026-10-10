@@ -535,6 +535,26 @@ if (new URLSearchParams(window.location.search).get("qa") === "t097") {
     if (!renderer.isTimingWindowActive?.() || !Number.isFinite(Number(renderer.timingState?.startedAt))) return null;
     return performance.now() - Number(renderer.timingState.startedAt);
   };
+  // Read-only QA snapshot: capture the resolver's synchronous output without
+  // changing combat decisions, timing windows, or production behavior.
+  window.__BW_T097_GET_RUNTIME__ = () => {
+    const battle = renderer.getBattleLoopState?.() || {};
+    const stage = renderer.combatStage;
+    return {
+      battle,
+      timing: renderer.lastTiming ? { ...renderer.lastTiming } : null,
+      lastTurn: renderer.lastTurn ? { ...renderer.lastTurn } : null,
+      stage: stage ? {
+        contract: stage.getState?.().contract || "",
+        selectedActorId: stage.getState?.().selectedActorId || "",
+        actors: (stage.getActors?.() || []).map((actor) => ({
+          actorId: String(actor.actorId || ""),
+          team: String(actor.team || ""),
+          role: String(actor.role || "")
+        }))
+      } : null
+    };
+  };
 }
 const rosterPanel = new RosterPanel({
   root: rosterPanelRoot,
