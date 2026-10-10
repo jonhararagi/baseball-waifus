@@ -874,11 +874,11 @@ async function run() {
       checkpoints["DEMO REWARD BOUNDARY"] = await readRuntime();
       timeline.push({ at_ms: Date.now() - runStartedAt, label:"DEMO REWARD BOUNDARY", ...checkpoints["DEMO REWARD BOUNDARY"] });
 
-      requireCondition(victory.scrap === 100, "T097 victory did not apply the existing 100 Scrap reward", victory);
-      requireCondition(victory.persistedScrap === 100, "T097 victory Scrap is not persisted in Player Meta", victory);
-      requireCondition(victory.rewardLedgerKeys.length === 1 && victory.rewardLedgerKeys[0] === expectedBattleId, "T097 reward ledger does not contain exactly one completed battle reward", victory);
-      requireCondition(victory.rewardLedger?.[expectedBattleId] === true, "T097 reward ledger entry is not true", victory);
-      // Reward handoff is authoritative in Player Meta state/ledger; HUD text is presentation-only.
+      requireCondition(victory.scrap === 0, "T097 local demo must not grant authoritative Scrap", victory);
+      requireCondition(victory.persistedScrap === 0, "T097 local demo must not persist authoritative Scrap", victory);
+      requireCondition(victory.rewardLedgerKeys.length === 0, "T097 local demo must leave reward ledger unchanged", victory);
+      requireCondition(!victory.rewardLedger?.[expectedBattleId], "T097 local demo unexpectedly created a reward ledger entry", victory);
+      // This is a negative demo-mode boundary probe, not proof of connected server reward handoff.
 
       const returnState = await mark(
         "RETURN",
@@ -890,9 +890,9 @@ async function run() {
         (state) => state.presentationPhase === "COMPLETE" && state.presentationActive === false,
         5000
       );
-      requireCondition(completeState.scrap === 100, "T097 Scrap balance changed after RETURN", completeState);
-      requireCondition(completeState.persistedScrap === 100, "T097 persisted Scrap changed after RETURN", completeState);
-      requireCondition(completeState.rewardLedgerKeys.length === 1, "T097 reward ledger changed after RETURN", completeState);
+      requireCondition(completeState.scrap === 0, "T097 demo Scrap changed after RETURN", completeState);
+      requireCondition(completeState.persistedScrap === 0, "T097 demo persisted Scrap changed after RETURN", completeState);
+      requireCondition(completeState.rewardLedgerKeys.length === 0, "T097 demo reward ledger changed after RETURN", completeState);
 
       await cdp.send("Page.navigate", { url: t097Url });
       await waitFor(
@@ -907,9 +907,9 @@ async function run() {
       checkpoints["RELOAD"] = { at_ms: Date.now() - runStartedAt, ...reloaded };
       timeline.push({ at_ms: Date.now() - runStartedAt, label:"RELOAD", ...reloaded });
 
-      requireCondition(reloaded.scrap === 100, "T097 persisted Scrap was not rehydrated after reload", reloaded);
-      requireCondition(reloaded.persistedScrap === 100, "T097 Player Meta persistence did not survive reload", reloaded);
-      requireCondition(reloaded.rewardLedgerKeys.length === 1 && reloaded.rewardLedger[expectedBattleId] === true, "T097 reward ledger did not survive reload", reloaded);
+      requireCondition(reloaded.scrap === 0, "T097 demo Scrap unexpectedly appeared after reload", reloaded);
+      requireCondition(reloaded.persistedScrap === 0, "T097 demo persisted Scrap unexpectedly appeared after reload", reloaded);
+      requireCondition(reloaded.rewardLedgerKeys.length === 0 && !reloaded.rewardLedger[expectedBattleId], "T097 demo reward ledger unexpectedly appeared after reload", reloaded);
       requireCondition(reloaded.rewardStatus !== "REWARD ERROR", "T097 reward error state detected after reload", reloaded);
 
       const sameOriginErrors = pageExceptions
@@ -928,15 +928,15 @@ async function run() {
           revision: browserVersion?.revision || "",
           userAgent: browserVersion?.userAgent || ""
         },
-        harness: "existing character_journey_browser_probe.mjs via T097_REWARD_HANDOFF=1",
+        harness: "existing character_journey_browser_probe.mjs via T097_REWARD_HANDOFF=1; local demo negative-authority probe",
         baseUrl,
         expectedBattleId,
         checkpoints,
         timeline,
         reward: {
           type: "SCRAP",
-          amount: 100,
-          source: "existing T062_REWARD_TABLE VICTORY entry"
+          amount: 0,
+          source: "local demo result is non-authoritative; connected server handoff not exercised"
         },
         persistence: {
           mechanism: "PlayerMetaPersistenceAdapter/localStorage",
@@ -957,11 +957,11 @@ async function run() {
 
       console.log("T097 BROWSER AUTOMATION = PASS_REAL");
       console.log("VICTORY = PASS_REAL");
-      console.log("REWARD HANDOFF = PASS_REAL");
-      console.log("REWARD = +100 SCRAP");
-      console.log("PLAYER STATE = SCRAP 0 -> 100");
-      console.log("PERSISTENCE = PASS_REAL");
-      console.log("DUPLICATION = PASS_REAL");
+      console.log("DEMO REWARD BOUNDARY = PASS_REAL");
+      console.log("REWARD = NONE // DEMO_ONLY");
+      console.log("PLAYER STATE = SCRAP 0 -> 0");
+      console.log("DEMO PERSISTENCE = PASS_REAL");
+      console.log("DEMO LEDGER = UNCHANGED");
       console.log("RETURN = PASS_REAL");
       console.log("RELOAD = PASS_REAL");
       return;
@@ -1065,7 +1065,7 @@ async function run() {
       const complete=await mark("RETURN COMPLETE", s => s.presentationPhase === "COMPLETE" && s.presentationActive === false, 5000);
       requireCondition(complete.battlePhase === "DEFEAT" && complete.playerStamina === 0, "T101 terminal state changed after return", complete);
       requireCondition(complete.scrap === 0 && complete.persistedScrap === 0, "T101 defeat awarded victory Scrap", complete);
-      requireCondition(complete.rewardLedgerKeys.length === 1 && complete.rewardLedgerKeys[0] === expectedBattleId && complete.rewardLedger?.[expectedBattleId] === true, "T101 defeat ledger identity missing or duplicated", complete);
+      requireCondition(complete.rewardLedgerKeys.length === 0 && !complete.rewardLedger?.[expectedBattleId], "T101 defeat must not create a victory reward ledger entry", complete);
       const actionControl=await cdpEvaluate(cdp, "(() => { const b=document.querySelector('#action-bat'); return {exists:Boolean(b),disabled:Boolean(b?.disabled)}; })()");
       requireCondition(actionControl.exists, "T101 post-terminal BATEAR control is missing", actionControl);
       const postTerminalBefore=await readRuntime();
@@ -1091,7 +1091,7 @@ async function run() {
       checkpoints.RELOAD={at_ms:Date.now()-runStartedAt,...reloaded};
       timeline.push({at_ms:Date.now()-runStartedAt,label:"RELOAD",...reloaded});
       requireCondition(reloaded.scrap === 0 && reloaded.persistedScrap === 0, "T101 reload produced victory Scrap", reloaded);
-      requireCondition(reloaded.rewardLedgerKeys.length === 1 && reloaded.rewardLedger?.[expectedBattleId] === true, "T101 defeat ledger did not survive reload consistently", reloaded);
+      requireCondition(reloaded.rewardLedgerKeys.length === 0 && !reloaded.rewardLedger?.[expectedBattleId], "T101 defeat demo ledger must remain empty after reload", reloaded);
       const sameOriginErrors=pageExceptions.map(item => item?.exception?.description || item?.text || "").filter(Boolean).filter(entry => entry.includes(baseUrl) || entry.includes("/js/"));
       requireCondition(sameOriginErrors.length === 0, "T101 same-origin runtime exceptions detected", sameOriginErrors);
       const evidence={task:"T101",sha:process.env.GITHUB_SHA||"local",runId:process.env.GITHUB_RUN_ID||"local",browser:BROWSER_BIN,browserVersion:{product:browserVersion?.product||"",revision:browserVersion?.revision||"",userAgent:browserVersion?.userAgent||""},harness:"existing character_journey_browser_probe.mjs via T101_DEFEAT_PROOF=1",expectedBattleId,initial,rounds,defeat,returnComplete:complete,reloaded,postTerminalActionGuard:{control:actionControl,functional:true,before:postTerminalBefore,after:postTerminalAfter},persistence:{mechanism:"PlayerMetaPersistenceAdapter/localStorage",key:playerMetaKey,reloadVerified:true},reward:{expected:[],scrapBefore:initial.scrap,scrapAfter:complete.scrap,scrapAfterReload:reloaded.scrap},duplication:{ledgerBeforeReload:complete.rewardLedgerKeys.length,ledgerAfterReload:reloaded.rewardLedgerKeys.length},timeline,consoleErrors:consoleErrors.map(entry=>({text:entry.text,url:entry.url,source:entry.source})),pageErrors:sameOriginErrors};
@@ -1236,8 +1236,10 @@ async function run() {
 
       if (T118_NON_HIT_REWARD_VALIDATION) {
         const finalState = await readRewardState();
-        requireCondition(finalState.timingGrade === "MISS", "T118 final Timing Grade changed", finalState);
-        requireCondition(finalState.combatResult === "STRIKE", "T118 final Combat Result changed", finalState);
+        // Timing grade is transient and can reset during the next tactical frame; assert it on the captured result DTO instead.
+        requireCondition(round1.afterTiming.timingGrade === "MISS", "T118 resolved Timing Grade was not MISS", round1.afterTiming);
+        requireCondition(round1.afterTiming.combatResult === "STRIKE", "T118 resolved Combat Result was not STRIKE", round1.afterTiming);
+        requireCondition(round1.afterTiming.battlePhase === "TACTICAL", "T118 MISS did not continue combat", round1.afterTiming);
         requireCondition(finalState.battlePhase === "TACTICAL", "T118 combat did not continue", finalState);
         requireCondition(finalState.scrap === initial.scrap, "T118 authoritative Scrap changed", { initial, finalState });
         requireCondition(finalState.persistedScrap === initial.persistedScrap, "T118 persisted Scrap changed", { initial, finalState });
@@ -1249,8 +1251,8 @@ async function run() {
           browser: BROWSER_BIN,
           browserVersion: { product: browserVersion?.product || "", revision: browserVersion?.revision || "", userAgent: browserVersion?.userAgent || "" },
           harness: "existing character_journey_browser_probe.mjs via T118_NON_HIT_REWARD_VALIDATION=1",
-          timingLayer: "MISS",
-          combatLayer: "STRIKE",
+          timingLayer: round1.afterTiming.timingGrade,
+          combatLayer: round1.afterTiming.combatResult,
           initial,
           beforeTiming: round1.beforeTiming,
           afterTiming: round1.afterTiming,
@@ -1261,8 +1263,8 @@ async function run() {
           at_ms: Date.now() - runStartedAt
         };
         writeFileSync(join(EVIDENCE_DIR, "t118-non-hit-reward-browser-evidence.json"), JSON.stringify(evidence, null, 2) + "\n", "utf8");
-        console.log("T118 TIMING GRADE = MISS");
-        console.log("T118 COMBAT RESULT = STRIKE");
+        console.log("T118 TIMING GRADE = " + round1.afterTiming.timingGrade);
+        console.log("T118 COMBAT RESULT = " + round1.afterTiming.combatResult);
         console.log("T118 COMBAT CONTINUES = PASS_REAL");
         console.log("T118 VICTORY = NO");
         console.log("T118 MATCH END = NO");
@@ -1510,7 +1512,7 @@ async function run() {
       const playerMetaKey = "baseball_waifus_player_meta_v1:local-player";
       const expectedBattleId = "battle:demo-bw001-vs-bw002";
 
-      const readRuntime = async () => cdpEvaluate(cdp, "(() => { const canvas=document.querySelector('#gameCanvas'); const d=canvas?.dataset||{}; const gacha=window.BaseballWaifusGacha?.getStatus?.()||null; const raw=localStorage.getItem('baseball_waifus_player_meta_v1:local-player'); let persisted=null; try { persisted=raw ? JSON.parse(raw) : null; } catch {} return { battlePhase:d.combatBattlePhase||'', tacticalTurn:d.combatTacticalTurn===''?null:Number(d.combatTacticalTurn), timingActive:d.combatTimingActive==='true', timingGrade:d.combatTimingGrade||'', combatResult:d.combatResult||'', presentationPhase:d.combatStagePresentationPhase||'', presentationActive:d.combatPresentationActive==='true', scrap:Number(gacha?.scavenger_scrap??NaN), persistedScrap:Number(persisted?.currencies?.SCRAP??NaN), rewardLedger:persisted?.rewardLedger||{}, rewardLedgerKeys:persisted?.rewardLedger?Object.keys(persisted.rewardLedger):[], playerMetaRawPresent:Boolean(raw), playerMeta:persisted }; })()");
+      const readRuntime = async () => cdpEvaluate(cdp, "(() => { const canvas=document.querySelector('#gameCanvas'); const d=canvas?.dataset||{}; const gacha=window.BaseballWaifusGacha?.getStatus?.()||null; const raw=localStorage.getItem('baseball_waifus_player_meta_v1:local-player'); let persistedRecord=null; try { persistedRecord=raw ? JSON.parse(raw) : null; } catch {} const persisted=persistedRecord?.schemaVersion===1 && Number.isSafeInteger(persistedRecord?.revision) && persistedRecord?.state && typeof persistedRecord.state==='object' ? persistedRecord.state : persistedRecord; return { battlePhase:d.combatBattlePhase||'', tacticalTurn:d.combatTacticalTurn===''?null:Number(d.combatTacticalTurn), timingActive:d.combatTimingActive==='true', timingGrade:d.combatTimingGrade||'', combatResult:d.combatResult||'', presentationPhase:d.combatStagePresentationPhase||'', presentationActive:d.combatPresentationActive==='true', scrap:Number(gacha?.scavenger_scrap??NaN), persistedScrap:Number(persisted?.currencies?.SCRAP??NaN), rewardLedger:persisted?.rewardLedger||{}, rewardLedgerKeys:persisted?.rewardLedger?Object.keys(persisted.rewardLedger):[], playerMetaRawPresent:Boolean(raw), playerMeta:persisted }; })()");
 
       const mark = async (name, condition, timeoutMs = 6000) => {
         const deadline = Date.now() + timeoutMs;
