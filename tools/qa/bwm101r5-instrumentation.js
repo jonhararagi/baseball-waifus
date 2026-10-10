@@ -243,9 +243,10 @@ function readTimingWindowDirect() {
   return {
     available: Boolean(renderer && timing),
     battle: {
-      phase: battle?.phase ?? null,
-      round: Number.isFinite(Number(battle?.round)) ? Number(battle.round) : null,
-      tacticalTurn: Number.isFinite(Number(battle?.tacticalTurn)) ? Number(battle.tacticalTurn) : null
+      phase: renderer?.battlePhase ?? battle?.phase ?? null,
+      authorityPhase: battle?.phase ?? null,
+      round: Number.isFinite(Number(renderer?.round ?? battle?.round)) ? Number(renderer?.round ?? battle?.round) : null,
+      tacticalTurn: Number.isFinite(Number(renderer?.tacticalTurn ?? battle?.tacticalTurn)) ? Number(renderer?.tacticalTurn ?? battle?.tacticalTurn) : null
     },
     timingState: timing ? {
       active: timing.active === true,
@@ -264,8 +265,11 @@ window.__BWM101R7C2_READ_TIMING__ = readTimingWindowDirect;
 function readOnlyRuntimeState(renderer) {
   const authority = renderer?.combatRuntime?.getState?.() || null;
   return {
-    battlePhase: authority?.phase ?? null, tacticalTurn: authority?.tacticalTurn ?? null,
-    combatResult: authority?.combatResult ?? null, lastTiming: safe(renderer?.lastTiming ?? null),
+    battlePhase: renderer?.battlePhase ?? authority?.phase ?? null,
+    authorityPhase: authority?.phase ?? null,
+    tacticalTurn: renderer?.tacticalTurn ?? authority?.tacticalTurn ?? null,
+    combatResult: renderer?.combatResult ?? authority?.combatResult ?? null,
+    lastTiming: safe(renderer?.lastTiming ?? null),
     presentation: renderer?.combatPresentation ? {
       active: renderer.combatPresentation.active ?? null, phase: renderer.combatPresentation.phase ?? null,
       sequenceId: renderer.combatPresentation.sequenceId ?? null, stepIndex: renderer.combatPresentation.stepIndex ?? null
@@ -341,8 +345,9 @@ wrap(CombatRenderer?.prototype, "resolveTimingInput", "T118.resolveTimingInput",
     startedAt: timing?.startedAt ?? null, elapsedMs: timing?.startedAt == null ? null : now - timing.startedAt,
     targetMs: timing?.targetMs ?? null, durationMs: timing?.durationMs ?? null,
     hitWindowMs: timing?.hitWindowMs ?? null, greatWindowMs: timing?.greatWindowMs ?? null,
-    phase: renderer?.combatRuntime?.getState?.()?.phase ?? null,
-    tacticalTurn: renderer?.combatRuntime?.getState?.()?.tacticalTurn ?? null,
+    phase: renderer?.battlePhase ?? renderer?.combatRuntime?.getState?.()?.phase ?? null,
+    authorityPhase: renderer?.combatRuntime?.getState?.()?.phase ?? null,
+    tacticalTurn: renderer?.tacticalTurn ?? renderer?.combatRuntime?.getState?.()?.tacticalTurn ?? null,
     before: readOnlyRuntimeState(renderer), persistedRewardState: storage,
     stackAtCall: new Error("BWM101R7C2 resolver origin").stack
   };
