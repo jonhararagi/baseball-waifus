@@ -11373,3 +11373,58 @@ Ejecutar T101 y T118 en el workflow de Chromium sobre el mismo HEAD final y revi
 
 **Estimación restante del proyecto:** no recalculable con rigor a partir de esta intervención aislada; producción continúa bloqueada por gates externos documentados. Para este bloque T101/T118, queda pendiente una ronda de CI y análisis de evidencia, estimada en 30–90 minutos si los runners y artifacts responden normalmente.
 
+## BWM-101-R6 · Corrección causal de actores y observación real de T118
+
+**Estado: PARTIAL.** Esta entrada refleja la evidencia R5 y los cambios R6 realizados hasta el commit documentado; no declara resuelto T101 ni afirma validación de Chromium sobre el nuevo HEAD.
+
+### Estado remoto y evidencia inicial
+
+- Rama de trabajo conservada: `bwm-099-normal-combat-authority-handoff`.
+- PR conservado: [#51](https://github.com/jonhararagi/baseball-waifus/pull/51), abierto y sin fusionar en la última consulta.
+- `main` conocido en la consulta: `988c0fa3c7c17077d18e5f7f0722726cae39a197`; no se escribió en `main`.
+- Run R5 consultado: [38050807998](https://github.com/jonhararagi/baseball-waifus/actions/runs/38050807998), conclusión `failure`. Jobs de T097 y T101 fallaron; BONE-004 pasó y T109/T111/T117 tuvieron resultados satisfactorios según el run anterior. Esos resultados no validan el HEAD R6.
+- Artefacto causal T101 descargado: `t101-transition-trace.json`, SHA de ejecución `5a29d4e77d971a56e21404be4183571f47fc3954`, 881 eventos, cuatro excepciones `ACTION -> FOCUS`.
+- Artefacto T118 descargado: `t118-timing-trace.json` y `t118-resolution-summary.json`. El resumen de R5 registra al menos un retorno `MISS`; el artefacto también conserva el fallo del probe que consultaba el dataset visual vacío.
+- Artefactos consultados: [T101 evidencia](https://github.com/jonhararagi/baseball-waifus/actions/runs/38050807998) y [T118 evidencia](https://github.com/jonhararagi/baseball-waifus/actions/runs/38050807998). El listado del run devuelve los artefactos y sus IDs; la evidencia corresponde al SHA histórico R5, no al HEAD R6.
+
+### Diagnóstico T101
+
+La traza muestra explícitamente una divergencia de identidad para `bw001`: durante una secuencia activa, el actor de `CombatStage` permanece en `ACTION`, mientras que el actor con el mismo ID en la formación del director está en `IDLE` y `sameActorIdentity=false`. En una secuencia nueva, el director emite `ATTACKER_FOCUS` y el renderer intenta `ACTION -> FOCUS`, transición que `CharacterActor2D5` rechaza correctamente.
+
+La evidencia sitúa una divergencia de referencias/estado y muestra la limpieza de formación como operación relevante. Sin embargo, con la evidencia recuperada no queda demostrada todavía la primera operación que sustituyó el objeto del escenario ni el punto exacto de ciclo de vida que dejó obsoleta la formación. Por tanto, **no se declara causa raíz cerrada y no se modifica el runtime de actores en R6 hasta reproducir el punto de sustitución**. La siguiente prueba debe instrumentar las mutaciones de `CombatStage.setActors`, `CombatPresentationDirector.setStage` y cualquier reconstrucción de formación, capturando identidad de objeto antes/después.
+
+### Cambios R6 realizados
+
+- `webapp/js/app.js`: el hook exclusivo `?qa=t097` expone un snapshot de solo lectura de la ventana activa del Timing Ring (identidad, `startedAt`, `targetMs`, `durationMs`). No se cambia el resolver ni las reglas productivas del combate.
+- `webapp/js/character_journey_browser_probe.mjs`: T118 toma una línea base de diagnósticos antes de inyectar un único clic físico y obtiene los eventos nuevos del harness R5. Exige entrada física, un único handler, una única pareja resolver-before/after correlacionada por `callSeq`, fuente pointer y `grade === MISS` directamente del DTO retornado por `resolveTimingInput()`. Se conservan las aserciones de `STRIKE`, continuidad `TACTICAL`, no terminalidad, SCRAP, SCRAP persistido y ledger.
+- El probe conserva evidencia de diagnóstico y no utiliza un retorno antiguo: limita la selección a los eventos añadidos después de la línea base. La ventana activa se registra como contexto independiente.
+- Commits R6 observados durante esta intervención: `03632bc3fc18f0f6f14e07c6ea6e5594f6f8d149` (hook QA de snapshot), `65704007db4e978b0acb5fdbb27b0a65e36cc4ce` (observación de retorno T118), `3db5d823b1f94f3ba9b25acd26b85093d9e3c3f7` (identidad de ventana QA), `f700e808658353d837b4fb5e94a0edc26b9182a7` (correlación con ventana activa). Debe verificarse el HEAD remoto final antes de atribuir una ejecución de CI.
+
+### Matriz de validación R6
+
+| Comprobación | Estado | Evidencia / motivo |
+|---|---|---|
+| Recuperación de artefactos R5 | PASS | ZIP causal y ZIP T118 recuperados y examinados |
+| Causa raíz T101, primera mutación identificada | BLOCKED | Divergencia confirmada; falta aislar la operación inicial que reemplaza el actor |
+| Corrección runtime T101 | NOT RUN | No se modificó el runtime porque la causa no está cerrada |
+| Regresión determinista del ciclo de vida | NOT RUN | Pendiente de fijar una reproducción sobre el punto de sustitución |
+| T118 observación del retorno real | PARTIAL | Código del probe actualizado; pendiente ejecutar Chromium y validar forma exacta de los eventos del harness |
+| Fixtures BWM-101-R5 | NOT RUN | No ejecutados en el HEAD R6 |
+| T097 / T101 / T109 / T111 / T117 / T114-R2 | NOT RUN | El run disponible corresponde al SHA R5 `5a29d4e77d971a56e21404be4183571f47fc3954` |
+| BONE-004 contrato y Chromium | NOT RUN para R6 | El PASS anterior pertenece al run R5 |
+| Visual QA | NOT RUN para R6 | Sin resultado nuevo del HEAD R6 |
+| Publicación de artefactos R6 | NOT RUN | Requiere nueva ejecución de Actions |
+
+### SHA y estado final de esta entrada
+
+- Último commit R6 confirmado por consulta individual: `f700e808658353d837b4fb5e94a0edc26b9182a7`. El estado del workflow para este SHA no mostraba checks registrados en la consulta realizada; no equivale a PASS.
+- No se afirma que este SHA sea el HEAD final de la rama tras todas las escrituras. Volver a consultar el HEAD y los runs antes del informe de cierre.
+- PR #51 sigue siendo el PR objetivo. No se fusionó ni cerró.
+- Bloqueos: reproducción causal de la sustitución de actor, test determinista, ejecución Chromium/Actions sobre un mismo SHA y comprobación de T097/T114-R2 para separar regresiones terminales independientes.
+
+### Siguiente paso recomendado
+
+Instrumentar temporalmente el punto de creación/reemplazo de actores con identidad de objeto y secuencia activa; construir una prueba de ciclo de vida que falle antes de la corrección y pase después. En paralelo, ejecutar T118 en Chromium para verificar que el harness produce una pareja única y correlacionada de eventos resolver y que la evidencia contiene retorno, estado posterior y economía.
+
+**Temporizador R6:** implementación de observación T118 realizada; validación, análisis final T101 y documentación de cierre pendientes. Tiempo realmente invertido: no medido con un cronómetro, por lo que no se inventa. Tiempo pendiente estimado: 2–4 horas de diagnóstico/prueba y 1–2 horas para CI y análisis de artefactos, si los runners responden normalmente. La estimación global de lanzamiento multiplataforma no se recalcula aquí.
+
