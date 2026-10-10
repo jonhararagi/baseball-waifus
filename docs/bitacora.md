@@ -11130,3 +11130,59 @@ La integración de recompensa contra un backend productivo continúa **BLOCKED**
 Siguiente tarea recomendada: **BWM-101 · Fix T101 presentation transition + reconcile T118/T114-R result contracts**, limitada a investigar la transición ACTION→FOCUS en el director de presentación, comprobar el DTO real de Timing MISS y el resultado terminal HOME_RUN, corregir únicamente el contrato o la transición que se demuestre incorrecta, y repetir T097/T101/T118/T114-R en Chromium. No modificar autenticación, firma, economía o balance.
 
 **Temporizador BWM-100:** la reconciliación CI y revisión de diff quedó realizada dentro de la ventana de 1–3 horas. Correcciones adicionales de runtime/probes y nueva CI quedan fuera de BWM-100; estimación preliminar 2–4 horas, sujeta a la causa de la transición ACTION→FOCUS.
+
+
+## BWM-101 · INVESTIGACIÓN DE T101, T118 Y T114-R
+
+**Fecha:** 2026-10-10  
+**Estado:** PARTIAL / BLOCKED; no se declara PASS.  
+**Rama:** `bwm-099-normal-combat-authority-handoff`  
+**PR:** [#51](https://github.com/jonhararagi/baseball-waifus/pull/51), abierto y sin fusionar.
+
+### Referencias Git verificadas antes de este ciclo
+
+- `main`: `988c0fa3c7c17077d18e5f7f0722726cae39a197`.
+- HEAD inicial de la rama de trabajo: `aeaf59f3dc72828f251d035eba15fb3c28711b1a`.
+- El PR #51 reporta ese mismo HEAD y mantiene como base el SHA de `main` indicado arriba.
+- La ejecución de CI analizada en BWM-100 corresponde a `0bc9eb4cf99c5be91f2c746e8ed5a9c8eabbb944`; no valida por sí misma `aeaf59f` ni commits posteriores.
+
+### Evidencia previa conservada
+
+- [T097 Reward Boundary CDP QA, run 38029414270](https://github.com/jonhararagi/baseball-waifus/actions/runs/38029414270): workflow terminado con FAILURE. El contrato BONE-004, la validación nativa Chromium y la prueba de bloqueo de recompensas demo pasaron; fallaron T101, T118 y T114-R.
+- [Visual QA, run 38029414216](https://github.com/jonhararagi/baseball-waifus/actions/runs/38029414216): SUCCESS en el SHA probado por ese workflow.
+- Los artefactos de T101, T118 y T114-R se publicaron en la ejecución T097; son evidencia histórica del SHA probado, no validación de la rama actual.
+
+### Diagnóstico por prueba
+
+**T101 — transición de presentación.** La máquina de estados de `CharacterActor2D5` define las transiciones `IDLE → FOCUS → ACTION → RETURN → IDLE` y rechaza combinaciones no permitidas en `transitionTo()`. La excepción `ACTION → FOCUS` confirma que una llamada intenta retroceder a FOCUS desde ACTION. La inspección estática realizada en este ciclo no identifica todavía, con suficiente evidencia, qué llamada concreta solicita esa transición en la secuencia fallida ni si la causa es reutilización de actores, orden de eventos o sincronización. No se modificó la máquina ni se suprimió la excepción. **Causa raíz: pendiente de reproducción instrumentada.**
+
+**T118 — Timing MISS.** El probe espera que el Timing Ring esté activo, envía un clic al centro del canvas y observa el estado una vez que `timingActive` es falso. Esa secuencia no demuestra por sí sola que el input corresponda a un MISS. La evidencia previa observó `TACTICAL / STRIKE` con `timingGrade` vacío, por lo que no es correcto cambiar a ciegas la aserción ni fabricar el campo. Falta correlacionar el input CDP con el evento de timing y el snapshot de resolución, incluyendo la traza de input y el estado antes/después. **Causa raíz: pendiente de evidencia dinámica.**
+
+**T114-R — resultado terminal.** El runtime observado en BWM-100 llegó a `battlePhase = VICTORY` y `combatResult = HOME_RUN`, con SCRAP sin cambios y ledger vacío. El renderer reconoce `HOME_RUN` como resultado específico. Esto es evidencia de que fase y resultado son campos distintos; la aserción que exige `combatResult === VICTORY` no refleja el ejemplo observado y no debe forzar una normalización del runtime. Aun así, falta una nueva ejecución que compruebe el conjunto de resultados válidos y la recuperación tras RETURN/recarga. **Corrección contractual identificada, validación final pendiente.**
+
+### Cambios y validación de este ciclo
+
+No se modificó código de runtime ni se relajaron aserciones durante esta pasada: la evidencia disponible no permite todavía justificar una corrección segura de T101 o T118. Se conserva la excepción y se mantienen explícitos los fallos. Esta entrada documental es el único cambio de BWM-101 en este commit.
+
+| Prueba | Resultado en este ciclo |
+|---|---|
+| SHA / PR / rama verificados | PASS |
+| Inspección estática de la máquina de estados y director | PARTIAL |
+| Reproducción dinámica T101 en Chromium | NOT RUN |
+| Reproducción dinámica T118 con traza de input | NOT RUN |
+| Corrección y regresión terminal T114-R | NOT RUN |
+| Sintaxis y suite completa sobre nuevo SHA | NOT RUN |
+| BONE-004 en nuevo SHA | NOT RUN |
+| CI de Chromium y Visual QA sobre nuevo SHA | NOT RUN |
+| Backend productivo real | BLOCKED / no probado |
+
+No se alteraron economía, SCRAP, gacha, balance, daño, turnos, autenticación, firmas criptográficas, idempotencia ni autoridad de recompensas. La evidencia BONE-004 previa corresponde a contratos y validación con mocks/firmantes de prueba; no prueba una integración productiva. No se utilizaron credenciales productivas.
+
+### Próxima acción recomendada
+
+1. Instrumentar la secuencia T101 para registrar actor, estado anterior, estado solicitado y origen de cada transición; reproducir antes de corregir.
+2. Para T118, registrar el evento de input real y el resultado producido por el sistema de timing, diferenciando input ignorado, timing inactivo y MISS confirmado.
+3. Corregir T114-R para comprobar la fase terminal por separado del resultado específico, manteniendo explícitos los resultados válidos; después validar persistencia y recuperación con el Player Meta envelope vigente.
+4. Ejecutar las pruebas y workflows en el nuevo SHA y enlazar sus resultados. No aprobar ni fusionar el PR #51 hasta resolver los bloqueos.
+
+**Temporizador BWM-101:** el objetivo inicial de 2–4 horas no puede confirmarse como completado. Estimación restante preliminar: 2–5 horas para instrumentación, corrección contractual y regresión; puede aumentar si T101 revela un problema de ciclo de vida o sincronización.
