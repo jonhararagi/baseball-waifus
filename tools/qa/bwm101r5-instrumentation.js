@@ -239,7 +239,7 @@ function wrapEnsure(proto) {
 function readTimingWindowDirect() {
   const renderer = refs.renderer;
   const timing = renderer?.timingState || null;
-  const battle = renderer?.combatRuntime?.state || null;
+  const battle = renderer?.combatRuntime?.getState?.() || null;
   return {
     available: Boolean(renderer && timing),
     battle: {
@@ -262,7 +262,7 @@ function readTimingWindowDirect() {
 window.__BWM101R7C2_READ_TIMING__ = readTimingWindowDirect;
 
 function readOnlyRuntimeState(renderer) {
-  const authority = renderer?.combatRuntime?.state || null;
+  const authority = renderer?.combatRuntime?.getState?.() || null;
   return {
     battlePhase: authority?.phase ?? null, tacticalTurn: authority?.tacticalTurn ?? null,
     combatResult: authority?.combatResult ?? null, lastTiming: safe(renderer?.lastTiming ?? null),
@@ -341,8 +341,8 @@ wrap(CombatRenderer?.prototype, "resolveTimingInput", "T118.resolveTimingInput",
     startedAt: timing?.startedAt ?? null, elapsedMs: timing?.startedAt == null ? null : now - timing.startedAt,
     targetMs: timing?.targetMs ?? null, durationMs: timing?.durationMs ?? null,
     hitWindowMs: timing?.hitWindowMs ?? null, greatWindowMs: timing?.greatWindowMs ?? null,
-    phase: renderer?.combatRuntime?.state?.phase ?? null,
-    tacticalTurn: renderer?.combatRuntime?.state?.tacticalTurn ?? null,
+    phase: renderer?.combatRuntime?.getState?.()?.phase ?? null,
+    tacticalTurn: renderer?.combatRuntime?.getState?.()?.tacticalTurn ?? null,
     before: readOnlyRuntimeState(renderer), persistedRewardState: storage,
     stackAtCall: new Error("BWM101R7C2 resolver origin").stack
   };
