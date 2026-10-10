@@ -11428,3 +11428,52 @@ Instrumentar temporalmente el punto de creación/reemplazo de actores con identi
 
 **Temporizador R6:** implementación de observación T118 realizada; validación, análisis final T101 y documentación de cierre pendientes. Tiempo realmente invertido: no medido con un cronómetro, por lo que no se inventa. Tiempo pendiente estimado: 2–4 horas de diagnóstico/prueba y 1–2 horas para CI y análisis de artefactos, si los runners responden normalmente. La estimación global de lanzamiento multiplataforma no se recalcula aquí.
 
+
+
+---
+
+## BWM-101-R7-C1 · Corrección de entrada única y traza de ciclo de vida
+
+**Fecha:** 2026-10-10  
+**Estado:** PARTIAL, pendiente de validación Chromium y de demostrar causa raíz T101.  
+**Rama:** `bwm-099-normal-combat-authority-handoff`  
+**PR:** [#51](https://github.com/jonhararagi/baseball-waifus/pull/51), abierto y sin fusionar.  
+**SHA de main conocido:** `988c0fa3c7c17077d18e5f7f0722726cae39a197`.
+
+### Estado inicial y R6
+
+- HEAD confirmado al inicio: `b5c93d23b91180c49a9bb0d88bed3d08aecfcab0`.
+- Run [R6 38055054272](https://github.com/jonhararagi/baseball-waifus/actions/runs/38055054272): terminado con `failure`; el job de CDP terminó, no sigue en curso.
+- [Visual QA R6 38055054275](https://github.com/jonhararagi/baseball-waifus/actions/runs/38055054275): el encargo previo informa `success`; no valida el comportamiento de T118 ni la causa raíz de T101.
+- Artefactos de R6 recuperados y no expirados: [T118](https://github.com/jonhararagi/baseball-waifus/actions/runs/38055054272), [T109](https://github.com/jonhararagi/baseball-waifus/actions/runs/38055054272), [T101](https://github.com/jonhararagi/baseball-waifus/actions/runs/38055054272), [trazas R5](https://github.com/jonhararagi/baseball-waifus/actions/runs/38055054272). La lista de jobs confirma T097, T101, T109, T118 y T114-R2 en fallo; T111, T117 y las comprobaciones BONE-004/Chromium nativo pasaron en esa ejecución histórica. Ninguno de estos resultados se considera PASS de R7.
+- Evidencia T101 previa: la excepción real `Invalid CharacterActor2D5 transition: ACTION -> FOCUS` aparece en la ruta de presentación. La divergencia entre actor de escenario y actor de formación ya se había observado, pero no estaba registrada la primera mutación que la origina.
+- Evidencia T118 previa: el snapshot posterior mostraba `TACTICAL / STRIKE`, timing inactivo, grade vacío y SCRAP/ledger sin cambios. Eso no prueba el grado devuelto por la llamada.
+
+### Cambios aplicados en R7-C1
+
+- `webapp/js/character_journey_browser_probe.mjs`: eliminada la primera secuencia de clics que ocurría antes de la línea base. Ahora se comprueba la geometría, se captura el contexto y el contador de eventos antes de una única secuencia CDP `mouseMoved / mousePressed / mouseReleased`. La aserción de diagnóstico no tiene reintento de clic.
+- T118 conserva las comprobaciones de exactamente un handler, una llamada resolver, un retorno correlacionado por `callSeq`, fuente `pointer`, grado `MISS`, resultado `STRIKE`, continuidad no terminal y frontera de recompensas. Se retiró la aserción obsoleta `round1.afterTiming.timingGrade === "MISS"` y la evidencia usa el grado del DTO retornado por el resolver.
+- `tools/qa/bwm101r5-instrumentation.js`: se añadieron observadores QA para `CombatStage.setActors`, `CombatPresentationDirector.setStage/_createRuntimeFormation/_ensureRuntimeFormation` y `CharacterFormation2D5.populate/attach/clear`, con IDs de referencia instrumentales monotónicos en `WeakMap` y snapshots de mapas/estado antes y después. Los wrappers delegan una sola vez, preservan retorno y re-lanzan excepciones. No se modificó el runtime productivo de actores.
+- Estos cambios ya se enviaron a la rama mediante commits separados. SHA de cada prueba y HEAD final deben anotarse después de la nueva ejecución, no inferirse de los SHA anteriores.
+
+### Validación
+
+| Comprobación | Estado en esta entrada |
+|---|---|
+| Consulta de PR, HEAD y estado de R6 | PASS |
+| Recuperación de lista de jobs y artefactos R6 | PASS |
+| Revisión de código de la secuencia T118 | PASS estático; no equivale a ejecución |
+| Prueba de fixtures `tools/qa/instrument-browser-site.test.mjs` | NOT RUN |
+| T118 Chromium sobre SHA R7 | NOT RUN |
+| T109 Chromium sobre SHA R7 | NOT RUN |
+| T101 con nueva traza de ciclo de vida | NOT RUN; causa raíz no demostrada |
+| T097, T111, T117, T114-R2, BONE-004 y Visual QA sobre SHA R7 | NOT RUN |
+| Publicación de artefactos R7 | NOT RUN |
+
+### Bloqueos y siguiente acción
+
+No se atribuyen T097 ni T114-R2 a la doble entrada sin nuevas evidencias. T101 permanece abierto hasta obtener una traza que incluya el primer reemplazo o creación divergente, referencias de objeto y secuencia de director. La instrumentación nueva aún debe verificarse con los fixtures y una reproducción real en Chromium. Si los artefactos no se generan, conservar el fallo explícito, no rebajar las aserciones.
+
+**Tiempo realmente invertido:** no medido por cronómetro.  
+**Temporizador R7-C1:** el flujo de entrada y la primera instrumentación se implementaron; validación automatizada, revisión de la traza y nueva CI siguen pendientes. Estimación restante: 1–3 horas si la correlación del navegador es reproducible; reserva de 1–2 horas adicionales si T101 necesita otra instrumentación o reproduce fallos independientes.  
+**Estimación global de finalización de BaseWarriors: Meta-Strike:** no puede calcularse rigurosamente a partir de esta tarea aislada; el lanzamiento multiplataforma permanece fuera de este temporizador.
