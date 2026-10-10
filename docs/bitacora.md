@@ -11051,7 +11051,7 @@ Pre-existing status is supported by Run `37550518856` on `847edd53f98ca75f0f7630
 **Estado:** PARTIAL / BLOCKED PARA INTEGRACIÓN PRODUCTIVA  
 **HEAD inicial inspeccionado:** `988c0fa3c7c17077d18e5f7f0722726cae39a197`  
 **Rama de trabajo:** `bwm-099-normal-combat-authority-handoff`  
-**PR:** pendiente de abrir tras validar los cambios de probes.
+**PR:** [#51 BWM-099 reward authority boundary and probe repair](https://github.com/jonhararagi/baseball-waifus/pull/51), abierto y sin fusionar.
 
 ### Hallazgos confirmados en el HEAD inicial
 
@@ -11079,8 +11079,8 @@ Pre-existing status is supported by Run `37550518856` on `847edd53f98ca75f0f7630
 
 **La integración productiva permanece BLOCKED.** La ruta de cliente conectada y el backend existen en código, pero no hay evidencia de endpoint productivo, autenticación real contra esa instancia, persistencia gestionada activa o smoke test externo. No se debe interpretar un workflow Chromium local ni un firmante efímero como despliegue real.
 
-Tras ejecutar CI en esta rama, abrir PR para revisión. La siguiente fase requiere una acción externa de provisión: configurar URL HTTPS del backend, Telegram bot token, clave privada de firma, allowlist CORS y persistencia gestionada, luego ejecutar smoke autenticado contra esa instancia. No añadir esos valores al repositorio.
+PR #51 está abierto para revisión; CI de Chromium y Visual QA se activaron al crear el PR y todavía estaban en ejecución en la última consulta. La siguiente fase requiere una acción externa de provisión: configurar URL HTTPS del backend, Telegram bot token, clave privada de firma, allowlist CORS y persistencia gestionada, luego ejecutar smoke autenticado contra esa instancia. No añadir esos valores al repositorio.
 
-**Pruebas de este turno:** no ejecutadas localmente; la integración GitHub de esta sesión permite editar y consultar archivos, pero no ejecutar el checkout del repositorio en un runner local. Los resultados de CI se registrarán tras la ejecución del workflow de la rama.
+**Pruebas de este turno:** no ejecutadas localmente; la integración GitHub de esta sesión permite editar y consultar archivos, pero no ejecutar el checkout del repositorio en un runner local. En el SHA `6d22e4bb2a6f46e9d9c59fe831c56b46e36d6c79`, los workflows T097 y Visual QA fueron iniciados por el evento `pull_request`; su resultado aún no estaba disponible al registrar esta actualización. No se declara ningún test como aprobado sin el resultado del runner.
 
 **Temporizador BWM-099:** inspección y corrección de probes estimadas en 4–8 horas. Provisión externa, despliegue, secrets y smoke productivo: duración no confirmada hasta conocer el proveedor y la disponibilidad de los recursos.
