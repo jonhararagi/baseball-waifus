@@ -1611,10 +1611,10 @@ async function run() {
         s => s.battlePhase === "VICTORY" && s.combatResult === "VICTORY",
         5000
       );
-      requireCondition(victory.scrap === beforeTerminal.scrap + 100, "T114-R Victory reward amount/order invalid", { beforeTerminal, victory });
-      requireCondition(victory.persistedScrap === beforeTerminal.persistedScrap + 100, "T114-R persisted victory reward amount invalid", { beforeTerminal, victory });
-      requireCondition(victory.rewardLedgerKeys.length === beforeTerminal.rewardLedgerKeys.length + 1, "T114-R victory reward ledger did not gain exactly one terminal application", { beforeTerminal, victory });
-      requireCondition(victory.rewardLedger?.[expectedBattleId] === true, "T114-R expected victory ledger entry missing", victory);
+      requireCondition(victory.scrap === beforeTerminal.scrap, "T114-R local demo must not grant authoritative Scrap", { beforeTerminal, victory });
+      requireCondition(victory.persistedScrap === beforeTerminal.persistedScrap, "T114-R local demo must not persist authoritative Scrap", { beforeTerminal, victory });
+      requireCondition(victory.rewardLedgerKeys.length === beforeTerminal.rewardLedgerKeys.length, "T114-R local demo reward ledger must remain unchanged", { beforeTerminal, victory });
+      requireCondition(!victory.rewardLedger?.[expectedBattleId], "T114-R local demo unexpectedly created a reward ledger entry", victory);
 
       const rewardApplication = {
         at_ms: Date.now() - runStartedAt,
@@ -1637,7 +1637,7 @@ async function run() {
       );
       requireCondition(completeState.battlePhase === "VICTORY", "T114-R victory terminal state changed during return", completeState);
       requireCondition(completeState.scrap === victory.scrap, "T114-R Scrap changed again after terminal return", { victory, completeState });
-      requireCondition(completeState.rewardLedgerKeys.length === 1, "T114-R reward ledger changed after terminal return", completeState);
+      requireCondition(completeState.rewardLedgerKeys.length === 0, "T114-R demo reward ledger changed after terminal return", completeState);
 
       const sameOriginErrors = pageExceptions
         .map((item) => item?.exception?.description || item?.text || "")
@@ -1667,10 +1667,11 @@ async function run() {
         terminalBoundary: {
           lastNonTerminal: "CLIMAX/TIMING ACTIVE",
           terminalResult: "VICTORY",
-          rewardObservedAfterTerminal: true,
+          rewardObservedAfterTerminal: false,
+          localRewardBlocked: true,
           scrapBefore: beforeTerminal.scrap,
           scrapAfter: victory.scrap,
-          expectedDelta: 100
+          expectedDelta: 0
         },
         consoleErrors: consoleErrors.map((entry) => ({ text:entry.text, url:entry.url, source:entry.source })),
         pageErrors: sameOriginErrors
@@ -1683,9 +1684,9 @@ async function run() {
       console.log("VICTORY = PASS_REAL");
       console.log("COMBAT RESULT = VICTORY");
       console.log("MATCH END = PASS_REAL_BY_TERMINAL_RESULT");
-      console.log("REWARD APPLICATION = PASS_REAL");
+      console.log("DEMO REWARD BLOCK = PASS_REAL");
       console.log("SCRAP AFTER TERMINAL = " + victory.scrap);
-      console.log("EXPECTED REWARD = +100 SCRAP");
+      console.log("EXPECTED REWARD = NONE // DEMO_ONLY");
       console.log("DUPLICATION = PASS_REAL");
       console.log("RETURN = PASS_REAL");
       console.log("TERMINAL BOUNDARY = PASS_REAL");
