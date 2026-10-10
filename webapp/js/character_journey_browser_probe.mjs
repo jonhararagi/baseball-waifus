@@ -203,7 +203,19 @@ async function dispatchCorrelatedTimingPointer(cdp, { task, attempt = 1, expecte
     requireCondition(target?.isCanvas === true, task + " physical Timing target is not the game canvas", target);
     await cdp.send("Input.setIgnoreInputEvents", { ignore: false });
 
-    const initial = await cdpEvaluate(cdp, clockExpression);
+    // Measure real CDP runtime-evaluation latency before selecting the live-window sample.
+    // The final sample is reused for timing, so the calibration does not consume a
+    // second, unaccounted evaluation after the timer reaches its target.
+    const evaluationRoundTripMs = [];
+    let initial = null;
+    for (let sampleIndex = 0; sampleIndex < 3; sampleIndex++) {
+      const sampleStart = performance.now();
+      initial = await cdpEvaluate(cdp, clockExpression);
+      evaluationRoundTripMs.push(performance.now() - sampleStart);
+    }
+    const sortedRtt = [...evaluationRoundTripMs].sort((a, b) => a - b);
+    const medianRttMs = sortedRtt[Math.floor(sortedRtt.length / 2)];
+    const maxRttMs = Math.max(...evaluationRoundTripMs);
     proof.windowAtPreparation = initial;
     requireCondition(initial?.active === true && Number.isFinite(initial.startedAt), task + " active Timing Ring window unavailable", initial);
     requireCondition(initial.phase === "CLIMAX", task + " timing window phase is not CLIMAX", initial);
@@ -212,24 +224,33 @@ async function dispatchCorrelatedTimingPointer(cdp, { task, attempt = 1, expecte
     if (expectedRound !== null) requireCondition(initial.round === expectedRound, task + " timing window belongs to wrong round", { expectedRound, initial });
     if (expectedTurn !== null) requireCondition(initial.tacticalTurn === expectedTurn, task + " timing window belongs to wrong turn", { expectedTurn, initial });
 
-    const leadMs = expectedGrade === "MISS" ? initial.hitWindowMs + initial.greatWindowMs + 20 : initial.greatWindowMs / 2 + 20;
+    const leadMs = expectedGrade === "MISS"
+      ? initial.hitWindowMs + initial.greatWindowMs + 20
+      : initial.greatWindowMs / 2 + 20;
     const scheduledElapsedMs = Math.max(0, initial.targetMs - leadMs);
-    proof.schedule = { strategy: expectedGrade === "MISS" ? "early-outside-hit-window" : "lead-by-half-great-window",
+    proof.schedulerCalibration = {
+      source: "measured Node/CDP runtime-evaluation round trips",
+      evaluationRoundTripMs,
+      medianEvaluationRoundTripMs: medianRttMs,
+      maxEvaluationRoundTripMs: maxRttMs
+    };
+    proof.schedule = {
+      strategy: expectedGrade === "MISS" ? "early-outside-hit-window" : "lead-by-half-great-window",
+      mechanism: "single Node timer derived from live startedAt/targetMs and measured CDP RTT; no polling loop",
       scheduledElapsedMs, leadMs, initialElapsedMs: initial.elapsedMs, targetMs: initial.targetMs,
-      hitWindowMs: initial.hitWindowMs, greatWindowMs: initial.greatWindowMs, durationMs: initial.durationMs };
-    const remainingMs = Math.max(500, initial.durationMs - Number(initial.elapsedMs || 0) + 250);
-    const scheduled = await waitFor(async () => {
-      const current = await cdpEvaluate(cdp, clockExpression);
-      proof.lastClockSample = current;
-      if (!current?.active) return { expired: true, ...current };
-      if (current.startedAt !== initial.startedAt) return { replaced: true, ...current };
-      return Number(current.elapsedMs) >= scheduledElapsedMs ? current : false;
-    }, { timeoutMs: remainingMs, intervalMs: 2, label: task + " timing schedule" });
-    proof.scheduledObservation = scheduled;
-    requireCondition(!scheduled.expired && !scheduled.replaced, task + " window expired or changed before input", { initial, scheduled });
-
+      hitWindowMs: initial.hitWindowMs, greatWindowMs: initial.greatWindowMs, durationMs: initial.durationMs,
+      timerWaitMs: Math.max(0, scheduledElapsedMs - Number(initial.elapsedMs || 0) - medianRttMs)
+    };
+    const timerWaitMs = proof.schedule.timerWaitMs;
+    const timerStart = performance.now();
+    if (timerWaitMs > 0) await sleep(timerWaitMs);
+    proof.schedule.actualNodeWaitMs = performance.now() - timerStart;
+    // The single baseline query includes the harness sequence and live TimingState.
+    // It is the final browser round trip before queuing the one physical input sequence.
     const baseline = await cdpEvaluate(cdp, "(() => { const r=window.__BWM101R7C2_READ_TIMING__?.()||{}; const t=r.timingState||null; const b=r.battle||{}; const d=window.__BWM101R5_DIAGNOSTICS__; const elapsedMs=Number.isFinite(Number(t?.startedAt))?performance.now()-Number(t.startedAt):null; return {sequence:d?.sequence??0,eventCount:d?.events?.length??0,phase:b.phase||'',round:b.round??null,tacticalTurn:b.tacticalTurn??null,window:t?{active:t.active===true,startedAt:t.startedAt??null,targetMs:t.targetMs??null,durationMs:t.durationMs??null,hitWindowMs:t.hitWindowMs??null,greatWindowMs:t.greatWindowMs??null,windowId:t.windowId||'',elapsedMs}:null}; })()");
     proof.baseline = baseline;
+    proof.scheduledObservation = baseline;
+    proof.schedule.baselineDeviationMs = Number(baseline?.window?.elapsedMs) - scheduledElapsedMs;
     const sameWindow = baseline?.window?.startedAt === initial.startedAt && baseline?.window?.targetMs === initial.targetMs && baseline?.window?.durationMs === initial.durationMs;
     requireCondition(sameWindow && baseline?.window?.active === true, task + " timing window changed between schedule and baseline", { initial, baseline });
     requireCondition(baseline.phase === "CLIMAX", task + " phase changed before physical input", baseline);
@@ -243,12 +264,20 @@ async function dispatchCorrelatedTimingPointer(cdp, { task, attempt = 1, expecte
         task + " missed high-confidence hit dispatch schedule", { baseline, schedule: proof.schedule });
     }
 
-    proof.dispatch = { startedAt: new Date().toISOString(), wallStartMs: Date.now(), eventSequence: ["mouseMoved", "mousePressed", "mouseReleased"] };
-    await cdp.send("Input.dispatchMouseEvent", { type: "mouseMoved", x, y, button: "none", buttons: 0 });
-    await cdp.send("Input.dispatchMouseEvent", { type: "mousePressed", x, y, button: "left", buttons: 1, clickCount: 1 });
-    await cdp.send("Input.dispatchMouseEvent", { type: "mouseReleased", x, y, button: "left", buttons: 0, clickCount: 1 });
+    proof.dispatch = { startedAt: new Date().toISOString(), wallStartMs: Date.now(), eventSequence: ["mouseMoved", "mousePressed", "mouseReleased"], dispatchMode: "queued-in-order-without-round-trip-gaps" };
+    // WebSocket/CDP preserves command order. Queue each of the three physical events
+    // synchronously and await all acknowledgements together, avoiding one RTT between
+    // mouseMoved and the actual mousePressed handler.
+    const dispatchStarted = performance.now();
+    const dispatched = await Promise.all([
+      cdp.send("Input.dispatchMouseEvent", { type: "mouseMoved", x, y, button: "none", buttons: 0 }),
+      cdp.send("Input.dispatchMouseEvent", { type: "mousePressed", x, y, button: "left", buttons: 1, clickCount: 1 }),
+      cdp.send("Input.dispatchMouseEvent", { type: "mouseReleased", x, y, button: "left", buttons: 0, clickCount: 1 })
+    ]);
     proof.dispatch.completedAt = new Date().toISOString();
     proof.dispatch.wallDurationMs = Date.now() - proof.dispatch.wallStartMs;
+    proof.dispatch.monotonicWallDurationMs = performance.now() - dispatchStarted;
+    proof.dispatch.commandAckCount = dispatched.length;
 
     const diagnostics = await cdpEvaluate(cdp, "(() => { const d=window.__BWM101R5_DIAGNOSTICS__; const events=d?.events||[]; return {sequence:d?.sequence??null,eventCount:events.length,events:events.filter(e=>Number(e.seq)>" + Number(baseline.sequence || 0) + ")}; })()");
     const events = diagnostics?.events || [];
@@ -287,7 +316,9 @@ async function dispatchCorrelatedTimingPointer(cdp, { task, attempt = 1, expecte
       task + " input did not produce exactly one resolver call and return", { baseline, resolverBefore, resolverAfter, events });
     requireCondition(Number(resolverCall.seq) === Number(resolverReturnEvent.callSeq),
       task + " resolver return callSeq does not match resolver-before seq", { resolverCall, resolverReturnEvent, events });
-    requireCondition(resolverCall.args?.[0] === "pointer", task + " resolver source was not pointer", { resolverCall, resolverReturnEvent });
+    const resolverSource = resolverCall.args?.[0]?.value ?? resolverCall.before?.source ?? null;
+    proof.resolution.source = resolverSource;
+    requireCondition(resolverSource === "pointer", task + " resolver source was not pointer", { resolverCall, resolverReturnEvent, resolverSource });
     requireCondition(proof.sameWindowCorrelation, task + " resolver did not use the baseline Timing Ring window", { baseline, resolverCall });
     requireCondition(grade.length > 0, task + " resolver return lacks direct grade DTO", { resolverReturn, resolverCall, resolverReturnEvent });
     const postGrade = String(runtimeImmediatelyAfterInput?.battle?.last_timing?.grade || runtimeImmediatelyAfterInput?.lastTiming?.grade || "").toUpperCase();
