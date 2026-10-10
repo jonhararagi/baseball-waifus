@@ -183,6 +183,134 @@ async function cdpEvaluate(cdp, expression) {
   return result?.result?.value;
 }
 
+
+async function dispatchCorrelatedTimingPointer(cdp, { task, attempt = 1, expectedGrade, expectedRound = null, expectedTurn = 5 }) {
+  const safeTask = String(task || "timing").toLowerCase().replace(/[^a-z0-9-]/g, "-");
+  const evidencePath = join(EVIDENCE_DIR, "timing-input-" + safeTask + "-" + String(attempt) + ".json");
+  const proof = { schema: "BWM-101-R7-C2-TIMING-INPUT", task, attempt, expectedGrade, expectedRound, expectedTurn,
+    sha: process.env.GITHUB_SHA || "local", runId: process.env.GITHUB_RUN_ID || "local", createdAt: new Date().toISOString(), status: "IN_PROGRESS" };
+  const persist = () => { try { mkdirSync(EVIDENCE_DIR, { recursive: true }); writeFileSync(evidencePath, JSON.stringify(proof, null, 2) + "\n", "utf8"); }
+    catch (error) { process.stderr.write("[BWM101R7C2] evidence write failed: " + String(error?.stack || error) + "\n"); } };
+  const clockExpression = "(() => { const r=window.__BW_T097_GET_RUNTIME__?.()||{}; const t=r.timingWindow||r.timingState||null; const b=r.battle||{}; const startedAt=Number(t?.startedAt); const elapsedMs=Number.isFinite(startedAt)?performance.now()-startedAt:Number(window.__BW_T097_TIMING_ELAPSED__?.()); return {active:t?.active===true,startedAt:Number.isFinite(startedAt)?startedAt:null,targetMs:Number(t?.targetMs??t?.target_ms),durationMs:Number(t?.durationMs??t?.duration_ms),hitWindowMs:Number(t?.hitWindowMs??t?.hit_window_ms),greatWindowMs:Number(t?.greatWindowMs??t?.great_window_ms),elapsedMs:Number.isFinite(elapsedMs)?elapsedMs:null,phase:b.phase||r.battlePhase||b.battlePhase||r.phase||'',round:Number.isFinite(Number(b.round))?Number(b.round):null,tacticalTurn:Number(b.tacticalTurn??r.tacticalTurn??NaN),lastTiming:b.last_timing??r.lastTiming??null}; })()";
+  try {
+    const geometry = await cdpEvaluate(cdp, "(() => { const c=document.querySelector('#gameCanvas'); const r=c?.getBoundingClientRect(); return c&&r?{left:r.left,top:r.top,width:r.width,height:r.height,viewportWidth:innerWidth,viewportHeight:innerHeight}:null; })()");
+    proof.geometry = geometry;
+    requireCondition(geometry && geometry.width > 0 && geometry.height > 0, task + " canvas geometry unavailable", geometry);
+    const x = geometry.left + geometry.width / 2, y = geometry.top + geometry.height / 2;
+    proof.inputPoint = { x, y };
+    const target = await cdpEvaluate(cdp, "(() => { const c=document.querySelector('#gameCanvas'); const e=document.elementFromPoint(" + x + "," + y + "); return {isCanvas:e===c,tag:e?.tagName||'',id:e?.id||''}; })()");
+    proof.target = target;
+    requireCondition(target?.isCanvas === true, task + " physical Timing target is not the game canvas", target);
+    await cdp.send("Input.setIgnoreInputEvents", { ignore: false });
+
+    const initial = await cdpEvaluate(cdp, clockExpression);
+    proof.windowAtPreparation = initial;
+    requireCondition(initial?.active === true && Number.isFinite(initial.startedAt), task + " active Timing Ring window unavailable", initial);
+    requireCondition(initial.phase === "CLIMAX", task + " timing window phase is not CLIMAX", initial);
+    requireCondition([initial.targetMs,initial.durationMs,initial.hitWindowMs,initial.greatWindowMs].every(Number.isFinite),
+      task + " timing window lacks target/duration/hit/great bands", initial);
+    if (expectedRound !== null) requireCondition(initial.round === expectedRound, task + " timing window belongs to wrong round", { expectedRound, initial });
+    if (expectedTurn !== null) requireCondition(initial.tacticalTurn === expectedTurn, task + " timing window belongs to wrong turn", { expectedTurn, initial });
+
+    const leadMs = expectedGrade === "MISS" ? initial.hitWindowMs + initial.greatWindowMs + 20 : initial.greatWindowMs / 2 + 20;
+    const scheduledElapsedMs = Math.max(0, initial.targetMs - leadMs);
+    proof.schedule = { strategy: expectedGrade === "MISS" ? "early-outside-hit-window" : "lead-by-half-great-window",
+      scheduledElapsedMs, leadMs, initialElapsedMs: initial.elapsedMs, targetMs: initial.targetMs,
+      hitWindowMs: initial.hitWindowMs, greatWindowMs: initial.greatWindowMs, durationMs: initial.durationMs };
+    const remainingMs = Math.max(500, initial.durationMs - Number(initial.elapsedMs || 0) + 250);
+    const scheduled = await waitFor(async () => {
+      const current = await cdpEvaluate(cdp, clockExpression);
+      proof.lastClockSample = current;
+      if (!current?.active) return { expired: true, ...current };
+      if (current.startedAt !== initial.startedAt) return { replaced: true, ...current };
+      return Number(current.elapsedMs) >= scheduledElapsedMs ? current : false;
+    }, { timeoutMs: remainingMs, intervalMs: 2, label: task + " timing schedule" });
+    proof.scheduledObservation = scheduled;
+    requireCondition(!scheduled.expired && !scheduled.replaced, task + " window expired or changed before input", { initial, scheduled });
+
+    const baseline = await cdpEvaluate(cdp, "(() => { const r=window.__BW_T097_GET_RUNTIME__?.()||{}; const t=r.timingWindow||r.timingState||null; const b=r.battle||{}; const d=window.__BWM101R5_DIAGNOSTICS__; const startedAt=Number(t?.startedAt); const elapsedMs=Number.isFinite(startedAt)?performance.now()-startedAt:Number(window.__BW_T097_TIMING_ELAPSED__?.()); return {sequence:d?.sequence??0,eventCount:d?.events?.length??0,phase:b.phase||r.battlePhase||b.battlePhase||r.phase||'',round:Number.isFinite(Number(b.round))?Number(b.round):null,tacticalTurn:Number(b.tacticalTurn??r.tacticalTurn??NaN),window:t?{active:t.active===true,startedAt:Number.isFinite(startedAt)?startedAt:null,targetMs:Number(t.targetMs??t.target_ms),durationMs:Number(t.durationMs??t.duration_ms),hitWindowMs:Number(t.hitWindowMs??t.hit_window_ms),greatWindowMs:Number(t.greatWindowMs??t.great_window_ms),elapsedMs:Number.isFinite(elapsedMs)?elapsedMs:null}:null}; })()");
+    proof.baseline = baseline;
+    const sameWindow = baseline?.window?.startedAt === initial.startedAt && baseline?.window?.targetMs === initial.targetMs && baseline?.window?.durationMs === initial.durationMs;
+    requireCondition(sameWindow && baseline?.window?.active === true, task + " timing window changed between schedule and baseline", { initial, baseline });
+    requireCondition(baseline.phase === "CLIMAX", task + " phase changed before physical input", baseline);
+    if (expectedRound !== null) requireCondition(baseline.round === expectedRound, task + " baseline round changed", { expectedRound, baseline });
+    if (expectedTurn !== null) requireCondition(baseline.tacticalTurn === expectedTurn, task + " baseline turn changed", { expectedTurn, baseline });
+    if (expectedGrade === "MISS") {
+      requireCondition(baseline.window.elapsedMs < baseline.window.targetMs - baseline.window.hitWindowMs - 10,
+        task + " missed early MISS dispatch schedule", { baseline, schedule: proof.schedule });
+    } else {
+      requireCondition(baseline.window.elapsedMs < baseline.window.targetMs + baseline.window.greatWindowMs / 2,
+        task + " missed high-confidence hit dispatch schedule", { baseline, schedule: proof.schedule });
+    }
+
+    proof.dispatch = { startedAt: new Date().toISOString(), wallStartMs: Date.now(), eventSequence: ["mouseMoved", "mousePressed", "mouseReleased"] };
+    await cdp.send("Input.dispatchMouseEvent", { type: "mouseMoved", x, y, button: "none", buttons: 0 });
+    await cdp.send("Input.dispatchMouseEvent", { type: "mousePressed", x, y, button: "left", buttons: 1, clickCount: 1 });
+    await cdp.send("Input.dispatchMouseEvent", { type: "mouseReleased", x, y, button: "left", buttons: 0, clickCount: 1 });
+    proof.dispatch.completedAt = new Date().toISOString();
+    proof.dispatch.wallDurationMs = Date.now() - proof.dispatch.wallStartMs;
+
+    const diagnostics = await cdpEvaluate(cdp, "(() => { const d=window.__BWM101R5_DIAGNOSTICS__; const events=d?.events||[]; return {sequence:d?.sequence??null,eventCount:events.length,events:events.filter(e=>Number(e.seq)>" + Number(baseline.sequence || 0) + ")}; })()");
+    const events = diagnostics?.events || [];
+    proof.eventsAfterBaseline = events;
+    proof.diagnosticsAfterDispatch = { sequence: diagnostics?.sequence ?? null, eventCount: diagnostics?.eventCount ?? null };
+    const resolverBefore = events.filter(e => e.type === "T118.resolveTimingInput:before");
+    const resolverAfter = events.filter(e => e.type === "T118.resolveTimingInput:after");
+    const pointerDowns = events.filter(e => e.type === "T118.dom-input" && e.eventType === "pointerdown");
+    const pointerUps = events.filter(e => e.type === "T118.dom-input" && e.eventType === "pointerup");
+    const handlers = events.filter(e => e.type === "T118.handleTimingPointer:before" && e.eventType === "pointerdown");
+    const resolverCall = resolverBefore.length === 1 ? resolverBefore[0] : null;
+    const resolverReturnEvent = resolverAfter.length === 1 ? resolverAfter[0] : null;
+    const resolverReturn = resolverReturnEvent?.result ?? null;
+    const elapsedMs = Number(resolverCall?.before?.elapsedMs ?? resolverReturn?.elapsed_ms ?? resolverReturn?.elapsedMs);
+    const targetMs = Number(resolverCall?.before?.targetMs ?? resolverReturn?.target_ms ?? resolverReturn?.targetMs ?? baseline.window.targetMs);
+    const deltaMs = Number(resolverReturn?.delta_ms ?? resolverReturn?.deltaMs ?? (elapsedMs - targetMs));
+    const grade = String(resolverReturn?.grade || "").toUpperCase();
+    const runtimeImmediatelyAfterInput = await cdpEvaluate(cdp, "window.__BW_T097_GET_RUNTIME__?.() || null");
+    proof.resolverEvents = { resolverBefore, resolverAfter, pointerDowns, pointerUps, handlers };
+    proof.resolverCall = resolverCall;
+    proof.resolverReturnEvent = resolverReturnEvent;
+    proof.resolverReturn = resolverReturn;
+    proof.resolution = { grade, elapsedMs: Number.isFinite(elapsedMs) ? elapsedMs : null,
+      targetMs: Number.isFinite(targetMs) ? targetMs : null, deltaMs: Number.isFinite(deltaMs) ? deltaMs : null,
+      expectedGrade, dispatchDeviationMs: Number.isFinite(elapsedMs) ? elapsedMs - scheduledElapsedMs : null };
+    proof.runtimeImmediatelyAfterInput = runtimeImmediatelyAfterInput;
+    proof.sameWindowCorrelation = Boolean(resolverCall && resolverCall.before?.startedAt === baseline.window.startedAt
+      && resolverCall.before?.targetMs === baseline.window.targetMs && resolverCall.before?.durationMs === baseline.window.durationMs);
+    proof.status = "CAPTURED";
+    persist();
+
+    requireCondition(pointerDowns.length === 1, task + " expected exactly one pointerdown after baseline", { baseline, pointerDowns, events });
+    requireCondition(pointerUps.length === 1, task + " expected exactly one pointerup after baseline", { baseline, pointerUps, events });
+    requireCondition(handlers.length === 1, task + " input did not reach exactly one pointer handler", { baseline, handlers, events });
+    requireCondition(resolverBefore.length === 1 && resolverAfter.length === 1,
+      task + " input did not produce exactly one resolver call and return", { baseline, resolverBefore, resolverAfter, events });
+    requireCondition(Number(resolverCall.seq) === Number(resolverReturnEvent.callSeq),
+      task + " resolver return callSeq does not match resolver-before seq", { resolverCall, resolverReturnEvent, events });
+    requireCondition(resolverCall.args?.[0] === "pointer", task + " resolver source was not pointer", { resolverCall, resolverReturnEvent });
+    requireCondition(proof.sameWindowCorrelation, task + " resolver did not use the baseline Timing Ring window", { baseline, resolverCall });
+    requireCondition(grade.length > 0, task + " resolver return lacks direct grade DTO", { resolverReturn, resolverCall, resolverReturnEvent });
+    const postGrade = String(runtimeImmediatelyAfterInput?.battle?.last_timing?.grade || runtimeImmediatelyAfterInput?.lastTiming?.grade || "").toUpperCase();
+    requireCondition(postGrade === grade, task + " runtime lastTiming disagrees with resolver return", { grade, postGrade, resolverReturn, runtimeImmediatelyAfterInput });
+    if (expectedGrade === "MISS") {
+      requireCondition(grade === "MISS" && Math.abs(deltaMs) > baseline.window.hitWindowMs,
+        task + " expected MISS outside hitWindow; actual grade/delta differ", { grade, elapsedMs, targetMs, deltaMs, baseline, resolverReturn });
+    } else {
+      requireCondition(grade !== "MISS" && Math.abs(deltaMs) <= baseline.window.greatWindowMs,
+        task + " expected valid Timing hit but return fell outside GREAT band", { grade, elapsedMs, targetMs, deltaMs, baseline, resolverReturn });
+    }
+    proof.status = "PASS_CORRELATED_INPUT";
+    persist();
+    return proof;
+  } catch (error) {
+    proof.status = "FAILED";
+    proof.failure = String(error?.stack || error);
+    proof.failedAt = new Date().toISOString();
+    persist();
+    throw error;
+  }
+}
+
 async function cdpClickSelector(cdp, selector) {
   const box = await cdpEvaluate(cdp, `(() => {
     const el = document.querySelector(${JSON.stringify(selector)});
@@ -866,25 +994,11 @@ async function run() {
         6000
       );
 
-      const timingElapsedAtInput = await waitFor(
-        async () => {
-          const elapsed = await cdpEvaluate(cdp, "window.__BW_T097_TIMING_ELAPSED__?.()");
-          return Number.isFinite(Number(elapsed)) && Number(elapsed) >= 690 && Number(elapsed) <= 760 ? Number(elapsed) : false;
-        },
-        { timeoutMs: 5000, intervalMs: 5, label: "T097 timing target band" }
-      );
+      const timingAttempt = await dispatchCorrelatedTimingPointer(cdp, {
+        task: "T097", attempt: 1, expectedGrade: "HIT", expectedRound: 1, expectedTurn: 5
+      });
+      const timingElapsedAtInput = timingAttempt.resolution.elapsedMs;
       const timing = await readRuntime();
-      requireCondition(timing.timingActive === true, "T097 timing window closed before physical input", timing);
-      const rect = await cdpEvaluate(cdp, "(() => { const c = document.querySelector('#gameCanvas'); const r = c?.getBoundingClientRect(); return r ? { left:r.left, top:r.top, width:r.width, height:r.height } : null; })()");
-      requireCondition(rect && rect.width > 0 && rect.height > 0, "T097 timing canvas geometry unavailable", rect);
-      const clickX = rect.left + rect.width / 2;
-      const clickY = rect.top + rect.height / 2;
-      const target = await cdpEvaluate(cdp, "(() => { const e = document.elementFromPoint(" + clickX + ", " + clickY + "); return { tag:e?.tagName || '', id:e?.id || '', isCanvas:e === document.querySelector('#gameCanvas') }; })()");
-      requireCondition(target.isCanvas === true, "T097 timing target is not the game canvas", target);
-      await cdp.send("Input.setIgnoreInputEvents", { ignore: false });
-      await cdp.send("Input.dispatchMouseEvent", { type:"mouseMoved", x:clickX, y:clickY, button:"none", buttons:0 });
-      await cdp.send("Input.dispatchMouseEvent", { type:"mousePressed", x:clickX, y:clickY, button:"left", buttons:1, clickCount:1 });
-      await cdp.send("Input.dispatchMouseEvent", { type:"mouseReleased", x:clickX, y:clickY, button:"left", buttons:0, clickCount:1 });
 
       const victory = await mark(
         "VICTORY",
@@ -1211,48 +1325,23 @@ async function run() {
         requireCondition(beforeTiming.scrap === 0 && beforeTiming.persistedScrap === 0, "T109 Scrap changed before non-terminal timing", beforeTiming);
         requireCondition(beforeTiming.rewardLedgerKeys.length === 0, "T109 reward ledger changed before non-terminal timing", beforeTiming);
 
-        await sleep(120);
-        const rect = await cdpEvaluate(cdp, "(() => { const r=document.querySelector('#gameCanvas')?.getBoundingClientRect(); return r ? {left:r.left,top:r.top,width:r.width,height:r.height} : null; })()");
-        requireCondition(rect && rect.width > 0 && rect.height > 0, "T109 canvas geometry unavailable", rect);
-        const x = rect.left + rect.width / 2;
-        const y = rect.top + rect.height / 2;
-        const target = await cdpEvaluate(cdp, "(() => document.elementFromPoint(" + x + "," + y + ") === document.querySelector('#gameCanvas'))()");
-        requireCondition(target === true, "T109 physical Timing target is not canvas");
-        // Baseline is captured after readiness/geometry checks and immediately before
-        // the sole physical input. Never retry with a second click if evidence is incomplete.
-        const timingInputContext = await cdpEvaluate(cdp, "(() => { const r=window.__BW_T097_GET_RUNTIME__?.()||{}; const t=r.timingWindow||null; const d=window.__BWM101R5_DIAGNOSTICS__; return {sequence:d?.sequence??null,eventCount:d?.events?.length??0,phase:r.battle?.phase||r.battle?.battlePhase||'',tacticalTurn:r.battle?.tacticalTurn??null,window:t?{active:t.active,startedAt:t.startedAt??null,targetMs:t.targetMs??null,durationMs:t.durationMs??null,windowId:t.windowId||''}:null}; })()");
-        requireCondition(timingInputContext?.phase === "CLIMAX" && timingInputContext?.window?.active === true, "Timing input baseline is not an active CLIMAX window", timingInputContext);
-        requireCondition(timingInputContext?.window && Number.isFinite(Number(timingInputContext.window.startedAt)), "T118 active Timing Ring window identity unavailable", timingInputContext);
-        await cdp.send("Input.setIgnoreInputEvents", { ignore:false });
-        await cdp.send("Input.dispatchMouseEvent", { type:"mouseMoved", x, y, button:"none", buttons:0 });
-        await cdp.send("Input.dispatchMouseEvent", { type:"mousePressed", x, y, button:"left", buttons:1, clickCount:1 });
-        await cdp.send("Input.dispatchMouseEvent", { type:"mouseReleased", x, y, button:"left", buttons:0, clickCount:1 });
-
-        const timingResolutionEvidence = await cdpEvaluate(cdp, "(() => { const d=window.__BWM101R5_DIAGNOSTICS__; const all=d?.events||[]; return {sequence:d?.sequence??null,events:all.slice(" + timingInputContext.eventCount + ").map(e=>({seq:e.seq,type:e.type,callSeq:e.callSeq,at:e.at,method:e.method,args:e.args,before:e.before,result:e.result,after:e.after})),count:all.length}; })()");
-        const synchronousResolver = await cdpEvaluate(cdp, "window.__BW_T097_GET_RUNTIME__?.() || null");
-
+        const timingAttempt = await dispatchCorrelatedTimingPointer(cdp, {
+          task: T118_NON_HIT_REWARD_VALIDATION ? "T118" : "T109",
+          attempt: round, expectedGrade: "MISS", expectedRound: round, expectedTurn: 5
+        });
+        const resolverReturn = timingAttempt.resolverReturn;
+        const synchronousResolver = timingAttempt.runtimeImmediatelyAfterInput;
         const afterTiming = await mark("ROUND " + round + " RESULT", s => s.timingActive === false && ["TACTICAL","VICTORY","DEFEAT"].includes(s.battlePhase), 5000);
-        if (T118_NON_HIT_REWARD_VALIDATION) {
-          const diagEvents = timingResolutionEvidence?.events || [];
-          const resolverBefore = diagEvents.filter(e => e.type === "T118.resolveTimingInput:before");
-          const resolverAfter = diagEvents.filter(e => e.type === "T118.resolveTimingInput:after");
-          const handlerEvents = diagEvents.filter(e => e.type === "T118.handleTimingPointer:before");
-          const physicalEvents = diagEvents.filter(e => e.type === "T118.dom-input");
-          requireCondition(physicalEvents.length >= 1, "T118 physical pointer input was not observed by R5 instrumentation", { timingInputContext, timingResolutionEvidence });
-          requireCondition(handlerEvents.length === 1, "T118 physical input did not reach exactly one real pointer handler", { handlerEvents, timingResolutionEvidence });
-          requireCondition(resolverBefore.length === 1 && resolverAfter.length === 1, "T118 physical input did not produce exactly one observed resolver call/return", { resolverBefore, resolverAfter, timingResolutionEvidence });
-          requireCondition(resolverBefore[0].callSeq === resolverAfter[0].callSeq, "T118 resolver return did not correlate to its matching call", { resolverBefore, resolverAfter });
-          requireCondition(String(resolverBefore[0].args?.[0]?.source || resolverBefore[0].before?.source || "pointer") === "pointer", "T118 correlated resolver source was not pointer", { resolverBefore, resolverAfter });
-          const returnedTiming = resolverAfter[0].result;
-          const returnedGrade = String(returnedTiming?.grade || returnedTiming?.timing?.grade || "").toUpperCase();
-          requireCondition(returnedGrade === "MISS", "T118 actual resolveTimingInput return was not MISS", { returnedTiming, resolverBefore, resolverAfter, timingInputContext, synchronousResolver });
-          requireCondition(synchronousResolver?.battle?.last_timing?.grade === returnedGrade, "T118 runtime snapshot disagrees with observed resolver return", { returnedGrade, synchronousResolver });
-          requireCondition(afterTiming.combatResult === "STRIKE", "T118 Combat Result was not STRIKE", afterTiming);
-          requireCondition(afterTiming.battlePhase === "TACTICAL", "T118 MISS did not remain non-terminal", afterTiming);
-          requireCondition(afterTiming.match_end !== true, "T118 MISS produced match_end", afterTiming);
-        }
-        if (afterTiming.battlePhase !== "TACTICAL") return { beforeTiming, afterTiming, afterReturn: afterTiming, synchronousResolver, terminal: afterTiming.battlePhase };
 
+        requireCondition(resolverReturn?.grade === "MISS", "T109 correlated resolver return was not MISS for round " + round, timingAttempt);
+        requireCondition(timingAttempt.sameWindowCorrelation === true, "T109 resolver return was not correlated to this round's active Timing Ring", timingAttempt);
+        const runtimeLastGrade = String(synchronousResolver?.battle?.last_timing?.grade || synchronousResolver?.lastTiming?.grade || "").toUpperCase();
+        requireCondition(runtimeLastGrade === String(resolverReturn?.grade || "").toUpperCase(), "T109 immediate runtime lastTiming disagrees with its resolver return", { timingAttempt, synchronousResolver });
+        if (afterTiming.battlePhase !== "TACTICAL") {
+          return { beforeTiming, afterTiming, afterReturn: afterTiming, synchronousResolver, resolverReturn, timingInputEvidence: timingAttempt, terminal: afterTiming.battlePhase };
+        }
+
+        requireCondition(afterTiming.combatResult === "STRIKE", "T109 MISS did not resolve to STRIKE", afterTiming);
         requireCondition(afterTiming.scrap === beforeTiming.scrap, "T109 Scrap changed after non-terminal Timing", { beforeTiming, afterTiming });
         requireCondition(afterTiming.persistedScrap === beforeTiming.persistedScrap, "T109 persisted Scrap changed after non-terminal Timing", { beforeTiming, afterTiming });
         requireCondition(afterTiming.rewardLedgerKeys.length === beforeTiming.rewardLedgerKeys.length, "T109 reward ledger changed after non-terminal Timing", { beforeTiming, afterTiming });
@@ -1262,7 +1351,7 @@ async function run() {
         requireCondition(afterReturn.scrap === beforeTiming.scrap, "T109 Scrap changed after non-terminal return", { beforeTiming, afterReturn });
         requireCondition(afterReturn.persistedScrap === beforeTiming.persistedScrap, "T109 persisted Scrap changed after non-terminal return", { beforeTiming, afterReturn });
         requireCondition(afterReturn.rewardLedgerKeys.length === beforeTiming.rewardLedgerKeys.length, "T109 reward ledger changed after non-terminal return", { beforeTiming, afterReturn });
-        return { beforeTiming, afterTiming, afterReturn, synchronousResolver, resolverReturn: (timingResolutionEvidence?.events || []).find(e => e.type === "T118.resolveTimingInput:after")?.result || null, terminal: null };
+        return { beforeTiming, afterTiming, afterReturn, synchronousResolver, resolverReturn, timingInputEvidence: timingAttempt, terminal: null };
       };
 
       const url = baseUrl + "?qa=t097";
@@ -1302,6 +1391,8 @@ async function run() {
         const finalState = await readRewardState();
         // Timing grade is transient and can reset during the next tactical frame; assert it on the captured result DTO instead.
         requireCondition(round1.resolverReturn?.grade === "MISS", "T118 correlated resolver return was not MISS", round1.resolverReturn);
+        requireCondition(round1.timingInputEvidence?.resolverCall?.seq === round1.timingInputEvidence?.resolverReturnEvent?.callSeq, "T118 resolver return did not correlate to the physical-input call", round1.timingInputEvidence);
+        requireCondition(round1.timingInputEvidence?.sameWindowCorrelation === true, "T118 resolver did not use the baseline Timing Ring window", round1.timingInputEvidence);
         requireCondition(round1.afterTiming.combatResult === "STRIKE", "T118 resolved Combat Result was not STRIKE", round1.afterTiming);
         requireCondition(round1.afterTiming.battlePhase === "TACTICAL", "T118 MISS did not continue combat", round1.afterTiming);
         requireCondition(finalState.battlePhase === "TACTICAL", "T118 combat did not continue", finalState);
@@ -1331,7 +1422,7 @@ async function run() {
           afterTiming: round1.afterTiming,
           postMiss: round1.afterReturn,
           finalState,
-          timingInput: { method: "CDP Input.dispatchMouseEvent", sequence: ["mouseMoved","mousePressed","mouseReleased"], waitMs: 120, expectedGrade: "MISS" },
+          timingInput: { method: "CDP Input.dispatchMouseEvent", sequence: ["mouseMoved","mousePressed","mouseReleased"], timingAttempt: round1.timingInputEvidence, expectedGrade: "MISS" },
           rewardBoundary: { noVictory: finalState.battlePhase !== "VICTORY", noMatchEnd: true, scrapUnchanged: finalState.scrap === initial.scrap, persistedScrapUnchanged: finalState.persistedScrap === initial.persistedScrap, ledgerUnchanged: finalState.rewardLedgerKeys.length === initial.rewardLedgerKeys.length },
           at_ms: Date.now() - runStartedAt
         };
@@ -1658,26 +1749,11 @@ async function run() {
       requireCondition(beforeTerminal.persistedScrap === initial.persistedScrap, "T114-R persisted Scrap changed before terminal", { initial, beforeTerminal });
       requireCondition(beforeTerminal.rewardLedgerKeys.length === initial.rewardLedgerKeys.length, "T114-R reward ledger changed before terminal", { initial, beforeTerminal });
 
-      await sleep(620);
-      const elapsedAtInput = await cdpEvaluate(cdp, "window.__BW_T097_TIMING_ELAPSED__?.()");
-      requireCondition(
-        Number.isFinite(Number(elapsedAtInput)) && Number(elapsedAtInput) > 0 && Number(elapsedAtInput) < 860,
-        "T114-R timing window closed before terminal input",
-        { elapsedAtInput }
-      );
-
+      const timingAttempt = await dispatchCorrelatedTimingPointer(cdp, {
+        task: "T114-R2", attempt: 1, expectedGrade: "HIT", expectedRound: 1, expectedTurn: 5
+      });
+      const elapsedAtInput = timingAttempt.resolution.elapsedMs;
       const timingInput = await readRuntime();
-      requireCondition(timingInput.timingActive === true, "T114-R timing closed before terminal input", timingInput);
-      const rect = await cdpEvaluate(cdp, "(() => { const r=document.querySelector('#gameCanvas')?.getBoundingClientRect(); return r ? {left:r.left,top:r.top,width:r.width,height:r.height} : null; })()");
-      requireCondition(rect && rect.width > 0 && rect.height > 0, "T114-R timing canvas geometry unavailable", rect);
-      const x = rect.left + rect.width / 2;
-      const y = rect.top + rect.height / 2;
-      const target = await cdpEvaluate(cdp, "(() => document.elementFromPoint(" + x + "," + y + ") === document.querySelector('#gameCanvas'))()");
-      requireCondition(target === true, "T114-R physical timing target is not canvas");
-      await cdp.send("Input.setIgnoreInputEvents", { ignore:false });
-      await cdp.send("Input.dispatchMouseEvent", { type:"mouseMoved", x, y, button:"none", buttons:0 });
-      await cdp.send("Input.dispatchMouseEvent", { type:"mousePressed", x, y, button:"left", buttons:1, clickCount:1 });
-      await cdp.send("Input.dispatchMouseEvent", { type:"mouseReleased", x, y, button:"left", buttons:0, clickCount:1 });
 
       const victory = await mark(
         "VICTORY",
@@ -1695,6 +1771,7 @@ async function run() {
       requireCondition(!victory.rewardLedger?.[expectedBattleId], "T114-R local demo unexpectedly created a reward ledger entry", victory);
 
       const rewardApplication = {
+        timingInputEvidence: timingAttempt,
         at_ms: Date.now() - runStartedAt,
         scrap: victory.scrap,
         persistedScrap: victory.persistedScrap,
