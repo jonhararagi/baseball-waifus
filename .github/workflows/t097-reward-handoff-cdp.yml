@@ -1,4 +1,4 @@
-name: T097 Normal Combat Reward Handoff CDP QA
+name: T097 Local Demo Reward Boundary CDP QA
 
 on:
   push:
@@ -128,7 +128,7 @@ jobs:
           name: bone004-reward-authority-browser-evidence
           path: browser-evidence/BONE-004/
           if-no-files-found: warn
-      - name: Run T097 reward handoff proof
+      - name: Run T097 local demo reward-blocking proof
         shell: bash
         env:
           T072_SITE_DIR: site
