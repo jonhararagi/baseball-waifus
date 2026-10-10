@@ -1222,15 +1222,35 @@ async function run() {
         await cdp.send("Input.dispatchMouseEvent", { type:"mouseMoved", x, y, button:"none", buttons:0 });
         await cdp.send("Input.dispatchMouseEvent", { type:"mousePressed", x, y, button:"left", buttons:1, clickCount:1 });
         await cdp.send("Input.dispatchMouseEvent", { type:"mouseReleased", x, y, button:"left", buttons:0, clickCount:1 });
-        // Capture the renderer's retained resolver output immediately after the real
-        // pointer handler returns, before polling can observe a later frame.
+        // Capture the active Timing Ring identity and diagnostic baseline before
+        // injecting one physical pointer input. The grade assertion uses the R5
+        // wrapper's return DTO, never the transient canvas dataset.
+        const timingInputContext = await cdpEvaluate(cdp, "(() => { const r=window.__BW_T097_GET_RUNTIME__?.()||{}; const t=r.battle?.timingState||null; const d=window.__BWM101R5_DIAGNOSTICS__; return {sequence:d?.sequence??null,eventCount:d?.events?.length??0,phase:r.battle?.phase||r.battle?.battlePhase||'',tacticalTurn:r.battle?.tacticalTurn??null,window:t?{startedAt:t.startedAt??null,targetMs:t.targetMs??null,durationMs:t.durationMs??null}:null}; })()");
+        requireCondition(timingInputContext?.window && Number.isFinite(Number(timingInputContext.window.startedAt)), "T118 active Timing Ring window identity unavailable", timingInputContext);
+        await cdp.send("Input.setIgnoreInputEvents", { ignore:false });
+        await cdp.send("Input.dispatchMouseEvent", { type:"mouseMoved", x, y, button:"none", buttons:0 });
+        await cdp.send("Input.dispatchMouseEvent", { type:"mousePressed", x, y, button:"left", buttons:1, clickCount:1 });
+        await cdp.send("Input.dispatchMouseEvent", { type:"mouseReleased", x, y, button:"left", buttons:0, clickCount:1 });
+
+        const timingResolutionEvidence = await cdpEvaluate(cdp, "(() => { const d=window.__BWM101R5_DIAGNOSTICS__; const all=d?.events||[]; return {sequence:d?.sequence??null,events:all.slice(" + timingInputContext.eventCount + ").map(e=>({seq:e.seq,type:e.type,callSeq:e.callSeq,at:e.at,method:e.method,args:e.args,before:e.before,result:e.result,after:e.after})),count:all.length}; })()");
         const synchronousResolver = await cdpEvaluate(cdp, "window.__BW_T097_GET_RUNTIME__?.() || null");
 
         const afterTiming = await mark("ROUND " + round + " RESULT", s => s.timingActive === false && ["TACTICAL","VICTORY","DEFEAT"].includes(s.battlePhase), 5000);
         if (T118_NON_HIT_REWARD_VALIDATION) {
-          requireCondition(synchronousResolver?.timing?.grade === "MISS", "T118 synchronous resolver Timing Grade was not MISS", synchronousResolver);
-          requireCondition(synchronousResolver?.battle?.last_timing?.grade === "MISS", "T118 combat runtime did not retain the same resolved Timing Grade", synchronousResolver);
-          requireCondition(afterTiming.timingGrade === "MISS", "T118 Timing Grade was not MISS", afterTiming);
+          const diagEvents = timingResolutionEvidence?.events || [];
+          const resolverBefore = diagEvents.filter(e => e.type === "T118.resolveTimingInput:before");
+          const resolverAfter = diagEvents.filter(e => e.type === "T118.resolveTimingInput:after");
+          const handlerEvents = diagEvents.filter(e => e.type === "T118.handleTimingPointer:before");
+          const physicalEvents = diagEvents.filter(e => e.type === "T118.dom-input");
+          requireCondition(physicalEvents.length >= 1, "T118 physical pointer input was not observed by R5 instrumentation", { timingInputContext, timingResolutionEvidence });
+          requireCondition(handlerEvents.length === 1, "T118 physical input did not reach exactly one real pointer handler", { handlerEvents, timingResolutionEvidence });
+          requireCondition(resolverBefore.length === 1 && resolverAfter.length === 1, "T118 physical input did not produce exactly one observed resolver call/return", { resolverBefore, resolverAfter, timingResolutionEvidence });
+          requireCondition(resolverBefore[0].callSeq === resolverAfter[0].callSeq, "T118 resolver return did not correlate to its matching call", { resolverBefore, resolverAfter });
+          requireCondition(String(resolverBefore[0].args?.[0]?.source || resolverBefore[0].before?.source || "pointer") === "pointer", "T118 correlated resolver source was not pointer", { resolverBefore, resolverAfter });
+          const returnedTiming = resolverAfter[0].result;
+          const returnedGrade = String(returnedTiming?.grade || returnedTiming?.timing?.grade || "").toUpperCase();
+          requireCondition(returnedGrade === "MISS", "T118 actual resolveTimingInput return was not MISS", { returnedTiming, resolverBefore, resolverAfter, timingInputContext, synchronousResolver });
+          requireCondition(synchronousResolver?.battle?.last_timing?.grade === returnedGrade, "T118 runtime snapshot disagrees with observed resolver return", { returnedGrade, synchronousResolver });
           requireCondition(afterTiming.combatResult === "STRIKE", "T118 Combat Result was not STRIKE", afterTiming);
           requireCondition(afterTiming.battlePhase === "TACTICAL", "T118 MISS did not remain non-terminal", afterTiming);
           requireCondition(afterTiming.match_end !== true, "T118 MISS produced match_end", afterTiming);
