@@ -1218,14 +1218,10 @@ async function run() {
         const y = rect.top + rect.height / 2;
         const target = await cdpEvaluate(cdp, "(() => document.elementFromPoint(" + x + "," + y + ") === document.querySelector('#gameCanvas'))()");
         requireCondition(target === true, "T109 physical Timing target is not canvas");
-        await cdp.send("Input.setIgnoreInputEvents", { ignore:false });
-        await cdp.send("Input.dispatchMouseEvent", { type:"mouseMoved", x, y, button:"none", buttons:0 });
-        await cdp.send("Input.dispatchMouseEvent", { type:"mousePressed", x, y, button:"left", buttons:1, clickCount:1 });
-        await cdp.send("Input.dispatchMouseEvent", { type:"mouseReleased", x, y, button:"left", buttons:0, clickCount:1 });
-        // Capture the active Timing Ring identity and diagnostic baseline before
-        // injecting one physical pointer input. The grade assertion uses the R5
-        // wrapper's return DTO, never the transient canvas dataset.
+        // Baseline is captured after readiness/geometry checks and immediately before
+        // the sole physical input. Never retry with a second click if evidence is incomplete.
         const timingInputContext = await cdpEvaluate(cdp, "(() => { const r=window.__BW_T097_GET_RUNTIME__?.()||{}; const t=r.timingWindow||null; const d=window.__BWM101R5_DIAGNOSTICS__; return {sequence:d?.sequence??null,eventCount:d?.events?.length??0,phase:r.battle?.phase||r.battle?.battlePhase||'',tacticalTurn:r.battle?.tacticalTurn??null,window:t?{active:t.active,startedAt:t.startedAt??null,targetMs:t.targetMs??null,durationMs:t.durationMs??null,windowId:t.windowId||''}:null}; })()");
+        requireCondition(timingInputContext?.phase === "CLIMAX" && timingInputContext?.window?.active === true, "Timing input baseline is not an active CLIMAX window", timingInputContext);
         requireCondition(timingInputContext?.window && Number.isFinite(Number(timingInputContext.window.startedAt)), "T118 active Timing Ring window identity unavailable", timingInputContext);
         await cdp.send("Input.setIgnoreInputEvents", { ignore:false });
         await cdp.send("Input.dispatchMouseEvent", { type:"mouseMoved", x, y, button:"none", buttons:0 });
@@ -1266,7 +1262,7 @@ async function run() {
         requireCondition(afterReturn.scrap === beforeTiming.scrap, "T109 Scrap changed after non-terminal return", { beforeTiming, afterReturn });
         requireCondition(afterReturn.persistedScrap === beforeTiming.persistedScrap, "T109 persisted Scrap changed after non-terminal return", { beforeTiming, afterReturn });
         requireCondition(afterReturn.rewardLedgerKeys.length === beforeTiming.rewardLedgerKeys.length, "T109 reward ledger changed after non-terminal return", { beforeTiming, afterReturn });
-        return { beforeTiming, afterTiming, afterReturn, synchronousResolver, terminal: null };
+        return { beforeTiming, afterTiming, afterReturn, synchronousResolver, resolverReturn: (timingResolutionEvidence?.events || []).find(e => e.type === "T118.resolveTimingInput:after")?.result || null, terminal: null };
       };
 
       const url = baseUrl + "?qa=t097";
@@ -1305,7 +1301,7 @@ async function run() {
       if (T118_NON_HIT_REWARD_VALIDATION) {
         const finalState = await readRewardState();
         // Timing grade is transient and can reset during the next tactical frame; assert it on the captured result DTO instead.
-        requireCondition(round1.afterTiming.timingGrade === "MISS", "T118 resolved Timing Grade was not MISS", round1.afterTiming);
+        requireCondition(round1.resolverReturn?.grade === "MISS", "T118 correlated resolver return was not MISS", round1.resolverReturn);
         requireCondition(round1.afterTiming.combatResult === "STRIKE", "T118 resolved Combat Result was not STRIKE", round1.afterTiming);
         requireCondition(round1.afterTiming.battlePhase === "TACTICAL", "T118 MISS did not continue combat", round1.afterTiming);
         requireCondition(finalState.battlePhase === "TACTICAL", "T118 combat did not continue", finalState);
@@ -1319,7 +1315,8 @@ async function run() {
           browser: BROWSER_BIN,
           browserVersion: { product: browserVersion?.product || "", revision: browserVersion?.revision || "", userAgent: browserVersion?.userAgent || "" },
           harness: "existing character_journey_browser_probe.mjs via T118_NON_HIT_REWARD_VALIDATION=1",
-          timingLayer: round1.afterTiming.timingGrade,
+          timingLayer: round1.resolverReturn?.grade || "",
+          resolverReturn: round1.resolverReturn || null,
           combatLayer: round1.afterTiming.combatResult,
           synchronousResolver: round1.synchronousResolver,
           resolverCorrelation: {
@@ -1339,7 +1336,7 @@ async function run() {
           at_ms: Date.now() - runStartedAt
         };
         writeFileSync(join(EVIDENCE_DIR, "t118-non-hit-reward-browser-evidence.json"), JSON.stringify(evidence, null, 2) + "\n", "utf8");
-        console.log("T118 TIMING GRADE = " + round1.afterTiming.timingGrade);
+        console.log("T118 TIMING GRADE = " + (round1.resolverReturn?.grade || ""));
         console.log("T118 COMBAT RESULT = " + round1.afterTiming.combatResult);
         console.log("T118 COMBAT CONTINUES = PASS_REAL");
         console.log("T118 VICTORY = NO");
