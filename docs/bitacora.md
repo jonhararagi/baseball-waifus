@@ -11342,3 +11342,34 @@ Archivos R5: tools/qa/instrument-browser-site.mjs, tools/qa/bwm101r5-instrumenta
 4. No aprobar ni fusionar PR #51 hasta revisar la excepción T101 y los fallos de los probes.
 
 **Temporizador BWM-101-R5:** estimación inicial 2–4 h de implementación/integración y 1–2 h para análisis/repetición de CI. Tiempo realmente invertido en esta sesión: aproximadamente 25–35 minutos de trabajo efectivo de herramientas, medido de forma aproximada por las marcas de tiempo de CI. Tiempo pendiente para diagnosticar T101, reconciliar T118/T097/T114-R2 y repetir regresiones: reservar 1–3 h, condicionado a la causa del ciclo de presentación. No se deriva una estimación global de lanzamiento multiplataforma a partir de este bloque.
+
+---
+
+## BWM-101-R5 · T101/T118 causal evidence instrumentation
+
+**Fecha:** 2026-10-10  
+**Rama:** `bwm-099-normal-combat-authority-handoff`  
+**PR:** #51, sin merge  
+**Timer de esta intervención:** 45–90 minutos  
+**Estado inicial:** PARTIAL / BLOCKED; la evidencia anterior no vinculaba con suficiente precisión el actor activo y la salida retenida del resolver con el input físico de Timing Ring.
+
+### Cambios aplicados
+
+- `webapp/js/app.js`: se añadió bajo `?qa=t097` el hook de solo lectura `__BW_T097_GET_RUNTIME__`, que expone snapshot de `getBattleLoopState()`, `lastTiming`, `lastTurn` y la identidad del actor seleccionado junto con el roster de actores de `CombatStage`. No cambia la resolución del combate.
+- `webapp/js/character_journey_browser_probe.mjs`: T101 ahora valida que el actor seleccionado exista en el stage, conserva la salida del resolver en cada ronda y exige que el grado retenido sea coherente con el MISS observado y el estado de combate.
+- T118 captura el snapshot retenido inmediatamente después de que CDP envía el input físico, antes del polling asíncrono. La evidencia incluye la comparación entre `renderer.lastTiming.grade` y `getBattleLoopState().last_timing.grade`.
+
+### Límites de validación
+
+- Commits de implementación: `03632bc3fc18f0f6f14e07c6ea6e5594f6f8d149`, `59dc7054b66eaf7789c49df9eb439d2b1c47c63c`.
+- Los archivos se escribieron exclusivamente en la rama de trabajo existente; `main` no se modificó.
+- No se ejecutaron aquí Chromium, la matriz completa ni los workflows de GitHub Actions. El código queda **IMPLEMENTADO / CI PENDIENTE**, no PASS_REAL.
+- No se cambiaron reglas de combate, timing, stamina, daño, recompensas, SCRAP, gacha, autenticación ni criptografía.
+- El actor seleccionado se registra como dato de presentación/QA; no se usa para decidir el resultado de juego.
+
+### Próximo paso
+
+Ejecutar T101 y T118 en el workflow de Chromium sobre el mismo HEAD final y revisar la evidencia JSON generada. Si falla la correlación, conservar los datos observados y diagnosticar el contrato real sin inyectar MISS artificial ni alterar reglas.
+
+**Estimación restante del proyecto:** no recalculable con rigor a partir de esta intervención aislada; producción continúa bloqueada por gates externos documentados. Para este bloque T101/T118, queda pendiente una ronda de CI y análisis de evidencia, estimada en 30–90 minutos si los runners y artifacts responden normalmente.
+
