@@ -12,7 +12,7 @@ const objectRefs = new WeakMap();
 let nextObjectRef = 1;
 const seenDivergence = new Set();
 const ensureSignatures = new WeakMap();
-const refs = { stage: null, director: null, formation: null };
+const refs = { stage: null, director: null, formation: null, renderer: null };
 
 function safe(value) {
   try { return JSON.parse(JSON.stringify(value, (_key, item) => typeof item === "bigint" ? String(item) : item)); }
@@ -141,6 +141,7 @@ function wrap(proto, method, type, snapshot) {
   const original = proto[method];
   if (original.__bwm101r7c2Wrapped) return;
   function wrapped(...args) {
+    if (this instanceof CombatRenderer) refs.renderer = this;
     const before = snapshot ? snapshot(this, args, { phase: "before" }) : {};
     const call = record(type + ":before", { method, args: actorArgsSnapshot(args), before });
     try {
@@ -235,6 +236,31 @@ function wrapEnsure(proto) {
   Object.defineProperty(wrapped, "name", { value: original.name, configurable: true });
   proto[method] = wrapped;
 }
+function readTimingWindowDirect() {
+  const renderer = refs.renderer;
+  const timing = renderer?.timingState || null;
+  const battle = renderer?.combatRuntime?.state || null;
+  return {
+    available: Boolean(renderer && timing),
+    battle: {
+      phase: battle?.phase ?? null,
+      round: Number.isFinite(Number(battle?.round)) ? Number(battle.round) : null,
+      tacticalTurn: Number.isFinite(Number(battle?.tacticalTurn)) ? Number(battle.tacticalTurn) : null
+    },
+    timingState: timing ? {
+      active: timing.active === true,
+      startedAt: Number.isFinite(Number(timing.startedAt)) ? Number(timing.startedAt) : null,
+      targetMs: Number.isFinite(Number(timing.targetMs)) ? Number(timing.targetMs) : null,
+      durationMs: Number.isFinite(Number(timing.durationMs)) ? Number(timing.durationMs) : null,
+      hitWindowMs: Number.isFinite(Number(timing.hitWindowMs)) ? Number(timing.hitWindowMs) : null,
+      greatWindowMs: Number.isFinite(Number(timing.greatWindowMs)) ? Number(timing.greatWindowMs) : null,
+      windowId: String(timing.id || timing.windowId || "")
+    } : null,
+    lastTiming: safe(renderer?.lastTiming ?? null)
+  };
+}
+window.__BWM101R7C2_READ_TIMING__ = readTimingWindowDirect;
+
 function readOnlyRuntimeState(renderer) {
   const authority = renderer?.combatRuntime?.state || null;
   return {
@@ -292,6 +318,14 @@ wrap(CombatRenderer?.prototype, "_handleCombatPresentationStep", "T101.renderer.
     } : null
   };
 });
+wrap(CombatRenderer?.prototype, "beginTimingWindow", "T118.beginTimingWindow", (renderer) => ({
+  timingState: safe(renderer?.timingState ?? null),
+  battle: {
+    phase: renderer?.combatRuntime?.state?.phase ?? null,
+    round: renderer?.combatRuntime?.state?.round ?? null,
+    tacticalTurn: renderer?.combatRuntime?.state?.tacticalTurn ?? null
+  }
+}));
 wrap(CombatRenderer?.prototype, "resolveTimingInput", "T118.resolveTimingInput", (renderer, args) => {
   const timing = renderer?.timingState || null;
   const now = performance.now();
@@ -355,7 +389,7 @@ record("harness.ready", {
     "CombatPresentationDirector._createRuntimeFormation", "CombatPresentationDirector._ensureRuntimeFormation",
     "CharacterFormation2D5.populate", "CharacterFormation2D5.attach", "CharacterFormation2D5.clear",
     "CombatPresentationDirector.startFromPresentationEvent", "CombatPresentationDirector._finishFormationActorsForReplacement",
-    "CombatPresentationDirector._emitStep", "CombatRenderer._handleCombatPresentationStep", "CombatRenderer.resolveTimingInput"
+    "CombatPresentationDirector._emitStep", "CombatRenderer._handleCombatPresentationStep", "CombatRenderer.beginTimingWindow", "CombatRenderer.resolveTimingInput"
   ],
   instrumentationErrors: root.instrumentationErrors
 });

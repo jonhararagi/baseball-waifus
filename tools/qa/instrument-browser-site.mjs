@@ -17,6 +17,7 @@ const targets=[
 {path:"js/character_formation_2d5.js",anchor:"  populate(actors = []) {"},
 {path:"js/character_formation_2d5.js",anchor:"  attach(actor, slotIndex = 0) {"},
 {path:"js/character_formation_2d5.js",anchor:"  clear() {"},
+{path:"js/combat.js",anchor:"  beginTimingWindow() {"},
 {path:"js/combat.js",anchor:'  resolveTimingInput(source = "pointer") {'},
 {path:"js/combat.js",anchor:"  _handleCombatPresentationStep(event) {"}
 ];
