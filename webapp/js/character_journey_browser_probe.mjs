@@ -995,7 +995,7 @@ async function run() {
       const playerMetaKey = "baseball_waifus_player_meta_v1:local-player";
       const expectedBattleId = "battle:demo-bw001-vs-bw002";
 
-      const readRuntime = async () => cdpEvaluate(cdp, "(() => { const canvas = document.querySelector('#gameCanvas'); const d = canvas?.dataset || {}; const gacha = window.BaseballWaifusGacha?.getStatus?.() || null; const raw = localStorage.getItem('baseball_waifus_player_meta_v1:local-player'); let persisted = null; try { const persistedRecord = raw ? JSON.parse(raw) : null; persisted = persistedRecord?.schemaVersion === 1 && Number.isSafeInteger(persistedRecord?.revision) && persistedRecord?.state && typeof persistedRecord.state === 'object' ? persistedRecord.state : persistedRecord?.currencies && persistedRecord?.rewardLedger && typeof persistedRecord.currencies === 'object' ? persistedRecord : null; } catch { persisted = null; } return { battlePhase:d.combatBattlePhase||'', tacticalTurn:d.combatTacticalTurn===''?null:Number(d.combatTacticalTurn), timingActive:d.combatTimingActive==='true', timingGrade:d.combatTimingGrade||'', combatResult:d.combatResult||'', presentationPhase:d.combatStagePresentationPhase||'', presentationActive:d.combatPresentationActive==='true', playerStamina:d.combatPlayerStamina===''?null:Number(d.combatPlayerStamina), playerStaminaMax:d.combatPlayerStaminaMax===''?null:Number(d.combatPlayerStaminaMax), scrap:Number(gacha?.scavenger_scrap??NaN), persistedScrap:Number(persisted?.currencies?.SCRAP??NaN), rewardLedger:persisted?.rewardLedger||null, rewardLedgerKeys:persisted?.rewardLedger?Object.keys(persisted.rewardLedger):[], playerMetaRawPresent:Boolean(raw) }; })()");
+      const readRuntime = async () => cdpEvaluate(cdp, "(() => { const canvas = document.querySelector('#gameCanvas'); const d = canvas?.dataset || {}; const gacha = window.BaseballWaifusGacha?.getStatus?.() || null; const raw = localStorage.getItem('baseball_waifus_player_meta_v1:local-player'); let persisted = null; try { const persistedRecord = raw ? JSON.parse(raw) : null; persisted = persistedRecord?.schemaVersion === 1 && Number.isSafeInteger(persistedRecord?.revision) && persistedRecord?.state && typeof persistedRecord.state === 'object' ? persistedRecord.state : persistedRecord?.currencies && persistedRecord?.rewardLedger && typeof persistedRecord.currencies === 'object' ? persistedRecord : null; } catch { persisted = null; } return { battlePhase:d.combatBattlePhase||'', tacticalTurn:d.combatTacticalTurn===''?null:Number(d.combatTacticalTurn), timingActive:d.combatTimingActive==='true', timingGrade:d.combatTimingGrade||'', combatResult:d.combatResult||'', presentationPhase:d.combatStagePresentationPhase||'', presentationActive:d.combatPresentationActive==='true', playerStamina:d.combatPlayerStamina===''?null:Number(d.combatPlayerStamina), playerStaminaMax:d.combatPlayerStaminaMax===''?null:Number(d.combatPlayerStaminaMax), scrap:Number(gacha?.scavenger_scrap??NaN), persistedScrap:Number(persisted?.currencies?.SCRAP??NaN), rewardLedger:persisted?.rewardLedger||null, rewardLedgerKeys:persisted?.rewardLedger?Object.keys(persisted.rewardLedger):[], playerMetaRawPresent:Boolean(raw), qaRuntime:window.__BW_T097_GET_RUNTIME__?.()||null }; })()");
 
       const mark = async (name, condition, timeoutMs = 6000) => {
         const deadline = Date.now() + timeoutMs;
@@ -1024,6 +1024,13 @@ async function run() {
         await sleep(120);
         const before = await readRuntime();
         requireCondition(before.timingActive === true, "T101 timing window closed before deterministic MISS input", before);
+        const actorBefore = before.qaRuntime?.stage?.selectedActorId || "";
+        requireCondition(
+          Boolean(actorBefore)
+          && before.qaRuntime?.stage?.actors?.some(actor => actor.actorId === actorBefore),
+          "T101 pre-resolution actor identity is not correlated to the active stage",
+          before.qaRuntime
+        );
         requireCondition(before.timingActive === true, "T101 timing window closed before MISS input", before);
         requireCondition(before.playerStamina > 0, "T101 stamina non-positive before non-victory", before);
         const rect = await cdpEvaluate(cdp, "(() => { const r=document.querySelector('#gameCanvas')?.getBoundingClientRect(); return r ? {left:r.left,top:r.top,width:r.width,height:r.height} : null; })()");
@@ -1037,6 +1044,14 @@ async function run() {
         await cdp.send("Input.dispatchMouseEvent", {type:"mousePressed",x,y,button:"left",buttons:1,clickCount:1});
         await cdp.send("Input.dispatchMouseEvent", {type:"mouseReleased",x,y,button:"left",buttons:0,clickCount:1});
         const after = await mark("ROUND " + round + " RESOLVED", s => s.timingActive === false && s.timingGrade === "MISS", 5000);
+        const actorAfter = after.qaRuntime?.stage?.selectedActorId || "";
+        requireCondition(
+          actorAfter === actorBefore
+          && after.qaRuntime?.stage?.actors?.some(actor => actor.actorId === actorAfter)
+          && after.qaRuntime?.battle?.last_timing?.grade === "MISS",
+          "T101 actor/sequence/resolution correlation failed",
+          { actorBefore, actorAfter, before: before.qaRuntime, after: after.qaRuntime }
+        );
         const terminalDefeat = after.battlePhase === "DEFEAT" && after.combatResult === "DEFEAT" && after.playerStamina === 0;
         if (terminalDefeat) {
           requireCondition(before.playerStamina === 1 && after.playerStamina === 0, "T101 terminal defeat stamina transition invalid", {before,after});
@@ -1057,7 +1072,15 @@ async function run() {
       requireCondition(initial.playerStamina > 0 && initial.playerStamina <= initial.playerStaminaMax && initial.playerStaminaMax <= 100, "T101 initial stamina bounds invalid", initial);
       await cdpClickSelector(cdp, ".home-action-play");
       await waitFor(async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#gameCanvas')?.dataset?.combatStageContract === 'COMBAT_STAGE_2_5D')"), {timeoutMs:30000,label:"T101 formation initialized"});
-      await mark("FORMATION", s => s.battlePhase === "TACTICAL" && s.tacticalTurn === 0);
+      const formation = await mark("FORMATION", s => s.battlePhase === "TACTICAL" && s.tacticalTurn === 0);
+      const formationRuntime = formation.qaRuntime;
+      requireCondition(
+        formationRuntime?.stage?.contract === "COMBAT_STAGE_2_5D"
+        && Boolean(formationRuntime.stage.selectedActorId)
+        && formationRuntime.stage.actors?.some(actor => actor.actorId === formationRuntime.stage.selectedActorId),
+        "T101 selected actor must resolve to a real stage actor",
+        formationRuntime
+      );
 
       const rounds=[];
       for (const round of [1,2,3,4]) {
@@ -1071,7 +1094,7 @@ async function run() {
           }
         }
         const resolution=await resolveMiss(round);
-        rounds.push({round,staminaBefore:resolution.before.playerStamina,staminaAfter:resolution.after.playerStamina,timingGrade:resolution.after.timingGrade,battlePhase:resolution.after.battlePhase,combatResult:resolution.after.combatResult});
+        rounds.push({round,actorId:resolution.before.qaRuntime?.stage?.selectedActorId||"",actorIds:resolution.before.qaRuntime?.stage?.actors?.map(actor=>actor.actorId)||[],sequence:resolution.after.qaRuntime?.battle?.last_timing||null,staminaBefore:resolution.before.playerStamina,staminaAfter:resolution.after.playerStamina,timingGrade:resolution.after.timingGrade,combatResultFromResolver:resolution.after.qaRuntime?.battle?.last_timing?.grade||"",battlePhase:resolution.after.battlePhase,combatResult:resolution.after.combatResult});
         if (round < 3) {
           requireCondition(resolution.after.battlePhase === "TACTICAL" && resolution.after.playerStamina > 0, "T101 non-terminal round did not return to TACTICAL", resolution.after);
           await mark("ROUND " + round + " RETURN", s => s.presentationPhase === "COMBAT_RETURN");
@@ -1134,7 +1157,7 @@ async function run() {
       const browserVersion = await cdp.send("Browser.getVersion");
       const playerMetaKey = "baseball_waifus_player_meta_v1:local-player";
 
-      const readRewardState = async () => cdpEvaluate(cdp, `(() => { const canvas = document.querySelector("#gameCanvas"); const d = canvas?.dataset || {}; const gacha = window.BaseballWaifusGacha?.getStatus?.() || null; const raw = localStorage.getItem("baseball_waifus_player_meta_v1:local-player"); let persisted = null; try { const persistedRecord = raw ? JSON.parse(raw) : null; persisted = persistedRecord?.schemaVersion === 1 && Number.isSafeInteger(persistedRecord?.revision) && persistedRecord?.state && typeof persistedRecord.state === 'object' ? persistedRecord.state : persistedRecord?.currencies && persistedRecord?.rewardLedger && typeof persistedRecord.currencies === 'object' ? persistedRecord : null; } catch { persisted = null; } return { battlePhase:d.combatBattlePhase||"", tacticalTurn:d.combatTacticalTurn===""?null:Number(d.combatTacticalTurn), timingActive:d.combatTimingActive==="true", timingGrade:d.combatTimingGrade||"", combatResult:d.combatResult||"", presentationPhase:d.combatStagePresentationPhase||"", presentationActive:d.combatPresentationActive==="true", playerStamina:d.combatPlayerStamina===""?null:Number(d.combatPlayerStamina), scrap:Number(gacha?.scavenger_scrap??NaN), persistedScrap:Number(persisted?.currencies?.SCRAP??NaN), rewardLedger:persisted?.rewardLedger||null, rewardLedgerKeys:persisted?.rewardLedger?Object.keys(persisted.rewardLedger):[], playerMetaRawPresent:Boolean(raw) }; })()`);
+      const readRewardState = async () => cdpEvaluate(cdp, `(() => { const canvas = document.querySelector("#gameCanvas"); const d = canvas?.dataset || {}; const gacha = window.BaseballWaifusGacha?.getStatus?.() || null; const raw = localStorage.getItem("baseball_waifus_player_meta_v1:local-player"); let persisted = null; try { const persistedRecord = raw ? JSON.parse(raw) : null; persisted = persistedRecord?.schemaVersion === 1 && Number.isSafeInteger(persistedRecord?.revision) && persistedRecord?.state && typeof persistedRecord.state === 'object' ? persistedRecord.state : persistedRecord?.currencies && persistedRecord?.rewardLedger && typeof persistedRecord.currencies === 'object' ? persistedRecord : null; } catch { persisted = null; } return { battlePhase:d.combatBattlePhase||"", tacticalTurn:d.combatTacticalTurn===""?null:Number(d.combatTacticalTurn), timingActive:d.combatTimingActive==="true", timingGrade:d.combatTimingGrade||"", combatResult:d.combatResult||"", presentationPhase:d.combatStagePresentationPhase||"", presentationActive:d.combatPresentationActive==="true", playerStamina:d.combatPlayerStamina===""?null:Number(d.combatPlayerStamina), scrap:Number(gacha?.scavenger_scrap??NaN), persistedScrap:Number(persisted?.currencies?.SCRAP??NaN), rewardLedger:persisted?.rewardLedger||null, rewardLedgerKeys:persisted?.rewardLedger?Object.keys(persisted.rewardLedger):[], playerMetaRawPresent:Boolean(raw), qaRuntime:window.__BW_T097_GET_RUNTIME__?.()||null }; })()`);
 
       const mark = async (name, condition, timeoutMs = 6000) => {
         const deadline = Date.now() + timeoutMs;
@@ -1199,9 +1222,14 @@ async function run() {
         await cdp.send("Input.dispatchMouseEvent", { type:"mouseMoved", x, y, button:"none", buttons:0 });
         await cdp.send("Input.dispatchMouseEvent", { type:"mousePressed", x, y, button:"left", buttons:1, clickCount:1 });
         await cdp.send("Input.dispatchMouseEvent", { type:"mouseReleased", x, y, button:"left", buttons:0, clickCount:1 });
+        // Capture the renderer's retained resolver output immediately after the real
+        // pointer handler returns, before polling can observe a later frame.
+        const synchronousResolver = await cdpEvaluate(cdp, "window.__BW_T097_GET_RUNTIME__?.() || null");
 
         const afterTiming = await mark("ROUND " + round + " RESULT", s => s.timingActive === false && ["TACTICAL","VICTORY","DEFEAT"].includes(s.battlePhase), 5000);
         if (T118_NON_HIT_REWARD_VALIDATION) {
+          requireCondition(synchronousResolver?.timing?.grade === "MISS", "T118 synchronous resolver Timing Grade was not MISS", synchronousResolver);
+          requireCondition(synchronousResolver?.battle?.last_timing?.grade === "MISS", "T118 combat runtime did not retain the same resolved Timing Grade", synchronousResolver);
           requireCondition(afterTiming.timingGrade === "MISS", "T118 Timing Grade was not MISS", afterTiming);
           requireCondition(afterTiming.combatResult === "STRIKE", "T118 Combat Result was not STRIKE", afterTiming);
           requireCondition(afterTiming.battlePhase === "TACTICAL", "T118 MISS did not remain non-terminal", afterTiming);
@@ -1273,6 +1301,14 @@ async function run() {
           harness: "existing character_journey_browser_probe.mjs via T118_NON_HIT_REWARD_VALIDATION=1",
           timingLayer: round1.afterTiming.timingGrade,
           combatLayer: round1.afterTiming.combatResult,
+          synchronousResolver,
+          resolverCorrelation: {
+            synchronousTimingGrade: synchronousResolver?.timing?.grade || "",
+            runtimeTimingGrade: synchronousResolver?.battle?.last_timing?.grade || "",
+            selectedActorId: synchronousResolver?.stage?.selectedActorId || "",
+            stageContract: synchronousResolver?.stage?.contract || "",
+            agrees: synchronousResolver?.timing?.grade === synchronousResolver?.battle?.last_timing?.grade
+          },
           initial,
           beforeTiming: round1.beforeTiming,
           afterTiming: round1.afterTiming,
