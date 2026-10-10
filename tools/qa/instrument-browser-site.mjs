@@ -2,16 +2,24 @@
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve, join } from "node:path";
-const version="BWM-101-R5.1", site=resolve(process.argv[2]||"site");
+const version="BWM-101-R7-C2", site=resolve(process.argv[2]||"site");
 const appPath=join(site,"js","app.js"), manifestPath=join(site,"bwm-101-r5-instrumentation-manifest.json"), outputModule=join(site,"js","qa","bwm101r5-instrumentation.js");
 const sourceModule=readFileSync(new URL("./bwm101r5-instrumentation.js",import.meta.url),"utf8");
 const targets=[
 {path:"js/combat_stage.js",anchor:"  transitionTo(nextState) {"},
+{path:"js/combat_stage.js",anchor:"  setActors(actors = []) {"},
 {path:"js/combat_presentation_director.js",anchor:"  _finishFormationActorsForReplacement() {"},
 {path:"js/combat_presentation_director.js",anchor:"  startFromPresentationEvent(event) {"},
 {path:"js/combat_presentation_director.js",anchor:"  _emitStep(reason) {"},
- {path:"js/combat.js",anchor:'  resolveTimingInput(source = "pointer") {'},
-{path:"js/combat.js",anchor:"  _handleCombatPresentationStep(event) {"}];
+{path:"js/combat_presentation_director.js",anchor:"  setStage(stage) {"},
+{path:"js/combat_presentation_director.js",anchor:"  _createRuntimeFormation() {"},
+{path:"js/combat_presentation_director.js",anchor:"  _ensureRuntimeFormation() {"},
+{path:"js/character_formation_2d5.js",anchor:"  populate(actors = []) {"},
+{path:"js/character_formation_2d5.js",anchor:"  attach(actor, slotIndex = 0) {"},
+{path:"js/character_formation_2d5.js",anchor:"  clear() {"},
+{path:"js/combat.js",anchor:'  resolveTimingInput(source = "pointer") {'},
+{path:"js/combat.js",anchor:"  _handleCombatPresentationStep(event) {"}
+];
 const sha=s=>createHash("sha256").update(s,"utf8").digest("hex");
 function fail(m){throw new Error("BWM101R5 HARNESS ERROR: "+m);}
 if(!existsSync(site)||!existsSync(appPath))fail("site/app.js not found: "+site);
