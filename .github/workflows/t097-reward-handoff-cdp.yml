@@ -98,6 +98,13 @@ jobs:
           node tools/qa/instrument-browser-site.mjs site
           node --input-type=module -e 'import { readFileSync } from "node:fs"; const m=JSON.parse(readFileSync("site/bwm-101-r5-instrumentation-manifest.json","utf8")); if (m.status !== "PASS" || m.harnessVersion !== "BWM-101-R7-C2" || m.checks.length !== 14 || m.checks.some(x => !x.passed)) throw new Error("BWM-101-R7-C2 manifest validation failed"); console.log("BWM101R5 MANIFEST PASS", JSON.stringify({version:m.harnessVersion,checks:m.checks.length}));'
 
+      - name: Validate deterministic actor identity replacement regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check webapp/js/character_journey_browser_probe.mjs
+          node --test tools/qa/combat-presentation-director.actor-identity.test.mjs
+
       - name: Locate Chrome
         id: chrome
         shell: bash
