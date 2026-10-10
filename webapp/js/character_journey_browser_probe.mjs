@@ -1608,8 +1608,13 @@ async function run() {
 
       const victory = await mark(
         "VICTORY",
-        s => s.battlePhase === "VICTORY" && s.combatResult === "VICTORY",
+        s => s.battlePhase === "VICTORY" && ["HIT", "HOME_RUN"].includes(s.combatResult),
         5000
+      );
+      requireCondition(
+        ["HIT", "HOME_RUN"].includes(victory.combatResult),
+        "T114-R victory phase carried an unsupported terminal outcome",
+        victory
       );
       requireCondition(victory.scrap === beforeTerminal.scrap, "T114-R local demo must not grant authoritative Scrap", { beforeTerminal, victory });
       requireCondition(victory.persistedScrap === beforeTerminal.persistedScrap, "T114-R local demo must not persist authoritative Scrap", { beforeTerminal, victory });
@@ -1666,7 +1671,8 @@ async function run() {
         },
         terminalBoundary: {
           lastNonTerminal: "CLIMAX/TIMING ACTIVE",
-          terminalResult: "VICTORY",
+          terminalPhase: victory.battlePhase,
+          terminalResult: victory.combatResult,
           rewardObservedAfterTerminal: false,
           localRewardBlocked: true,
           scrapBefore: beforeTerminal.scrap,
@@ -1682,7 +1688,8 @@ async function run() {
       console.log("SCRAP BEFORE TERMINAL = " + beforeTerminal.scrap);
       console.log("LAST NON-TERMINAL STATE = CLIMAX/TIMING ACTIVE");
       console.log("VICTORY = PASS_REAL");
-      console.log("COMBAT RESULT = VICTORY");
+      console.log("TERMINAL PHASE = " + victory.battlePhase);
+      console.log("COMBAT RESULT = " + victory.combatResult);
       console.log("MATCH END = PASS_REAL_BY_TERMINAL_RESULT");
       console.log("DEMO REWARD BLOCK = PASS_REAL");
       console.log("SCRAP AFTER TERMINAL = " + victory.scrap);
