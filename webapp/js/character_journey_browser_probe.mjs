@@ -1235,7 +1235,7 @@ async function run() {
           requireCondition(afterTiming.battlePhase === "TACTICAL", "T118 MISS did not remain non-terminal", afterTiming);
           requireCondition(afterTiming.match_end !== true, "T118 MISS produced match_end", afterTiming);
         }
-        if (afterTiming.battlePhase !== "TACTICAL") return { beforeTiming, afterTiming, afterReturn: afterTiming, terminal: afterTiming.battlePhase };
+        if (afterTiming.battlePhase !== "TACTICAL") return { beforeTiming, afterTiming, afterReturn: afterTiming, synchronousResolver, terminal: afterTiming.battlePhase };
 
         requireCondition(afterTiming.scrap === beforeTiming.scrap, "T109 Scrap changed after non-terminal Timing", { beforeTiming, afterTiming });
         requireCondition(afterTiming.persistedScrap === beforeTiming.persistedScrap, "T109 persisted Scrap changed after non-terminal Timing", { beforeTiming, afterTiming });
@@ -1246,7 +1246,7 @@ async function run() {
         requireCondition(afterReturn.scrap === beforeTiming.scrap, "T109 Scrap changed after non-terminal return", { beforeTiming, afterReturn });
         requireCondition(afterReturn.persistedScrap === beforeTiming.persistedScrap, "T109 persisted Scrap changed after non-terminal return", { beforeTiming, afterReturn });
         requireCondition(afterReturn.rewardLedgerKeys.length === beforeTiming.rewardLedgerKeys.length, "T109 reward ledger changed after non-terminal return", { beforeTiming, afterReturn });
-        return { beforeTiming, afterTiming, afterReturn, terminal: null };
+        return { beforeTiming, afterTiming, afterReturn, synchronousResolver, terminal: null };
       };
 
       const url = baseUrl + "?qa=t097";
@@ -1301,13 +1301,13 @@ async function run() {
           harness: "existing character_journey_browser_probe.mjs via T118_NON_HIT_REWARD_VALIDATION=1",
           timingLayer: round1.afterTiming.timingGrade,
           combatLayer: round1.afterTiming.combatResult,
-          synchronousResolver,
+          synchronousResolver: round1.synchronousResolver,
           resolverCorrelation: {
-            synchronousTimingGrade: synchronousResolver?.timing?.grade || "",
-            runtimeTimingGrade: synchronousResolver?.battle?.last_timing?.grade || "",
-            selectedActorId: synchronousResolver?.stage?.selectedActorId || "",
-            stageContract: synchronousResolver?.stage?.contract || "",
-            agrees: synchronousResolver?.timing?.grade === synchronousResolver?.battle?.last_timing?.grade
+            synchronousTimingGrade: round1.synchronousResolver?.timing?.grade || "",
+            runtimeTimingGrade: round1.synchronousResolver?.battle?.last_timing?.grade || "",
+            selectedActorId: round1.synchronousResolver?.stage?.selectedActorId || "",
+            stageContract: round1.synchronousResolver?.stage?.contract || "",
+            agrees: round1.synchronousResolver?.timing?.grade === round1.synchronousResolver?.battle?.last_timing?.grade
           },
           initial,
           beforeTiming: round1.beforeTiming,
