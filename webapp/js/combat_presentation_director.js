@@ -119,7 +119,15 @@ export class CombatPresentationDirector {
   }
 
   _ensureRuntimeFormation() {
-    if (!this.formation) this.formation = this._createRuntimeFormation();
+    const stageActors = this.stage?.getActors
+      ? this.stage.getActors({ team: "PLAYER" }).slice(0, 4)
+      : [];
+    const formationActors = this.formation?.actors;
+    const synchronized = stageActors.length === 4
+      && formationActors instanceof Map
+      && formationActors.size === 4
+      && stageActors.every((actor) => formationActors.get(String(actor.actorId)) === actor);
+    if (!synchronized) this.formation = this._createRuntimeFormation();
     return this.formation;
   }
 
@@ -183,7 +191,10 @@ export class CombatPresentationDirector {
   }
 
   _finishFormationActorsForReplacement() {
-    const formation = this._ensureRuntimeFormation();
+    // Finish the active actor generation before synchronizing a replaced stage map.
+    // Calling _ensureRuntimeFormation here could discard references to actors
+    // that still need to return to IDLE.
+    const formation = this.formation || this._ensureRuntimeFormation();
     const actors = formation?.actors ? [...formation.actors.values()] : [];
     for (const actor of actors) {
       const state = actor.getPresentationState?.();

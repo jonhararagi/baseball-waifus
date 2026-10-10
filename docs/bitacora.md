@@ -11041,3 +11041,496 @@ Pre-existing status is supported by Run `37550518856` on `847edd53f98ca75f0f7630
 **GLOBAL GATE:** `CERRADO`.  
 **PRODUCTION:** `NOT VERIFIED`.  
 **NEXT PRODUCTION HANDOFF:** `BONE-011-AUTH-032` after a material, verifiable owner-gate change.
+
+
+---
+
+## BWM-099 · NORMAL COMBAT SERVER-AUTHORITY HANDOFF
+
+**Fecha:** 2026-10-10  
+**Estado:** PARTIAL / BLOCKED PARA INTEGRACIÓN PRODUCTIVA  
+**HEAD inicial inspeccionado:** `988c0fa3c7c17077d18e5f7f0722726cae39a197`  
+**Rama de trabajo:** `bwm-099-normal-combat-authority-handoff`  
+**PR:** [#51 BWM-099 reward authority boundary and probe repair](https://github.com/jonhararagi/baseball-waifus/pull/51), abierto y sin fusionar.
+
+### Hallazgos confirmados en el HEAD inicial
+
+- El cliente ya tiene un límite API conectado: `BaseballWaifusApi.getCombatInit()` y `submitTurnAction()` usan `/v1/combat/:matchId/init` y `/v1/combat/:matchId/turn`, con `x-telegram-init-data` cuando Telegram proporciona initData. `app.js` enruta a demo local cuando `window.BASEBALL_WAIFUS_API_BASE_URL` está vacío y llama al endpoint conectado cuando la URL está configurada.
+- El backend incluye autenticación de Telegram validada en servidor, `CombatService`, attestation `SERVER_COMBAT_ATTESTATION_V1` y firma ECDSA P-256. La suite de backend de pruebas usa identidad de test y firmante efímero, por lo que no constituye prueba de despliegue productivo.
+- `backend/README.md` declara que no hay deployment externo configurado. La configuración de producción requiere secretos externos, persistencia gestionada y proveedor de pagos; el workflow de deploy es manual y no despliega a un proveedor cloud. No se verificó ninguna instancia HTTPS productiva ni sus variables/secrets. No se consultaron ni expusieron valores secretos.
+- PR #50 (`BWM-098`) sigue abierto y sin fusionar. BWM-099 usa rama independiente y no altera su documentación.
+
+### Diagnóstico de probes contra los logs del workflow 37996496065
+
+- **T097:** la partida termina en `VICTORY / HOME_RUN`, pero es la ruta demo/local. El cliente muestra `LOCAL_RESULT // DEMO_ONLY // REWARD BLOCKED`, Scrap permanece en 0 y el ledger queda vacío. El fallo provenía de esperar +100 SCRAP en una partida local, contradiciendo la frontera de autoridad existente. El probe se corrige para verificar el bloqueo esperado, no para simular una concesión conectada.
+- **T101:** se alcanza `DEFEAT`, stamina 0 y Scrap 0. La aserción exigía una entrada en el ledger de recompensa de victoria aunque el contrato no concede premio por derrota. Se corrige para exigir que el ledger permanezca vacío.
+- **T118:** el log observa `STRIKE` y fase táctica, pero el campo transitorio `timingGrade` ya se había reiniciado cuando el probe leyó el estado final. La aserción de MISS se mueve al snapshot del resultado capturado inmediatamente después del input; el saldo y ledger se siguen comprobando al final.
+- **T114-R:** el lector histórico accedía a `currencies` en el nivel superior, pero Player Meta actual persiste `{schemaVersion, revision, state}`. El lector del probe se actualiza para aceptar el envelope actual y mantener compatibilidad con el formato histórico si apareciera.
+- **T109/T111/T117:** sus logs previos muestran límites de recompensa no terminal y diagnóstico de timing útiles; no se interpretan como prueba de integración productiva.
+
+### Cambios acotados de BWM-099
+
+- Se ajusta el probe T097 para demostrar que una victoria local no acredita SCRAP, no crea ledger y sigue así tras RETURN/recarga. El workflow se etiqueta como validación de frontera demo, no como handoff conectado.
+- Se corrige el contrato esperado por T101 para derrota sin premio.
+- Se corrige la lectura temporal de T118 y el lector de envelope de T114-R.
+- No se modifican combate, balance, gacha, economía, verificación criptográfica ni runtime de producción. No se han añadido endpoints ni claves.
+
+### Límite y siguiente paso
+
+**La integración productiva permanece BLOCKED.** La ruta de cliente conectada y el backend existen en código, pero no hay evidencia de endpoint productivo, autenticación real contra esa instancia, persistencia gestionada activa o smoke test externo. No se debe interpretar un workflow Chromium local ni un firmante efímero como despliegue real.
+
+PR #51 está abierto para revisión; CI de Chromium y Visual QA se activaron al crear el PR y todavía estaban en ejecución en la última consulta. La siguiente fase requiere una acción externa de provisión: configurar URL HTTPS del backend, Telegram bot token, clave privada de firma, allowlist CORS y persistencia gestionada, luego ejecutar smoke autenticado contra esa instancia. No añadir esos valores al repositorio.
+
+**Pruebas de este turno:** no ejecutadas localmente; la integración GitHub de esta sesión permite editar y consultar archivos, pero no ejecutar el checkout del repositorio en un runner local. En el SHA `6d22e4bb2a6f46e9d9c59fe831c56b46e36d6c79`, los workflows T097 y Visual QA fueron iniciados por el evento `pull_request`; su resultado aún no estaba disponible al registrar esta actualización. No se declara ningún test como aprobado sin el resultado del runner.
+
+**Temporizador BWM-099:** inspección y corrección de probes estimadas en 4–8 horas. Provisión externa, despliegue, secrets y smoke productivo: duración no confirmada hasta conocer el proveedor y la disponibilidad de los recursos.
+
+
+---
+
+## BWM-100 · CI EVIDENCE RECONCILIATION & PR #51 REVIEW
+
+**Fecha:** 2026-10-10  
+**Estado:** PARTIAL / PR NEEDS CORRECTIONS; producción BLOCKED  
+**HEAD de main verificado:** `988c0fa3c7c17077d18e5f7f0722726cae39a197`  
+**HEAD de rama verificado:** `0bc9eb4cf99c5be91f2c746e8ed5a9c8eabbb944`  
+**PR #51:** abierto, sin fusionar, `mergeable=true`, 7 commits, 3 archivos cambiados. No hay reviews registradas en la consulta.  
+**Comparación:** rama 7 commits por delante, 0 por detrás de main.
+
+### CI del HEAD exacto
+
+- **T097 Local Demo Reward Boundary CDP QA**, Run [38029414270](https://github.com/jonhararagi/baseball-waifus/actions/runs/38029414270), evento `pull_request`, SHA `0bc9eb4cf99c5be91f2c746e8ed5a9c8eabbb944`: **FAILURE**.
+  - Sintaxis del probe: PASS.
+  - BONE-004 Reward Authority Contract y compatibilidad de attestation: PASS.
+  - BONE-004 Native Chromium Reward Authority Validation: PASS.
+  - T097 demo boundary: PASS. El log demuestra victoria local, SCRAP 0→0, ledger sin cambios, RETURN y reload sin recompensa.
+  - T101: FAIL por excepciones reales de runtime `Invalid CharacterActor2D5 transition: ACTION -> FOCUS` en `combat_stage.js:222`, invocadas desde `combat.js` al resolver timing/presentación. No es un fallo de la nueva aserción del ledger. Debe investigarse como regresión/defecto de presentación antes de aprobar el PR.
+  - T109 mid-turn boundary: PASS.
+  - T111 terminal boundary: PASS.
+  - T117 terminal timing diagnostic: PASS; esto no prueba handoff conectado.
+  - T118: FAIL en una aserción previa: `T118 Timing Grade was not MISS`; el estado observado es `TACTICAL / STRIKE`, `timingGrade=""`, timing inactivo y SCRAP/ledger sin cambios. El cambio posterior para comprobar `round1.afterTiming` no llega a ejecutarse porque falla antes en `resolveNonTerminalMiss()`. La corrección de lectura temporal es insuficiente; no cambiar la expectativa hasta demostrar el contrato/input correcto.
+  - T114-R: FAIL por timeout esperando una condición `VICTORY` que exige también `combatResult === "VICTORY"`. El estado observado es `battlePhase="VICTORY"`, `combatResult="HOME_RUN"`, timingGrade GREAT, SCRAP 0 y ledger vacío. El probe mezcla una fase terminal válida con un literal de resultado incorrecto o un contrato no confirmado. Inspeccionar el modelo de resultados y adaptar el test al contrato real, sin alterar el juego.
+  - Los artefactos de T097/T101/T109/T111/T117/T118/T114-R se subieron. El job global falla debido a T101, T118 y T114-R.
+- **Baseball Waifus Visual QA**, Run [38029414216](https://github.com/jonhararagi/baseball-waifus/actions/runs/38029414216), mismo SHA `0bc9eb4cf99c5be91f2c746e8ed5a9c8eabbb944`: **SUCCESS**. Incluye `p10-release-gate` y los jobs de QA de personajes/integración; no sustituye el workflow de reward boundary.
+- **Combined commit status:** el endpoint de status no devolvió estados individuales publicados. Se usan los resultados concretos de workflow anteriores, no se infiere un gate global en verde.
+- **Pruebas locales:** NOT RUN en esta sesión. La sintaxis y los probes citados se ejecutaron en GitHub Actions.
+
+### Revisión de código y dictamen
+
+- HEAD inicial/base coincide con main; la rama no avanzó desde el SHA informado. No se sobrescribió trabajo posterior.
+- El diff se limita a `.github/workflows/t097-reward-handoff-cdp.yml`, `webapp/js/character_journey_browser_probe.mjs` y esta bitácora.
+- La prueba T097 ahora prueba explícitamente la frontera negativa del modo demo y no se presenta como evidencia de recompensa conectada.
+- **No aprobar aún el PR #51.** T101 descubre una excepción de runtime que no debe esconderse como ruido; T118 no alcanza la aserción corregida y sigue observando un resultado distinto del esperado; T114-R demuestra que la condición terminal del probe no coincide con el resultado observado. Requieren una corrección acotada y otra ejecución de CI.
+- No se realizaron cambios de código adicionales durante BWM-100, para no alterar las expectativas a ciegas ni expandir el alcance de revisión. Solo se agrega esta reconciliación de evidencia.
+
+### Bloqueos y siguiente paso
+
+La integración de recompensa contra un backend productivo continúa **BLOCKED**: no existe evidencia de endpoint desplegado, persistencia gestionada activa o smoke test autenticado contra una instancia real. No se fusionó ni desplegó nada.
+
+Siguiente tarea recomendada: **BWM-101 · Fix T101 presentation transition + reconcile T118/T114-R result contracts**, limitada a investigar la transición ACTION→FOCUS en el director de presentación, comprobar el DTO real de Timing MISS y el resultado terminal HOME_RUN, corregir únicamente el contrato o la transición que se demuestre incorrecta, y repetir T097/T101/T118/T114-R en Chromium. No modificar autenticación, firma, economía o balance.
+
+**Temporizador BWM-100:** la reconciliación CI y revisión de diff quedó realizada dentro de la ventana de 1–3 horas. Correcciones adicionales de runtime/probes y nueva CI quedan fuera de BWM-100; estimación preliminar 2–4 horas, sujeta a la causa de la transición ACTION→FOCUS.
+
+
+## BWM-101 · INVESTIGACIÓN DE T101, T118 Y T114-R
+
+**Fecha:** 2026-10-10  
+**Estado:** PARTIAL / BLOCKED; no se declara PASS.  
+**Rama:** `bwm-099-normal-combat-authority-handoff`  
+**PR:** [#51](https://github.com/jonhararagi/baseball-waifus/pull/51), abierto y sin fusionar.
+
+### Referencias Git verificadas antes de este ciclo
+
+- `main`: `988c0fa3c7c17077d18e5f7f0722726cae39a197`.
+- HEAD inicial de la rama de trabajo: `aeaf59f3dc72828f251d035eba15fb3c28711b1a`.
+- El PR #51 reporta ese mismo HEAD y mantiene como base el SHA de `main` indicado arriba.
+- La ejecución de CI analizada en BWM-100 corresponde a `0bc9eb4cf99c5be91f2c746e8ed5a9c8eabbb944`; no valida por sí misma `aeaf59f` ni commits posteriores.
+
+### Evidencia previa conservada
+
+- [T097 Reward Boundary CDP QA, run 38029414270](https://github.com/jonhararagi/baseball-waifus/actions/runs/38029414270): workflow terminado con FAILURE. El contrato BONE-004, la validación nativa Chromium y la prueba de bloqueo de recompensas demo pasaron; fallaron T101, T118 y T114-R.
+- [Visual QA, run 38029414216](https://github.com/jonhararagi/baseball-waifus/actions/runs/38029414216): SUCCESS en el SHA probado por ese workflow.
+- Los artefactos de T101, T118 y T114-R se publicaron en la ejecución T097; son evidencia histórica del SHA probado, no validación de la rama actual.
+
+### Diagnóstico por prueba
+
+**T101 — transición de presentación.** La máquina de estados de `CharacterActor2D5` define las transiciones `IDLE → FOCUS → ACTION → RETURN → IDLE` y rechaza combinaciones no permitidas en `transitionTo()`. La excepción `ACTION → FOCUS` confirma que una llamada intenta retroceder a FOCUS desde ACTION. La inspección estática realizada en este ciclo no identifica todavía, con suficiente evidencia, qué llamada concreta solicita esa transición en la secuencia fallida ni si la causa es reutilización de actores, orden de eventos o sincronización. No se modificó la máquina ni se suprimió la excepción. **Causa raíz: pendiente de reproducción instrumentada.**
+
+**T118 — Timing MISS.** El probe espera que el Timing Ring esté activo, envía un clic al centro del canvas y observa el estado una vez que `timingActive` es falso. Esa secuencia no demuestra por sí sola que el input corresponda a un MISS. La evidencia previa observó `TACTICAL / STRIKE` con `timingGrade` vacío, por lo que no es correcto cambiar a ciegas la aserción ni fabricar el campo. Falta correlacionar el input CDP con el evento de timing y el snapshot de resolución, incluyendo la traza de input y el estado antes/después. **Causa raíz: pendiente de evidencia dinámica.**
+
+**T114-R — resultado terminal.** El runtime observado en BWM-100 llegó a `battlePhase = VICTORY` y `combatResult = HOME_RUN`, con SCRAP sin cambios y ledger vacío. El renderer reconoce `HOME_RUN` como resultado específico. Esto es evidencia de que fase y resultado son campos distintos; la aserción que exige `combatResult === VICTORY` no refleja el ejemplo observado y no debe forzar una normalización del runtime. Aun así, falta una nueva ejecución que compruebe el conjunto de resultados válidos y la recuperación tras RETURN/recarga. **Corrección contractual identificada, validación final pendiente.**
+
+### Cambios y validación de este ciclo
+
+No se modificó código de runtime ni se relajaron aserciones durante esta pasada: la evidencia disponible no permite todavía justificar una corrección segura de T101 o T118. Se conserva la excepción y se mantienen explícitos los fallos. Esta entrada documental es el único cambio de BWM-101 en este commit.
+
+| Prueba | Resultado en este ciclo |
+|---|---|
+| SHA / PR / rama verificados | PASS |
+| Inspección estática de la máquina de estados y director | PARTIAL |
+| Reproducción dinámica T101 en Chromium | NOT RUN |
+| Reproducción dinámica T118 con traza de input | NOT RUN |
+| Corrección y regresión terminal T114-R | NOT RUN |
+| Sintaxis y suite completa sobre nuevo SHA | NOT RUN |
+| BONE-004 en nuevo SHA | NOT RUN |
+| CI de Chromium y Visual QA sobre nuevo SHA | NOT RUN |
+| Backend productivo real | BLOCKED / no probado |
+
+No se alteraron economía, SCRAP, gacha, balance, daño, turnos, autenticación, firmas criptográficas, idempotencia ni autoridad de recompensas. La evidencia BONE-004 previa corresponde a contratos y validación con mocks/firmantes de prueba; no prueba una integración productiva. No se utilizaron credenciales productivas.
+
+### Próxima acción recomendada
+
+1. Instrumentar la secuencia T101 para registrar actor, estado anterior, estado solicitado y origen de cada transición; reproducir antes de corregir.
+2. Para T118, registrar el evento de input real y el resultado producido por el sistema de timing, diferenciando input ignorado, timing inactivo y MISS confirmado.
+3. Corregir T114-R para comprobar la fase terminal por separado del resultado específico, manteniendo explícitos los resultados válidos; después validar persistencia y recuperación con el Player Meta envelope vigente.
+4. Ejecutar las pruebas y workflows en el nuevo SHA y enlazar sus resultados. No aprobar ni fusionar el PR #51 hasta resolver los bloqueos.
+
+**Temporizador BWM-101:** el objetivo inicial de 2–4 horas no puede confirmarse como completado. Estimación restante preliminar: 2–5 horas para instrumentación, corrección contractual y regresión; puede aumentar si T101 revela un problema de ciclo de vida o sincronización.
+
+
+## BWM-101-R1 · Instrumentación dinámica y reconciliación contractual
+
+**Fecha:** 2026-10-10  
+**Estado:** PARTIAL / BLOCKED; pendiente de regresión en el SHA final.  
+**Rama:** `bwm-099-normal-combat-authority-handoff`  
+**PR:** [#51](https://github.com/jonhararagi/baseball-waifus/pull/51), abierto y sin fusionar.
+
+### Referencias verificadas al inicio
+
+- `main`: `988c0fa3c7c17077d18e5f7f0722726cae39a197`.
+- HEAD inicial: `0d391ab41751f60326f27bea1edd1090f4697dc5`.
+- PR #51 estaba abierto, sin fusionar, con base SHA coincidente con `main` y `mergeable: true`.
+- [T097 run 38035507912](https://github.com/jonhararagi/baseball-waifus/actions/runs/38035507912) y [Visual QA run 38035507810](https://github.com/jonhararagi/baseball-waifus/actions/runs/38035507810) apuntaban ambos al SHA inicial exacto. T097 terminó en FAILURE; Visual QA terminó en SUCCESS. Esos resultados no validan el commit nuevo de este ciclo.
+
+### Evidencia dinámica y diagnóstico
+
+**T101 — transición ACTION → FOCUS.** La ejecución real de Chromium del run 38035507912 reproduce la excepción, no es una inferencia estática. El stack capturado es `CharacterActor2D5.transitionTo` → `setPresentationState` → `CombatRenderer._handleCombatPresentationStep` (fase `ATTACKER_FOCUS`) → `CombatPresentationDirector.onStep` → `_emitStep`. La ubicación `combat_stage.js:222:13` seguía vigente en el SHA inicial. La evidencia demuestra que al entrar un evento `ATTACKER_FOCUS`, el actor solicitado aún está en `ACTION`. No demuestra por sí sola si el evento repetido viene de un nuevo resultado antes de terminar la acción anterior, una sustitución legítima o una carrera del ciclo de presentación. No se cambió la máquina de estados ni se descartó la excepción. **Causa raíz: todavía no confirmada; hace falta instrumentación correlacionada con actorId, sequenceId, razón y fases previas.**
+
+**T118 — Timing MISS.** El run 38035507912 reproduce la aserción fallida: estado observado `TACTICAL / STRIKE`, `timingActive=false`, `timingGrade=""`, `presentationPhase=ATTACKER_FOCUS`, SCRAP 0 y ledger vacío. El probe de la ruta T109/T118 espera Timing activo, envía eventos CDP `mouseMoved`, `mousePressed`, `mouseReleased` al centro de `#gameCanvas` y después espera el cierre de timing. Esa evidencia confirma el input enviado y un resultado `STRIKE`, pero no confirma que el runtime haya resuelto un `MISS`; la ruta T118 no guarda una traza de entrada correlacionada ni un snapshot inmediato del resolver. No se fabricó un grade ni se debilitó la aserción. **Causa raíz: pendiente; hay que enlazar el evento real del Timing Ring, el resultado de resolución y la actualización del DTO/dataset.**
+
+**T114-R — fase terminal frente a desenlace.** En la misma ejecución, el timeout observó `battlePhase="VICTORY"`, `combatResult="HIT"`, presentación `COMPLETE`, SCRAP y SCRAP persistido en 0 y ledger vacío. La ejecución previa había observado `HOME_RUN`. Los resultados `HIT` y `HOME_RUN` son valores de desenlace, no nombres de fase. Se corrigió el probe para exigir `battlePhase === "VICTORY"` y un desenlace de victoria reconocido (`HIT` o `HOME_RUN`) por separado, sin modificar el productor de resultados. La prueba conserva las comprobaciones negativas de SCRAP/ledger y de retorno de presentación. Sin embargo, la recuperación después de recargar aún requiere cobertura explícita y ejecución posterior al cambio.
+
+### Cambio de código
+
+- `webapp/js/character_journey_browser_probe.mjs`: T114-R deja de exigir el literal no respaldado `combatResult === "VICTORY"`; valida por separado la fase terminal y el desenlace `HIT | HOME_RUN`, y la evidencia/log registra ambos campos de forma diferenciada.
+- `docs/bitacora.md`: esta entrada registra los resultados reales, los límites de evidencia y las comprobaciones pendientes.
+- No se modificó la máquina de estados ni el resolver de Timing porque las trazas actuales no bastan para justificar una corrección de runtime segura.
+
+### Matriz de verificación
+
+| Prueba | Evidencia / estado |
+|---|---|
+| HEAD, base, estado del PR y mergeability | PASS al inicio; debe volver a consultarse tras el commit |
+| T101 | FAIL reproducible en SHA `0d391ab`; raíz pendiente |
+| T118 | FAIL reproducible en SHA `0d391ab`; el MISS no está confirmado |
+| T114-R | Fallo de expectativa contractual identificado; corrección de probe aplicada, regresión del SHA final pendiente |
+| T097 / demo sin recompensa tras retorno y recarga | La ejecución inicial conserva SCRAP 0 y ledger vacío, pero T097 global falla por T101/T118/T114-R |
+| T109 / T111 / T117 | No se declaran aprobados para el SHA final hasta nueva ejecución |
+| BONE-004 | El run inicial lo ejecutó; la evidencia no valida el SHA posterior |
+| Visual QA | SUCCESS en SHA inicial solamente; no valida este cambio |
+| Integración productiva | BLOCKED; no hay smoke test autenticado contra una instancia productiva real |
+
+No se alteraron economía, SCRAP, gacha, pity, daño, turnos, balance, autenticación, firmas, idempotencia ni autoridad de recompensas. No se aprobó ni fusionó el PR, y `main` no se modificó.
+
+### Siguiente paso
+
+Reproducir T101 con trazas de actor/sequence/evento y T118 con un registro que una input físico, actividad de Timing Ring y resultado inmediato. Después ejecutar la matriz completa en un SHA que contenga las correcciones. El contrato de recuperación tras recarga debe añadirse o validarse antes de cerrar T114-R.
+
+**Temporizador BWM-101-R1:** la reconciliación inicial y el ajuste contractual de T114-R quedaron aplicados. Estimación restante: 2–5 horas para instrumentación, diagnóstico seguro y regresiones; si la máquina de estados o el ciclo de timing requieren una corrección más amplia, detenerse y reestimar.
+
+
+## BWM-101-R5 · Harness incremental y trazas causales T101/T118
+
+**Fecha:** 2026-10-10. **Estado al registrar el cambio:** pendiente de CI en el SHA nuevo. **Rama:** bwm-099-normal-combat-authority-handoff. **PR:** [#51](https://github.com/jonhararagi/baseball-waifus/pull/51), abierto y sin fusionar. **main verificado:** 988c0fa3c7c17077d18e5f7f0722726cae39a197. **HEAD inicial:** a847e8b35028222566c725cd5feb4a415a2b0542.
+
+### Recuperación de R4
+
+No se encontró un registro recuperable que identifique la operación exacta que falló en R4. La rama remota no contiene un commit de implementación R4; el error original queda como **NO VERIFICABLE**, sin atribuirlo a una causa supuesta.
+
+### Cambios de R5
+
+- tools/qa/instrument-browser-site.mjs valida seis anclas exactas en la copia site/, copia el módulo temporal y lo importa antes del código de la aplicación. Escribe un manifiesto con SHA-256 de fuentes, rutas, versión y resultados.
+- tools/qa/bwm101r5-instrumentation.js envuelve transición, director de presentación, pasos de renderer y resolver. Cada wrapper llama una sola vez a la implementación original, mantiene argumentos/retorno y vuelve a lanzar la misma excepción.
+- tools/qa/instrument-browser-site.test.mjs comprueba instalación, ancla ausente, ancla duplicada e idempotencia con fixtures temporales.
+- El workflow existente ejecuta tests e instrumentación después de preparar site/ y publica las trazas R5 con if: always().
+- El probe intenta guardar trazas y resúmenes en finally con SHA, run, timestamp, estado, excepciones y conteos. Si no puede recuperar el buffer, registra fallo de instrumentación.
+
+### Cómo repetir
+
+El workflow existente ejecuta:
+
+    node --test tools/qa/instrument-browser-site.test.mjs
+    node tools/qa/instrument-browser-site.mjs site
+
+Solo se modifica la copia temporal site/. Los archivos de producción webapp/ no se editan para introducir wrappers. No se corrigen transiciones, no se fuerza MISS y no se relajan las aserciones.
+
+### Matriz pendiente de ejecución en SHA R5
+
+| Componente | Estado antes de ejecutar el workflow |
+|---|---|
+| Pruebas del harness | NOT RUN |
+| T101 traza de transición | NOT RUN |
+| T118 retorno real del resolver | NOT RUN |
+| T114-R2 | NOT RUN |
+| T097/T109/T111/T117 | NOT RUN |
+| BONE-004 | NOT RUN para SHA R5 |
+| Visual QA | NOT RUN para SHA R5 |
+| Backend productivo | BLOCKED, sin smoke autenticado acreditado |
+
+Diagnóstico T101 y T118: aún no existe evidencia nueva de R5. T101 se evaluará únicamente a partir de las transiciones y excepciones registradas. T118 contará como MISS solo si el retorno real del método envuelto expone grade MISS. Las ejecuciones históricas no se consideran validación de R5.
+
+No se cambia main, no se crea otra rama/PR, no se modifica runtime de combate, SCRAP, economía, recompensas, ledger, gacha, pity, autenticación, firmas ni idempotencia. El PR #51 permanece sin fusionar.
+
+**Temporizador BWM-101-R5:** estimación inicial de implementación e integración 2–4 horas; hasta 1–2 horas adicionales para análisis/repetición de CI. Tiempo realmente invertido: no medido de forma fiable por el entorno de herramientas. Tiempo pendiente: CI, recuperación y análisis de artefactos, estimado provisionalmente en 1–3 horas según los resultados. No es una estimación del lanzamiento multiplataforma global.
+
+
+## BWM-101-R5 · Reconciliación de CI y evidencia causal verificada
+
+**Fecha:** 2026-10-10. **Estado:** PARTIAL; harness y captura PASS, regresiones T101/T118 y otras rutas con fallos observados. **Rama:** bwm-099-normal-combat-authority-handoff. **PR #51:** abierto, sin fusionar. **main:** 988c0fa3c7c17077d18e5f7f0722726cae39a197. **SHA de código probado:** 114c271598003bb16705af44737eb3b9dd2939f2. En el evento pull_request, el runner informa el merge SHA bda24a0e4be3d799138983252746795ab8033122; ambos identifican el código probado en el run.
+
+### CI y artefactos
+
+- [T097 Local Demo Reward Boundary CDP QA, run 38050459328](https://github.com/jonhararagi/baseball-waifus/actions/runs/38050459328): FAILURE global, fiel a las aserciones.
+- [Visual QA, run 38050459401](https://github.com/jonhararagi/baseball-waifus/actions/runs/38050459401): SUCCESS en el SHA de código 114c271598003bb16705af44737eb3b9dd2939f2.
+- [BWM-101-R5 causal traces](https://github.com/jonhararagi/baseball-waifus/actions/runs/38050459328/artifacts/11669047649): contiene las cuatro evidencias T101/T118 con run ID, SHA evaluado, timestamp y estado.
+- [T101 browser evidence](https://github.com/jonhararagi/baseball-waifus/actions/runs/38050459328/artifacts/11669207347).
+- [T118 browser evidence](https://github.com/jonhararagi/baseball-waifus/actions/runs/38050459328/artifacts/11668514513).
+- [T097 evidence](https://github.com/jonhararagi/baseball-waifus/actions/runs/38050459328/artifacts/11669047652), [T109 evidence](https://github.com/jonhararagi/baseball-waifus/actions/runs/38050459328/artifacts/11669187356), [T111 evidence](https://github.com/jonhararagi/baseball-waifus/actions/runs/38050459328/artifacts/11669382203), [T117 evidence](https://github.com/jonhararagi/baseball-waifus/actions/runs/38050459328/artifacts/11669197401), [T114-R2 evidence](https://github.com/jonhararagi/baseball-waifus/actions/runs/38050459328/artifacts/11669152503) y [BONE-004 evidence](https://github.com/jonhararagi/baseball-waifus/actions/runs/38050459328/artifacts/11669217062).
+
+### Diagnóstico T101
+
+La instrumentación sobre site/ produjo una traza de 881 eventos repartidos en capturas previas a navegación. El resumen registró cuatro excepciones de transición ACTION → FOCUS durante la reproducción. El stack sigue el recorrido CharacterActor2D5.transitionTo → CharacterActor2D5.setPresentationState → CombatRenderer._handleCombatPresentationStep → CombatPresentationDirector._emitStep → CombatPresentationDirector.startFromPresentationEvent.
+
+En una excepción concreta, el actor del escenario tenía actorId bw001 y estado ACTION, mientras que el actor de la formación con el mismo actorId bw001 estaba en IDLE; la comparación de identidad devolvió false. El evento de presentación era ATTACKER_FOCUS y la secuencia era combat-presentation:bw001:bw002:STRIKE. Esto constituye evidencia de que escenario y formación mantienen objetos distintos para el mismo ID durante la transición fallida. Es una pista causal fuerte para investigar el ciclo de vida/sincronización de actores, no una corrección implementada ni una demostración de causa raíz completa. La excepción se conserva; no se cambió la máquina de estados.
+
+### Diagnóstico T118
+
+La traza confirma que el input llegó a handleTimingPointer y que resolveTimingInput se llamó una vez y devolvió un objeto real con grade MISS, source pointer, elapsed_ms 155, target_ms 720, delta_ms -565, great_window_ms 79 y hit_window_ms 173. La llamada no fue inferida por timeout ni por canvas.dataset. El estado posterior volvió a TACTICAL, lastTiming conservó MISS, SCRAP siguió en 0 y rewardLedger permaneció vacío.
+
+La aserción existente falla porque inspecciona timingGrade, que aparece vacío después de iniciar la transición de presentación; el objeto devuelto por el resolver sí acredita MISS. No se alteró la aserción ni el resolver. El resumen registró handlerReachCount=1, resolverCallCount=1, resolverReturnCount=1, observedMissReturns=1 e inputObservedWithoutHandler=false.
+
+### Matriz de pruebas del SHA 114c271598003bb16705af44737eb3b9dd2939f2
+
+| Componente | Resultado real | Observación |
+|---|---|---|
+| Harness: fixtures, ancla ausente/duplicada, segunda ejecución | PASS | El paso Validate and instrument temporary site for BWM-101-R5 terminó success e inspeccionó el manifiesto |
+| Instrumentación en copia site/ | PASS | No se editaron archivos de runtime de combate; manifiesto y wrappers se generaron en la copia temporal |
+| T101 | FAIL | Cuatro excepciones ACTION → FOCUS capturadas; identidad de actor de escenario y formación difiere |
+| T118 | FAIL | El retorno real es MISS; la aserción posterior consulta un campo transitorio vacío |
+| T097 | FAIL | Timeout esperando VICTORY; el estado observado quedó TACTICAL/STRIKE, SCRAP 0 y ledger vacío |
+| T109 | PASS | La prueba de frontera no terminal terminó correctamente |
+| T111 | PASS | La prueba de frontera terminal terminó correctamente |
+| T117 | PASS | El diagnóstico de timing terminal terminó correctamente |
+| T114-R2 | FAIL | Timeout esperando VICTORY; el estado observado quedó TACTICAL/STRIKE, SCRAP 0 y ledger vacío |
+| BONE-004 contrato y Chromium nativo | PASS | Ambos pasos terminaron success en este run |
+| Visual QA | PASS | Run separado 38050459401, mismo SHA de código 114c |
+| Backend productivo autenticado | BLOCKED | No se ejecutó smoke contra backend productivo |
+
+T097 y T114-R2 tuvieron resultados distintos en una ejecución anterior cercana; en este SHA fallaron con el estado descrito arriba. Se documenta el resultado de este run y no se reutiliza el anterior para convertir el fallo en PASS. El workflow publicó los artefactos con if: always() y mantuvo el job global en FAILURE.
+
+### Estado de R4, cambios y límites
+
+El error original de la operación de escritura de R4 no pudo recuperarse y permanece **NO VERIFICABLE**. Durante R5 hubo una primera implementación de harness con sintaxis defectuosa; CI la detectó. Se corrigió el ancla/escape, se volvió a ejecutar y el paso de harness pasó. Después se amplió la captura para conservar el buffer T101 entre navegaciones; esa ampliación está incluida en el SHA 114c y se ejercitó en el run 38050459328.
+
+Archivos R5: tools/qa/instrument-browser-site.mjs, tools/qa/bwm101r5-instrumentation.js, tools/qa/instrument-browser-site.test.mjs, .github/workflows/t097-reward-handoff-cdp.yml, webapp/js/character_journey_browser_probe.mjs y docs/bitacora.md. El cambio de probe es instrumentación del runner; no modifica reglas de combate, transición, timing, economía ni recompensas. El commit documental que incorpora esta reconciliación no cambia el código probado; por eso el SHA de código probado y el HEAD posterior de documentación se reportan por separado.
+
+### Siguiente acción recomendada
+
+1. En una tarea separada, investigar el ciclo de vida del actor bw001 entre CombatStage y CharacterFormation, usando el orden de eventos/estados de la traza, sin relajar ACTION → FOCUS.
+2. Corregir la observación T118 del probe para asertar sobre el DTO retornado capturado, manteniendo las verificaciones de SCRAP y ledger; no modificar la regla del resolver.
+3. Repetir T097/T101/T118/T114-R2 en el SHA de la siguiente tarea y analizar por qué T097/T114-R2 quedaron en TACTICAL/STRIKE en esta ejecución.
+4. No aprobar ni fusionar PR #51 hasta revisar la excepción T101 y los fallos de los probes.
+
+**Temporizador BWM-101-R5:** estimación inicial 2–4 h de implementación/integración y 1–2 h para análisis/repetición de CI. Tiempo realmente invertido en esta sesión: aproximadamente 25–35 minutos de trabajo efectivo de herramientas, medido de forma aproximada por las marcas de tiempo de CI. Tiempo pendiente para diagnosticar T101, reconciliar T118/T097/T114-R2 y repetir regresiones: reservar 1–3 h, condicionado a la causa del ciclo de presentación. No se deriva una estimación global de lanzamiento multiplataforma a partir de este bloque.
+
+---
+
+## BWM-101-R5 · T101/T118 causal evidence instrumentation
+
+**Fecha:** 2026-10-10  
+**Rama:** `bwm-099-normal-combat-authority-handoff`  
+**PR:** #51, sin merge  
+**Timer de esta intervención:** 45–90 minutos  
+**Estado inicial:** PARTIAL / BLOCKED; la evidencia anterior no vinculaba con suficiente precisión el actor activo y la salida retenida del resolver con el input físico de Timing Ring.
+
+### Cambios aplicados
+
+- `webapp/js/app.js`: se añadió bajo `?qa=t097` el hook de solo lectura `__BW_T097_GET_RUNTIME__`, que expone snapshot de `getBattleLoopState()`, `lastTiming`, `lastTurn` y la identidad del actor seleccionado junto con el roster de actores de `CombatStage`. No cambia la resolución del combate.
+- `webapp/js/character_journey_browser_probe.mjs`: T101 ahora valida que el actor seleccionado exista en el stage, conserva la salida del resolver en cada ronda y exige que el grado retenido sea coherente con el MISS observado y el estado de combate.
+- T118 captura el snapshot retenido inmediatamente después de que CDP envía el input físico, antes del polling asíncrono. La evidencia incluye la comparación entre `renderer.lastTiming.grade` y `getBattleLoopState().last_timing.grade`.
+
+### Límites de validación
+
+- Commits de implementación: `03632bc3fc18f0f6f14e07c6ea6e5594f6f8d149`, `59dc7054b66eaf7789c49df9eb439d2b1c47c63c`, `40e4bf83656bf33f34971334cbb360cc019739f5` (corrección de alcance de evidencia T118).
+- Los archivos se escribieron exclusivamente en la rama de trabajo existente; `main` no se modificó.
+- No se ejecutaron aquí Chromium, la matriz completa ni los workflows de GitHub Actions. El código queda **IMPLEMENTADO / CI PENDIENTE**, no PASS_REAL.
+- No se cambiaron reglas de combate, timing, stamina, daño, recompensas, SCRAP, gacha, autenticación ni criptografía.
+- El actor seleccionado se registra como dato de presentación/QA; no se usa para decidir el resultado de juego.
+
+### Próximo paso
+
+Ejecutar T101 y T118 en el workflow de Chromium sobre el mismo HEAD final y revisar la evidencia JSON generada. Si falla la correlación, conservar los datos observados y diagnosticar el contrato real sin inyectar MISS artificial ni alterar reglas.
+
+**Estimación restante del proyecto:** no recalculable con rigor a partir de esta intervención aislada; producción continúa bloqueada por gates externos documentados. Para este bloque T101/T118, queda pendiente una ronda de CI y análisis de evidencia, estimada en 30–90 minutos si los runners y artifacts responden normalmente.
+
+## BWM-101-R6 · Corrección causal de actores y observación real de T118
+
+**Estado: PARTIAL.** Esta entrada refleja la evidencia R5 y los cambios R6 realizados hasta el commit documentado; no declara resuelto T101 ni afirma validación de Chromium sobre el nuevo HEAD.
+
+### Estado remoto y evidencia inicial
+
+- Rama de trabajo conservada: `bwm-099-normal-combat-authority-handoff`.
+- PR conservado: [#51](https://github.com/jonhararagi/baseball-waifus/pull/51), abierto y sin fusionar en la última consulta.
+- `main` conocido en la consulta: `988c0fa3c7c17077d18e5f7f0722726cae39a197`; no se escribió en `main`.
+- Run R5 consultado: [38050807998](https://github.com/jonhararagi/baseball-waifus/actions/runs/38050807998), conclusión `failure`. Jobs de T097 y T101 fallaron; BONE-004 pasó y T109/T111/T117 tuvieron resultados satisfactorios según el run anterior. Esos resultados no validan el HEAD R6.
+- Artefacto causal T101 descargado: `t101-transition-trace.json`, SHA de ejecución `5a29d4e77d971a56e21404be4183571f47fc3954`, 881 eventos, cuatro excepciones `ACTION -> FOCUS`.
+- Artefacto T118 descargado: `t118-timing-trace.json` y `t118-resolution-summary.json`. El resumen de R5 registra al menos un retorno `MISS`; el artefacto también conserva el fallo del probe que consultaba el dataset visual vacío.
+- Artefactos consultados: [T101 evidencia](https://github.com/jonhararagi/baseball-waifus/actions/runs/38050807998) y [T118 evidencia](https://github.com/jonhararagi/baseball-waifus/actions/runs/38050807998). El listado del run devuelve los artefactos y sus IDs; la evidencia corresponde al SHA histórico R5, no al HEAD R6.
+
+### Diagnóstico T101
+
+La traza muestra explícitamente una divergencia de identidad para `bw001`: durante una secuencia activa, el actor de `CombatStage` permanece en `ACTION`, mientras que el actor con el mismo ID en la formación del director está en `IDLE` y `sameActorIdentity=false`. En una secuencia nueva, el director emite `ATTACKER_FOCUS` y el renderer intenta `ACTION -> FOCUS`, transición que `CharacterActor2D5` rechaza correctamente.
+
+La evidencia sitúa una divergencia de referencias/estado y muestra la limpieza de formación como operación relevante. Sin embargo, con la evidencia recuperada no queda demostrada todavía la primera operación que sustituyó el objeto del escenario ni el punto exacto de ciclo de vida que dejó obsoleta la formación. Por tanto, **no se declara causa raíz cerrada y no se modifica el runtime de actores en R6 hasta reproducir el punto de sustitución**. La siguiente prueba debe instrumentar las mutaciones de `CombatStage.setActors`, `CombatPresentationDirector.setStage` y cualquier reconstrucción de formación, capturando identidad de objeto antes/después.
+
+### Cambios R6 realizados
+
+- `webapp/js/app.js`: el hook exclusivo `?qa=t097` expone un snapshot de solo lectura de la ventana activa del Timing Ring (identidad, `startedAt`, `targetMs`, `durationMs`). No se cambia el resolver ni las reglas productivas del combate.
+- `webapp/js/character_journey_browser_probe.mjs`: T118 toma una línea base de diagnósticos antes de inyectar un único clic físico y obtiene los eventos nuevos del harness R5. Exige entrada física, un único handler, una única pareja resolver-before/after correlacionada por `callSeq`, fuente pointer y `grade === MISS` directamente del DTO retornado por `resolveTimingInput()`. Se conservan las aserciones de `STRIKE`, continuidad `TACTICAL`, no terminalidad, SCRAP, SCRAP persistido y ledger.
+- El probe conserva evidencia de diagnóstico y no utiliza un retorno antiguo: limita la selección a los eventos añadidos después de la línea base. La ventana activa se registra como contexto independiente.
+- Commits R6 observados durante esta intervención: `03632bc3fc18f0f6f14e07c6ea6e5594f6f8d149` (hook QA de snapshot), `65704007db4e978b0acb5fdbb27b0a65e36cc4ce` (observación de retorno T118), `3db5d823b1f94f3ba9b25acd26b85093d9e3c3f7` (identidad de ventana QA), `f700e808658353d837b4fb5e94a0edc26b9182a7` (correlación con ventana activa). Debe verificarse el HEAD remoto final antes de atribuir una ejecución de CI.
+
+### Matriz de validación R6
+
+| Comprobación | Estado | Evidencia / motivo |
+|---|---|---|
+| Recuperación de artefactos R5 | PASS | ZIP causal y ZIP T118 recuperados y examinados |
+| Causa raíz T101, primera mutación identificada | BLOCKED | Divergencia confirmada; falta aislar la operación inicial que reemplaza el actor |
+| Corrección runtime T101 | NOT RUN | No se modificó el runtime porque la causa no está cerrada |
+| Regresión determinista del ciclo de vida | NOT RUN | Pendiente de fijar una reproducción sobre el punto de sustitución |
+| T118 observación del retorno real | PARTIAL | Código del probe actualizado; pendiente ejecutar Chromium y validar forma exacta de los eventos del harness |
+| Fixtures BWM-101-R5 | NOT RUN | No ejecutados en el HEAD R6 |
+| T097 / T101 / T109 / T111 / T117 / T114-R2 | NOT RUN | El run disponible corresponde al SHA R5 `5a29d4e77d971a56e21404be4183571f47fc3954` |
+| BONE-004 contrato y Chromium | NOT RUN para R6 | El PASS anterior pertenece al run R5 |
+| Visual QA | NOT RUN para R6 | Sin resultado nuevo del HEAD R6 |
+| Publicación de artefactos R6 | NOT RUN | Requiere nueva ejecución de Actions |
+
+### SHA y estado final de esta entrada
+
+- Último commit R6 confirmado por consulta individual: `f700e808658353d837b4fb5e94a0edc26b9182a7`. El estado del workflow para este SHA no mostraba checks registrados en la consulta realizada; no equivale a PASS.
+- No se afirma que este SHA sea el HEAD final de la rama tras todas las escrituras. Volver a consultar el HEAD y los runs antes del informe de cierre.
+- PR #51 sigue siendo el PR objetivo. No se fusionó ni cerró.
+- Bloqueos: reproducción causal de la sustitución de actor, test determinista, ejecución Chromium/Actions sobre un mismo SHA y comprobación de T097/T114-R2 para separar regresiones terminales independientes.
+
+### Siguiente paso recomendado
+
+Instrumentar temporalmente el punto de creación/reemplazo de actores con identidad de objeto y secuencia activa; construir una prueba de ciclo de vida que falle antes de la corrección y pase después. En paralelo, ejecutar T118 en Chromium para verificar que el harness produce una pareja única y correlacionada de eventos resolver y que la evidencia contiene retorno, estado posterior y economía.
+
+**Temporizador R6:** implementación de observación T118 realizada; validación, análisis final T101 y documentación de cierre pendientes. Tiempo realmente invertido: no medido con un cronómetro, por lo que no se inventa. Tiempo pendiente estimado: 2–4 horas de diagnóstico/prueba y 1–2 horas para CI y análisis de artefactos, si los runners responden normalmente. La estimación global de lanzamiento multiplataforma no se recalcula aquí.
+
+
+
+---
+
+## BWM-101-R7-C1 · Corrección de entrada única y traza de ciclo de vida
+
+**Fecha:** 2026-10-10  
+**Estado:** PARTIAL, pendiente de validación Chromium y de demostrar causa raíz T101.  
+**Rama:** `bwm-099-normal-combat-authority-handoff`  
+**PR:** [#51](https://github.com/jonhararagi/baseball-waifus/pull/51), abierto y sin fusionar.  
+**SHA de main conocido:** `988c0fa3c7c17077d18e5f7f0722726cae39a197`.
+
+### Estado inicial y R6
+
+- HEAD confirmado al inicio: `b5c93d23b91180c49a9bb0d88bed3d08aecfcab0`.
+- Run [R6 38055054272](https://github.com/jonhararagi/baseball-waifus/actions/runs/38055054272): terminado con `failure`; el job de CDP terminó, no sigue en curso.
+- [Visual QA R6 38055054275](https://github.com/jonhararagi/baseball-waifus/actions/runs/38055054275): el encargo previo informa `success`; no valida el comportamiento de T118 ni la causa raíz de T101.
+- Artefactos de R6 recuperados y no expirados: [T118](https://github.com/jonhararagi/baseball-waifus/actions/runs/38055054272), [T109](https://github.com/jonhararagi/baseball-waifus/actions/runs/38055054272), [T101](https://github.com/jonhararagi/baseball-waifus/actions/runs/38055054272), [trazas R5](https://github.com/jonhararagi/baseball-waifus/actions/runs/38055054272). La lista de jobs confirma T097, T101, T109, T118 y T114-R2 en fallo; T111, T117 y las comprobaciones BONE-004/Chromium nativo pasaron en esa ejecución histórica. Ninguno de estos resultados se considera PASS de R7.
+- Evidencia T101 previa: la excepción real `Invalid CharacterActor2D5 transition: ACTION -> FOCUS` aparece en la ruta de presentación. La divergencia entre actor de escenario y actor de formación ya se había observado, pero no estaba registrada la primera mutación que la origina.
+- Evidencia T118 previa: el snapshot posterior mostraba `TACTICAL / STRIKE`, timing inactivo, grade vacío y SCRAP/ledger sin cambios. Eso no prueba el grado devuelto por la llamada.
+
+### Cambios aplicados en R7-C1
+
+- `webapp/js/character_journey_browser_probe.mjs`: eliminada la primera secuencia de clics que ocurría antes de la línea base. Ahora se comprueba la geometría, se captura el contexto y el contador de eventos antes de una única secuencia CDP `mouseMoved / mousePressed / mouseReleased`. La aserción de diagnóstico no tiene reintento de clic.
+- T118 conserva las comprobaciones de exactamente un handler, una llamada resolver, un retorno correlacionado por `callSeq`, fuente `pointer`, grado `MISS`, resultado `STRIKE`, continuidad no terminal y frontera de recompensas. Se retiró la aserción obsoleta `round1.afterTiming.timingGrade === "MISS"` y la evidencia usa el grado del DTO retornado por el resolver.
+- `tools/qa/bwm101r5-instrumentation.js`: se añadieron observadores QA para `CombatStage.setActors`, `CombatPresentationDirector.setStage/_createRuntimeFormation/_ensureRuntimeFormation` y `CharacterFormation2D5.populate/attach/clear`, con IDs de referencia instrumentales monotónicos en `WeakMap` y snapshots de mapas/estado antes y después. Los wrappers delegan una sola vez, preservan retorno y re-lanzan excepciones. No se modificó el runtime productivo de actores.
+- Estos cambios ya se enviaron a la rama mediante commits separados. SHA de cada prueba y HEAD final deben anotarse después de la nueva ejecución, no inferirse de los SHA anteriores.
+
+### Validación
+
+| Comprobación | Estado en esta entrada |
+|---|---|
+| Consulta de PR, HEAD y estado de R6 | PASS |
+| Recuperación de lista de jobs y artefactos R6 | PASS |
+| Revisión de código de la secuencia T118 | PASS estático; no equivale a ejecución |
+| Prueba de fixtures `tools/qa/instrument-browser-site.test.mjs` | NOT RUN |
+| T118 Chromium sobre SHA R7 | NOT RUN |
+| T109 Chromium sobre SHA R7 | NOT RUN |
+| T101 con nueva traza de ciclo de vida | NOT RUN; causa raíz no demostrada |
+| T097, T111, T117, T114-R2, BONE-004 y Visual QA sobre SHA R7 | NOT RUN |
+| Publicación de artefactos R7 | NOT RUN |
+
+### Bloqueos y siguiente acción
+
+No se atribuyen T097 ni T114-R2 a la doble entrada sin nuevas evidencias. T101 permanece abierto hasta obtener una traza que incluya el primer reemplazo o creación divergente, referencias de objeto y secuencia de director. La instrumentación nueva aún debe verificarse con los fixtures y una reproducción real en Chromium. Si los artefactos no se generan, conservar el fallo explícito, no rebajar las aserciones.
+
+**Tiempo realmente invertido:** no medido por cronómetro.  
+**Temporizador R7-C1:** el flujo de entrada y la primera instrumentación se implementaron; validación automatizada, revisión de la traza y nueva CI siguen pendientes. Estimación restante: 1–3 horas si la correlación del navegador es reproducible; reserva de 1–2 horas adicionales si T101 necesita otra instrumentación o reproduce fallos independientes.  
+**Estimación global de finalización de BaseWarriors: Meta-Strike:** no puede calcularse rigurosamente a partir de esta tarea aislada; el lanzamiento multiplataforma permanece fuera de este temporizador.
+
+---
+
+## BWM-101-R7-C2 · Timing Ring determinista y ciclo de vida de actores
+
+**Fecha:** 2026-10-10  
+**Estado registrado:** `PARTIAL`; no es cierre de release.  
+**Rama:** `bwm-099-normal-combat-authority-handoff`  
+**HEAD de rama al registrar esta entrada:** `c82cef64a33defdad7ece51a48e0f94bcc898203`  
+**PR #51:** [abierto, sin fusionar](https://github.com/jonhararagi/baseball-waifus/pull/51), base `988c0fa3c7c17077d18e5f7f0722726cae39a197`, mergeable=`true`.  
+**SHA de main confirmado:** `988c0fa3c7c17077d18e5f7f0722726cae39a197`.
+
+### Preflight y ejecuciones remotas
+
+- Run R6 [38055054272](https://github.com/jonhararagi/baseball-waifus/actions/runs/38055054272): terminó en FAILURE; T097/T101/T109/T118/T114-R2 fallaron. T111/T117 y BONE-004 contrato/Chromium nativo pasaron en ese SHA. Visual QA R6 [38055054275](https://github.com/jonhararagi/baseball-waifus/actions/runs/38055054275): SUCCESS. No se consideran PASS del SHA R7-C2 actual.
+- Run de timing con evidencia [38064484726](https://github.com/jonhararagi/baseball-waifus/actions/runs/38064484726), SHA observado `49d5c328e06614ce28a44c0b5ba0c2a9fa91654a`: el probe midió el mismo patrón de latencia dentro del input. T097 programó alrededor de `660 ms`, pero el retorno ocurrió sobre `905 ms`, desviación `+244 ms`; T109 mostró un desfase aproximado de `230 ms` entre el snapshot anterior y el retorno. La traza de timing registró bandas reales del window, grado y delta. No se maquilló el resultado.
+- CDP actual al redactar esta entrada: [38064790009](https://github.com/jonhararagi/baseball-waifus/actions/runs/38064790009) · SHA `c82cef64a33defdad7ece51a48e0f94bcc898203` · in_progress/PENDING.
+- Visual QA actual al redactar esta entrada: [38064790006](https://github.com/jonhararagi/baseball-waifus/actions/runs/38064790006) · SHA `c82cef64a33defdad7ece51a48e0f94bcc898203` · completed/success.
+- Los artefactos nuevos deben revisarse en sus runs respectivos y cotejarse con su SHA, no por similitud de nombre.
+
+### Diagnóstico y cambios
+
+**T101, causa raíz demostrada por la traza.** En el reemplazo del mapa `CombatStage.setActors()`, `bw001` pasaba de una referencia compartida `object-ref-4` en stage y formación a un actor nuevo `object-ref-21` en stage, mientras la formación seguía ligada a `object-ref-4`. El director reutilizaba la formación obsoleta porque `_ensureRuntimeFormation()` solo la creaba si era null; la secuencia de presentación posterior terminaba pidiendo `ACTION → FOCUS` al actor de la generación actual. Se corrigió el ciclo de vida sin tocar la máquina de estados: comparar las referencias de los cuatro actores player stage/formación y reconstruir la formación si divergen; al reemplazar, finalizar primero la generación de actores que estaba animándose. La regresión determinista contiene un test rojo con la antigua implementación que exige la excepción `ACTION → FOCUS` y el test verde con la implementación corregida que valida la identidad de referencias, secuencias sucesivas y llegada a `COMPLETE`.
+
+**T118/T109/T097/T114-R2, causa del probe.** Los runs previos confirmaron que `resolverBefore.seq` debe compararse con `resolverAfter.callSeq`. El retorno real de un clic R7-C2 anterior fue `GREAT`, `elapsed_ms=737`, `target_ms=720`, `delta_ms=17`; no era MISS. Los runs con el scheduler anterior mostraron que esperar mediante polling CDP y luego consultar el estado volvía a introducir una latencia considerable. La instrumentación usó `getState()`, que clona el estado de la autoridad, en el camino síncrono del pointer handler; eso puede bloquear el hilo y desplazar la resolución después del evento físico. El intento más reciente elimina el round trip CDP después del temporizador y toma el baseline exacto durante `pointerdown` en fase de captura, antes del handler del canvas. El lector QA debe obtener la fase, turno y bandas a través del objeto de estado plano disponible, no invocar getters que clonan la autoridad. La banda del clic terminal acepta `HIT` o `GREAT` dentro de `hitWindowMs`; MISS sigue requiriendo el DTO real fuera de la ventana de acierto. Cada intento persiste su JSON antes de las aserciones funcionales, también en fallo.
+
+### Archivos del alcance R7-C2
+
+- `webapp/js/character_journey_browser_probe.mjs`: scheduling de Timing Ring basado en la ventana real, geometría del canvas sin puntos obstruidos, entrada física única, captura correlacionada del retorno DTO y evidencia por intento.
+- `tools/qa/bwm101r5-instrumentation.js`: referencias estables por `WeakMap`, traza de ciclo de vida de actores, señal de primer desajuste y captura de input; debe evitar llamadas que clonen estado durante el evento físico.
+- `tools/qa/instrument-browser-site.mjs` y `tools/qa/instrument-browser-site.test.mjs`: fixture/anclas de R7-C2, incluida `beginTimingWindow()`.
+- `.github/workflows/t097-reward-handoff-cdp.yml`: validación del manifiesto R7-C2, prueba de identidad de actores y publicación de artefactos con `if: always()`.
+- `webapp/js/combat_presentation_director.js`: corrección mínima de sincronización de la formación cuando `CombatStage.setActors()` reemplaza la generación de actores.
+- `tools/qa/combat-presentation-director.actor-identity.test.mjs`: reproducción determinista del comportamiento anterior y verificación de la corrección.
+- No se modificaron autoridad de combate, daño, stamina, Timing Ring productivo, economía, SCRAP, ledger, gacha, pity, autenticación ni attestation.
+
+### Matriz de evidencia
+
+| Validación | Resultado que puede afirmarse |
+|---|---|
+| Preflight PR/main y revisión de R6 | PASS de consulta |
+| R7-C2 regresión determinista de actor | PASS en CI de una ejecución anterior al último ajuste del lector de timing; revalidar el SHA actual |
+| Harness válido/ausente/duplicado/idempotencia | PASS en una ejecución previa; revalidar el SHA actual |
+| `node --check` probe | Ejecutado por workflow en una revisión previa; revalidar la revisión actual |
+| T101 Chromium | La traza posterior a la corrección no mostró `ACTION → FOCUS` en una revisión previa; revalidar el SHA actual |
+| T097 / T109 / T118 / T114-R2 | FAIL en ejecuciones previas; los intentos deben revisarse sobre el SHA más reciente |
+| T111 / T117 | PASS histórico en R6, no reutilizable como PASS de R7-C2 |
+| BONE-004 contrato y Chromium nativo | PASS histórico en R6, no reutilizable como PASS del SHA actual |
+| Visual QA | Hubo PASS en revisiones previas; usar [38064790006](https://github.com/jonhararagi/baseball-waifus/actions/runs/38064790006) · SHA `c82cef64a33defdad7ece51a48e0f94bcc898203` · completed/success para el estado remoto actual |
+| Evidencia de retorno real y frontera SCRAP/ledger | Pendiente de revisión del artefacto del SHA más reciente |
+
+### Bloqueos y siguiente acción
+
+El reemplazo de actores tiene causa raíz reproducida y una regresión determinista. El cierre funcional queda pendiente de revisar la nueva captura temporal contra Chromium: verificar que el snapshot de `pointerdown` no llame `getState()` ni ningún getter que clone la autoridad, comparar `pointerdown` con el único handler y el par resolver before/after por `seq/callSeq`, y verificar el retorno real, el estado inmediato y SCRAP/ledger. Si un intento no llega al grado previsto, conservar el DTO y fallar explícitamente; no repetir el clic. No atribuir fallos terminales a T101 sin correlación.
+
+**Tiempo real invertido:** no medido por cronómetro.  
+**Timer de BWM-101-R7-C2:** estimación restante de 2–4 horas para cerrar el input crítico y verificar artefactos; reserva de 1–2 horas extra si aún hay variación de Chromium o se descubre otro fallo independiente. La duración del lanzamiento multiplataforma es una estimación aparte y no se deduce de este bloque.

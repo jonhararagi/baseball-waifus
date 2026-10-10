@@ -183,6 +183,200 @@ async function cdpEvaluate(cdp, expression) {
   return result?.result?.value;
 }
 
+
+async function dispatchCorrelatedTimingPointer(cdp, { task, attempt = 1, expectedGrade, expectedRound = null, expectedTurn = 5 }) {
+  const safeTask = String(task || "timing").toLowerCase().replace(/[^a-z0-9-]/g, "-");
+  const evidencePath = join(EVIDENCE_DIR, "timing-input-" + safeTask + "-" + String(attempt) + ".json");
+  const proof = { schema: "BWM-101-R7-C2-TIMING-INPUT", task, attempt, expectedGrade, expectedRound, expectedTurn,
+    sha: process.env.GITHUB_SHA || "local", runId: process.env.GITHUB_RUN_ID || "local", createdAt: new Date().toISOString(), status: "IN_PROGRESS" };
+  const persist = () => { try { mkdirSync(EVIDENCE_DIR, { recursive: true }); writeFileSync(evidencePath, JSON.stringify(proof, null, 2) + "\n", "utf8"); }
+    catch (error) { process.stderr.write("[BWM101R7C2] evidence write failed: " + String(error?.stack || error) + "\n"); } };
+  const clockExpression = "(() => { const r=window.__BWM101R7C2_READ_TIMING__?.()||{}; const t=r.timingState||null; const b=r.battle||{}; const d=window.__BWM101R5_DIAGNOSTICS__; const elapsedMs=Number.isFinite(Number(t?.startedAt))?performance.now()-Number(t.startedAt):null; return {available:r.available===true,active:t?.active===true,startedAt:t?.startedAt??null,targetMs:t?.targetMs??null,durationMs:t?.durationMs??null,hitWindowMs:t?.hitWindowMs??null,greatWindowMs:t?.greatWindowMs??null,windowId:t?.windowId||'',elapsedMs,phase:b.phase||'',round:b.round??null,tacticalTurn:b.tacticalTurn??null,lastTiming:r.lastTiming??null,sequence:d?.sequence??0,eventCount:d?.events?.length??0}; })()";
+  try {
+    const geometryAndTargets = await cdpEvaluate(cdp, "(() => { const c=document.querySelector('#gameCanvas'); const r=c?.getBoundingClientRect(); if(!c||!r)return null; const fractions=[[.5,.5],[.8,.5],[.2,.5],[.5,.8],[.5,.2],[.8,.8],[.2,.8],[.8,.2],[.2,.2],[.92,.5],[.08,.5],[.5,.92],[.5,.08]]; const candidates=fractions.map(([fx,fy])=>{const x=r.left+r.width*fx,y=r.top+r.height*fy,e=document.elementFromPoint(x,y);return {x,y,fx,fy,isCanvas:e===c,tag:e?.tagName||'',id:e?.id||''};}); const accessible=candidates.filter(p=>p.isCanvas).sort((a,b)=>Math.hypot(a.fx-.5,a.fy-.5)-Math.hypot(b.fx-.5,b.fy-.5)); return {left:r.left,top:r.top,width:r.width,height:r.height,viewportWidth:innerWidth,viewportHeight:innerHeight,candidates,selected:accessible[0]||null}; })()");
+    const geometry = geometryAndTargets ? {left:geometryAndTargets.left,top:geometryAndTargets.top,width:geometryAndTargets.width,height:geometryAndTargets.height,viewportWidth:geometryAndTargets.viewportWidth,viewportHeight:geometryAndTargets.viewportHeight} : null;
+    proof.geometry = geometry;
+    proof.targetCandidates = geometryAndTargets?.candidates || [];
+    requireCondition(geometry && geometry.width > 0 && geometry.height > 0, task + " canvas geometry unavailable", geometry);
+    const selectedPoint = geometryAndTargets?.selected;
+    requireCondition(selectedPoint?.isCanvas === true, task + " no unobstructed canvas input coordinate exists", { geometry, candidates: geometryAndTargets?.candidates || [] });
+    const x = selectedPoint.x, y = selectedPoint.y;
+    proof.inputPoint = { x, y, fractionX: selectedPoint.fx, fractionY: selectedPoint.fy };
+    proof.target = selectedPoint;
+    await cdp.send("Input.setIgnoreInputEvents", { ignore: false });
+
+    // Measure real CDP runtime-evaluation latency before selecting the live-window sample.
+    // The final sample is reused for timing, so the calibration does not consume a
+    // second, unaccounted evaluation after the timer reaches its target.
+    const evaluationRoundTripMs = [];
+    let initial = null;
+    for (let sampleIndex = 0; sampleIndex < 3; sampleIndex++) {
+      const sampleStart = performance.now();
+      initial = await cdpEvaluate(cdp, clockExpression);
+      evaluationRoundTripMs.push(performance.now() - sampleStart);
+    }
+    const sortedRtt = [...evaluationRoundTripMs].sort((a, b) => a - b);
+    const medianRttMs = sortedRtt[Math.floor(sortedRtt.length / 2)];
+    const maxRttMs = Math.max(...evaluationRoundTripMs);
+    proof.windowAtPreparation = initial;
+    requireCondition(initial?.active === true && Number.isFinite(initial.startedAt), task + " active Timing Ring window unavailable", initial);
+    requireCondition(initial.phase === "CLIMAX", task + " timing window phase is not CLIMAX", initial);
+    requireCondition([initial.targetMs,initial.durationMs,initial.hitWindowMs,initial.greatWindowMs].every(Number.isFinite),
+      task + " timing window lacks target/duration/hit/great bands", initial);
+    if (expectedRound !== null) requireCondition(initial.round === expectedRound, task + " timing window belongs to wrong round", { expectedRound, initial });
+    if (expectedTurn !== null) requireCondition(initial.tacticalTurn === expectedTurn, task + " timing window belongs to wrong turn", { expectedTurn, initial });
+
+    const leadMs = expectedGrade === "MISS"
+      ? (initial.hitWindowMs * 2) + initial.greatWindowMs + 30
+      : initial.hitWindowMs / 2;
+    const scheduledElapsedMs = Math.max(0, initial.targetMs - leadMs);
+    proof.schedulerCalibration = {
+      source: "measured Node/CDP runtime-evaluation round trips",
+      evaluationRoundTripMs, medianEvaluationRoundTripMs: medianRttMs,
+      maxEvaluationRoundTripMs: maxRttMs,
+      finalSampleRoundTripMs: evaluationRoundTripMs[evaluationRoundTripMs.length - 1]
+    };
+    proof.schedule = {
+      strategy: expectedGrade === "MISS" ? "early-outside-twice-hit-window" : "lead-by-half-hit-window",
+      mechanism: "single Node timer; no CDP poll or runtime query after the wait; exact baseline captured during window-capture pointerdown before canvas handler",
+      scheduledElapsedMs, leadMs, initialElapsedMs: initial.elapsedMs, targetMs: initial.targetMs,
+      hitWindowMs: initial.hitWindowMs, greatWindowMs: initial.greatWindowMs, durationMs: initial.durationMs,
+      harnessSequenceAtSchedule: initial.sequence, harnessEventCountAtSchedule: initial.eventCount,
+      timerWaitMs: Math.max(0, scheduledElapsedMs - Number(initial.elapsedMs || 0) - medianRttMs)
+    };
+    const timerWaitMs = proof.schedule.timerWaitMs;
+    const timerStart = performance.now();
+    if (timerWaitMs > 0) await sleep(timerWaitMs);
+    proof.schedule.actualNodeWaitMs = performance.now() - timerStart;
+    proof.preDispatchPlan = {
+      sequence: initial.sequence, eventCount: initial.eventCount,
+      phase: initial.phase, round: initial.round, tacticalTurn: initial.tacticalTurn,
+      window: {
+        active: initial.active, startedAt: initial.startedAt, targetMs: initial.targetMs,
+        durationMs: initial.durationMs, hitWindowMs: initial.hitWindowMs,
+        greatWindowMs: initial.greatWindowMs, windowId: initial.windowId,
+        elapsedMs: Number(initial.elapsedMs) + Number(evaluationRoundTripMs[evaluationRoundTripMs.length - 1] || 0)
+          + proof.schedule.actualNodeWaitMs
+      },
+      source: "pre-dispatch schedule; exact physical baseline is captured inside pointerdown capture"
+    };
+    proof.dispatch = { startedAt: new Date().toISOString(), wallStartMs: Date.now(), eventSequence: ["mouseMoved", "mousePressed", "mouseReleased"], dispatchMode: "queued-in-order-without-round-trip-gaps" };
+    // WebSocket/CDP preserves command order. Queue each of the three physical events
+    // synchronously and await all acknowledgements together, avoiding one RTT between
+    // mouseMoved and the actual mousePressed handler.
+    const dispatchStarted = performance.now();
+    const dispatched = await Promise.all([
+      cdp.send("Input.dispatchMouseEvent", { type: "mouseMoved", x, y, button: "none", buttons: 0 }),
+      cdp.send("Input.dispatchMouseEvent", { type: "mousePressed", x, y, button: "left", buttons: 1, clickCount: 1 }),
+      cdp.send("Input.dispatchMouseEvent", { type: "mouseReleased", x, y, button: "left", buttons: 0, clickCount: 1 })
+    ]);
+    proof.dispatch.completedAt = new Date().toISOString();
+    proof.dispatch.wallDurationMs = Date.now() - proof.dispatch.wallStartMs;
+    proof.dispatch.monotonicWallDurationMs = performance.now() - dispatchStarted;
+    proof.dispatch.commandAckCount = dispatched.length;
+
+    const diagnostics = await cdpEvaluate(cdp, "(() => { const d=window.__BWM101R5_DIAGNOSTICS__; const events=d?.events||[]; return {sequence:d?.sequence??null,eventCount:events.length,events:events.filter(e=>Number(e.seq)>" + Number(initial.sequence || 0) + ")}; })()");
+    const observedEvents = diagnostics?.events || [];
+    proof.eventsAfterPreparation = observedEvents;
+    proof.diagnosticsAfterDispatch = { sequence: diagnostics?.sequence ?? null, eventCount: diagnostics?.eventCount ?? null };
+    const pointerDownEvents = observedEvents.filter(e => e.type === "T118.dom-input" && e.eventType === "pointerdown");
+    const pointerDownEvent = pointerDownEvents.length === 1 ? pointerDownEvents[0] : null;
+    const pointerBaselineSeq = Number(pointerDownEvent?.harnessBaselineSeq);
+    const events = Number.isFinite(pointerBaselineSeq)
+      ? observedEvents.filter(e => Number(e.seq) > pointerBaselineSeq)
+      : [];
+    const physicalTimingSnapshot = pointerDownEvent?.timingSnapshot || null;
+    const rawTiming = physicalTimingSnapshot?.timingState || null;
+    const baseline = pointerDownEvent ? {
+      sequence: pointerDownEvent.harnessBaselineSeq,
+      eventCount: pointerDownEvent.harnessBaselineEventCount,
+      phase: physicalTimingSnapshot?.battle?.phase ?? null,
+      round: physicalTimingSnapshot?.battle?.round ?? null,
+      tacticalTurn: physicalTimingSnapshot?.battle?.tacticalTurn ?? null,
+      window: rawTiming ? {
+        active: rawTiming.active === true, startedAt: rawTiming.startedAt ?? null,
+        targetMs: rawTiming.targetMs ?? null, durationMs: rawTiming.durationMs ?? null,
+        hitWindowMs: rawTiming.hitWindowMs ?? null, greatWindowMs: rawTiming.greatWindowMs ?? null,
+        windowId: rawTiming.windowId || "", elapsedMs: rawTiming.elapsedMs ?? null
+      } : null,
+      source: "synchronous window-capture pointerdown baseline before canvas target handler",
+      physicalInputEventSeq: pointerDownEvent.seq
+    } : null;
+    proof.baseline = baseline || proof.preDispatchPlan;
+    proof.exactPointerBaselineCaptured = Boolean(baseline?.window && Number.isFinite(Number(baseline.sequence)));
+    proof.schedule.baselineDeviationMs = Number(baseline?.window?.elapsedMs) - scheduledElapsedMs;
+    proof.eventsAfterBaseline = events;
+    const resolverBefore = events.filter(e => e.type === "T118.resolveTimingInput:before");
+    const resolverAfter = events.filter(e => e.type === "T118.resolveTimingInput:after");
+    const pointerDowns = observedEvents.filter(e => e.type === "T118.dom-input" && e.eventType === "pointerdown");
+    const pointerUps = observedEvents.filter(e => e.type === "T118.dom-input" && e.eventType === "pointerup");
+    const handlers = events.filter(e => e.type === "T118.handleTimingPointer:before" && e.eventType === "pointerdown");
+    const resolverCall = resolverBefore.length === 1 ? resolverBefore[0] : null;
+    const resolverReturnEvent = resolverAfter.length === 1 ? resolverAfter[0] : null;
+    const resolverReturn = resolverReturnEvent?.result ?? null;
+    const elapsedMs = Number(resolverCall?.before?.elapsedMs ?? resolverReturn?.elapsed_ms ?? resolverReturn?.elapsedMs);
+    const targetMs = Number(resolverCall?.before?.targetMs ?? resolverReturn?.target_ms ?? resolverReturn?.targetMs ?? baseline?.window?.targetMs ?? initial.targetMs);
+    const deltaMs = Number(resolverReturn?.delta_ms ?? resolverReturn?.deltaMs ?? (elapsedMs - targetMs));
+    const grade = String(resolverReturn?.grade || "").toUpperCase();
+    const runtimeImmediatelyAfterInput = resolverReturnEvent?.after?.before || await cdpEvaluate(cdp, "window.__BW_T097_GET_RUNTIME__?.() || null");
+    proof.resolverEvents = { resolverBefore, resolverAfter, pointerDowns, pointerUps, handlers };
+    proof.resolverCall = resolverCall;
+    proof.resolverReturnEvent = resolverReturnEvent;
+    proof.resolverReturn = resolverReturn;
+    proof.resolution = { grade, elapsedMs: Number.isFinite(elapsedMs) ? elapsedMs : null,
+      targetMs: Number.isFinite(targetMs) ? targetMs : null, deltaMs: Number.isFinite(deltaMs) ? deltaMs : null,
+      expectedGrade, dispatchDeviationMs: Number.isFinite(elapsedMs) ? elapsedMs - scheduledElapsedMs : null };
+    proof.runtimeImmediatelyAfterInput = runtimeImmediatelyAfterInput;
+    proof.sameWindowCorrelation = Boolean(baseline?.window && resolverCall && resolverCall.before?.startedAt === baseline.window.startedAt
+      && resolverCall.before?.targetMs === baseline.window.targetMs && resolverCall.before?.durationMs === baseline.window.durationMs);
+    proof.status = "CAPTURED";
+    persist();
+
+    requireCondition(pointerDowns.length === 1, task + " expected exactly one pointerdown after preflight", { baseline, pointerDowns, observedEvents });
+    requireCondition(proof.exactPointerBaselineCaptured, task + " did not capture exact live TimingState during pointerdown capture before the canvas handler", { baseline, proof });
+    requireCondition(baseline?.phase === "CLIMAX", task + " actual pointerdown phase was not CLIMAX", { baseline, proof });
+    requireCondition(baseline?.window?.active === true, task + " actual pointerdown had no active Timing Ring", { baseline, proof });
+    if (expectedRound !== null) requireCondition(baseline.round === expectedRound, task + " actual pointerdown belonged to wrong round", { expectedRound, baseline });
+    if (expectedTurn !== null) requireCondition(baseline.tacticalTurn === expectedTurn, task + " actual pointerdown belonged to wrong turn", { expectedTurn, baseline });
+    requireCondition(pointerUps.length === 1, task + " expected exactly one pointerup after baseline", { baseline, pointerUps, events });
+    requireCondition(handlers.length === 1, task + " input did not reach exactly one pointer handler", { baseline, handlers, events });
+    requireCondition(resolverBefore.length === 1 && resolverAfter.length === 1,
+      task + " input did not produce exactly one resolver call and return", { baseline, resolverBefore, resolverAfter, events });
+    requireCondition(Number(resolverCall.seq) === Number(resolverReturnEvent.callSeq),
+      task + " resolver return callSeq does not match resolver-before seq", { resolverCall, resolverReturnEvent, events });
+    const resolverSource = resolverCall.args?.[0]?.value ?? resolverCall.before?.source ?? null;
+    proof.resolution.source = resolverSource;
+    requireCondition(resolverSource === "pointer", task + " resolver source was not pointer", { resolverCall, resolverReturnEvent, resolverSource });
+    requireCondition(proof.sameWindowCorrelation, task + " resolver did not use the baseline Timing Ring window", { baseline, resolverCall });
+    requireCondition(grade.length > 0, task + " resolver return lacks direct grade DTO", { resolverReturn, resolverCall, resolverReturnEvent });
+    const postGrade = String(runtimeImmediatelyAfterInput?.battle?.last_timing?.grade || runtimeImmediatelyAfterInput?.lastTiming?.grade || "").toUpperCase();
+    requireCondition(postGrade === grade, task + " runtime lastTiming disagrees with resolver return", { grade, postGrade, resolverReturn, runtimeImmediatelyAfterInput });
+    if (expectedGrade === "MISS") {
+      requireCondition(grade === "MISS" && Math.abs(deltaMs) > baseline.window.hitWindowMs,
+        task + " expected MISS outside hitWindow; actual grade/delta differ", { grade, elapsedMs, targetMs, deltaMs, baseline, resolverReturn });
+    } else {
+      // T097 and T114-R2 require a valid non-MISS timing outcome for victory.
+      // GREAT is the scheduling target; HIT is also a valid real resolver outcome
+      // when measured dispatch latency crosses the GREAT band but remains in hitWindow.
+      requireCondition(["GREAT", "HIT"].includes(grade) && Math.abs(deltaMs) <= baseline.window.hitWindowMs,
+        task + " expected a valid HIT/GREAT timing result within hitWindow", {
+          grade, elapsedMs, targetMs, deltaMs, baseline, resolverReturn,
+          greatWindowMs: baseline.window.greatWindowMs,
+          hitWindowMs: baseline.window.hitWindowMs
+        });
+    }
+    proof.status = "PASS_CORRELATED_INPUT";
+    persist();
+    return proof;
+  } catch (error) {
+    proof.status = "FAILED";
+    proof.failure = String(error?.stack || error);
+    proof.failedAt = new Date().toISOString();
+    persist();
+    throw error;
+  }
+}
+
 async function cdpClickSelector(cdp, selector) {
   const box = await cdpEvaluate(cdp, `(() => {
     const el = document.querySelector(${JSON.stringify(selector)});
@@ -245,6 +439,8 @@ async function run() {
   const consoleErrors = [];
   const pageExceptions = [];
   const network = { requests: [], responses: [] };
+  let r5ProbeFailure = null;
+  const r5NavigationSnapshots = [];
 
   try {
     browser = spawn(BROWSER_BIN, [
@@ -276,6 +472,24 @@ async function run() {
     await cdp.send("Runtime.enable");
     await cdp.send("Log.enable");
     await cdp.send("Network.enable");
+
+    if (["T101","T118"].includes(process.env.BWM101R5_TASK)) {
+      const originalCdpSend = cdp.send.bind(cdp);
+      cdp.send = async (method, params) => {
+        if (method === "Page.navigate") {
+          try {
+            const serialized = await cdpEvaluate(cdp, "window.__BWM101R5_DIAGNOSTICS__ ? JSON.stringify(window.__BWM101R5_DIAGNOSTICS__) : null");
+            if (serialized) {
+              const diagnostics = typeof serialized === "string" ? JSON.parse(serialized) : serialized;
+              r5NavigationSnapshots.push({ capturedAt: new Date().toISOString(), reason: "before-Page.navigate", diagnostics });
+            }
+          } catch (captureError) {
+            r5NavigationSnapshots.push({ capturedAt: new Date().toISOString(), reason: "before-Page.navigate", captureError: String(captureError?.stack || captureError) });
+          }
+        }
+        return originalCdpSend(method, params);
+      };
+    }
 
     const bone008PlayerMetaFixture = "{\"schemaVersion\":1,\"revision\":1,\"state\":{\"schemaVersion\":1,\"identity\":{\"playerId\":\"local-player\",\"provider\":\"local\"},\"inventory\":{\"characters\":{\"bw001\":{\"quantity\":1,\"unlocked\":true}}},\"currencies\":{\"SCRAP\":0,\"FRAGMENTS\":0},\"gacha\":{\"pullsSinceUR\":0},\"unlocks\":{},\"progression\":{\"characters\":{\"bw001\":{\"level\":1}}},\"roster\":{\"activeBatter\":\"bw001\",\"supports\":[null,null]},\"rewardLedger\":{}}}";
     let persistedFixture = null;
@@ -846,39 +1060,25 @@ async function run() {
         6000
       );
 
-      const timingElapsedAtInput = await waitFor(
-        async () => {
-          const elapsed = await cdpEvaluate(cdp, "window.__BW_T097_TIMING_ELAPSED__?.()");
-          return Number.isFinite(Number(elapsed)) && Number(elapsed) >= 690 && Number(elapsed) <= 760 ? Number(elapsed) : false;
-        },
-        { timeoutMs: 5000, intervalMs: 5, label: "T097 timing target band" }
-      );
+      const timingAttempt = await dispatchCorrelatedTimingPointer(cdp, {
+        task: "T097", attempt: 1, expectedGrade: "HIT", expectedRound: 1, expectedTurn: 5
+      });
+      const timingElapsedAtInput = timingAttempt.resolution.elapsedMs;
       const timing = await readRuntime();
-      requireCondition(timing.timingActive === true, "T097 timing window closed before physical input", timing);
-      const rect = await cdpEvaluate(cdp, "(() => { const c = document.querySelector('#gameCanvas'); const r = c?.getBoundingClientRect(); return r ? { left:r.left, top:r.top, width:r.width, height:r.height } : null; })()");
-      requireCondition(rect && rect.width > 0 && rect.height > 0, "T097 timing canvas geometry unavailable", rect);
-      const clickX = rect.left + rect.width / 2;
-      const clickY = rect.top + rect.height / 2;
-      const target = await cdpEvaluate(cdp, "(() => { const e = document.elementFromPoint(" + clickX + ", " + clickY + "); return { tag:e?.tagName || '', id:e?.id || '', isCanvas:e === document.querySelector('#gameCanvas') }; })()");
-      requireCondition(target.isCanvas === true, "T097 timing target is not the game canvas", target);
-      await cdp.send("Input.setIgnoreInputEvents", { ignore: false });
-      await cdp.send("Input.dispatchMouseEvent", { type:"mouseMoved", x:clickX, y:clickY, button:"none", buttons:0 });
-      await cdp.send("Input.dispatchMouseEvent", { type:"mousePressed", x:clickX, y:clickY, button:"left", buttons:1, clickCount:1 });
-      await cdp.send("Input.dispatchMouseEvent", { type:"mouseReleased", x:clickX, y:clickY, button:"left", buttons:0, clickCount:1 });
 
       const victory = await mark(
         "VICTORY",
         (state) => state.battlePhase === "VICTORY" && Boolean(state.combatResult),
         5000
       );
-      checkpoints["REWARD HANDOFF"] = await readRuntime();
-      timeline.push({ at_ms: Date.now() - runStartedAt, label:"REWARD HANDOFF", ...checkpoints["REWARD HANDOFF"] });
+      checkpoints["DEMO REWARD BOUNDARY"] = await readRuntime();
+      timeline.push({ at_ms: Date.now() - runStartedAt, label:"DEMO REWARD BOUNDARY", ...checkpoints["DEMO REWARD BOUNDARY"] });
 
-      requireCondition(victory.scrap === 100, "T097 victory did not apply the existing 100 Scrap reward", victory);
-      requireCondition(victory.persistedScrap === 100, "T097 victory Scrap is not persisted in Player Meta", victory);
-      requireCondition(victory.rewardLedgerKeys.length === 1 && victory.rewardLedgerKeys[0] === expectedBattleId, "T097 reward ledger does not contain exactly one completed battle reward", victory);
-      requireCondition(victory.rewardLedger?.[expectedBattleId] === true, "T097 reward ledger entry is not true", victory);
-      // Reward handoff is authoritative in Player Meta state/ledger; HUD text is presentation-only.
+      requireCondition(victory.scrap === 0, "T097 local demo must not grant authoritative Scrap", victory);
+      requireCondition(victory.persistedScrap === 0, "T097 local demo must not persist authoritative Scrap", victory);
+      requireCondition(victory.rewardLedgerKeys.length === 0, "T097 local demo must leave reward ledger unchanged", victory);
+      requireCondition(!victory.rewardLedger?.[expectedBattleId], "T097 local demo unexpectedly created a reward ledger entry", victory);
+      // This is a negative demo-mode boundary probe, not proof of connected server reward handoff.
 
       const returnState = await mark(
         "RETURN",
@@ -890,9 +1090,9 @@ async function run() {
         (state) => state.presentationPhase === "COMPLETE" && state.presentationActive === false,
         5000
       );
-      requireCondition(completeState.scrap === 100, "T097 Scrap balance changed after RETURN", completeState);
-      requireCondition(completeState.persistedScrap === 100, "T097 persisted Scrap changed after RETURN", completeState);
-      requireCondition(completeState.rewardLedgerKeys.length === 1, "T097 reward ledger changed after RETURN", completeState);
+      requireCondition(completeState.scrap === 0, "T097 demo Scrap changed after RETURN", completeState);
+      requireCondition(completeState.persistedScrap === 0, "T097 demo persisted Scrap changed after RETURN", completeState);
+      requireCondition(completeState.rewardLedgerKeys.length === 0, "T097 demo reward ledger changed after RETURN", completeState);
 
       await cdp.send("Page.navigate", { url: t097Url });
       await waitFor(
@@ -907,9 +1107,9 @@ async function run() {
       checkpoints["RELOAD"] = { at_ms: Date.now() - runStartedAt, ...reloaded };
       timeline.push({ at_ms: Date.now() - runStartedAt, label:"RELOAD", ...reloaded });
 
-      requireCondition(reloaded.scrap === 100, "T097 persisted Scrap was not rehydrated after reload", reloaded);
-      requireCondition(reloaded.persistedScrap === 100, "T097 Player Meta persistence did not survive reload", reloaded);
-      requireCondition(reloaded.rewardLedgerKeys.length === 1 && reloaded.rewardLedger[expectedBattleId] === true, "T097 reward ledger did not survive reload", reloaded);
+      requireCondition(reloaded.scrap === 0, "T097 demo Scrap unexpectedly appeared after reload", reloaded);
+      requireCondition(reloaded.persistedScrap === 0, "T097 demo persisted Scrap unexpectedly appeared after reload", reloaded);
+      requireCondition(reloaded.rewardLedgerKeys.length === 0 && !reloaded.rewardLedger[expectedBattleId], "T097 demo reward ledger unexpectedly appeared after reload", reloaded);
       requireCondition(reloaded.rewardStatus !== "REWARD ERROR", "T097 reward error state detected after reload", reloaded);
 
       const sameOriginErrors = pageExceptions
@@ -928,15 +1128,16 @@ async function run() {
           revision: browserVersion?.revision || "",
           userAgent: browserVersion?.userAgent || ""
         },
-        harness: "existing character_journey_browser_probe.mjs via T097_REWARD_HANDOFF=1",
+        harness: "existing character_journey_browser_probe.mjs via T097_REWARD_HANDOFF=1; local demo negative-authority probe",
         baseUrl,
         expectedBattleId,
         checkpoints,
         timeline,
+        timingInput: timingAttempt,
         reward: {
           type: "SCRAP",
-          amount: 100,
-          source: "existing T062_REWARD_TABLE VICTORY entry"
+          amount: 0,
+          source: "local demo result is non-authoritative; connected server handoff not exercised"
         },
         persistence: {
           mechanism: "PlayerMetaPersistenceAdapter/localStorage",
@@ -957,11 +1158,11 @@ async function run() {
 
       console.log("T097 BROWSER AUTOMATION = PASS_REAL");
       console.log("VICTORY = PASS_REAL");
-      console.log("REWARD HANDOFF = PASS_REAL");
-      console.log("REWARD = +100 SCRAP");
-      console.log("PLAYER STATE = SCRAP 0 -> 100");
-      console.log("PERSISTENCE = PASS_REAL");
-      console.log("DUPLICATION = PASS_REAL");
+      console.log("DEMO REWARD BOUNDARY = PASS_REAL");
+      console.log("REWARD = NONE // DEMO_ONLY");
+      console.log("PLAYER STATE = SCRAP 0 -> 0");
+      console.log("DEMO PERSISTENCE = PASS_REAL");
+      console.log("DEMO LEDGER = UNCHANGED");
       console.log("RETURN = PASS_REAL");
       console.log("RELOAD = PASS_REAL");
       return;
@@ -975,7 +1176,7 @@ async function run() {
       const playerMetaKey = "baseball_waifus_player_meta_v1:local-player";
       const expectedBattleId = "battle:demo-bw001-vs-bw002";
 
-      const readRuntime = async () => cdpEvaluate(cdp, "(() => { const canvas = document.querySelector('#gameCanvas'); const d = canvas?.dataset || {}; const gacha = window.BaseballWaifusGacha?.getStatus?.() || null; const raw = localStorage.getItem('baseball_waifus_player_meta_v1:local-player'); let persisted = null; try { const persistedRecord = raw ? JSON.parse(raw) : null; persisted = persistedRecord?.schemaVersion === 1 && Number.isSafeInteger(persistedRecord?.revision) && persistedRecord?.state && typeof persistedRecord.state === 'object' ? persistedRecord.state : persistedRecord?.currencies && persistedRecord?.rewardLedger && typeof persistedRecord.currencies === 'object' ? persistedRecord : null; } catch { persisted = null; } return { battlePhase:d.combatBattlePhase||'', tacticalTurn:d.combatTacticalTurn===''?null:Number(d.combatTacticalTurn), timingActive:d.combatTimingActive==='true', timingGrade:d.combatTimingGrade||'', combatResult:d.combatResult||'', presentationPhase:d.combatStagePresentationPhase||'', presentationActive:d.combatPresentationActive==='true', playerStamina:d.combatPlayerStamina===''?null:Number(d.combatPlayerStamina), playerStaminaMax:d.combatPlayerStaminaMax===''?null:Number(d.combatPlayerStaminaMax), scrap:Number(gacha?.scavenger_scrap??NaN), persistedScrap:Number(persisted?.currencies?.SCRAP??NaN), rewardLedger:persisted?.rewardLedger||null, rewardLedgerKeys:persisted?.rewardLedger?Object.keys(persisted.rewardLedger):[], playerMetaRawPresent:Boolean(raw) }; })()");
+      const readRuntime = async () => cdpEvaluate(cdp, "(() => { const canvas = document.querySelector('#gameCanvas'); const d = canvas?.dataset || {}; const gacha = window.BaseballWaifusGacha?.getStatus?.() || null; const raw = localStorage.getItem('baseball_waifus_player_meta_v1:local-player'); let persisted = null; try { const persistedRecord = raw ? JSON.parse(raw) : null; persisted = persistedRecord?.schemaVersion === 1 && Number.isSafeInteger(persistedRecord?.revision) && persistedRecord?.state && typeof persistedRecord.state === 'object' ? persistedRecord.state : persistedRecord?.currencies && persistedRecord?.rewardLedger && typeof persistedRecord.currencies === 'object' ? persistedRecord : null; } catch { persisted = null; } return { battlePhase:d.combatBattlePhase||'', tacticalTurn:d.combatTacticalTurn===''?null:Number(d.combatTacticalTurn), timingActive:d.combatTimingActive==='true', timingGrade:d.combatTimingGrade||'', combatResult:d.combatResult||'', presentationPhase:d.combatStagePresentationPhase||'', presentationActive:d.combatPresentationActive==='true', playerStamina:d.combatPlayerStamina===''?null:Number(d.combatPlayerStamina), playerStaminaMax:d.combatPlayerStaminaMax===''?null:Number(d.combatPlayerStaminaMax), scrap:Number(gacha?.scavenger_scrap??NaN), persistedScrap:Number(persisted?.currencies?.SCRAP??NaN), rewardLedger:persisted?.rewardLedger||null, rewardLedgerKeys:persisted?.rewardLedger?Object.keys(persisted.rewardLedger):[], playerMetaRawPresent:Boolean(raw), qaRuntime:window.__BW_T097_GET_RUNTIME__?.()||null }; })()");
 
       const mark = async (name, condition, timeoutMs = 6000) => {
         const deadline = Date.now() + timeoutMs;
@@ -1004,6 +1205,13 @@ async function run() {
         await sleep(120);
         const before = await readRuntime();
         requireCondition(before.timingActive === true, "T101 timing window closed before deterministic MISS input", before);
+        const actorBefore = before.qaRuntime?.stage?.selectedActorId || "";
+        requireCondition(
+          Boolean(actorBefore)
+          && before.qaRuntime?.stage?.actors?.some(actor => actor.actorId === actorBefore),
+          "T101 pre-resolution actor identity is not correlated to the active stage",
+          before.qaRuntime
+        );
         requireCondition(before.timingActive === true, "T101 timing window closed before MISS input", before);
         requireCondition(before.playerStamina > 0, "T101 stamina non-positive before non-victory", before);
         const rect = await cdpEvaluate(cdp, "(() => { const r=document.querySelector('#gameCanvas')?.getBoundingClientRect(); return r ? {left:r.left,top:r.top,width:r.width,height:r.height} : null; })()");
@@ -1017,6 +1225,14 @@ async function run() {
         await cdp.send("Input.dispatchMouseEvent", {type:"mousePressed",x,y,button:"left",buttons:1,clickCount:1});
         await cdp.send("Input.dispatchMouseEvent", {type:"mouseReleased",x,y,button:"left",buttons:0,clickCount:1});
         const after = await mark("ROUND " + round + " RESOLVED", s => s.timingActive === false && s.timingGrade === "MISS", 5000);
+        const actorAfter = after.qaRuntime?.stage?.selectedActorId || "";
+        requireCondition(
+          actorAfter === actorBefore
+          && after.qaRuntime?.stage?.actors?.some(actor => actor.actorId === actorAfter)
+          && after.qaRuntime?.battle?.last_timing?.grade === "MISS",
+          "T101 actor/sequence/resolution correlation failed",
+          { actorBefore, actorAfter, before: before.qaRuntime, after: after.qaRuntime }
+        );
         const terminalDefeat = after.battlePhase === "DEFEAT" && after.combatResult === "DEFEAT" && after.playerStamina === 0;
         if (terminalDefeat) {
           requireCondition(before.playerStamina === 1 && after.playerStamina === 0, "T101 terminal defeat stamina transition invalid", {before,after});
@@ -1037,7 +1253,15 @@ async function run() {
       requireCondition(initial.playerStamina > 0 && initial.playerStamina <= initial.playerStaminaMax && initial.playerStaminaMax <= 100, "T101 initial stamina bounds invalid", initial);
       await cdpClickSelector(cdp, ".home-action-play");
       await waitFor(async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#gameCanvas')?.dataset?.combatStageContract === 'COMBAT_STAGE_2_5D')"), {timeoutMs:30000,label:"T101 formation initialized"});
-      await mark("FORMATION", s => s.battlePhase === "TACTICAL" && s.tacticalTurn === 0);
+      const formation = await mark("FORMATION", s => s.battlePhase === "TACTICAL" && s.tacticalTurn === 0);
+      const formationRuntime = formation.qaRuntime;
+      requireCondition(
+        formationRuntime?.stage?.contract === "COMBAT_STAGE_2_5D"
+        && Boolean(formationRuntime.stage.selectedActorId)
+        && formationRuntime.stage.actors?.some(actor => actor.actorId === formationRuntime.stage.selectedActorId),
+        "T101 selected actor must resolve to a real stage actor",
+        formationRuntime
+      );
 
       const rounds=[];
       for (const round of [1,2,3,4]) {
@@ -1051,7 +1275,7 @@ async function run() {
           }
         }
         const resolution=await resolveMiss(round);
-        rounds.push({round,staminaBefore:resolution.before.playerStamina,staminaAfter:resolution.after.playerStamina,timingGrade:resolution.after.timingGrade,battlePhase:resolution.after.battlePhase,combatResult:resolution.after.combatResult});
+        rounds.push({round,actorId:resolution.before.qaRuntime?.stage?.selectedActorId||"",actorIds:resolution.before.qaRuntime?.stage?.actors?.map(actor=>actor.actorId)||[],sequence:resolution.after.qaRuntime?.battle?.last_timing||null,staminaBefore:resolution.before.playerStamina,staminaAfter:resolution.after.playerStamina,timingGrade:resolution.after.timingGrade,combatResultFromResolver:resolution.after.qaRuntime?.battle?.last_timing?.grade||"",battlePhase:resolution.after.battlePhase,combatResult:resolution.after.combatResult});
         if (round < 3) {
           requireCondition(resolution.after.battlePhase === "TACTICAL" && resolution.after.playerStamina > 0, "T101 non-terminal round did not return to TACTICAL", resolution.after);
           await mark("ROUND " + round + " RETURN", s => s.presentationPhase === "COMBAT_RETURN");
@@ -1065,7 +1289,7 @@ async function run() {
       const complete=await mark("RETURN COMPLETE", s => s.presentationPhase === "COMPLETE" && s.presentationActive === false, 5000);
       requireCondition(complete.battlePhase === "DEFEAT" && complete.playerStamina === 0, "T101 terminal state changed after return", complete);
       requireCondition(complete.scrap === 0 && complete.persistedScrap === 0, "T101 defeat awarded victory Scrap", complete);
-      requireCondition(complete.rewardLedgerKeys.length === 1 && complete.rewardLedgerKeys[0] === expectedBattleId && complete.rewardLedger?.[expectedBattleId] === true, "T101 defeat ledger identity missing or duplicated", complete);
+      requireCondition(complete.rewardLedgerKeys.length === 0 && !complete.rewardLedger?.[expectedBattleId], "T101 defeat must not create a victory reward ledger entry", complete);
       const actionControl=await cdpEvaluate(cdp, "(() => { const b=document.querySelector('#action-bat'); return {exists:Boolean(b),disabled:Boolean(b?.disabled)}; })()");
       requireCondition(actionControl.exists, "T101 post-terminal BATEAR control is missing", actionControl);
       const postTerminalBefore=await readRuntime();
@@ -1091,7 +1315,7 @@ async function run() {
       checkpoints.RELOAD={at_ms:Date.now()-runStartedAt,...reloaded};
       timeline.push({at_ms:Date.now()-runStartedAt,label:"RELOAD",...reloaded});
       requireCondition(reloaded.scrap === 0 && reloaded.persistedScrap === 0, "T101 reload produced victory Scrap", reloaded);
-      requireCondition(reloaded.rewardLedgerKeys.length === 1 && reloaded.rewardLedger?.[expectedBattleId] === true, "T101 defeat ledger did not survive reload consistently", reloaded);
+      requireCondition(reloaded.rewardLedgerKeys.length === 0 && !reloaded.rewardLedger?.[expectedBattleId], "T101 defeat demo ledger must remain empty after reload", reloaded);
       const sameOriginErrors=pageExceptions.map(item => item?.exception?.description || item?.text || "").filter(Boolean).filter(entry => entry.includes(baseUrl) || entry.includes("/js/"));
       requireCondition(sameOriginErrors.length === 0, "T101 same-origin runtime exceptions detected", sameOriginErrors);
       const evidence={task:"T101",sha:process.env.GITHUB_SHA||"local",runId:process.env.GITHUB_RUN_ID||"local",browser:BROWSER_BIN,browserVersion:{product:browserVersion?.product||"",revision:browserVersion?.revision||"",userAgent:browserVersion?.userAgent||""},harness:"existing character_journey_browser_probe.mjs via T101_DEFEAT_PROOF=1",expectedBattleId,initial,rounds,defeat,returnComplete:complete,reloaded,postTerminalActionGuard:{control:actionControl,functional:true,before:postTerminalBefore,after:postTerminalAfter},persistence:{mechanism:"PlayerMetaPersistenceAdapter/localStorage",key:playerMetaKey,reloadVerified:true},reward:{expected:[],scrapBefore:initial.scrap,scrapAfter:complete.scrap,scrapAfterReload:reloaded.scrap},duplication:{ledgerBeforeReload:complete.rewardLedgerKeys.length,ledgerAfterReload:reloaded.rewardLedgerKeys.length},timeline,consoleErrors:consoleErrors.map(entry=>({text:entry.text,url:entry.url,source:entry.source})),pageErrors:sameOriginErrors};
@@ -1114,7 +1338,7 @@ async function run() {
       const browserVersion = await cdp.send("Browser.getVersion");
       const playerMetaKey = "baseball_waifus_player_meta_v1:local-player";
 
-      const readRewardState = async () => cdpEvaluate(cdp, `(() => { const canvas = document.querySelector("#gameCanvas"); const d = canvas?.dataset || {}; const gacha = window.BaseballWaifusGacha?.getStatus?.() || null; const raw = localStorage.getItem("baseball_waifus_player_meta_v1:local-player"); let persisted = null; try { const persistedRecord = raw ? JSON.parse(raw) : null; persisted = persistedRecord?.schemaVersion === 1 && Number.isSafeInteger(persistedRecord?.revision) && persistedRecord?.state && typeof persistedRecord.state === 'object' ? persistedRecord.state : persistedRecord?.currencies && persistedRecord?.rewardLedger && typeof persistedRecord.currencies === 'object' ? persistedRecord : null; } catch { persisted = null; } return { battlePhase:d.combatBattlePhase||"", tacticalTurn:d.combatTacticalTurn===""?null:Number(d.combatTacticalTurn), timingActive:d.combatTimingActive==="true", timingGrade:d.combatTimingGrade||"", combatResult:d.combatResult||"", presentationPhase:d.combatStagePresentationPhase||"", presentationActive:d.combatPresentationActive==="true", playerStamina:d.combatPlayerStamina===""?null:Number(d.combatPlayerStamina), scrap:Number(gacha?.scavenger_scrap??NaN), persistedScrap:Number(persisted?.currencies?.SCRAP??NaN), rewardLedger:persisted?.rewardLedger||null, rewardLedgerKeys:persisted?.rewardLedger?Object.keys(persisted.rewardLedger):[], playerMetaRawPresent:Boolean(raw) }; })()`);
+      const readRewardState = async () => cdpEvaluate(cdp, `(() => { const canvas = document.querySelector("#gameCanvas"); const d = canvas?.dataset || {}; const gacha = window.BaseballWaifusGacha?.getStatus?.() || null; const raw = localStorage.getItem("baseball_waifus_player_meta_v1:local-player"); let persisted = null; try { const persistedRecord = raw ? JSON.parse(raw) : null; persisted = persistedRecord?.schemaVersion === 1 && Number.isSafeInteger(persistedRecord?.revision) && persistedRecord?.state && typeof persistedRecord.state === 'object' ? persistedRecord.state : persistedRecord?.currencies && persistedRecord?.rewardLedger && typeof persistedRecord.currencies === 'object' ? persistedRecord : null; } catch { persisted = null; } return { battlePhase:d.combatBattlePhase||"", tacticalTurn:d.combatTacticalTurn===""?null:Number(d.combatTacticalTurn), timingActive:d.combatTimingActive==="true", timingGrade:d.combatTimingGrade||"", combatResult:d.combatResult||"", presentationPhase:d.combatStagePresentationPhase||"", presentationActive:d.combatPresentationActive==="true", playerStamina:d.combatPlayerStamina===""?null:Number(d.combatPlayerStamina), scrap:Number(gacha?.scavenger_scrap??NaN), persistedScrap:Number(persisted?.currencies?.SCRAP??NaN), rewardLedger:persisted?.rewardLedger||null, rewardLedgerKeys:persisted?.rewardLedger?Object.keys(persisted.rewardLedger):[], playerMetaRawPresent:Boolean(raw), qaRuntime:window.__BW_T097_GET_RUNTIME__?.()||null }; })()`);
 
       const mark = async (name, condition, timeoutMs = 6000) => {
         const deadline = Date.now() + timeoutMs;
@@ -1168,27 +1392,23 @@ async function run() {
         requireCondition(beforeTiming.scrap === 0 && beforeTiming.persistedScrap === 0, "T109 Scrap changed before non-terminal timing", beforeTiming);
         requireCondition(beforeTiming.rewardLedgerKeys.length === 0, "T109 reward ledger changed before non-terminal timing", beforeTiming);
 
-        await sleep(120);
-        const rect = await cdpEvaluate(cdp, "(() => { const r=document.querySelector('#gameCanvas')?.getBoundingClientRect(); return r ? {left:r.left,top:r.top,width:r.width,height:r.height} : null; })()");
-        requireCondition(rect && rect.width > 0 && rect.height > 0, "T109 canvas geometry unavailable", rect);
-        const x = rect.left + rect.width / 2;
-        const y = rect.top + rect.height / 2;
-        const target = await cdpEvaluate(cdp, "(() => document.elementFromPoint(" + x + "," + y + ") === document.querySelector('#gameCanvas'))()");
-        requireCondition(target === true, "T109 physical Timing target is not canvas");
-        await cdp.send("Input.setIgnoreInputEvents", { ignore:false });
-        await cdp.send("Input.dispatchMouseEvent", { type:"mouseMoved", x, y, button:"none", buttons:0 });
-        await cdp.send("Input.dispatchMouseEvent", { type:"mousePressed", x, y, button:"left", buttons:1, clickCount:1 });
-        await cdp.send("Input.dispatchMouseEvent", { type:"mouseReleased", x, y, button:"left", buttons:0, clickCount:1 });
-
+        const timingAttempt = await dispatchCorrelatedTimingPointer(cdp, {
+          task: T118_NON_HIT_REWARD_VALIDATION ? "T118" : "T109",
+          attempt: round, expectedGrade: "MISS", expectedRound: round, expectedTurn: 5
+        });
+        const resolverReturn = timingAttempt.resolverReturn;
+        const synchronousResolver = timingAttempt.runtimeImmediatelyAfterInput;
         const afterTiming = await mark("ROUND " + round + " RESULT", s => s.timingActive === false && ["TACTICAL","VICTORY","DEFEAT"].includes(s.battlePhase), 5000);
-        if (T118_NON_HIT_REWARD_VALIDATION) {
-          requireCondition(afterTiming.timingGrade === "MISS", "T118 Timing Grade was not MISS", afterTiming);
-          requireCondition(afterTiming.combatResult === "STRIKE", "T118 Combat Result was not STRIKE", afterTiming);
-          requireCondition(afterTiming.battlePhase === "TACTICAL", "T118 MISS did not remain non-terminal", afterTiming);
-          requireCondition(afterTiming.match_end !== true, "T118 MISS produced match_end", afterTiming);
-        }
-        if (afterTiming.battlePhase !== "TACTICAL") return { beforeTiming, afterTiming, afterReturn: afterTiming, terminal: afterTiming.battlePhase };
 
+        requireCondition(resolverReturn?.grade === "MISS", "T109 correlated resolver return was not MISS for round " + round, timingAttempt);
+        requireCondition(timingAttempt.sameWindowCorrelation === true, "T109 resolver return was not correlated to this round's active Timing Ring", timingAttempt);
+        const runtimeLastGrade = String(synchronousResolver?.battle?.last_timing?.grade || synchronousResolver?.lastTiming?.grade || "").toUpperCase();
+        requireCondition(runtimeLastGrade === String(resolverReturn?.grade || "").toUpperCase(), "T109 immediate runtime lastTiming disagrees with its resolver return", { timingAttempt, synchronousResolver });
+        if (afterTiming.battlePhase !== "TACTICAL") {
+          return { beforeTiming, afterTiming, afterReturn: afterTiming, synchronousResolver, resolverReturn, timingInputEvidence: timingAttempt, terminal: afterTiming.battlePhase };
+        }
+
+        requireCondition(afterTiming.combatResult === "STRIKE", "T109 MISS did not resolve to STRIKE", afterTiming);
         requireCondition(afterTiming.scrap === beforeTiming.scrap, "T109 Scrap changed after non-terminal Timing", { beforeTiming, afterTiming });
         requireCondition(afterTiming.persistedScrap === beforeTiming.persistedScrap, "T109 persisted Scrap changed after non-terminal Timing", { beforeTiming, afterTiming });
         requireCondition(afterTiming.rewardLedgerKeys.length === beforeTiming.rewardLedgerKeys.length, "T109 reward ledger changed after non-terminal Timing", { beforeTiming, afterTiming });
@@ -1198,7 +1418,7 @@ async function run() {
         requireCondition(afterReturn.scrap === beforeTiming.scrap, "T109 Scrap changed after non-terminal return", { beforeTiming, afterReturn });
         requireCondition(afterReturn.persistedScrap === beforeTiming.persistedScrap, "T109 persisted Scrap changed after non-terminal return", { beforeTiming, afterReturn });
         requireCondition(afterReturn.rewardLedgerKeys.length === beforeTiming.rewardLedgerKeys.length, "T109 reward ledger changed after non-terminal return", { beforeTiming, afterReturn });
-        return { beforeTiming, afterTiming, afterReturn, terminal: null };
+        return { beforeTiming, afterTiming, afterReturn, synchronousResolver, resolverReturn, timingInputEvidence: timingAttempt, terminal: null };
       };
 
       const url = baseUrl + "?qa=t097";
@@ -1236,8 +1456,12 @@ async function run() {
 
       if (T118_NON_HIT_REWARD_VALIDATION) {
         const finalState = await readRewardState();
-        requireCondition(finalState.timingGrade === "MISS", "T118 final Timing Grade changed", finalState);
-        requireCondition(finalState.combatResult === "STRIKE", "T118 final Combat Result changed", finalState);
+        // Timing grade is transient and can reset during the next tactical frame; assert it on the captured result DTO instead.
+        requireCondition(round1.resolverReturn?.grade === "MISS", "T118 correlated resolver return was not MISS", round1.resolverReturn);
+        requireCondition(round1.timingInputEvidence?.resolverCall?.seq === round1.timingInputEvidence?.resolverReturnEvent?.callSeq, "T118 resolver return did not correlate to the physical-input call", round1.timingInputEvidence);
+        requireCondition(round1.timingInputEvidence?.sameWindowCorrelation === true, "T118 resolver did not use the baseline Timing Ring window", round1.timingInputEvidence);
+        requireCondition(round1.afterTiming.combatResult === "STRIKE", "T118 resolved Combat Result was not STRIKE", round1.afterTiming);
+        requireCondition(round1.afterTiming.battlePhase === "TACTICAL", "T118 MISS did not continue combat", round1.afterTiming);
         requireCondition(finalState.battlePhase === "TACTICAL", "T118 combat did not continue", finalState);
         requireCondition(finalState.scrap === initial.scrap, "T118 authoritative Scrap changed", { initial, finalState });
         requireCondition(finalState.persistedScrap === initial.persistedScrap, "T118 persisted Scrap changed", { initial, finalState });
@@ -1249,20 +1473,29 @@ async function run() {
           browser: BROWSER_BIN,
           browserVersion: { product: browserVersion?.product || "", revision: browserVersion?.revision || "", userAgent: browserVersion?.userAgent || "" },
           harness: "existing character_journey_browser_probe.mjs via T118_NON_HIT_REWARD_VALIDATION=1",
-          timingLayer: "MISS",
-          combatLayer: "STRIKE",
+          timingLayer: round1.resolverReturn?.grade || "",
+          resolverReturn: round1.resolverReturn || null,
+          combatLayer: round1.afterTiming.combatResult,
+          synchronousResolver: round1.synchronousResolver,
+          resolverCorrelation: {
+            synchronousTimingGrade: round1.synchronousResolver?.timing?.grade || "",
+            runtimeTimingGrade: round1.synchronousResolver?.battle?.last_timing?.grade || "",
+            selectedActorId: round1.synchronousResolver?.stage?.selectedActorId || "",
+            stageContract: round1.synchronousResolver?.stage?.contract || "",
+            agrees: round1.synchronousResolver?.timing?.grade === round1.synchronousResolver?.battle?.last_timing?.grade
+          },
           initial,
           beforeTiming: round1.beforeTiming,
           afterTiming: round1.afterTiming,
           postMiss: round1.afterReturn,
           finalState,
-          timingInput: { method: "CDP Input.dispatchMouseEvent", sequence: ["mouseMoved","mousePressed","mouseReleased"], waitMs: 120, expectedGrade: "MISS" },
+          timingInput: { method: "CDP Input.dispatchMouseEvent", sequence: ["mouseMoved","mousePressed","mouseReleased"], timingAttempt: round1.timingInputEvidence, expectedGrade: "MISS" },
           rewardBoundary: { noVictory: finalState.battlePhase !== "VICTORY", noMatchEnd: true, scrapUnchanged: finalState.scrap === initial.scrap, persistedScrapUnchanged: finalState.persistedScrap === initial.persistedScrap, ledgerUnchanged: finalState.rewardLedgerKeys.length === initial.rewardLedgerKeys.length },
           at_ms: Date.now() - runStartedAt
         };
         writeFileSync(join(EVIDENCE_DIR, "t118-non-hit-reward-browser-evidence.json"), JSON.stringify(evidence, null, 2) + "\n", "utf8");
-        console.log("T118 TIMING GRADE = MISS");
-        console.log("T118 COMBAT RESULT = STRIKE");
+        console.log("T118 TIMING GRADE = " + (round1.resolverReturn?.grade || ""));
+        console.log("T118 COMBAT RESULT = " + round1.afterTiming.combatResult);
         console.log("T118 COMBAT CONTINUES = PASS_REAL");
         console.log("T118 VICTORY = NO");
         console.log("T118 MATCH END = NO");
@@ -1300,7 +1533,7 @@ async function run() {
         tactical,
         rounds: [round1, round2],
         finalState,
-        timingInput: { method: "CDP Input.dispatchMouseEvent", waitMs: 120, expectedGrade: "MISS" },
+        timingInput: { method: "CDP Input.dispatchMouseEvent", sequence: ["mouseMoved","mousePressed","mouseReleased"], scheduledAttempts: [round1.timingInputEvidence, round2.timingInputEvidence], expectedGrade: "MISS" },
         rewardBoundary: { midCombatScrapUnchanged:true, persistedScrapUnchanged:true, rewardLedgerUnchanged:true, terminalNotReached:true },
         at_ms: Date.now() - runStartedAt
       };
@@ -1510,7 +1743,7 @@ async function run() {
       const playerMetaKey = "baseball_waifus_player_meta_v1:local-player";
       const expectedBattleId = "battle:demo-bw001-vs-bw002";
 
-      const readRuntime = async () => cdpEvaluate(cdp, "(() => { const canvas=document.querySelector('#gameCanvas'); const d=canvas?.dataset||{}; const gacha=window.BaseballWaifusGacha?.getStatus?.()||null; const raw=localStorage.getItem('baseball_waifus_player_meta_v1:local-player'); let persisted=null; try { persisted=raw ? JSON.parse(raw) : null; } catch {} return { battlePhase:d.combatBattlePhase||'', tacticalTurn:d.combatTacticalTurn===''?null:Number(d.combatTacticalTurn), timingActive:d.combatTimingActive==='true', timingGrade:d.combatTimingGrade||'', combatResult:d.combatResult||'', presentationPhase:d.combatStagePresentationPhase||'', presentationActive:d.combatPresentationActive==='true', scrap:Number(gacha?.scavenger_scrap??NaN), persistedScrap:Number(persisted?.currencies?.SCRAP??NaN), rewardLedger:persisted?.rewardLedger||{}, rewardLedgerKeys:persisted?.rewardLedger?Object.keys(persisted.rewardLedger):[], playerMetaRawPresent:Boolean(raw), playerMeta:persisted }; })()");
+      const readRuntime = async () => cdpEvaluate(cdp, "(() => { const canvas=document.querySelector('#gameCanvas'); const d=canvas?.dataset||{}; const gacha=window.BaseballWaifusGacha?.getStatus?.()||null; const raw=localStorage.getItem('baseball_waifus_player_meta_v1:local-player'); let persistedRecord=null; try { persistedRecord=raw ? JSON.parse(raw) : null; } catch {} const persisted=persistedRecord?.schemaVersion===1 && Number.isSafeInteger(persistedRecord?.revision) && persistedRecord?.state && typeof persistedRecord.state==='object' ? persistedRecord.state : persistedRecord; return { battlePhase:d.combatBattlePhase||'', tacticalTurn:d.combatTacticalTurn===''?null:Number(d.combatTacticalTurn), timingActive:d.combatTimingActive==='true', timingGrade:d.combatTimingGrade||'', combatResult:d.combatResult||'', presentationPhase:d.combatStagePresentationPhase||'', presentationActive:d.combatPresentationActive==='true', scrap:Number(gacha?.scavenger_scrap??NaN), persistedScrap:Number(persisted?.currencies?.SCRAP??NaN), rewardLedger:persisted?.rewardLedger||{}, rewardLedgerKeys:persisted?.rewardLedger?Object.keys(persisted.rewardLedger):[], playerMetaRawPresent:Boolean(raw), playerMeta:persisted }; })()");
 
       const mark = async (name, condition, timeoutMs = 6000) => {
         const deadline = Date.now() + timeoutMs;
@@ -1583,38 +1816,29 @@ async function run() {
       requireCondition(beforeTerminal.persistedScrap === initial.persistedScrap, "T114-R persisted Scrap changed before terminal", { initial, beforeTerminal });
       requireCondition(beforeTerminal.rewardLedgerKeys.length === initial.rewardLedgerKeys.length, "T114-R reward ledger changed before terminal", { initial, beforeTerminal });
 
-      await sleep(620);
-      const elapsedAtInput = await cdpEvaluate(cdp, "window.__BW_T097_TIMING_ELAPSED__?.()");
-      requireCondition(
-        Number.isFinite(Number(elapsedAtInput)) && Number(elapsedAtInput) > 0 && Number(elapsedAtInput) < 860,
-        "T114-R timing window closed before terminal input",
-        { elapsedAtInput }
-      );
-
+      const timingAttempt = await dispatchCorrelatedTimingPointer(cdp, {
+        task: "T114-R2", attempt: 1, expectedGrade: "HIT", expectedRound: 1, expectedTurn: 5
+      });
+      const elapsedAtInput = timingAttempt.resolution.elapsedMs;
       const timingInput = await readRuntime();
-      requireCondition(timingInput.timingActive === true, "T114-R timing closed before terminal input", timingInput);
-      const rect = await cdpEvaluate(cdp, "(() => { const r=document.querySelector('#gameCanvas')?.getBoundingClientRect(); return r ? {left:r.left,top:r.top,width:r.width,height:r.height} : null; })()");
-      requireCondition(rect && rect.width > 0 && rect.height > 0, "T114-R timing canvas geometry unavailable", rect);
-      const x = rect.left + rect.width / 2;
-      const y = rect.top + rect.height / 2;
-      const target = await cdpEvaluate(cdp, "(() => document.elementFromPoint(" + x + "," + y + ") === document.querySelector('#gameCanvas'))()");
-      requireCondition(target === true, "T114-R physical timing target is not canvas");
-      await cdp.send("Input.setIgnoreInputEvents", { ignore:false });
-      await cdp.send("Input.dispatchMouseEvent", { type:"mouseMoved", x, y, button:"none", buttons:0 });
-      await cdp.send("Input.dispatchMouseEvent", { type:"mousePressed", x, y, button:"left", buttons:1, clickCount:1 });
-      await cdp.send("Input.dispatchMouseEvent", { type:"mouseReleased", x, y, button:"left", buttons:0, clickCount:1 });
 
       const victory = await mark(
         "VICTORY",
-        s => s.battlePhase === "VICTORY" && s.combatResult === "VICTORY",
+        s => s.battlePhase === "VICTORY" && ["HIT", "HOME_RUN"].includes(s.combatResult),
         5000
       );
-      requireCondition(victory.scrap === beforeTerminal.scrap + 100, "T114-R Victory reward amount/order invalid", { beforeTerminal, victory });
-      requireCondition(victory.persistedScrap === beforeTerminal.persistedScrap + 100, "T114-R persisted victory reward amount invalid", { beforeTerminal, victory });
-      requireCondition(victory.rewardLedgerKeys.length === beforeTerminal.rewardLedgerKeys.length + 1, "T114-R victory reward ledger did not gain exactly one terminal application", { beforeTerminal, victory });
-      requireCondition(victory.rewardLedger?.[expectedBattleId] === true, "T114-R expected victory ledger entry missing", victory);
+      requireCondition(
+        ["HIT", "HOME_RUN"].includes(victory.combatResult),
+        "T114-R victory phase carried an unsupported terminal outcome",
+        victory
+      );
+      requireCondition(victory.scrap === beforeTerminal.scrap, "T114-R local demo must not grant authoritative Scrap", { beforeTerminal, victory });
+      requireCondition(victory.persistedScrap === beforeTerminal.persistedScrap, "T114-R local demo must not persist authoritative Scrap", { beforeTerminal, victory });
+      requireCondition(victory.rewardLedgerKeys.length === beforeTerminal.rewardLedgerKeys.length, "T114-R local demo reward ledger must remain unchanged", { beforeTerminal, victory });
+      requireCondition(!victory.rewardLedger?.[expectedBattleId], "T114-R local demo unexpectedly created a reward ledger entry", victory);
 
       const rewardApplication = {
+        timingInputEvidence: timingAttempt,
         at_ms: Date.now() - runStartedAt,
         scrap: victory.scrap,
         persistedScrap: victory.persistedScrap,
@@ -1635,7 +1859,7 @@ async function run() {
       );
       requireCondition(completeState.battlePhase === "VICTORY", "T114-R victory terminal state changed during return", completeState);
       requireCondition(completeState.scrap === victory.scrap, "T114-R Scrap changed again after terminal return", { victory, completeState });
-      requireCondition(completeState.rewardLedgerKeys.length === 1, "T114-R reward ledger changed after terminal return", completeState);
+      requireCondition(completeState.rewardLedgerKeys.length === 0, "T114-R demo reward ledger changed after terminal return", completeState);
 
       const sameOriginErrors = pageExceptions
         .map((item) => item?.exception?.description || item?.text || "")
@@ -1660,15 +1884,18 @@ async function run() {
         timingInput: {
           method: "CDP Input.dispatchMouseEvent",
           elapsedMs: elapsedAtInput,
-          targetBand: "T096 recovered 620ms sleep / canvas center"
+          targetBand: "live timingState startedAt/targetMs/greatWindowMs scheduled pointer input",
+          timingAttempt
         },
         terminalBoundary: {
           lastNonTerminal: "CLIMAX/TIMING ACTIVE",
-          terminalResult: "VICTORY",
-          rewardObservedAfterTerminal: true,
+          terminalPhase: victory.battlePhase,
+          terminalResult: victory.combatResult,
+          rewardObservedAfterTerminal: false,
+          localRewardBlocked: true,
           scrapBefore: beforeTerminal.scrap,
           scrapAfter: victory.scrap,
-          expectedDelta: 100
+          expectedDelta: 0
         },
         consoleErrors: consoleErrors.map((entry) => ({ text:entry.text, url:entry.url, source:entry.source })),
         pageErrors: sameOriginErrors
@@ -1679,11 +1906,12 @@ async function run() {
       console.log("SCRAP BEFORE TERMINAL = " + beforeTerminal.scrap);
       console.log("LAST NON-TERMINAL STATE = CLIMAX/TIMING ACTIVE");
       console.log("VICTORY = PASS_REAL");
-      console.log("COMBAT RESULT = VICTORY");
+      console.log("TERMINAL PHASE = " + victory.battlePhase);
+      console.log("COMBAT RESULT = " + victory.combatResult);
       console.log("MATCH END = PASS_REAL_BY_TERMINAL_RESULT");
-      console.log("REWARD APPLICATION = PASS_REAL");
+      console.log("DEMO REWARD BLOCK = PASS_REAL");
       console.log("SCRAP AFTER TERMINAL = " + victory.scrap);
-      console.log("EXPECTED REWARD = +100 SCRAP");
+      console.log("EXPECTED REWARD = NONE // DEMO_ONLY");
       console.log("DUPLICATION = PASS_REAL");
       console.log("RETURN = PASS_REAL");
       console.log("TERMINAL BOUNDARY = PASS_REAL");
@@ -2439,6 +2667,7 @@ async function run() {
     else if (T073_PRESENTATION) console.log("T073 CHARACTER PRESENTATION = PASS_REAL");
     else console.log("T072 BROWSER JOURNEY = PASS_REAL");
   } catch (error) {
+    r5ProbeFailure = String(error?.stack || error);
     writeFileSync(
       join(EVIDENCE_DIR, "t072-browser-failure.json"),
       JSON.stringify({
@@ -2461,6 +2690,23 @@ async function run() {
     );
     throw error;
   } finally {
+    const r5Task=process.env.BWM101R5_TASK, r5Root=process.env.BWM101R5_EVIDENCE_ROOT;
+    if(["T101","T118"].includes(r5Task)&&r5Root){
+      try{
+        let currentDiagnostics=null;
+        if(cdp){const serialized=await cdpEvaluate(cdp,"window.__BWM101R5_DIAGNOSTICS__ ? JSON.stringify(window.__BWM101R5_DIAGNOSTICS__) : null");if(serialized)currentDiagnostics=typeof serialized==="string"?JSON.parse(serialized):serialized;}
+        const pageSnapshots=[...r5NavigationSnapshots,...(currentDiagnostics?[{capturedAt:new Date().toISOString(),reason:"final",diagnostics:currentDiagnostics}]:[])];
+        const allEvents=pageSnapshots.flatMap((page,pageIndex)=>(page.diagnostics?.events||[]).map(event=>({...event,pageIndex})));
+        const diagnostics=currentDiagnostics?{...currentDiagnostics,events:allEvents,pages:pageSnapshots.map((page,index)=>({pageIndex:index,capturedAt:page.capturedAt,reason:page.reason,captureError:page.captureError,eventCount:page.diagnostics?.events?.length||0,startedAt:page.diagnostics?.startedAt||null}))}:null;
+        const root=resolve(r5Root);mkdirSync(root,{recursive:true});
+        const common={task:r5Task,sha:process.env.GITHUB_SHA||"local",runId:process.env.GITHUB_RUN_ID||"local",runAttempt:process.env.GITHUB_RUN_ATTEMPT||"local",timestamp:new Date().toISOString(),probeStatus:r5ProbeFailure?"FAIL":"COMPLETED",probeFailure:r5ProbeFailure,instrumentationAvailable:Boolean(diagnostics),instrumentationErrors:diagnostics?.instrumentationErrors||[],pageExceptions:pageExceptions.map(x=>x?.exception?.description||x?.text||""),consoleErrors:consoleErrors.map(x=>({text:x.text,url:x.url,source:x.source}))};
+        if(!diagnostics)common.captureFailure="Runner could not retrieve page trace before browser close; capture unavailable, not PASS.";
+        const trace=r5Task==="T101"?"t101-transition-trace.json":"t118-timing-trace.json", summaryName=r5Task==="T101"?"t101-transition-summary.json":"t118-resolution-summary.json", events=diagnostics?.events||[];
+        writeFileSync(join(root,trace),JSON.stringify({...common,diagnostics},null,2)+"\n","utf8");
+        const summary={...common,eventCount:events.length,transitionExceptionCount:events.filter(e=>e.type==="T101.actor.transitionTo:exception").length,actionToFocusCount:events.filter(e=>e.type==="T101.actor.transitionTo:exception"&&/ACTION -> FOCUS/.test(e.error?.message||"")).length,handlerReachCount:events.filter(e=>e.type==="T118.handleTimingPointer:before").length,domInputCount:events.filter(e=>e.type==="T118.dom-input").length,inputObservedWithoutHandler:events.some(e=>e.type==="T118.dom-input")&&!events.some(e=>e.type==="T118.handleTimingPointer:before"),resolverCallCount:events.filter(e=>e.type==="T118.resolveTimingInput:before").length,resolverReturnCount:events.filter(e=>e.type==="T118.resolveTimingInput:after").length,observedMissReturns:events.filter(e=>e.type==="T118.resolveTimingInput:after"&&String(e.result?.grade||e.result?.timing?.grade||"").toUpperCase()==="MISS").length,status:!diagnostics?"INSTRUMENTATION_FAILURE":r5ProbeFailure?"PROBE_FAILED_TRACE_PRESERVED":"CAPTURED"};
+        writeFileSync(join(root,summaryName),JSON.stringify(summary,null,2)+"\n","utf8");if(!diagnostics)process.stderr.write("[BWM101R5] trace unavailable; marked failure\n");
+      }catch(e){try{mkdirSync(resolve(r5Root),{recursive:true});writeFileSync(join(resolve(r5Root),"instrumentation-capture-failure.json"),JSON.stringify({task:r5Task,sha:process.env.GITHUB_SHA||"local",runId:process.env.GITHUB_RUN_ID||"local",timestamp:new Date().toISOString(),error:String(e?.stack||e),originalProbeFailure:r5ProbeFailure},null,2)+"\n","utf8");}catch{}process.stderr.write("[BWM101R5] evidence capture failed: "+String(e?.stack||e)+"\n");}
+    }
     try { cdp?.close(); } catch {}
     try { browser?.kill("SIGTERM"); } catch {}
     try { server?.close(); } catch {}
