@@ -11186,3 +11186,54 @@ No se alteraron economía, SCRAP, gacha, balance, daño, turnos, autenticación,
 4. Ejecutar las pruebas y workflows en el nuevo SHA y enlazar sus resultados. No aprobar ni fusionar el PR #51 hasta resolver los bloqueos.
 
 **Temporizador BWM-101:** el objetivo inicial de 2–4 horas no puede confirmarse como completado. Estimación restante preliminar: 2–5 horas para instrumentación, corrección contractual y regresión; puede aumentar si T101 revela un problema de ciclo de vida o sincronización.
+
+
+## BWM-101-R1 · Instrumentación dinámica y reconciliación contractual
+
+**Fecha:** 2026-10-10  
+**Estado:** PARTIAL / BLOCKED; pendiente de regresión en el SHA final.  
+**Rama:** `bwm-099-normal-combat-authority-handoff`  
+**PR:** [#51](https://github.com/jonhararagi/baseball-waifus/pull/51), abierto y sin fusionar.
+
+### Referencias verificadas al inicio
+
+- `main`: `988c0fa3c7c17077d18e5f7f0722726cae39a197`.
+- HEAD inicial: `0d391ab41751f60326f27bea1edd1090f4697dc5`.
+- PR #51 estaba abierto, sin fusionar, con base SHA coincidente con `main` y `mergeable: true`.
+- [T097 run 38035507912](https://github.com/jonhararagi/baseball-waifus/actions/runs/38035507912) y [Visual QA run 38035507810](https://github.com/jonhararagi/baseball-waifus/actions/runs/38035507810) apuntaban ambos al SHA inicial exacto. T097 terminó en FAILURE; Visual QA terminó en SUCCESS. Esos resultados no validan el commit nuevo de este ciclo.
+
+### Evidencia dinámica y diagnóstico
+
+**T101 — transición ACTION → FOCUS.** La ejecución real de Chromium del run 38035507912 reproduce la excepción, no es una inferencia estática. El stack capturado es `CharacterActor2D5.transitionTo` → `setPresentationState` → `CombatRenderer._handleCombatPresentationStep` (fase `ATTACKER_FOCUS`) → `CombatPresentationDirector.onStep` → `_emitStep`. La ubicación `combat_stage.js:222:13` seguía vigente en el SHA inicial. La evidencia demuestra que al entrar un evento `ATTACKER_FOCUS`, el actor solicitado aún está en `ACTION`. No demuestra por sí sola si el evento repetido viene de un nuevo resultado antes de terminar la acción anterior, una sustitución legítima o una carrera del ciclo de presentación. No se cambió la máquina de estados ni se descartó la excepción. **Causa raíz: todavía no confirmada; hace falta instrumentación correlacionada con actorId, sequenceId, razón y fases previas.**
+
+**T118 — Timing MISS.** El run 38035507912 reproduce la aserción fallida: estado observado `TACTICAL / STRIKE`, `timingActive=false`, `timingGrade=""`, `presentationPhase=ATTACKER_FOCUS`, SCRAP 0 y ledger vacío. El probe de la ruta T109/T118 espera Timing activo, envía eventos CDP `mouseMoved`, `mousePressed`, `mouseReleased` al centro de `#gameCanvas` y después espera el cierre de timing. Esa evidencia confirma el input enviado y un resultado `STRIKE`, pero no confirma que el runtime haya resuelto un `MISS`; la ruta T118 no guarda una traza de entrada correlacionada ni un snapshot inmediato del resolver. No se fabricó un grade ni se debilitó la aserción. **Causa raíz: pendiente; hay que enlazar el evento real del Timing Ring, el resultado de resolución y la actualización del DTO/dataset.**
+
+**T114-R — fase terminal frente a desenlace.** En la misma ejecución, el timeout observó `battlePhase="VICTORY"`, `combatResult="HIT"`, presentación `COMPLETE`, SCRAP y SCRAP persistido en 0 y ledger vacío. La ejecución previa había observado `HOME_RUN`. Los resultados `HIT` y `HOME_RUN` son valores de desenlace, no nombres de fase. Se corrigió el probe para exigir `battlePhase === "VICTORY"` y un desenlace de victoria reconocido (`HIT` o `HOME_RUN`) por separado, sin modificar el productor de resultados. La prueba conserva las comprobaciones negativas de SCRAP/ledger y de retorno de presentación. Sin embargo, la recuperación después de recargar aún requiere cobertura explícita y ejecución posterior al cambio.
+
+### Cambio de código
+
+- `webapp/js/character_journey_browser_probe.mjs`: T114-R deja de exigir el literal no respaldado `combatResult === "VICTORY"`; valida por separado la fase terminal y el desenlace `HIT | HOME_RUN`, y la evidencia/log registra ambos campos de forma diferenciada.
+- `docs/bitacora.md`: esta entrada registra los resultados reales, los límites de evidencia y las comprobaciones pendientes.
+- No se modificó la máquina de estados ni el resolver de Timing porque las trazas actuales no bastan para justificar una corrección de runtime segura.
+
+### Matriz de verificación
+
+| Prueba | Evidencia / estado |
+|---|---|
+| HEAD, base, estado del PR y mergeability | PASS al inicio; debe volver a consultarse tras el commit |
+| T101 | FAIL reproducible en SHA `0d391ab`; raíz pendiente |
+| T118 | FAIL reproducible en SHA `0d391ab`; el MISS no está confirmado |
+| T114-R | Fallo de expectativa contractual identificado; corrección de probe aplicada, regresión del SHA final pendiente |
+| T097 / demo sin recompensa tras retorno y recarga | La ejecución inicial conserva SCRAP 0 y ledger vacío, pero T097 global falla por T101/T118/T114-R |
+| T109 / T111 / T117 | No se declaran aprobados para el SHA final hasta nueva ejecución |
+| BONE-004 | El run inicial lo ejecutó; la evidencia no valida el SHA posterior |
+| Visual QA | SUCCESS en SHA inicial solamente; no valida este cambio |
+| Integración productiva | BLOCKED; no hay smoke test autenticado contra una instancia productiva real |
+
+No se alteraron economía, SCRAP, gacha, pity, daño, turnos, balance, autenticación, firmas, idempotencia ni autoridad de recompensas. No se aprobó ni fusionó el PR, y `main` no se modificó.
+
+### Siguiente paso
+
+Reproducir T101 con trazas de actor/sequence/evento y T118 con un registro que una input físico, actividad de Timing Ring y resultado inmediato. Después ejecutar la matriz completa en un SHA que contenga las correcciones. El contrato de recuperación tras recarga debe añadirse o validarse antes de cerrar T114-R.
+
+**Temporizador BWM-101-R1:** la reconciliación inicial y el ajuste contractual de T114-R quedaron aplicados. Estimación restante: 2–5 horas para instrumentación, diagnóstico seguro y regresiones; si la máquina de estados o el ciclo de timing requieren una corrección más amplia, detenerse y reestimar.
