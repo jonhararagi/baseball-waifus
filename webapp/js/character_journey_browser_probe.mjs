@@ -193,14 +193,16 @@ async function dispatchCorrelatedTimingPointer(cdp, { task, attempt = 1, expecte
     catch (error) { process.stderr.write("[BWM101R7C2] evidence write failed: " + String(error?.stack || error) + "\n"); } };
   const clockExpression = "(() => { const r=window.__BWM101R7C2_READ_TIMING__?.()||{}; const t=r.timingState||null; const b=r.battle||{}; const elapsedMs=Number.isFinite(Number(t?.startedAt))?performance.now()-Number(t.startedAt):null; return {available:r.available===true,active:t?.active===true,startedAt:t?.startedAt??null,targetMs:t?.targetMs??null,durationMs:t?.durationMs??null,hitWindowMs:t?.hitWindowMs??null,greatWindowMs:t?.greatWindowMs??null,windowId:t?.windowId||'',elapsedMs,phase:b.phase||'',round:b.round??null,tacticalTurn:b.tacticalTurn??null,lastTiming:r.lastTiming??null}; })()";
   try {
-    const geometry = await cdpEvaluate(cdp, "(() => { const c=document.querySelector('#gameCanvas'); const r=c?.getBoundingClientRect(); return c&&r?{left:r.left,top:r.top,width:r.width,height:r.height,viewportWidth:innerWidth,viewportHeight:innerHeight}:null; })()");
+    const geometryAndTargets = await cdpEvaluate(cdp, "(() => { const c=document.querySelector('#gameCanvas'); const r=c?.getBoundingClientRect(); if(!c||!r)return null; const fractions=[[.5,.5],[.8,.5],[.2,.5],[.5,.8],[.5,.2],[.8,.8],[.2,.8],[.8,.2],[.2,.2],[.92,.5],[.08,.5],[.5,.92],[.5,.08]]; const candidates=fractions.map(([fx,fy])=>{const x=r.left+r.width*fx,y=r.top+r.height*fy,e=document.elementFromPoint(x,y);return {x,y,fx,fy,isCanvas:e===c,tag:e?.tagName||'',id:e?.id||''};}); const accessible=candidates.filter(p=>p.isCanvas).sort((a,b)=>Math.hypot(a.fx-.5,a.fy-.5)-Math.hypot(b.fx-.5,b.fy-.5)); return {left:r.left,top:r.top,width:r.width,height:r.height,viewportWidth:innerWidth,viewportHeight:innerHeight,candidates,selected:accessible[0]||null}; })()");
+    const geometry = geometryAndTargets ? {left:geometryAndTargets.left,top:geometryAndTargets.top,width:geometryAndTargets.width,height:geometryAndTargets.height,viewportWidth:geometryAndTargets.viewportWidth,viewportHeight:geometryAndTargets.viewportHeight} : null;
     proof.geometry = geometry;
+    proof.targetCandidates = geometryAndTargets?.candidates || [];
     requireCondition(geometry && geometry.width > 0 && geometry.height > 0, task + " canvas geometry unavailable", geometry);
-    const x = geometry.left + geometry.width / 2, y = geometry.top + geometry.height / 2;
-    proof.inputPoint = { x, y };
-    const target = await cdpEvaluate(cdp, "(() => { const c=document.querySelector('#gameCanvas'); const e=document.elementFromPoint(" + x + "," + y + "); return {isCanvas:e===c,tag:e?.tagName||'',id:e?.id||''}; })()");
-    proof.target = target;
-    requireCondition(target?.isCanvas === true, task + " physical Timing target is not the game canvas", target);
+    const selectedPoint = geometryAndTargets?.selected;
+    requireCondition(selectedPoint?.isCanvas === true, task + " no unobstructed canvas input coordinate exists", { geometry, candidates: geometryAndTargets?.candidates || [] });
+    const x = selectedPoint.x, y = selectedPoint.y;
+    proof.inputPoint = { x, y, fractionX: selectedPoint.fx, fractionY: selectedPoint.fy };
+    proof.target = selectedPoint;
     await cdp.send("Input.setIgnoreInputEvents", { ignore: false });
 
     // Measure real CDP runtime-evaluation latency before selecting the live-window sample.
