@@ -246,6 +246,7 @@ async function run() {
   const pageExceptions = [];
   const network = { requests: [], responses: [] };
   let r5ProbeFailure = null;
+  const r5NavigationSnapshots = [];
 
   try {
     browser = spawn(BROWSER_BIN, [
@@ -277,6 +278,24 @@ async function run() {
     await cdp.send("Runtime.enable");
     await cdp.send("Log.enable");
     await cdp.send("Network.enable");
+
+    if (["T101","T118"].includes(process.env.BWM101R5_TASK)) {
+      const originalCdpSend = cdp.send.bind(cdp);
+      cdp.send = async (method, params) => {
+        if (method === "Page.navigate") {
+          try {
+            const serialized = await cdpEvaluate(cdp, "window.__BWM101R5_DIAGNOSTICS__ ? JSON.stringify(window.__BWM101R5_DIAGNOSTICS__) : null");
+            if (serialized) {
+              const diagnostics = typeof serialized === "string" ? JSON.parse(serialized) : serialized;
+              r5NavigationSnapshots.push({ capturedAt: new Date().toISOString(), reason: "before-Page.navigate", diagnostics });
+            }
+          } catch (captureError) {
+            r5NavigationSnapshots.push({ capturedAt: new Date().toISOString(), reason: "before-Page.navigate", captureError: String(captureError?.stack || captureError) });
+          }
+        }
+        return originalCdpSend(method, params);
+      };
+    }
 
     const bone008PlayerMetaFixture = "{\"schemaVersion\":1,\"revision\":1,\"state\":{\"schemaVersion\":1,\"identity\":{\"playerId\":\"local-player\",\"provider\":\"local\"},\"inventory\":{\"characters\":{\"bw001\":{\"quantity\":1,\"unlocked\":true}}},\"currencies\":{\"SCRAP\":0,\"FRAGMENTS\":0},\"gacha\":{\"pullsSinceUR\":0},\"unlocks\":{},\"progression\":{\"characters\":{\"bw001\":{\"level\":1}}},\"roster\":{\"activeBatter\":\"bw001\",\"supports\":[null,null]},\"rewardLedger\":{}}}";
     let persistedFixture = null;
@@ -2476,8 +2495,11 @@ async function run() {
     const r5Task=process.env.BWM101R5_TASK, r5Root=process.env.BWM101R5_EVIDENCE_ROOT;
     if(["T101","T118"].includes(r5Task)&&r5Root){
       try{
-        let diagnostics=null;
-        if(cdp){const serialized=await cdpEvaluate(cdp,"window.__BWM101R5_DIAGNOSTICS__ ? JSON.stringify(window.__BWM101R5_DIAGNOSTICS__) : null");if(serialized)diagnostics=typeof serialized==="string"?JSON.parse(serialized):serialized;}
+        let currentDiagnostics=null;
+        if(cdp){const serialized=await cdpEvaluate(cdp,"window.__BWM101R5_DIAGNOSTICS__ ? JSON.stringify(window.__BWM101R5_DIAGNOSTICS__) : null");if(serialized)currentDiagnostics=typeof serialized==="string"?JSON.parse(serialized):serialized;}
+        const pageSnapshots=[...r5NavigationSnapshots,...(currentDiagnostics?[{capturedAt:new Date().toISOString(),reason:"final",diagnostics:currentDiagnostics}]:[])];
+        const allEvents=pageSnapshots.flatMap((page,pageIndex)=>(page.diagnostics?.events||[]).map(event=>({...event,pageIndex})));
+        const diagnostics=currentDiagnostics?{...currentDiagnostics,events:allEvents,pages:pageSnapshots.map((page,index)=>({pageIndex:index,capturedAt:page.capturedAt,reason:page.reason,captureError:page.captureError,eventCount:page.diagnostics?.events?.length||0,startedAt:page.diagnostics?.startedAt||null}))}:null;
         const root=resolve(r5Root);mkdirSync(root,{recursive:true});
         const common={task:r5Task,sha:process.env.GITHUB_SHA||"local",runId:process.env.GITHUB_RUN_ID||"local",runAttempt:process.env.GITHUB_RUN_ATTEMPT||"local",timestamp:new Date().toISOString(),probeStatus:r5ProbeFailure?"FAIL":"COMPLETED",probeFailure:r5ProbeFailure,instrumentationAvailable:Boolean(diagnostics),instrumentationErrors:diagnostics?.instrumentationErrors||[],pageExceptions:pageExceptions.map(x=>x?.exception?.description||x?.text||""),consoleErrors:consoleErrors.map(x=>({text:x.text,url:x.url,source:x.source}))};
         if(!diagnostics)common.captureFailure="Runner could not retrieve page trace before browser close; capture unavailable, not PASS.";
