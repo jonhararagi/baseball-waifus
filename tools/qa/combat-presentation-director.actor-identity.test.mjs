@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { CharacterActor2D5, CombatStage } from "../webapp/js/combat_stage.js";
-import { CombatPresentationDirector } from "../webapp/js/combat_presentation_director.js";
+import { CharacterActor2D5, CombatStage } from "../../webapp/js/combat_stage.js";
+import { CombatPresentationDirector } from "../../webapp/js/combat_presentation_director.js";
 
 function stageActors(generation = "initial") {
   return [
