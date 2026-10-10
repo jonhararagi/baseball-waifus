@@ -11477,3 +11477,60 @@ No se atribuyen T097 ni T114-R2 a la doble entrada sin nuevas evidencias. T101 p
 **Tiempo realmente invertido:** no medido por cronómetro.  
 **Temporizador R7-C1:** el flujo de entrada y la primera instrumentación se implementaron; validación automatizada, revisión de la traza y nueva CI siguen pendientes. Estimación restante: 1–3 horas si la correlación del navegador es reproducible; reserva de 1–2 horas adicionales si T101 necesita otra instrumentación o reproduce fallos independientes.  
 **Estimación global de finalización de BaseWarriors: Meta-Strike:** no puede calcularse rigurosamente a partir de esta tarea aislada; el lanzamiento multiplataforma permanece fuera de este temporizador.
+
+---
+
+## BWM-101-R7-C2 · Timing Ring determinista y ciclo de vida de actores
+
+**Fecha:** 2026-10-10  
+**Estado registrado:** `PARTIAL`; no es cierre de release.  
+**Rama:** `bwm-099-normal-combat-authority-handoff`  
+**HEAD de rama al registrar esta entrada:** `c82cef64a33defdad7ece51a48e0f94bcc898203`  
+**PR #51:** [abierto, sin fusionar](https://github.com/jonhararagi/baseball-waifus/pull/51), base `988c0fa3c7c17077d18e5f7f0722726cae39a197`, mergeable=`true`.  
+**SHA de main confirmado:** `988c0fa3c7c17077d18e5f7f0722726cae39a197`.
+
+### Preflight y ejecuciones remotas
+
+- Run R6 [38055054272](https://github.com/jonhararagi/baseball-waifus/actions/runs/38055054272): terminó en FAILURE; T097/T101/T109/T118/T114-R2 fallaron. T111/T117 y BONE-004 contrato/Chromium nativo pasaron en ese SHA. Visual QA R6 [38055054275](https://github.com/jonhararagi/baseball-waifus/actions/runs/38055054275): SUCCESS. No se consideran PASS del SHA R7-C2 actual.
+- Run de timing con evidencia [38064484726](https://github.com/jonhararagi/baseball-waifus/actions/runs/38064484726), SHA observado `49d5c328e06614ce28a44c0b5ba0c2a9fa91654a`: el probe midió el mismo patrón de latencia dentro del input. T097 programó alrededor de `660 ms`, pero el retorno ocurrió sobre `905 ms`, desviación `+244 ms`; T109 mostró un desfase aproximado de `230 ms` entre el snapshot anterior y el retorno. La traza de timing registró bandas reales del window, grado y delta. No se maquilló el resultado.
+- CDP actual al redactar esta entrada: [38064790009](https://github.com/jonhararagi/baseball-waifus/actions/runs/38064790009) · SHA `c82cef64a33defdad7ece51a48e0f94bcc898203` · in_progress/PENDING.
+- Visual QA actual al redactar esta entrada: [38064790006](https://github.com/jonhararagi/baseball-waifus/actions/runs/38064790006) · SHA `c82cef64a33defdad7ece51a48e0f94bcc898203` · completed/success.
+- Los artefactos nuevos deben revisarse en sus runs respectivos y cotejarse con su SHA, no por similitud de nombre.
+
+### Diagnóstico y cambios
+
+**T101, causa raíz demostrada por la traza.** En el reemplazo del mapa `CombatStage.setActors()`, `bw001` pasaba de una referencia compartida `object-ref-4` en stage y formación a un actor nuevo `object-ref-21` en stage, mientras la formación seguía ligada a `object-ref-4`. El director reutilizaba la formación obsoleta porque `_ensureRuntimeFormation()` solo la creaba si era null; la secuencia de presentación posterior terminaba pidiendo `ACTION → FOCUS` al actor de la generación actual. Se corrigió el ciclo de vida sin tocar la máquina de estados: comparar las referencias de los cuatro actores player stage/formación y reconstruir la formación si divergen; al reemplazar, finalizar primero la generación de actores que estaba animándose. La regresión determinista contiene un test rojo con la antigua implementación que exige la excepción `ACTION → FOCUS` y el test verde con la implementación corregida que valida la identidad de referencias, secuencias sucesivas y llegada a `COMPLETE`.
+
+**T118/T109/T097/T114-R2, causa del probe.** Los runs previos confirmaron que `resolverBefore.seq` debe compararse con `resolverAfter.callSeq`. El retorno real de un clic R7-C2 anterior fue `GREAT`, `elapsed_ms=737`, `target_ms=720`, `delta_ms=17`; no era MISS. Los runs con el scheduler anterior mostraron que esperar mediante polling CDP y luego consultar el estado volvía a introducir una latencia considerable. La instrumentación usó `getState()`, que clona el estado de la autoridad, en el camino síncrono del pointer handler; eso puede bloquear el hilo y desplazar la resolución después del evento físico. El intento más reciente elimina el round trip CDP después del temporizador y toma el baseline exacto durante `pointerdown` en fase de captura, antes del handler del canvas. El lector QA debe obtener la fase, turno y bandas a través del objeto de estado plano disponible, no invocar getters que clonan la autoridad. La banda del clic terminal acepta `HIT` o `GREAT` dentro de `hitWindowMs`; MISS sigue requiriendo el DTO real fuera de la ventana de acierto. Cada intento persiste su JSON antes de las aserciones funcionales, también en fallo.
+
+### Archivos del alcance R7-C2
+
+- `webapp/js/character_journey_browser_probe.mjs`: scheduling de Timing Ring basado en la ventana real, geometría del canvas sin puntos obstruidos, entrada física única, captura correlacionada del retorno DTO y evidencia por intento.
+- `tools/qa/bwm101r5-instrumentation.js`: referencias estables por `WeakMap`, traza de ciclo de vida de actores, señal de primer desajuste y captura de input; debe evitar llamadas que clonen estado durante el evento físico.
+- `tools/qa/instrument-browser-site.mjs` y `tools/qa/instrument-browser-site.test.mjs`: fixture/anclas de R7-C2, incluida `beginTimingWindow()`.
+- `.github/workflows/t097-reward-handoff-cdp.yml`: validación del manifiesto R7-C2, prueba de identidad de actores y publicación de artefactos con `if: always()`.
+- `webapp/js/combat_presentation_director.js`: corrección mínima de sincronización de la formación cuando `CombatStage.setActors()` reemplaza la generación de actores.
+- `tools/qa/combat-presentation-director.actor-identity.test.mjs`: reproducción determinista del comportamiento anterior y verificación de la corrección.
+- No se modificaron autoridad de combate, daño, stamina, Timing Ring productivo, economía, SCRAP, ledger, gacha, pity, autenticación ni attestation.
+
+### Matriz de evidencia
+
+| Validación | Resultado que puede afirmarse |
+|---|---|
+| Preflight PR/main y revisión de R6 | PASS de consulta |
+| R7-C2 regresión determinista de actor | PASS en CI de una ejecución anterior al último ajuste del lector de timing; revalidar el SHA actual |
+| Harness válido/ausente/duplicado/idempotencia | PASS en una ejecución previa; revalidar el SHA actual |
+| `node --check` probe | Ejecutado por workflow en una revisión previa; revalidar la revisión actual |
+| T101 Chromium | La traza posterior a la corrección no mostró `ACTION → FOCUS` en una revisión previa; revalidar el SHA actual |
+| T097 / T109 / T118 / T114-R2 | FAIL en ejecuciones previas; los intentos deben revisarse sobre el SHA más reciente |
+| T111 / T117 | PASS histórico en R6, no reutilizable como PASS de R7-C2 |
+| BONE-004 contrato y Chromium nativo | PASS histórico en R6, no reutilizable como PASS del SHA actual |
+| Visual QA | Hubo PASS en revisiones previas; usar [38064790006](https://github.com/jonhararagi/baseball-waifus/actions/runs/38064790006) · SHA `c82cef64a33defdad7ece51a48e0f94bcc898203` · completed/success para el estado remoto actual |
+| Evidencia de retorno real y frontera SCRAP/ledger | Pendiente de revisión del artefacto del SHA más reciente |
+
+### Bloqueos y siguiente acción
+
+El reemplazo de actores tiene causa raíz reproducida y una regresión determinista. El cierre funcional queda pendiente de revisar la nueva captura temporal contra Chromium: verificar que el snapshot de `pointerdown` no llame `getState()` ni ningún getter que clone la autoridad, comparar `pointerdown` con el único handler y el par resolver before/after por `seq/callSeq`, y verificar el retorno real, el estado inmediato y SCRAP/ledger. Si un intento no llega al grado previsto, conservar el DTO y fallar explícitamente; no repetir el clic. No atribuir fallos terminales a T101 sin correlación.
+
+**Tiempo real invertido:** no medido por cronómetro.  
+**Timer de BWM-101-R7-C2:** estimación restante de 2–4 horas para cerrar el input crítico y verificar artefactos; reserva de 1–2 horas extra si aún hay variación de Chromium o se descubre otro fallo independiente. La duración del lanzamiento multiplataforma es una estimación aparte y no se deduce de este bloque.
