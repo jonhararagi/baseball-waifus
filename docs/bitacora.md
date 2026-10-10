@@ -11041,3 +11041,46 @@ Pre-existing status is supported by Run `37550518856` on `847edd53f98ca75f0f7630
 **GLOBAL GATE:** `CERRADO`.  
 **PRODUCTION:** `NOT VERIFIED`.  
 **NEXT PRODUCTION HANDOFF:** `BONE-011-AUTH-032` after a material, verifiable owner-gate change.
+
+
+---
+
+## BWM-099 · NORMAL COMBAT SERVER-AUTHORITY HANDOFF
+
+**Fecha:** 2026-10-10  
+**Estado:** PARTIAL / BLOCKED PARA INTEGRACIÓN PRODUCTIVA  
+**HEAD inicial inspeccionado:** `988c0fa3c7c17077d18e5f7f0722726cae39a197`  
+**Rama de trabajo:** `bwm-099-normal-combat-authority-handoff`  
+**PR:** pendiente de abrir tras validar los cambios de probes.
+
+### Hallazgos confirmados en el HEAD inicial
+
+- El cliente ya tiene un límite API conectado: `BaseballWaifusApi.getCombatInit()` y `submitTurnAction()` usan `/v1/combat/:matchId/init` y `/v1/combat/:matchId/turn`, con `x-telegram-init-data` cuando Telegram proporciona initData. `app.js` enruta a demo local cuando `window.BASEBALL_WAIFUS_API_BASE_URL` está vacío y llama al endpoint conectado cuando la URL está configurada.
+- El backend incluye autenticación de Telegram validada en servidor, `CombatService`, attestation `SERVER_COMBAT_ATTESTATION_V1` y firma ECDSA P-256. La suite de backend de pruebas usa identidad de test y firmante efímero, por lo que no constituye prueba de despliegue productivo.
+- `backend/README.md` declara que no hay deployment externo configurado. La configuración de producción requiere secretos externos, persistencia gestionada y proveedor de pagos; el workflow de deploy es manual y no despliega a un proveedor cloud. No se verificó ninguna instancia HTTPS productiva ni sus variables/secrets. No se consultaron ni expusieron valores secretos.
+- PR #50 (`BWM-098`) sigue abierto y sin fusionar. BWM-099 usa rama independiente y no altera su documentación.
+
+### Diagnóstico de probes contra los logs del workflow 37996496065
+
+- **T097:** la partida termina en `VICTORY / HOME_RUN`, pero es la ruta demo/local. El cliente muestra `LOCAL_RESULT // DEMO_ONLY // REWARD BLOCKED`, Scrap permanece en 0 y el ledger queda vacío. El fallo provenía de esperar +100 SCRAP en una partida local, contradiciendo la frontera de autoridad existente. El probe se corrige para verificar el bloqueo esperado, no para simular una concesión conectada.
+- **T101:** se alcanza `DEFEAT`, stamina 0 y Scrap 0. La aserción exigía una entrada en el ledger de recompensa de victoria aunque el contrato no concede premio por derrota. Se corrige para exigir que el ledger permanezca vacío.
+- **T118:** el log observa `STRIKE` y fase táctica, pero el campo transitorio `timingGrade` ya se había reiniciado cuando el probe leyó el estado final. La aserción de MISS se mueve al snapshot del resultado capturado inmediatamente después del input; el saldo y ledger se siguen comprobando al final.
+- **T114-R:** el lector histórico accedía a `currencies` en el nivel superior, pero Player Meta actual persiste `{schemaVersion, revision, state}`. El lector del probe se actualiza para aceptar el envelope actual y mantener compatibilidad con el formato histórico si apareciera.
+- **T109/T111/T117:** sus logs previos muestran límites de recompensa no terminal y diagnóstico de timing útiles; no se interpretan como prueba de integración productiva.
+
+### Cambios acotados de BWM-099
+
+- Se ajusta el probe T097 para demostrar que una victoria local no acredita SCRAP, no crea ledger y sigue así tras RETURN/recarga. El workflow se etiqueta como validación de frontera demo, no como handoff conectado.
+- Se corrige el contrato esperado por T101 para derrota sin premio.
+- Se corrige la lectura temporal de T118 y el lector de envelope de T114-R.
+- No se modifican combate, balance, gacha, economía, verificación criptográfica ni runtime de producción. No se han añadido endpoints ni claves.
+
+### Límite y siguiente paso
+
+**La integración productiva permanece BLOCKED.** La ruta de cliente conectada y el backend existen en código, pero no hay evidencia de endpoint productivo, autenticación real contra esa instancia, persistencia gestionada activa o smoke test externo. No se debe interpretar un workflow Chromium local ni un firmante efímero como despliegue real.
+
+Tras ejecutar CI en esta rama, abrir PR para revisión. La siguiente fase requiere una acción externa de provisión: configurar URL HTTPS del backend, Telegram bot token, clave privada de firma, allowlist CORS y persistencia gestionada, luego ejecutar smoke autenticado contra esa instancia. No añadir esos valores al repositorio.
+
+**Pruebas de este turno:** no ejecutadas localmente; la integración GitHub de esta sesión permite editar y consultar archivos, pero no ejecutar el checkout del repositorio en un runner local. Los resultados de CI se registrarán tras la ejecución del workflow de la rama.
+
+**Temporizador BWM-099:** inspección y corrección de probes estimadas en 4–8 horas. Provisión externa, despliegue, secrets y smoke productivo: duración no confirmada hasta conocer el proveedor y la disponibilidad de los recursos.
