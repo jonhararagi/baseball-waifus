@@ -327,8 +327,15 @@ async function dispatchCorrelatedTimingPointer(cdp, { task, attempt = 1, expecte
       requireCondition(grade === "MISS" && Math.abs(deltaMs) > baseline.window.hitWindowMs,
         task + " expected MISS outside hitWindow; actual grade/delta differ", { grade, elapsedMs, targetMs, deltaMs, baseline, resolverReturn });
     } else {
-      requireCondition(grade !== "MISS" && Math.abs(deltaMs) <= baseline.window.greatWindowMs,
-        task + " expected valid Timing hit but return fell outside GREAT band", { grade, elapsedMs, targetMs, deltaMs, baseline, resolverReturn });
+      // T097 and T114-R2 require a valid non-MISS timing outcome for victory.
+      // GREAT is the scheduling target; HIT is also a valid real resolver outcome
+      // when measured dispatch latency crosses the GREAT band but remains in hitWindow.
+      requireCondition(["GREAT", "HIT"].includes(grade) && Math.abs(deltaMs) <= baseline.window.hitWindowMs,
+        task + " expected a valid HIT/GREAT timing result within hitWindow", {
+          grade, elapsedMs, targetMs, deltaMs, baseline, resolverReturn,
+          greatWindowMs: baseline.window.greatWindowMs,
+          hitWindowMs: baseline.window.hitWindowMs
+        });
     }
     proof.status = "PASS_CORRELATED_INPUT";
     persist();
