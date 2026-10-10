@@ -1067,6 +1067,7 @@ async function run() {
         expectedBattleId,
         checkpoints,
         timeline,
+        timingInput: timingAttempt,
         reward: {
           type: "SCRAP",
           amount: 0,
