@@ -817,11 +817,7 @@ async function run() {
 
     const defaultHome = await waitFor(
       async () => {
-        const snapshot = await cdpEvaluate(cdp, \`(() => {
-          const root = document.querySelector("#home-view");
-          const name = document.querySelector("#home-character-name")?.textContent?.trim() || "";
-          return { visible: Boolean(root && !root.hidden), name };
-        })()\`).catch(() => null);
+        const snapshot = await cdpEvaluate(cdp, "(() => { const root=document.querySelector('#home-view'); const name=document.querySelector('#home-character-name')?.textContent?.trim() || ''; return { visible: Boolean(root && !root.hidden), name }; })()").catch(() => null);
         if (snapshot) {
           homeInitializationSamples.push({ at: new Date().toISOString(), ...snapshot });
           if (homeInitializationSamples.length > 20) homeInitializationSamples.shift();
