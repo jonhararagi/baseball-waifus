@@ -44,7 +44,9 @@ function record(type, data = {}) {
     root.events.splice(0, removed);
     root.droppedEvents = Number(root.droppedEvents || 0) + removed;
   }
-  try { console.debug("[BWM101R7C2]" + JSON.stringify(event)); } catch {}
+  if (!String(type).startsWith("T118.")) {
+    try { console.debug("[BWM101R7C2]" + JSON.stringify(event)); } catch {}
+  }
   return event;
 }
 function mapSnapshot(map) {
@@ -239,14 +241,15 @@ function wrapEnsure(proto) {
 function readTimingWindowDirect() {
   const renderer = refs.renderer;
   const timing = renderer?.timingState || null;
-  const battle = renderer?.combatRuntime?.getState?.() || null;
+  // Read the existing plain authority state object directly. Do not clone the session.
+  const battle = renderer?.combatRuntime?.authority?.state || null;
   return {
     available: Boolean(renderer && timing),
     battle: {
-      phase: renderer?.battlePhase ?? battle?.phase ?? null,
+      phase: timing?.active === true ? "CLIMAX" : (battle?.phase ?? null),
       authorityPhase: battle?.phase ?? null,
-      round: Number.isFinite(Number(renderer?.round ?? battle?.round)) ? Number(renderer?.round ?? battle?.round) : null,
-      tacticalTurn: Number.isFinite(Number(renderer?.tacticalTurn ?? battle?.tacticalTurn)) ? Number(renderer?.tacticalTurn ?? battle?.tacticalTurn) : null
+      round: Number.isFinite(Number(battle?.round)) ? Number(battle.round) : null,
+      tacticalTurn: Number.isFinite(Number(battle?.tacticalTurn)) ? Number(battle.tacticalTurn) : null
     },
     timingState: timing ? {
       active: timing.active === true,
@@ -257,27 +260,45 @@ function readTimingWindowDirect() {
       greatWindowMs: Number.isFinite(Number(timing.greatWindowMs)) ? Number(timing.greatWindowMs) : null,
       windowId: String(timing.id || timing.windowId || ""),
       elapsedMs: Number.isFinite(Number(timing.startedAt)) ? performance.now() - Number(timing.startedAt) : null
-    } : null,
-    lastTiming: safe(renderer?.lastTiming ?? null)
+    } : null
   };
 }
 window.__BWM101R7C2_READ_TIMING__ = readTimingWindowDirect;
 
 function readOnlyRuntimeState(renderer) {
-  const authority = renderer?.combatRuntime?.getState?.() || null;
+  const authority = renderer?.combatRuntime?.authority?.state || null;
+  const timingActive = renderer?.timingState?.active === true;
+  const timing = renderer?.timingState || null;
   return {
-    battlePhase: renderer?.battlePhase ?? authority?.phase ?? null,
+    battlePhase: timingActive ? "CLIMAX" : (authority?.phase ?? null),
     authorityPhase: authority?.phase ?? null,
-    tacticalTurn: renderer?.tacticalTurn ?? authority?.tacticalTurn ?? null,
-    combatResult: renderer?.combatResult ?? authority?.combatResult ?? null,
-    lastTiming: safe(renderer?.lastTiming ?? null),
+    tacticalTurn: authority?.tacticalTurn ?? null,
+    combatResult: authority?.terminal ?? authority?.combatResult ?? null,
+    lastTiming: renderer?.lastTiming ? {
+      grade: renderer.lastTiming.grade ?? null,
+      elapsed_ms: renderer.lastTiming.elapsed_ms ?? null,
+      target_ms: renderer.lastTiming.target_ms ?? null,
+      delta_ms: renderer.lastTiming.delta_ms ?? null,
+      source: renderer.lastTiming.source ?? null,
+      round: renderer.lastTiming.round ?? null
+    } : null,
+    timingState: timing ? {
+      active: timing.active === true,
+      startedAt: timing.startedAt ?? null,
+      targetMs: timing.targetMs ?? null,
+      durationMs: timing.durationMs ?? null,
+      hitWindowMs: timing.hitWindowMs ?? null,
+      greatWindowMs: timing.greatWindowMs ?? null,
+      windowId: String(timing.id || timing.windowId || "")
+    } : null,
     presentation: renderer?.combatPresentation ? {
-      active: renderer.combatPresentation.active ?? null, phase: renderer.combatPresentation.phase ?? null,
-      sequenceId: renderer.combatPresentation.sequenceId ?? null, stepIndex: renderer.combatPresentation.stepIndex ?? null
+      active: renderer.combatPresentation.active ?? null,
+      phase: renderer.combatPresentation.phase ?? null,
+      sequenceId: renderer.combatPresentation.sequenceId ?? null,
+      stepIndex: renderer.combatPresentation.stepIndex ?? null
     } : null
   };
 }
-
 wrap(CharacterActor2D5?.prototype, "transitionTo", "T101.actor.transitionTo", (actor, args) => ({
   actor: actorInfo(actor), requestedState: args[0] ?? null,
   eventId: window.__BWM_CURRENT_PRESENTATION_EVENT_ID__ ?? null,
@@ -331,40 +352,62 @@ wrap(CombatRenderer?.prototype, "beginTimingWindow", "T118.beginTimingWindow", (
     tacticalTurn: renderer?.combatRuntime?.state?.tacticalTurn ?? null
   }
 }));
-wrap(CombatRenderer?.prototype, "resolveTimingInput", "T118.resolveTimingInput", (renderer, args) => {
+wrap(CombatRenderer?.prototype, "resolveTimingInput", "T118.resolveTimingInput", (renderer, args, meta = {}) => {
   const timing = renderer?.timingState || null;
-  const now = performance.now();
-  const storage = {};
-  try {
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (/player.?meta|reward|scrap|ledger/i.test(key || "")) storage[key] = localStorage.getItem(key);
-    }
-  } catch {}
-  return {
-    source: args[0] ?? "pointer", timingState: safe(timing), active: timing?.active ?? null,
-    startedAt: timing?.startedAt ?? null, elapsedMs: timing?.startedAt == null ? null : now - timing.startedAt,
-    targetMs: timing?.targetMs ?? null, durationMs: timing?.durationMs ?? null,
-    hitWindowMs: timing?.hitWindowMs ?? null, greatWindowMs: timing?.greatWindowMs ?? null,
-    phase: renderer?.battlePhase ?? renderer?.combatRuntime?.getState?.()?.phase ?? null,
-    authorityPhase: renderer?.combatRuntime?.getState?.()?.phase ?? null,
-    tacticalTurn: renderer?.tacticalTurn ?? renderer?.combatRuntime?.getState?.()?.tacticalTurn ?? null,
-    before: readOnlyRuntimeState(renderer), persistedRewardState: storage,
-    stackAtCall: new Error("BWM101R7C2 resolver origin").stack
+  const authority = renderer?.combatRuntime?.authority?.state || null;
+  const afterCall = meta.phase === "after";
+  const snapshot = {
+    source: args[0] ?? "pointer",
+    timingState: timing ? {
+      active: timing.active === true,
+      startedAt: timing.startedAt ?? null,
+      elapsedMs: timing.startedAt == null ? null : performance.now() - Number(timing.startedAt),
+      targetMs: timing.targetMs ?? null,
+      durationMs: timing.durationMs ?? null,
+      hitWindowMs: timing.hitWindowMs ?? null,
+      greatWindowMs: timing.greatWindowMs ?? null,
+      windowId: String(timing.id || timing.windowId || "")
+    } : null,
+    active: timing?.active ?? false,
+    startedAt: timing?.startedAt ?? null,
+    elapsedMs: timing?.startedAt == null ? null : performance.now() - Number(timing.startedAt),
+    targetMs: timing?.targetMs ?? null,
+    durationMs: timing?.durationMs ?? null,
+    hitWindowMs: timing?.hitWindowMs ?? null,
+    greatWindowMs: timing?.greatWindowMs ?? null,
+    phase: timing?.active === true ? "CLIMAX" : (authority?.phase ?? null),
+    authorityPhase: authority?.phase ?? null,
+    tacticalTurn: authority?.tacticalTurn ?? null,
+    before: readOnlyRuntimeState(renderer)
   };
+  // Persistence is inspected after the resolver so it cannot delay the grade calculation.
+  if (afterCall) {
+    const storage = {};
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (/player.?meta|reward|scrap|ledger/i.test(key || "")) storage[key] = localStorage.getItem(key);
+      }
+    } catch {}
+    snapshot.persistedRewardState = storage;
+  }
+  return snapshot;
 });
 function input(event) {
   if (!/pointer|mouse|touch|click/i.test(event.type)) return;
-  // Window capture runs before the canvas target handler resolves timing.
-  const harnessBaselineSeq = root.sequence;
-  const harnessBaselineEventCount = root.events.length;
-  const timingSnapshot = readTimingWindowDirect();
+  const exactBaseline = event.type === "pointerdown";
+  const harnessBaselineSeq = exactBaseline ? root.sequence : null;
+  const harnessBaselineEventCount = exactBaseline ? root.events.length : null;
+  // The capture listener runs before the canvas target handler resolves the grade.
+  const timingSnapshot = exactBaseline ? readTimingWindowDirect() : null;
   record("T118.dom-input", {
     eventType: event.type, target: event.target?.id ?? event.target?.tagName ?? null,
     x: event.clientX ?? null, y: event.clientY ?? null, isTrusted: event.isTrusted,
-    harnessBaselineSeq, harnessBaselineEventCount, timingSnapshot
+    harnessBaselineSeq, harnessBaselineEventCount, timingSnapshot,
+    eventTimeStamp: Number.isFinite(Number(event.timeStamp)) ? Number(event.timeStamp) : null
   });
 }
+
 for (const type of ["pointerdown", "pointerup", "mousedown", "mouseup", "click", "touchstart", "touchend"]) window.addEventListener(type, input, true);
 
 if (!Object.getOwnPropertyDescriptor(CombatRenderer.prototype, "handleTimingPointer")) {
