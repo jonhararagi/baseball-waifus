@@ -1656,70 +1656,100 @@ async function run() {
 
       const climax = await mark("CLIMAX", s => s.battlePhase === "CLIMAX" && s.tacticalTurn === 5);
       const timing = await mark("TIMING ACTIVE", s => s.battlePhase === "CLIMAX" && s.tacticalTurn === 5 && s.timingActive === true, 6000);
-      const timingAtStart = { ...timing, elapsed: await cdpEvaluate(cdp, "window.__BW_T097_TIMING_ELAPSED__?.()") };
-      const rect = await cdpEvaluate(cdp, "(() => { const r=document.querySelector('#gameCanvas')?.getBoundingClientRect(); return r ? {left:r.left,top:r.top,width:r.width,height:r.height} : null; })()");
-      requireCondition(rect && rect.width > 0 && rect.height > 0, "T117 timing canvas geometry unavailable", rect);
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
-      const target = await cdpEvaluate(cdp, "(() => { const e=document.elementFromPoint(" + centerX + "," + centerY + "); return {tag:e?.tagName||'',id:e?.id||'',isCanvas:e===document.querySelector('#gameCanvas')}; })()");
-      requireCondition(target.isCanvas === true, "T117 physical timing target is not canvas", target);
-
-      await sleep(620);
-      const beforeInput = await readRuntime();
-      const elapsedAtInput = await cdpEvaluate(cdp, "window.__BW_T097_TIMING_ELAPSED__?.()");
-      requireCondition(beforeInput.timingActive === true, "T117 timing window closed before historical input", {beforeInput,elapsedAtInput});
-
-      await cdp.send("Input.setIgnoreInputEvents", {ignore:false});
-      await cdp.send("Input.dispatchMouseEvent", {type:"mouseMoved",x:centerX,y:centerY,button:"none",buttons:0});
-      await cdp.send("Input.dispatchMouseEvent", {type:"mousePressed",x:centerX,y:centerY,button:"left",buttons:1,clickCount:1});
-      await cdp.send("Input.dispatchMouseEvent", {type:"mouseReleased",x:centerX,y:centerY,button:"left",buttons:0,clickCount:1});
-
-      const inputEvidence = await waitFor(async () => cdpEvaluate(cdp, "(() => window.__BW_T117_POINTER_EVIDENCE__ || null)()"), {timeoutMs:1000,intervalMs:10,label:"T117 pointer evidence"});
-      await sleep(250);
+      const timingAtStart = {
+        ...timing,
+        elapsed: await cdpEvaluate(cdp, "window.__BW_T097_TIMING_ELAPSED__?.()")
+      };
+      const timingAttempt = await dispatchCorrelatedTimingPointer(cdp, {
+        task: "T117", attempt: 1, expectedGrade: "HIT", expectedRound: 1, expectedTurn: 5
+      });
+      const rect = timingAttempt.geometry;
+      const centerX = timingAttempt.inputPoint.x;
+      const centerY = timingAttempt.inputPoint.y;
+      const target = timingAttempt.target;
+      const baseline = timingAttempt.baseline;
+      const beforeInput = {
+        battlePhase: baseline?.phase ?? "",
+        tacticalTurn: baseline?.tacticalTurn ?? null,
+        timingActive: baseline?.window?.active === true,
+        elapsedMs: baseline?.window?.elapsedMs ?? null
+      };
+      const elapsedAtInput = timingAttempt.resolution.elapsedMs;
+      const inputEvidence = await cdpEvaluate(cdp, "(() => window.__BW_T117_POINTER_EVIDENCE__ || null)()");
       const afterInput = await readRuntime();
+      afterInput.resolverGrade = timingAttempt.resolverReturn?.grade || "";
       timeline.push({at_ms:Date.now()-runStartedAt,label:"AFTER INPUT",...afterInput});
 
       const diagnostic = (() => {
         if (!timingAtStart.timingActive) return "TRAVERSAL_BLOCKED_BEFORE_TIMING";
         if (!beforeInput.timingActive) return "TIMING_WINDOW_CLOSED_BEFORE_INPUT";
         if (!inputEvidence || inputEvidence.pointerdown < 1) return "INPUT_SENT_POINTERDOWN_NOT_OBSERVED";
-        if (afterInput.timingGrade === "MISS") return "PHYSICAL_INPUT_ACCEPTED_MISS";
-        if (afterInput.timingGrade === "HIT" && afterInput.battlePhase === "VICTORY") return "HIT_VICTORY";
-        if (afterInput.timingGrade && afterInput.battlePhase === "DEFEAT") return "DEFEAT";
+        if (timingAttempt.resolverReturn?.grade === "MISS") return "PHYSICAL_INPUT_ACCEPTED_MISS";
+        if (["HIT","GREAT"].includes(timingAttempt.resolverReturn?.grade) && afterInput.battlePhase === "VICTORY") return "HIT_VICTORY";
+        if (timingAttempt.resolverReturn?.grade && afterInput.battlePhase === "DEFEAT") return "DEFEAT";
         return "OTHER_HARNESS_OR_RUNTIME";
       })();
 
       let terminalValidation = { reward: "NOT_REACHED", return: "NOT_REACHED" };
-      if (diagnostic === "HIT_VICTORY") {
-        const victory = await mark("VICTORY REWARD", s => s.battlePhase === "VICTORY" && s.scrap === 100 && s.persistedScrap === 100 && s.rewardLedgerKeys.length === 1, 5000);
-        requireCondition(victory.rewardLedgerKeys.length === 1, "T117 victory ledger count invalid", victory);
-        terminalValidation = { reward: "PASS", return: "NOT_REACHED", victory };
-        await mark("COMBAT RETURN", s => s.presentationPhase === "COMBAT_RETURN", 5000);
-        const complete = await mark("RETURN COMPLETE", s => s.presentationPhase === "COMPLETE" && s.presentationActive === false, 5000);
-        requireCondition(complete.battlePhase === "VICTORY", "T117 terminal battle state changed during return", complete);
-        requireCondition(complete.scrap === victory.scrap && complete.persistedScrap === victory.persistedScrap, "T117 reward changed during return", { victory, complete });
-        terminalValidation = { reward: "PASS", return: "PASS", victory, complete };
-      }
-
       const evidence = {
         task:"T117",
         sha:process.env.GITHUB_SHA||"local",
         runId:process.env.GITHUB_RUN_ID||"local",
         browser:BROWSER_BIN,
         browserVersion:{product:browserVersion?.product||"",revision:browserVersion?.revision||"",userAgent:browserVersion?.userAgent||""},
-        harness:"existing character_journey_browser_probe.mjs via T117_TERMINAL_TIMING_DIAGNOSTIC=1",
+        harness:"character_journey_browser_probe.mjs via T117_TERMINAL_TIMING_DIAGNOSTIC=1",
         assetDiagnostic:{bw001_idle_png_present:false, repositorySearch:"no matching tracked file found"},
         initial,
         climax,
         timing:timingAtStart,
         geometry:{canvas:rect,center:{x:centerX,y:centerY},target},
-        input:{method:"CDP Input.dispatchMouseEvent",historicalSleepMs:620,elapsedAtInput,pointerdown:inputEvidence?.pointerdown||0,pointerup:inputEvidence?.pointerup||0,lastDown:inputEvidence?.lastDown||null,lastUp:inputEvidence?.lastUp||null},
+        timingAttempt,
+        input:{
+          method:"CDP Input.dispatchMouseEvent",
+          scheduling:"dispatchCorrelatedTimingPointer from live TimingState and measured CDP RTT",
+          elapsedAtInput,
+          pointerdown:inputEvidence?.pointerdown||0,
+          pointerup:inputEvidence?.pointerup||0,
+          lastDown:inputEvidence?.lastDown||null,
+          lastUp:inputEvidence?.lastUp||null
+        },
+        beforeInput,
         afterInput,
         diagnostic,
         timeline,
         reward:{scrapBefore:initial.scrap,scrapAfter:afterInput.scrap,persistedBefore:initial.persistedScrap,persistedAfter:afterInput.persistedScrap,ledgerBefore:initial.rewardLedgerKeys,ledgerAfter:afterInput.rewardLedgerKeys},
         terminal:{battlePhase:afterInput.battlePhase,combatResult:afterInput.combatResult,validation:terminalValidation},
         pageErrors:pageExceptions.map(item=>item?.exception?.description||item?.text||"").filter(Boolean)
+      };
+      // Persist the real DTO and observed state before any functional assertion.
+      writeFileSync(join(EVIDENCE_DIR,"t117-terminal-timing-diagnostic.json"),JSON.stringify(evidence,null,2)+"\n","utf8");
+
+      requireCondition(diagnostic === "HIT_VICTORY",
+        "T117 deterministic physical input did not reach VICTORY with a real HIT/GREAT DTO",
+        { diagnostic, timingAttempt, beforeInput, afterInput });
+      const victory = await mark(
+        "VICTORY LOCAL REWARD BLOCKED",
+        s => s.battlePhase === "VICTORY" && s.scrap === 0 && s.persistedScrap === 0 && s.rewardLedgerKeys.length === 0,
+        5000
+      );
+      await mark("COMBAT RETURN", s => s.presentationPhase === "COMBAT_RETURN", 5000);
+      const complete = await mark("RETURN COMPLETE", s => s.presentationPhase === "COMPLETE" && s.presentationActive === false, 5000);
+      requireCondition(complete.battlePhase === "VICTORY", "T117 terminal battle state changed during return", complete);
+      requireCondition(complete.scrap === 0 && complete.persistedScrap === 0 && complete.rewardLedgerKeys.length === 0,
+        "T117 local demo must preserve the non-authoritative reward boundary after return", { victory, complete });
+      terminalValidation = {
+        reward: "PASS_LOCAL_REWARD_BLOCKED",
+        return: "PASS",
+        victory,
+        complete
+      };
+      evidence.terminal = { battlePhase: complete.battlePhase, combatResult: complete.combatResult, validation: terminalValidation };
+      evidence.timeline.push({at_ms:Date.now()-runStartedAt,label:"VICTORY REWARD BOUNDARY",...victory});
+      evidence.timeline.push({at_ms:Date.now()-runStartedAt,label:"RETURN COMPLETE",...complete});
+      evidence.reward = {
+        scrapBefore: initial.scrap, scrapAfter: complete.scrap,
+        persistedBefore: initial.persistedScrap, persistedAfter: complete.persistedScrap,
+        ledgerBefore: initial.rewardLedgerKeys, ledgerAfter: complete.rewardLedgerKeys
       };
       writeFileSync(join(EVIDENCE_DIR,"t117-terminal-timing-diagnostic.json"),JSON.stringify(evidence,null,2)+"\n","utf8");
 
@@ -1731,9 +1761,9 @@ async function run() {
       console.log("INPUT SENT = YES");
       console.log("POINTERDOWN OBSERVED = " + String((inputEvidence?.pointerdown||0) > 0));
       console.log("POINTERUP OBSERVED = " + String((inputEvidence?.pointerup||0) > 0));
-      console.log("TIMING GRADE = " + (afterInput.timingGrade || "NOT_REACHED"));
-      console.log("BATTLE PHASE = " + (afterInput.battlePhase || ""));
-      console.log("COMBAT RESULT = " + (afterInput.combatResult || ""));
+      console.log("TIMING GRADE = " + (timingAttempt.resolverReturn?.grade || "NOT_REACHED"));
+      console.log("BATTLE PHASE = " + (complete.battlePhase || ""));
+      console.log("COMBAT RESULT = " + (complete.combatResult || ""));
       return;
     }
 
