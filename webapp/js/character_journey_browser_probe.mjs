@@ -185,7 +185,7 @@ async function cdpEvaluate(cdp, expression) {
 }
 
 
-async function dispatchCorrelatedTimingPointer(cdp, { task, attempt = 1, expectedGrade, expectedRound = null, expectedTurn = 5 }) {
+async function dispatchCorrelatedTimingPointer(cdp, { task, attempt = 1, expectedGrade, expectedRound = null, expectedTurn = 5, preparedGeometryAndTargets = null }) {
   const safeTask = String(task || "timing").toLowerCase().replace(/[^a-z0-9-]/g, "-");
   const evidencePath = join(EVIDENCE_DIR, "timing-input-" + safeTask + "-" + String(attempt) + ".json");
   const proof = { schema: "BWM-101-R7-C2-TIMING-INPUT", task, attempt, expectedGrade, expectedRound, expectedTurn,
@@ -194,7 +194,17 @@ async function dispatchCorrelatedTimingPointer(cdp, { task, attempt = 1, expecte
     catch (error) { process.stderr.write("[BWM101R7C2] evidence write failed: " + String(error?.stack || error) + "\n"); } };
   const clockExpression = "(() => { const r=window.__BWM101R7C2_READ_TIMING__?.()||{}; const t=r.timingState||null; const b=r.battle||{}; const d=window.__BWM101R5_DIAGNOSTICS__; const elapsedMs=Number.isFinite(Number(t?.startedAt))?performance.now()-Number(t.startedAt):null; return {available:r.available===true,active:t?.active===true,startedAt:t?.startedAt??null,targetMs:t?.targetMs??null,durationMs:t?.durationMs??null,hitWindowMs:t?.hitWindowMs??null,greatWindowMs:t?.greatWindowMs??null,windowId:t?.windowId||'',elapsedMs,phase:b.phase||'',round:b.round??null,tacticalTurn:b.tacticalTurn??null,lastTiming:r.lastTiming??null,sequence:d?.sequence??0,eventCount:d?.events?.length??0}; })()";
   try {
-    const geometryAndTargets = await cdpEvaluate(cdp, "(() => { const c=document.querySelector('#gameCanvas'); const r=c?.getBoundingClientRect(); if(!c||!r)return null; const fractions=[[.5,.5],[.8,.5],[.2,.5],[.5,.8],[.5,.2],[.8,.8],[.2,.8],[.8,.2],[.2,.2],[.92,.5],[.08,.5],[.5,.92],[.5,.08]]; const candidates=fractions.map(([fx,fy])=>{const x=r.left+r.width*fx,y=r.top+r.height*fy,e=document.elementFromPoint(x,y);return {x,y,fx,fy,isCanvas:e===c,tag:e?.tagName||'',id:e?.id||''};}); const accessible=candidates.filter(p=>p.isCanvas).sort((a,b)=>Math.hypot(a.fx-.5,a.fy-.5)-Math.hypot(b.fx-.5,b.fy-.5)); return {left:r.left,top:r.top,width:r.width,height:r.height,viewportWidth:innerWidth,viewportHeight:innerHeight,candidates,selected:accessible[0]||null}; })()");
+    // BWM-105 prepares this point before the five-turn cycle. Read the live
+    // timing state as the first CDP round trip once CLIMAX is active, otherwise
+    // the 860 ms production timeout can expire during pointer geometry discovery.
+    const evaluationRoundTripMs = [];
+    let initial = null;
+    if (preparedGeometryAndTargets) {
+      const sampleStart = performance.now();
+      initial = await cdpEvaluate(cdp, clockExpression);
+      evaluationRoundTripMs.push(performance.now() - sampleStart);
+    }
+    const geometryAndTargets = preparedGeometryAndTargets || await await cdpEvaluate(cdp, "(() => { const c=document.querySelector('#gameCanvas'); const r=c?.getBoundingClientRect(); if(!c||!r)return null; const fractions=[[.5,.5],[.8,.5],[.2,.5],[.5,.8],[.5,.2],[.8,.8],[.2,.8],[.8,.2],[.2,.2],[.92,.5],[.08,.5],[.5,.92],[.5,.08]]; const candidates=fractions.map(([fx,fy])=>{const x=r.left+r.width*fx,y=r.top+r.height*fy,e=document.elementFromPoint(x,y);return {x,y,fx,fy,isCanvas:e===c,tag:e?.tagName||'',id:e?.id||''};}); const accessible=candidates.filter(p=>p.isCanvas).sort((a,b)=>Math.hypot(a.fx-.5,a.fy-.5)-Math.hypot(b.fx-.5,b.fy-.5)); return {left:r.left,top:r.top,width:r.width,height:r.height,viewportWidth:innerWidth,viewportHeight:innerHeight,candidates,selected:accessible[0]||null}; })()");
     const geometry = geometryAndTargets ? {left:geometryAndTargets.left,top:geometryAndTargets.top,width:geometryAndTargets.width,height:geometryAndTargets.height,viewportWidth:geometryAndTargets.viewportWidth,viewportHeight:geometryAndTargets.viewportHeight} : null;
     proof.geometry = geometry;
     proof.targetCandidates = geometryAndTargets?.candidates || [];
@@ -204,17 +214,16 @@ async function dispatchCorrelatedTimingPointer(cdp, { task, attempt = 1, expecte
     const x = selectedPoint.x, y = selectedPoint.y;
     proof.inputPoint = { x, y, fractionX: selectedPoint.fx, fractionY: selectedPoint.fy };
     proof.target = selectedPoint;
-    await cdp.send("Input.setIgnoreInputEvents", { ignore: false });
-
-    // Measure real CDP runtime-evaluation latency before selecting the live-window sample.
-    // The final sample is reused for timing, so the calibration does not consume a
-    // second, unaccounted evaluation after the timer reaches its target.
-    const evaluationRoundTripMs = [];
-    let initial = null;
-    for (let sampleIndex = 0; sampleIndex < 3; sampleIndex++) {
-      const sampleStart = performance.now();
-      initial = await cdpEvaluate(cdp, clockExpression);
-      evaluationRoundTripMs.push(performance.now() - sampleStart);
+    if (!preparedGeometryAndTargets) {
+      await cdp.send("Input.setIgnoreInputEvents", { ignore: false });
+      // Existing reward-boundary probes keep three measured samples. BWM-105
+      // deliberately takes one immediate sample above, before any geometry or
+      // calibration round trips can consume the short live timing window.
+      for (let sampleIndex = 0; sampleIndex < 3; sampleIndex++) {
+        const sampleStart = performance.now();
+        initial = await cdpEvaluate(cdp, clockExpression);
+        evaluationRoundTripMs.push(performance.now() - sampleStart);
+      }
     }
     const sortedRtt = [...evaluationRoundTripMs].sort((a, b) => a - b);
     const medianRttMs = sortedRtt[Math.floor(sortedRtt.length / 2)];
@@ -752,6 +761,13 @@ async function run() {
           { temporary, inventory: evidence.playerMetaBefore.inventoryIds });
         evidence.screenshots.formation = await screenshot(cdp, "bwm105-01-formation");
 
+        // Cache an unobstructed physical canvas coordinate before the Timing Ring
+        // starts. No DOM hit-testing or geometry query is needed once CLIMAX opens.
+        const timingCanvasTarget = await cdpEvaluate(cdp, "(() => { const c=document.querySelector('#gameCanvas'); const r=c?.getBoundingClientRect(); if(!c||!r)return null; const fractions=[[.5,.5],[.8,.5],[.2,.5],[.5,.8],[.5,.2],[.8,.8],[.2,.8],[.8,.2],[.2,.2],[.92,.5],[.08,.5],[.5,.92],[.5,.08]]; const candidates=fractions.map(([fx,fy])=>{const x=r.left+r.width*fx,y=r.top+r.height*fy,e=document.elementFromPoint(x,y);return {x,y,fx,fy,isCanvas:e===c,tag:e?.tagName||'',id:e?.id||''};}); const accessible=candidates.filter(p=>p.isCanvas).sort((a,b)=>Math.hypot(a.fx-.5,a.fy-.5)-Math.hypot(b.fx-.5,b.fy-.5)); return {left:r.left,top:r.top,width:r.width,height:r.height,viewportWidth:innerWidth,viewportHeight:innerHeight,candidates,selected:accessible[0]||null}; })()");
+        requireCondition(timingCanvasTarget?.selected?.isCanvas === true,
+          "BWM-105 Timing Ring has no unobstructed physical canvas coordinate", timingCanvasTarget);
+        evidence.timingCanvasTarget = timingCanvasTarget;
+
         const selectablePlayer = players.find((unit) => unit.id !== formation.battle.selectedPlayerId && unit.health > 0);
         const selectableEnemy = enemies.find((unit) => unit.id !== formation.battle.selectedEnemyId && unit.health > 0);
         requireCondition(selectablePlayer && selectableEnemy, "BWM-105 requires selectable live player and enemy actors");
@@ -817,7 +833,8 @@ async function run() {
             const beforeEnemyHp = healthTotal(active.battle.enemies);
             const inputProof = await dispatchCorrelatedTimingPointer(cdp, {
               task: "BWM-105", attempt: timingRound + 1, expectedGrade: "GREAT",
-              expectedRound: active.battle.round, expectedTurn: 5
+              expectedRound: active.battle.round, expectedTurn: 5,
+              preparedGeometryAndTargets: timingCanvasTarget
             });
             requireCondition(inputProof.status === "PASS_CORRELATED_INPUT" && inputProof.sameWindowCorrelation,
               "BWM-105 Timing Ring input lacks real window/resolver correlation", inputProof);
