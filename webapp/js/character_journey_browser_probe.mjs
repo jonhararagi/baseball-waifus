@@ -716,9 +716,14 @@ async function run() {
 
         const formation = await waitFor(async () => {
           const snapshot = await runtimeSnapshot();
-          return snapshot?.mode === "4v4" && snapshot?.stage?.actorCount === 8
+          const status = await cdpEvaluate(cdp, "document.querySelector('#combat-4v4-status')?.textContent || ''");
+          if (/4V4 START FAILED|4V4 UNAVAILABLE/.test(status)) return { bwm105StartupFailure: status, runtimeAtStartupFailure: snapshot };
+          return snapshot?.mode === "4v4" && Number(snapshot?.stage?.actorCount) === 8
             && snapshot?.battle?.players?.length === 4 && snapshot?.battle?.enemies?.length === 4 ? snapshot : null;
         }, { timeoutMs: 30000, label: "BWM-105 4v4 initialized through main WebApp" });
+        requireCondition(!formation.bwm105StartupFailure,
+          "BWM-105 main WebApp refused to start 4v4: " + String(formation.bwm105StartupFailure || ""), formation);
+        evidence.entryStartStatus = await cdpEvaluate(cdp, "document.querySelector('#combat-4v4-status')?.textContent || ''");
         const players = formation.battle.players;
         const enemies = formation.battle.enemies;
         const units = [...players, ...enemies];
@@ -739,7 +744,7 @@ async function run() {
           "BWM-105 rendered actors are not sourced from authoritative units", actors);
         requireCondition(!actors.some((actor) => actor.kind === "FIXTURE" || String(actor.source).includes("T078_BLOCKOUT_FIXTURE")),
           "BWM-105 T078 fixture actor found in live formation", actors);
-        requireCondition(formation.stage.playerCount === 4 && formation.stage.enemyCount === 4,
+        requireCondition(Number(formation.stage.playerCount) === 4 && Number(formation.stage.enemyCount) === 4,
           "BWM-105 rendered formation count differs from authority", formation.stage);
         const temporary = players.filter((unit) => unit.temporary).map((unit) => unit.characterId);
         requireCondition(temporary.every((id) => !evidence.playerMetaBefore.inventoryIds.includes(id)),
@@ -933,6 +938,14 @@ async function run() {
         evidence.failedAt = new Date().toISOString();
         evidence.consoleErrors = consoleErrors.map((entry) => ({ text: entry.text, url: entry.url, source: entry.source }));
         evidence.pageExceptions = pageExceptions.map((entry) => entry?.exception?.description || entry?.text || "").filter(Boolean);
+        evidence.failureContext = await cdpEvaluate(cdp,
+          "(() => ({status:document.querySelector('#combat-4v4-status')?.textContent||'',"
+          + "homeVisible:Boolean(document.querySelector('#home-view')&&!document.querySelector('#home-view').hidden),"
+          + "homeButton:(()=>{const el=document.querySelector('#home-action-start-4v4');if(!el)return null;const r=el.getBoundingClientRect();return {hidden:el.hidden,disabled:el.disabled,x:r.x,y:r.y,width:r.width,height:r.height}})(),"
+          + "footerButton:(()=>{const el=document.querySelector('#action-start-4v4');if(!el)return null;const r=el.getBoundingClientRect();return {hidden:el.hidden,disabled:el.disabled,x:r.x,y:r.y,width:r.width,height:r.height}})(),"
+          + "canvas:(()=>{const el=document.querySelector('#gameCanvas');return el?{mode:el.dataset.combatMode||'',actorCount:el.dataset.combatStageActorCount||'',players:el.dataset.combatStagePlayerCount||'',enemies:el.dataset.combatStageEnemyCount||'',phase:el.dataset.combatBattlePhase||''}:null})()}))()");
+        evidence.runtimeAtFailure = await runtimeSnapshot();
+        try { evidence.screenshots.failure = await screenshot(cdp, "bwm105-99-failure-state"); } catch {}
         writeFileSync(join(EVIDENCE_DIR, "bwm105-webapp-4v4-browser-evidence.json"), JSON.stringify(evidence, null, 2) + "\n", "utf8");
         throw error;
       }

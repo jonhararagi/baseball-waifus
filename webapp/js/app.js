@@ -1247,6 +1247,7 @@ async function startLocalFourVFour() {
     if (fourVFourStatus) fourVFourStatus.textContent = "4V4 UNAVAILABLE // CANONICAL CATALOG NOT READY";
     return false;
   }
+  if (fourVFourStatus) fourVFourStatus.textContent = "4V4 STARTING // PREPARING CANONICAL FORMATION";
   try {
     const dto = buildLocalFourVFourCombatInit();
     await renderer.setCombatInit(dto);
