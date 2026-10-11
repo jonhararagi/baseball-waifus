@@ -414,15 +414,28 @@ if (!Object.getOwnPropertyDescriptor(CombatRenderer.prototype, "handleTimingPoin
   Object.defineProperty(CombatRenderer.prototype, "handleTimingPointer", {
     configurable: true,
     set(fn) {
+      const renderer = this;
       const wrappedHandler = function(event) {
         record("T118.handleTimingPointer:before", {
           eventType: event?.type ?? null, isTrusted: event?.isTrusted ?? null,
           target: event?.target?.id ?? event?.target?.tagName ?? null,
-          timingState: safe(this.timingState ?? null), state: readOnlyRuntimeState(this)
+          timingState: renderer?.timingState ? {
+            active: renderer.timingState.active === true,
+            startedAt: renderer.timingState.startedAt ?? null,
+            targetMs: renderer.timingState.targetMs ?? null,
+            durationMs: renderer.timingState.durationMs ?? null,
+            hitWindowMs: renderer.timingState.hitWindowMs ?? null,
+            greatWindowMs: renderer.timingState.greatWindowMs ?? null
+          } : null,
+          state: readOnlyRuntimeState(renderer)
         });
         try {
           const result = Reflect.apply(fn, this, [event]);
-          record("T118.handleTimingPointer:after", { eventType: event?.type ?? null, state: readOnlyRuntimeState(this) });
+          record("T118.handleTimingPointer:after", {
+            eventType: event?.type ?? null,
+            timingActive: renderer?.timingState?.active ?? false,
+            state: readOnlyRuntimeState(renderer)
+          });
           return result;
         } catch (error) {
           record("T118.handleTimingPointer:exception", {
