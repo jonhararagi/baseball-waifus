@@ -1273,7 +1273,7 @@ startFourVFourButton?.addEventListener("click", () => { void startLocalFourVFour
 startFourVFourHomeButton?.addEventListener("click", () => { void startLocalFourVFour(); });
 returnFourVFourButton?.addEventListener("click", () => {
   mainMenu.navigate("home");
-  if (startFourVFourButton) startFourVFourButton.hidden = false;
+  if (startFourVFourButton) startFourVFourButton.hidden = true;
   if (startFourVFourHomeButton) startFourVFourHomeButton.hidden = false;
   if (returnFourVFourButton) returnFourVFourButton.hidden = true;
   if (fourVFourStatus) fourVFourStatus.textContent = "HOME // LOCAL 4V4 RESULT • NO PERSISTENT REWARD";
