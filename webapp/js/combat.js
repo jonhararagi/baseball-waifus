@@ -988,10 +988,17 @@ export class CombatRenderer {
     this._syncCombatStageDataset();
     this.lastTacticalEvent = null;
 
-    await this.assetBank.preload([
+    const assetPreload = this.assetBank.preload([
       ...(dto.assets?.sprites || []).map((asset) => ({ ...asset, kind: "sprite" })),
       ...(dto.assets?.cards || []).map((asset) => ({ ...asset, kind: "card" }))
     ]);
+    if (String(dto.game_mode || dto.mode || "").toLowerCase() === "4v4") {
+      // Gameplay authority and user input must not wait for remote art to finish.
+      // Keep all assets eligible for cache population without blocking combat boot.
+      void assetPreload.catch(() => null);
+    } else {
+      await assetPreload;
+    }
 
     this.batterRenderer.setBatter(dto.batter);
     this.onState?.(this.state);
