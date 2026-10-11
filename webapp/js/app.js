@@ -2,7 +2,8 @@ import {
   BaseballWaifusApi,
   TelegramBridge,
   isCombatInitDTO,
-  isTurnResultDTO
+  isTurnResultDTO,
+  CHARACTER_FACTIONS
 } from "./api.js";
 import { CombatRenderer } from "./combat.js";
 import { AudioManager } from "./audioManager.js";
@@ -1114,6 +1115,10 @@ function canonicalCharacterForBattle(characterId, catalog) {
 function buildLocalFourVFourUnit(character, { team, temporary = false } = {}) {
   const characterId = canonicalCharacterId(character);
   const canonical = character?.canonical || character;
+  const faction = String(canonical?.faction || canonical?.identity?.faction || character?.faction || "");
+  if (!CHARACTER_FACTIONS.includes(faction)) {
+    throw new Error("CANONICAL_COMBAT_FACTION_MISSING:" + characterId);
+  }
   const sourceStats = canonical?.stats || character?.stats || {};
   const stat = (key, alias = null) => {
     const rawValue = sourceStats[key] ?? (alias ? sourceStats[alias] : undefined) ?? character?.[key];
@@ -1138,6 +1143,9 @@ function buildLocalFourVFourUnit(character, { team, temporary = false } = {}) {
     id,
     characterId,
     displayName: String(canonical?.display_name || character?.display_name || character?.name || characterId),
+    faction,
+    element: String(canonical?.element || character?.element || ""),
+    rarity: String(canonical?.rarity || character?.rarity || ""),
     team,
     stats: {
       power: stat("power"),
@@ -1226,6 +1234,9 @@ function buildLocalFourVFourCombatInit() {
       character_id: firstPlayer.characterId,
       card_id: firstPlayer.characterId,
       name: firstPlayer.displayName,
+      element: firstPlayer.element,
+      rarity: firstPlayer.rarity,
+      faction: firstPlayer.faction,
       stats: { ...firstPlayer.stats },
       stamina: firstPlayer.stats.stamina
     },
@@ -1234,6 +1245,9 @@ function buildLocalFourVFourCombatInit() {
       character_id: firstEnemy.characterId,
       card_id: firstEnemy.characterId,
       name: firstEnemy.displayName,
+      element: firstEnemy.element,
+      rarity: firstEnemy.rarity,
+      faction: firstEnemy.faction,
       stats: { ...firstEnemy.stats },
       stamina: firstEnemy.stats.stamina
     },
