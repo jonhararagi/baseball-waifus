@@ -1273,6 +1273,10 @@ async function startLocalFourVFour() {
     if (returnFourVFourButton) returnFourVFourButton.hidden = true;
     if (batButton) batButton.disabled = false;
     await renderer.setCombatInit(dto);
+    // The existing default-demo bootstrap can short-circuit when a renderer
+    // session already exists. Explicitly hide its blocking overlay for this
+    // newly initialized 4v4 session before exposing canvas input to the player.
+    setLoading(false);
     if (fourVFourStatus) {
       const temporary = dto.player_team_units.filter((unit) => unit.temporary).length;
       fourVFourStatus.textContent = "4V4 READY // PLAYER 4 • RIVALS 4"
