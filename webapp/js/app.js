@@ -1264,12 +1264,14 @@ async function startLocalFourVFour() {
   if (fourVFourStatus) fourVFourStatus.textContent = "4V4 STARTING // PREPARING CANONICAL FORMATION";
   try {
     const dto = buildLocalFourVFourCombatInit();
-    await renderer.setCombatInit(dto);
+    // Reveal the actual combat canvas before initialization so renderer setup
+    // cannot remain suspended while HOME keeps the canvas hidden.
     mainMenu.navigate("combat");
     if (startFourVFourButton) startFourVFourButton.hidden = true;
     if (startFourVFourHomeButton) startFourVFourHomeButton.hidden = true;
     if (returnFourVFourButton) returnFourVFourButton.hidden = true;
     if (batButton) batButton.disabled = false;
+    await renderer.setCombatInit(dto);
     if (fourVFourStatus) {
       const temporary = dto.player_team_units.filter((unit) => unit.temporary).length;
       fourVFourStatus.textContent = "4V4 READY // PLAYER 4 • RIVALS 4"
@@ -1279,6 +1281,10 @@ async function startLocalFourVFour() {
     return true;
   } catch (error) {
     if (fourVFourStatus) fourVFourStatus.textContent = "4V4 START FAILED // " + String(error.message || error);
+    if (startFourVFourHomeButton) startFourVFourHomeButton.hidden = true;
+    if (startFourVFourButton) startFourVFourButton.hidden = false;
+    if (returnFourVFourButton) returnFourVFourButton.hidden = false;
+    if (batButton) batButton.disabled = true;
     return false;
   }
 }
