@@ -276,7 +276,11 @@ export class CombatRenderer {
 
     this.handleViewportResize = () => this.resize();
     this.handleTimingPointer = (event) => {
-      if (this.disposed || this.paused || !this.timingState?.active) return;
+      if (this.disposed || this.paused) return;
+      if (!this.timingState?.active) {
+        if (String(this.state?.game_mode || this.state?.mode || "").toLowerCase() === "4v4") this._selectFourVFourCombatantAtPointer(event);
+        return;
+      }
       event.preventDefault();
       this.resolveTimingInput("pointer");
     };
@@ -509,25 +513,48 @@ export class CombatRenderer {
     const authoritative = transition.state;
     this._syncAuthorityState();
     this.lastTacticalEvent = result;
+    if (authoritative.mode === "4v4") this._syncCombatStageDataset();
     const presentationEvent = createCombatPresentationEvent({
       result,
-      attackerId: this.state?.batter?.id,
-      targetId: this.state?.pitcher?.id,
-      actionType: "TACTICAL_HIT",
-      terminal: false
+      attackerId: result?.attacker_id || result?.attackerId || this.state?.batter?.id,
+      targetId: result?.target_id || result?.targetId || this.state?.pitcher?.id,
+      actionType: result?.outcome || "TACTICAL_HIT",
+      terminal: Boolean(authoritative.terminal || result?.match_end)
     });
     this.combatPresentation.startFromPresentationEvent(presentationEvent);
 
     this.audioBridge?.playTacticalCard?.();
     this.audioBridge?.playTacticalCharge?.();
     this._applyWaifuFeedback("feedback-hit", "TACTICAL HIT");
-    this.onTacticalTurn?.({
+    this.onTacticalTurn?.(authoritative.mode === "4v4" ? {
+      ...result,
+      players_alive: (authoritative.players || []).filter((unit) => unit.health > 0).length,
+      enemies_alive: (authoritative.enemies || []).filter((unit) => unit.health > 0).length,
+      internal_energy: authoritative.internalEnergy,
+      effectiveness: authoritative.tacticalEffectiveness
+    } : {
       ...result,
       boss_hp: authoritative.bossHp,
       boss_concentration: authoritative.bossConcentration,
       internal_energy: authoritative.internalEnergy,
       effectiveness: authoritative.tacticalEffectiveness
     });
+    if (authoritative.terminal) {
+      const outcome = authoritative.terminal;
+      this.onLocalCombatResult?.({
+        type: "TurnResultDTO",
+        match_id: String(this.state?.match_id || this.state?.matchId || "local-combat-4v4"),
+        result: outcome,
+        outcome,
+        match_end: true,
+        state: { ...(this.state?.state || {}), match_complete: true, outcome },
+        combat_mode: "4v4",
+        combat_result: result,
+        source: "combat-local-4v4-authority"
+      });
+      this._syncCombatStageDataset();
+      return result;
+    }
 
     if (this.tacticalTurn >= this.tacticalMaxTurns) {
       this._clearOwnedTimeout(this.phaseTransitionTimeout);
@@ -548,8 +575,8 @@ export class CombatRenderer {
 
     const presentationEvent = createCombatPresentationEvent({
       result,
-      attackerId: this.state?.batter?.id,
-      targetId: this.state?.pitcher?.id,
+      attackerId: result?.attacker_id || result?.attackerId || this.state?.batter?.id,
+      targetId: result?.target_id || result?.targetId || this.state?.pitcher?.id,
       actionType: result.outcome || "CLIMAX_ACTION",
       terminal: Boolean(authoritative.terminal)
     });
@@ -958,6 +985,7 @@ export class CombatRenderer {
     this.timingState = null;
     this.combatRuntime.startSession(this.state);
     this._syncAuthorityState();
+    this._syncCombatStageDataset();
     this.lastTacticalEvent = null;
 
     await this.assetBank.preload([
@@ -1448,6 +1476,12 @@ export class CombatRenderer {
 
   _drawCombatStageActor(ctx, actor, transform, w, h) {
     const color = actor.team === "ENEMY" ? "#ff007f" : "#00f3ff";
+    if (String(this.state?.game_mode || this.state?.mode || "").toLowerCase() === "4v4") {
+      if (actor.team === "ENEMY") this._drawCombatEnemyActor(ctx, actor, transform, w, h, transform);
+      else this._drawCombatSupportActor(ctx, actor, transform, color);
+      this._drawCombatantStatus(ctx, actor, transform, w, h, color);
+      return;
+    }
     const presentation = this.combatPresentation.getState();
     const attackerId = resolvePresentationAttackerId(
       presentation.active ? presentation.result : null,
@@ -1510,9 +1544,71 @@ export class CombatRenderer {
       ctx.font = "800 8px Rajdhani, system-ui, sans-serif";
       ctx.fillStyle = "#ccefff";
       ctx.globalAlpha = 0.78;
-      ctx.fillText("FIXTURE", 0, radius * 1.34);
+      const label = String(this.state?.game_mode || this.state?.mode || "").toLowerCase() === "4v4"
+        ? String(actor.visual?.name || actor.actorId).slice(0, 14)
+        : "FIXTURE";
+      ctx.fillText(label, 0, radius * 1.34);
     }
     ctx.restore();
+  }
+
+  _drawCombatantStatus(ctx, actor, transform, w, h, color) {
+    const loop = this.getBattleLoopState();
+    const unit = [...(loop.players || []), ...(loop.enemies || [])].find((entry) => entry.id === actor.actorId);
+    if (!unit) return;
+    const x = transform.x;
+    const y = transform.y + 44 * transform.scale;
+    const barWidth = Math.max(36, 58 * transform.scale);
+    const barHeight = 4;
+    const ratio = clamp(unit.health / Math.max(1, unit.maxHealth), 0, 1);
+    const dimmed = unit.health <= 0;
+    ctx.save();
+    ctx.globalAlpha = dimmed ? 0.48 : 0.94;
+    ctx.textAlign = "center";
+    ctx.font = "800 9px Rajdhani, system-ui, sans-serif";
+    ctx.fillStyle = dimmed ? "#8a8a9b" : "#f2f8ff";
+    ctx.fillText(String(unit.displayName || unit.characterId || unit.id).slice(0, 14) + (unit.temporary ? " *" : ""), x, y);
+    ctx.fillStyle = "rgba(255,255,255,.14)";
+    ctx.fillRect(x - barWidth / 2, y + 4, barWidth, barHeight);
+    ctx.fillStyle = color;
+    ctx.fillRect(x - barWidth / 2, y + 4, barWidth * ratio, barHeight);
+    ctx.font = "700 8px Rajdhani, system-ui, sans-serif";
+    ctx.fillStyle = "#cbd5e8";
+    ctx.fillText(String(unit.health) + "/" + String(unit.maxHealth), x, y + 19);
+    if (loop.selectedEnemyId === unit.id) this._drawCombatActorRing(ctx, x, transform.y + 8, 34 * transform.scale, "#ffdf00", true);
+    else if (loop.selectedPlayerId === unit.id) this._drawCombatActorRing(ctx, x, transform.y + 8, 30 * transform.scale, "#00f3ff", true);
+    ctx.restore();
+  }
+
+  _selectFourVFourCombatantAtPointer(event) {
+    const loop = this.getBattleLoopState();
+    if (loop.mode !== "4v4") return false;
+    const rect = this.canvas.getBoundingClientRect();
+    if (!rect.width || !rect.height) return false;
+    const point = {
+      x: ((event.clientX - rect.left) / rect.width) * this.pixelWidth,
+      y: ((event.clientY - rect.top) / rect.height) * this.pixelHeight
+    };
+    const candidates = this.combatStage.getSortedActors().map((actor) => {
+      const position = this.combatStage.resolveActorTransform(actor.actorId, { width: this.pixelWidth, height: this.pixelHeight });
+      return position ? { actor, position, distance: Math.hypot(position.x - point.x, position.y - point.y) } : null;
+    }).filter(Boolean).sort((a, b) => a.distance - b.distance);
+    const selected = candidates[0];
+    if (!selected || selected.distance > Math.max(this.pixelWidth, this.pixelHeight) * 0.075) return false;
+    const unit = [...(loop.players || []), ...(loop.enemies || [])].find((entry) => entry.id === selected.actor.actorId);
+    if (!unit || unit.health <= 0) return false;
+    try {
+      if (selected.actor.team === "PLAYER") {
+        this.combatRuntime.selectPlayerUnit(unit.id);
+        this.combatStage.setSelectedActor(unit.id);
+      } else {
+        this.combatRuntime.selectEnemyUnit(unit.id);
+      }
+      this._syncCombatStageDataset();
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   _drawCombatEnemyActor(ctx, actor, transform, w, h, motion = null) {
@@ -1674,9 +1770,16 @@ export class CombatRenderer {
     if (!this.combatStage) return;
     const batter = this.state?.batter || {};
     const enemy = this.state?.pitcher || {};
-    this.combatStage.setActors(createCombatStageActors({ batter, enemy }));
+    const fourVFour = String(this.state?.game_mode || this.state?.mode || "").toLowerCase() === "4v4";
+    this.combatStage.setActors(createCombatStageActors({
+      batter,
+      enemy,
+      playerTeam: fourVFour ? (this.state?.player_team_units || []) : [],
+      enemyTeam: fourVFour ? (this.state?.enemy_team_units || []) : []
+    }));
     const selectedId = String(
-      batter?.id || batter?.character_id || batter?.card_id
+      (fourVFour ? this.state?.player_team_units?.[0]?.id : null)
+      || batter?.id || batter?.character_id || batter?.card_id
       || this.combatStage.getActors({ team: "PLAYER" })[0]?.actorId || ""
     );
     this.combatStage.setSelectedActor(selectedId);
@@ -1714,6 +1817,8 @@ export class CombatRenderer {
     const combatPresentationState = this.combatPresentation.getState();
     this.canvas.dataset.combatBattlePhase = String(loopState.phase || "");
     this.canvas.dataset.combatTacticalTurn = String(loopState.tacticalTurn ?? "");
+    this.canvas.dataset.combatMode = String(this.state?.game_mode || this.state?.mode || "baseball");
+    this.canvas.dataset.combatSelectedTarget = String(loopState.selectedEnemyId || "");
     this.canvas.dataset.combatTacticalMaxTurns = String(loopState.tacticalMaxTurns ?? "");
     this.canvas.dataset.combatPlayerStamina = String(loopState.playerStamina ?? "");
     this.canvas.dataset.combatPlayerStaminaMax = String(loopState.playerStaminaMax ?? "");
@@ -1952,6 +2057,44 @@ export class CombatRenderer {
   _drawBattleLoopHud(ctx, w, h) {
     const loop = this.getBattleLoopState();
     if (!loop || !this.matchReady) return;
+    if (loop.mode === "4v4") {
+      const playerAlive = (loop.players || []).filter((unit) => unit.health > 0);
+      const enemyAlive = (loop.enemies || []).filter((unit) => unit.health > 0);
+      const playerHp = (loop.players || []).reduce((sum, unit) => sum + unit.health, 0);
+      const playerMax = (loop.players || []).reduce((sum, unit) => sum + unit.maxHealth, 0);
+      const enemyHp = (loop.enemies || []).reduce((sum, unit) => sum + unit.health, 0);
+      const enemyMax = (loop.enemies || []).reduce((sum, unit) => sum + unit.maxHealth, 0);
+      const phaseLabel = loop.phase === "CLIMAX" ? "TIMING RING // CLIMAX"
+        : loop.phase === "VICTORY" ? "VICTORY // OPPONENT TEAM DEFEATED"
+        : loop.phase === "DEFEAT" ? "DEFEAT // YOUR TEAM DEFEATED"
+        : "TACTICAL // TURN " + loop.tacticalTurn + "/" + loop.tacticalMaxTurns;
+      const barX = w * 0.08;
+      const barW = w * 0.84;
+      ctx.save();
+      ctx.textAlign = "center";
+      ctx.font = "900 11px Orbitron, system-ui, sans-serif";
+      ctx.fillStyle = loop.phase === "CLIMAX" ? "#ffdf00" : loop.terminal === "DEFEAT" ? "#ff007f" : "#00f3ff";
+      ctx.shadowColor = ctx.fillStyle;
+      ctx.shadowBlur = 8;
+      ctx.fillText("ROUND " + loop.round + " • " + phaseLabel, w / 2, h * 0.205);
+      ctx.shadowBlur = 0;
+      ctx.textAlign = "left";
+      ctx.font = "800 8px Rajdhani, system-ui, sans-serif";
+      ctx.fillStyle = "#b8bed0";
+      ctx.fillText("YOUR TEAM " + playerAlive.length + "/4 • HP " + playerHp + "/" + playerMax, barX, h * 0.225);
+      ctx.fillStyle = "rgba(255,255,255,.10)";
+      ctx.fillRect(barX, h * 0.232, barW, 5);
+      ctx.fillStyle = "#00f3ff";
+      ctx.fillRect(barX, h * 0.232, barW * clamp(playerHp / Math.max(1, playerMax), 0, 1), 5);
+      ctx.fillStyle = "#b8bed0";
+      ctx.fillText("RIVALS " + enemyAlive.length + "/4 • HP " + enemyHp + "/" + enemyMax, barX, h * 0.251);
+      ctx.fillStyle = "rgba(255,255,255,.10)";
+      ctx.fillRect(barX, h * 0.258, barW, 5);
+      ctx.fillStyle = "#ff007f";
+      ctx.fillRect(barX, h * 0.258, barW * clamp(enemyHp / Math.max(1, enemyMax), 0, 1), 5);
+      ctx.restore();
+      return;
+    }
 
     const phaseLabel = loop.phase === "TACTICAL"
       ? `TACTICAL // CARTA ${loop.tactical_turn}/${loop.tactical_max_turns}`

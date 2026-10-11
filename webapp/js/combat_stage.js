@@ -256,7 +256,40 @@ export class CharacterActor2D5 {
 export function createCombatActor(options = {}) {
   return new CharacterActor2D5(options);
 }
-export function createCombatStageActors({ batter = {}, enemy = {} } = {}) {
+const DEFAULT_ENEMY_POSITIONS = Object.freeze([
+  Object.freeze({ x: 0.70, y: 0.35, depth: "FAR", scale: 0.84, elevation: 0.08, facing: -1 }),
+  Object.freeze({ x: 0.83, y: 0.48, depth: "MID", scale: 0.96, elevation: 0.14, facing: -1 }),
+  Object.freeze({ x: 0.72, y: 0.62, depth: "NEAR", scale: 1.02, elevation: 0.06, facing: -1 }),
+  Object.freeze({ x: 0.89, y: 0.73, depth: "MID", scale: 0.92, elevation: 0.12, facing: -1 })
+]);
+
+function buildRuntimeCombatActor(unit, team, position) {
+  const temporary = unit?.temporary === true;
+  return createCombatActor({
+    actorId: unit.id,
+    team,
+    kind: temporary ? "TEMPORARY_CANONICAL" : team === "ENEMY" ? "ENEMY" : "CHARACTER",
+    position,
+    depth: position.depth,
+    scale: position.scale,
+    elevation: position.elevation,
+    facing: position.facing,
+    visual: {
+      name: String(unit.displayName || unit.characterId || unit.id),
+      characterId: String(unit.characterId || ""),
+      source: temporary ? "TEMPORARY_CANONICAL_LOCAL" : "CANONICAL_CHARACTER",
+      temporary
+    }
+  });
+}
+
+export function createCombatStageActors({ batter = {}, enemy = {}, playerTeam = [], enemyTeam = [] } = {}) {
+  if (Array.isArray(playerTeam) && playerTeam.length === 4 && Array.isArray(enemyTeam) && enemyTeam.length === 4) {
+    return [
+      ...playerTeam.map((unit, index) => buildRuntimeCombatActor(unit, "PLAYER", DEFAULT_PLAYER_POSITIONS[index])),
+      ...enemyTeam.map((unit, index) => buildRuntimeCombatActor(unit, "ENEMY", DEFAULT_ENEMY_POSITIONS[index]))
+    ];
+  }
   const batterId = String(batter?.id || batter?.character_id || batter?.card_id || "selected-character");
   const enemyId = String(enemy?.id || enemy?.character_id || enemy?.card_id || "enemy-fixture");
   const players = DEFAULT_PLAYER_POSITIONS.map((position, index) => {

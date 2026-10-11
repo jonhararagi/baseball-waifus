@@ -84,6 +84,10 @@ export class CombatRuntimeController {
 
     const state = this.getState();
     const window = timingWindow || this.getTimingWindow();
+    const selectedEnemy = state.mode === "4v4"
+      ? state.enemies?.find((unit) => unit.id === state.selectedEnemyId && unit.health > 0)
+        || state.enemies?.filter((unit) => unit.health > 0).sort((a, b) => a.health - b.health || a.id.localeCompare(b.id))[0]
+      : null;
     const timing = resolveTiming({
       elapsedMs,
       targetMs: window.targetMs,
@@ -93,7 +97,7 @@ export class CombatRuntimeController {
       source,
       round: state.round,
       tacticalEffectiveness: state.tacticalEffectiveness,
-      bossHpBefore: state.bossHp
+      bossHpBefore: selectedEnemy ? selectedEnemy.health : state.bossHp
     });
 
     const transition = this.resolveClimaxTurn(timing.grade);
@@ -102,6 +106,16 @@ export class CombatRuntimeController {
       timing,
       transition
     });
+  }
+
+  selectPlayerUnit(unitId) {
+    this.assertStarted();
+    return this.authority.selectPlayerUnit(unitId);
+  }
+
+  selectEnemyUnit(unitId) {
+    this.assertStarted();
+    return this.authority.selectEnemyUnit(unitId);
   }
 
   resolveTacticalTurn() {
