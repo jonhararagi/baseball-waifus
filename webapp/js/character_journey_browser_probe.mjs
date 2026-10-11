@@ -441,6 +441,7 @@ async function run() {
   const network = { requests: [], responses: [] };
   let r5ProbeFailure = null;
   const r5NavigationSnapshots = [];
+  const homeInitializationSamples = [];
 
   try {
     browser = spawn(BROWSER_BIN, [
@@ -815,16 +816,26 @@ async function run() {
     }
 
     const defaultHome = await waitFor(
-      async () => cdpEvaluate(cdp, `(() => {
-        const root = document.querySelector("#home-view");
-        const name = document.querySelector("#home-character-name")?.textContent?.trim() || "";
-        return { visible: Boolean(root && !root.hidden), name };
-      })()`).catch(() => null),
-      { timeoutMs: 30000, label: "fresh starter Home initialization" }
+      async () => {
+        const snapshot = await cdpEvaluate(cdp, \`(() => {
+          const root = document.querySelector("#home-view");
+          const name = document.querySelector("#home-character-name")?.textContent?.trim() || "";
+          return { visible: Boolean(root && !root.hidden), name };
+        })()\`).catch(() => null);
+        if (snapshot) {
+          homeInitializationSamples.push({ at: new Date().toISOString(), ...snapshot });
+          if (homeInitializationSamples.length > 20) homeInitializationSamples.shift();
+        }
+        // Home visibility can precede the asynchronous starter roster/UI binding.
+        // Wait for the correct visible state rather than asserting on the first frame.
+        return snapshot?.visible === true && snapshot.name === "Aiko Hanamori" ? snapshot : false;
+      },
+      { timeoutMs: 30000, intervalMs: 100, label: "fresh starter Home initialization (visible Aiko binding)" }
     );
 
-    requireCondition(defaultHome.visible, "Home is not visible", defaultHome);
-    requireCondition(defaultHome.name === "Aiko Hanamori", "Home active character is not Aiko", defaultHome);
+    requireCondition(defaultHome.visible && defaultHome.name === "Aiko Hanamori",
+      "Home did not settle to the fresh Aiko starter within the initialization window",
+      { defaultHome, homeInitializationSamples });
 
     const initialRuntime = await cdpEvaluate(cdp, `(() => {
       const state = window.BaseballWaifusGacha?.getState?.() || null;
@@ -2707,6 +2718,7 @@ async function run() {
         browser: BROWSER_BIN,
         baseUrl,
         error: String(error?.stack || error),
+        homeInitializationSamples,
         requests: network.requests,
         responses: network.responses,
         consoleErrors: consoleErrors.map((entry) => ({
