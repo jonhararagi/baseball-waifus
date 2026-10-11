@@ -16,6 +16,15 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./css/styles.css" />
+  <style>
+    .combat-4v4-status{padding:7px 12px;color:#9fefff;font:700 11px Rajdhani,system-ui,sans-serif;letter-spacing:.05em}
+    .cyber-btn[hidden],.home-action[hidden]{display:none !important}
+    #app-container.is-combat-4v4 .scoreboard-overlay,
+    #app-container.is-combat-4v4 #active-waifu-card{display:none !important}
+    #action-start-4v4{border-color:#00f3ff}
+    #action-return-home{border-color:#ffdf00}
+    .roster-controls label{min-width:0}
+  </style>
   <title>BaseWarriors: Meta-Strike ⚾ Cyberpunk Baseball</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
@@ -38,9 +47,9 @@
     <section id="home-view" class="home-view menu-view" aria-label="Player Home" hidden>
       <div class="home-header"><div><span class="home-kicker">BASEWARRIORS // PLAYER HOME</span><h1>MI MUNDO DE BATALLA</h1></div><div class="home-collection-summary"><span>CHARACTERS</span><strong id="home-owned-count">0</strong></div></div>
       <article class="home-character-card"><div class="home-character-stage"><div class="home-character-glow" aria-hidden="true"></div><img id="home-character-art" class="home-character-art" alt="" decoding="async"><div id="home-character-empty" class="home-character-empty" hidden><span class="home-empty-icon">⚾</span><strong>NO ACTIVE CHARACTER</strong><small>RECRUIT YOUR FIRST WARRIOR</small></div></div><div class="home-character-copy"><span class="home-kicker">ACTIVE CHARACTER</span><div class="home-character-name-row"><h2 id="home-character-name">SIN PERSONAJE ACTIVO</h2><span id="home-character-rarity" class="home-rarity">RECLUTA</span></div><div id="home-character-role" class="home-character-role">ROSTER // VACÍO</div><div id="home-character-play-identity" class="home-character-play">PLAYSTYLE // DESCONOCIDO</div><button id="home-character-detail-open" class="home-character-detail-cta" type="button">CONOCER // CHARACTER PROFILE</button><div class="home-progression"><span id="home-character-level">LV --</span><span id="home-character-stars">RANK --</span><span id="home-character-duplicates">DUPLICATES ×0</span></div><div class="home-stat-strip"><div><span>PWR</span><strong id="home-stat-power">--</strong></div><div><span>CONTACT</span><strong id="home-stat-contact">--</strong></div><div><span>SPEED</span><strong id="home-stat-speed">--</strong></div></div></div></article>
-      <section class="home-section home-squad-section" aria-label="Current squad"><div class="home-section-head"><div><span class="home-kicker">CURRENT SQUAD</span><h2>MI EQUIPO</h2></div><span class="home-squad-count">BATTER + 2 SUPPORTS</span></div><div class="home-squad-grid"><div class="home-squad-slot is-batter"><span>BATTER</span><strong id="home-squad-batter">NO BATTER</strong></div><div class="home-squad-slot"><span>SUPPORT 01</span><strong id="home-squad-support-0">EMPTY SLOT</strong></div><div class="home-squad-slot"><span>SUPPORT 02</span><strong id="home-squad-support-1">EMPTY SLOT</strong></div></div></section>
+      <section class="home-section home-squad-section" aria-label="Current squad"><div class="home-section-head"><div><span class="home-kicker">CURRENT SQUAD</span><h2>MI EQUIPO</h2></div><span class="home-squad-count">SQUAD // FOUR COMBATANTS</span></div><div class="home-squad-grid"><div class="home-squad-slot is-batter"><span>BATTER</span><strong id="home-squad-batter">NO BATTER</strong></div><div class="home-squad-slot"><span>SUPPORT 01</span><strong id="home-squad-support-0">EMPTY SLOT</strong></div><div class="home-squad-slot"><span>SUPPORT 02</span><strong id="home-squad-support-1">EMPTY SLOT</strong></div><div class="home-squad-slot"><span>4V4 MEMBER</span><strong id="home-squad-fourth">TEMPORARY LOCAL</strong></div></div></section>
       <section class="home-resource-row" aria-label="Resources"><div><span class="home-kicker">RESOURCES</span><strong>SCRAP</strong></div><strong id="home-scrap">0</strong></section>
-      <section class="home-actions" aria-label="Quick actions"><button class="home-action home-action-play" type="button" data-home-action="combat"><span>⚾</span><strong>PLAY</strong><small>ENTER THE MATCH</small></button><button class="home-action home-action-collection" type="button" data-home-action="dex"><span>▦</span><strong>COLLECTION</strong><small>MEET YOUR ROSTER</small></button><button class="home-action" type="button" data-home-action="roster"><span>👥</span><strong>SQUAD</strong><small>BUILD YOUR LINEUP</small></button><button class="home-action" type="button" data-home-action="locker"><span>♡</span><strong>LOCKER</strong><small>KNOW YOUR WARRIOR</small></button><button class="home-action" type="button" data-home-action="gacha"><span>✦</span><strong>RECRUIT</strong><small>FIND THE NEXT ONE</small></button></section>
+      <section class="home-actions" aria-label="Quick actions"><button class="home-action home-action-play" type="button" data-home-action="combat"><span>⚾</span><strong>PLAY</strong><small>ENTER THE MATCH</small></button><button id="home-action-start-4v4" class="home-action" type="button"><span>⚔️</span><strong>4V4 BATTLE</strong><small>FOUR WARRIORS VS FOUR RIVALS</small></button><button class="home-action home-action-collection" type="button" data-home-action="dex"><span>▦</span><strong>COLLECTION</strong><small>MEET YOUR ROSTER</small></button><button class="home-action" type="button" data-home-action="roster"><span>👥</span><strong>SQUAD</strong><small>BUILD YOUR LINEUP</small></button><button class="home-action" type="button" data-home-action="locker"><span>♡</span><strong>LOCKER</strong><small>KNOW YOUR WARRIOR</small></button><button class="home-action" type="button" data-home-action="gacha"><span>✦</span><strong>RECRUIT</strong><small>FIND THE NEXT ONE</small></button></section>
     </section>
 
     <section id="character-detail-view" class="character-detail-view" aria-label="Character Detail" hidden>
@@ -200,6 +209,14 @@
 
     <footer class="cyber-footer combat-view-piece">
       <div class="primary-actions">
+        <button id="action-start-4v4" class="cyber-btn btn-super-swing" type="button" aria-label="Iniciar combate local 4 contra 4" hidden>
+          <span class="btn-text">INICIAR 4V4</span>
+          <span class="btn-sub">4 UNIDADES • 4 RIVALES</span>
+        </button>
+        <button id="action-return-home" class="cyber-btn btn-super-swing" type="button" hidden>
+          <span class="btn-text">VOLVER A HOME</span>
+          <span class="btn-sub">RESULTADO LOCAL COMPLETADO</span>
+        </button>
         <button id="action-bat" class="cyber-btn btn-primary-swing" type="button">
           <span class="btn-text">BATEAR</span>
           <span class="btn-sub">SWING</span>
@@ -209,6 +226,7 @@
           <span class="btn-sub">🔥 MAX ENERGY</span>
         </button>
       </div>
+      <div id="combat-4v4-status" class="combat-4v4-status" role="status" aria-live="polite">COMBATE LOCAL 4V4 DISPONIBLE DESDE INICIAR 4V4</div>
       <div class="secondary-nav">
         <button id="btn-nav-roster" class="nav-item" type="button"><span class="nav-icon">👥</span><span class="nav-label">EQUIPO</span></button>
         <button id="btn-nav-gacha" class="nav-item highlight-nav" type="button"><span class="nav-icon">🎁</span><span class="nav-label">RECLUTAR</span></button>
@@ -296,6 +314,7 @@
         <label>BATTER<select id="roster-active-select"></select></label>
         <label>SUPPORT 01<select id="roster-support-0"></select></label>
         <label>SUPPORT 02<select id="roster-support-1"></select></label>
+        <label>4V4 MEMBER<select id="roster-support-2"><option value="">TEMPORARY LOCAL IF EMPTY</option></select></label>
         <button id="roster-apply" class="action-button action-primary" type="button">EQUIPAR EQUIPO</button>
       </div>
     </section>

@@ -1,4 +1,5 @@
 export const MAX_SUPPORT_WAIFUS = 2;
+export const MAX_TEAM_COMBATANTS = 4;
 export const BIOME_SYNERGY_MULTIPLIER = 1.15;
 
 function clone(value) { return JSON.parse(JSON.stringify(value)); }
@@ -33,6 +34,8 @@ export class TeamManager {
     this.playerMetaRosterIntegration = playerMetaRosterIntegration;
     this.storage = storage;
     this.storageKey = storageKey;
+    this.fourthMemberStorageKey = "baseball_waifus_team_4v4_v1";
+    this.fourthMemberId = this._loadFourthMember();
     this.state = this.playerMetaRosterIntegration ? null : this._load();
     if (!this.playerMetaRosterIntegration) this._sanitizeState();
   }
@@ -44,6 +47,39 @@ export class TeamManager {
   getRoster() {
     if (this.playerMetaRosterIntegration) return this.playerMetaRosterIntegration.getRoster();
     return { active_batter: this.state.active_batter, supports: [...this.state.supports] };
+  }
+  getFourthMemberId() {
+    const id = String(this.fourthMemberId || "");
+    if (!id || !this._isUnlocked(id)) return null;
+    const roster = this.getRoster();
+    return id === roster.active_batter || roster.supports.includes(id) ? null : id;
+  }
+  getBattleRoster() {
+    const roster = this.getRoster();
+    return [...new Set([roster.active_batter, ...roster.supports, this.getFourthMemberId()].filter(Boolean))].slice(0, MAX_TEAM_COMBATANTS);
+  }
+  setFourthMember(waifuId) {
+    const id = waifuId ? String(waifuId) : "";
+    if (id && !this._isUnlocked(id)) throw new Error("Only unlocked waifus can enter the fourth combat slot");
+    const roster = this.getRoster();
+    if (id && (id === roster.active_batter || roster.supports.includes(id))) throw new Error("Fourth combat slot must contain a unique character");
+    this.fourthMemberId = id || null;
+    this._saveFourthMember();
+    return this.getBattleRoster();
+  }
+  _loadFourthMember() {
+    try {
+      const raw = this.storage?.getItem?.(this.fourthMemberStorageKey);
+      const parsed = raw ? JSON.parse(raw) : {};
+      return typeof parsed?.fourth_member === "string" ? parsed.fourth_member : null;
+    } catch {
+      return null;
+    }
+  }
+  _saveFourthMember() {
+    try {
+      this.storage?.setItem?.(this.fourthMemberStorageKey, JSON.stringify({ schema: 1, fourth_member: this.fourthMemberId || null }));
+    } catch {}
   }
   getActiveBatterId() { return this.getRoster().active_batter; }
   getActiveWaifu() {
@@ -57,12 +93,21 @@ export class TeamManager {
   setActiveBatter(waifuId) {
     const id = String(waifuId || "");
     if (!this._isUnlocked(id)) throw new Error("Only unlocked waifus can become the active batter");
-    if (this.playerMetaRosterIntegration) return this.playerMetaRosterIntegration.setActiveBatter(id);
-    this.state.active_batter = id;
-    this.state.supports = this.state.supports.filter((supportId) => supportId !== id);
-    this._save();
-    this.persistActiveBatter?.(id);
-    return this.getRoster();
+    let result;
+    if (this.playerMetaRosterIntegration) {
+      result = this.playerMetaRosterIntegration.setActiveBatter(id);
+    } else {
+      this.state.active_batter = id;
+      this.state.supports = this.state.supports.filter((supportId) => supportId !== id);
+      this._save();
+      this.persistActiveBatter?.(id);
+      result = this.getRoster();
+    }
+    if (this.fourthMemberId === id) {
+      this.fourthMemberId = null;
+      this._saveFourthMember();
+    }
+    return result;
   }
   setSupport(slot, waifuId) {
     const index = Math.floor(Number(slot) || 0);
@@ -72,6 +117,10 @@ export class TeamManager {
     if (id && id === this.getActiveBatterId()) throw new Error("Active batter cannot also be a support");
     if (id && this.getSupportIds().some((supportId, supportIndex) => supportId === id && supportIndex !== index)) {
       throw new Error("A waifu can only occupy one support slot");
+    }
+    if (id && id === this.fourthMemberId) {
+      this.fourthMemberId = null;
+      this._saveFourthMember();
     }
     if (this.playerMetaRosterIntegration) return this.playerMetaRosterIntegration.setSupport(index, id || null);
     this.state.supports[index] = id || null;

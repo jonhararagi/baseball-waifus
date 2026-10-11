@@ -2,7 +2,8 @@ import {
   BaseballWaifusApi,
   TelegramBridge,
   isCombatInitDTO,
-  isTurnResultDTO
+  isTurnResultDTO,
+  CHARACTER_FACTIONS
 } from "./api.js";
 import { CombatRenderer } from "./combat.js";
 import { AudioManager } from "./audioManager.js";
@@ -102,6 +103,11 @@ const lockerSkinCatalog = document.querySelector("#locker-skin-catalog");
 const rosterActiveSelect = document.querySelector("#roster-active-select");
 const rosterSupport0 = document.querySelector("#roster-support-0");
 const rosterSupport1 = document.querySelector("#roster-support-1");
+const rosterSupport2 = document.querySelector("#roster-support-2");
+const startFourVFourButton = document.querySelector("#action-start-4v4");
+const startFourVFourHomeButton = document.querySelector("#home-action-start-4v4");
+const returnFourVFourButton = document.querySelector("#action-return-home");
+const fourVFourStatus = document.querySelector("#combat-4v4-status");
 const rosterApplyButton = document.querySelector("#roster-apply");
 const rosterSummary = document.querySelector("#roster-summary");
 const settingsQuality = document.querySelector("#settings-quality");
@@ -485,11 +491,26 @@ const renderer = new CombatRenderer(document.querySelector("#combat-canvas, #gam
   audioBridge,
   hapticsBridge,
   onScrapEarned: handleScrapEarned,
-  onLocalCombatResult: api.configured() ? null : (turnResult) => {
-    handleLocalCombatResult(turnResult);
+  onLocalCombatResult: (turnResult) => {
+    const local4v4 = renderer?.getBattleLoopState?.().mode === "4v4";
+    if (local4v4 || !api.configured()) handleLocalCombatResult(turnResult);
+    if (local4v4) {
+      const outcome = String(turnResult?.outcome || turnResult?.result || "").toUpperCase();
+      if (fourVFourStatus) fourVFourStatus.textContent = "4V4 RESULT // " + outcome + " • LOCAL DEMO • REWARDS BLOCKED";
+      if (returnFourVFourButton) returnFourVFourButton.hidden = false;
+      if (startFourVFourButton) startFourVFourButton.hidden = true;
+      if (startFourVFourHomeButton) startFourVFourHomeButton.hidden = true;
+      if (batButton) batButton.disabled = true;
+    }
   },
   performanceAdapter,
   onTimingResult: (timing) => {
+    if (renderer?.getBattleLoopState?.().mode === "4v4") {
+      const loop = renderer.getBattleLoopState();
+      if (timingFeedback) timingFeedback.textContent = "TIMING " + String(timing.grade || "MISS") + " • " + String(loop.lastAction?.targetId || "");
+      if (batButton) batButton.disabled = Boolean(loop.terminal);
+      return;
+    }
     void sendAction("BAT", timing);
   },
   onTacticalTurn: (event) => {
@@ -529,6 +550,51 @@ if (new URLSearchParams(window.location.search).get("qa") === "t081") {
     battle: renderer.getBattleLoopState(),
     stage: renderer.combatStage.getState()
   });
+}
+if (new URLSearchParams(window.location.search).get("qa") === "bwm105") {
+  window.__BW_BWM105_GET_RUNTIME__ = () => {
+    const battle = renderer.getBattleLoopState?.() || {};
+    const playerMeta = gachaController.playerMetaIntegration?.authority?.getSnapshot?.() || null;
+    return {
+      task: "BWM-105",
+      gachaReady: gachaController.ready === true,
+      mode: battle.mode || "baseball",
+      battle,
+      stage: renderer.combatStage?.getState?.() || null,
+      actors: (renderer.combatStage?.getActors?.() || []).map((actor) => ({
+        id: actor.actorId,
+        team: actor.team,
+        kind: actor.kind,
+        characterId: actor.visual?.characterId || "",
+        source: actor.visual?.source || ""
+      })),
+      actorPositions: (renderer.combatStage?.getActors?.() || []).map((actor) => {
+        const transform = renderer.combatStage.resolveActorTransform(actor.actorId, {
+          width: renderer.pixelWidth,
+          height: renderer.pixelHeight
+        });
+        return transform ? { id: actor.actorId, team: actor.team, x: transform.x, y: transform.y, width: renderer.pixelWidth, height: renderer.pixelHeight } : null;
+      }).filter(Boolean),
+      timingWindow: renderer.timingState ? {
+        active: Boolean(renderer.timingState.active),
+        startedAt: Number(renderer.timingState.startedAt),
+        targetMs: Number(renderer.timingState.targetMs),
+        durationMs: Number(renderer.timingState.durationMs),
+        hitWindowMs: Number(renderer.timingState.hitWindowMs),
+        greatWindowMs: Number(renderer.timingState.greatWindowMs)
+      } : null,
+      lastTiming: renderer.lastTiming ? { ...renderer.lastTiming } : null,
+      currencies: playerMeta ? { ...(playerMeta.currencies || playerMeta.state?.currencies || {}) } : null,
+      rewardLedger: playerMeta ? Object.keys(playerMeta.rewardLedger || playerMeta.state?.rewardLedger || {}) : null,
+      inventoryIds: playerMeta ? Object.keys(playerMeta.inventory?.characters || playerMeta.state?.inventory?.characters || {}) : null,
+      roster: playerMeta ? (playerMeta.roster || playerMeta.state?.roster || null) : null,
+      persistedFourthMember: window.localStorage.getItem("baseball_waifus_team_4v4_v1")
+    };
+  };
+  window.__BW_T097_GET_RUNTIME__ = () => {
+    const snapshot = window.__BW_BWM105_GET_RUNTIME__?.() || {};
+    return { battle: { ...(snapshot.battle || {}), last_timing: snapshot.lastTiming || null }, lastTiming: snapshot.lastTiming || null, stage: snapshot.stage || null };
+  };
 }
 if (new URLSearchParams(window.location.search).get("qa") === "t097") {
   window.__BW_T097_TIMING_ELAPSED__ = () => {
@@ -861,7 +927,7 @@ const gallery = new GalleryController({
     }
   }
 });
-const homeView=new HomeView({root:homeViewRoot,getSnapshot:()=>gachaController.playerMetaIntegration?.getSnapshot()||null,getActiveCharacter:()=>{const id=gachaController.getActiveBatter();return id?gachaController.getCharacter(id):null},getRoster:()=>teamManager.getRoster(),getProgression:id=>upgradeSystem.getProgression(id),getCharacter:id=>gachaController.getCharacter(id),onNavigate:view=>{if(view==="roster"){rosterPanel.open();return}if(view==="gacha"){gachaRecruitment.open();return}setView(view)},onInspect:id=>characterDetailView.open(id)});
+const homeView=new HomeView({root:homeViewRoot,getSnapshot:()=>gachaController.playerMetaIntegration?.getSnapshot()||null,getActiveCharacter:()=>{const id=gachaController.getActiveBatter();return id?gachaController.getCharacter(id):null},getRoster:()=>teamManager.getRoster(),getFourthMember:()=>teamManager.getFourthMemberId(),getProgression:id=>upgradeSystem.getProgression(id),getCharacter:id=>gachaController.getCharacter(id),onNavigate:view=>{if(view==="roster"){rosterPanel.open();return}if(view==="gacha"){gachaRecruitment.open();return}setView(view)},onInspect:id=>characterDetailView.open(id)});
 const characterDetailView=new CharacterDetailView({root:characterDetailRoot,getCharacter:id=>gachaController.getCharacter(id),getArtBinding:id=>getCharacterArtBinding(id),getInventoryEntry:id=>gachaController.getState().inventory?.[id]||null,getProgression:id=>upgradeSystem.getProgression(id),getRoster:()=>teamManager.getRoster(),getCurrencies:()=>({scrap:gachaController.getScavengerScrap(),fragments:gachaController.getFragments()}),canUpgrade:id=>upgradeSystem.canUpgrade(id),getUpgradeCost:id=>upgradeSystem.getUpgradeCost(id),getStoryEntry:getCharacterStoryBinding,getRelationshipContext:getCharacterRelationshipContext,onStory:(id)=>{const model=characterDetailView.model;return openCharacterStory(id,getCharacterStoryBinding(id),{character_id:model?.id,canonical:{display_name:model?.name}})},onLocker:(id)=>{const character=gachaController.getCharacter(id);if(!character)return false;const presentationPath=characterDetailView.model?.heroPath||"";characterDetailView.close();lockerRoom.setActiveWaifu(character);lockerRoom.setPresentationAsset(presentationPath);setView("locker");return true;},onUpgrade:id=>upgradeSystem.upgradeWaifu(id),onUse:id=>{try{teamManager.setActiveBatter(id);lockerRoom.setActiveWaifu(id);homeView.refresh();characterDetailView.close();setView("combat");}catch(error){setConnection("Unable to use character","error");}},onClose:()=>homeView.refresh()});
 characterStoryPresentation = new NarrativePresentation({
   root: narrativeTestView,
@@ -1036,6 +1102,209 @@ function createDemoCombatInit() {
   };
 }
 
+function canonicalCharacterId(character) {
+  return String(character?.character_id || character?.characterId || character?.id || "").trim();
+}
+
+function canonicalCharacterForBattle(characterId, catalog) {
+  return catalog.find((unit) => canonicalCharacterId(unit) === String(characterId))
+    || gachaController.getCharacter(characterId)
+    || null;
+}
+
+function buildLocalFourVFourUnit(character, { team, temporary = false } = {}) {
+  const characterId = canonicalCharacterId(character);
+  const canonical = character?.canonical || character;
+  const faction = String(canonical?.faction || canonical?.identity?.faction || character?.faction || "");
+  if (!CHARACTER_FACTIONS.includes(faction)) {
+    throw new Error("CANONICAL_COMBAT_FACTION_MISSING:" + characterId);
+  }
+  const sourceStats = canonical?.stats || character?.stats || {};
+  const stat = (key, alias = null) => {
+    const rawValue = sourceStats[key] ?? (alias ? sourceStats[alias] : undefined) ?? character?.[key];
+    const value = Number(rawValue);
+    if (!Number.isFinite(value) || value <= 0) {
+      throw new Error("CANONICAL_COMBAT_STAT_MISSING:" + characterId + ":" + key);
+    }
+    return Math.min(100, value);
+  };
+  const staminaValue = Number(sourceStats.stamina ?? character?.stamina);
+  if (!Number.isFinite(staminaValue) || staminaValue <= 0) {
+    throw new Error("CANONICAL_COMBAT_STAT_MISSING:" + characterId + ":stamina");
+  }
+  const stamina = Math.min(200, staminaValue);
+  // First-version health policy: derive durability from canonical stamina.
+  // This mode-local mapping does not change the legacy individual-combat formulas.
+  const maxHealth = Math.max(100, Math.round(stamina * 2));
+  const id = team === "ENEMY"
+    ? "enemy:" + characterId
+    : temporary ? "temporary:" + characterId : characterId;
+  return {
+    id,
+    characterId,
+    displayName: String(canonical?.display_name || character?.display_name || character?.name || characterId),
+    faction,
+    element: String(canonical?.element || character?.element || ""),
+    rarity: String(canonical?.rarity || character?.rarity || ""),
+    team,
+    stats: {
+      power: stat("power"),
+      contact: stat("contact"),
+      speed: stat("speed"),
+      eye: stat("eye", "control"),
+      stamina
+    },
+    maxHealth,
+    health: maxHealth,
+    temporary: Boolean(temporary),
+    source: temporary ? "TEMPORARY_CANONICAL_LOCAL" : "CANONICAL_CHARACTER"
+  };
+}
+
+function buildLocalFourVFourFormation() {
+  const catalog = gachaController.getCharacters();
+  const inventory = gachaController.getState()?.inventory || {};
+  const rosterIds = typeof teamManager.getBattleRoster === "function" ? teamManager.getBattleRoster() : [];
+  const selectedCharacters = [];
+  const usedCharacterIds = new Set();
+  const isUnlocked = (id) => playerMetaRosterIntegration
+    ? playerMetaRosterIntegration.isUnlocked(id)
+    : Boolean(inventory[id]);
+
+  for (const id of rosterIds) {
+    if (selectedCharacters.length >= 4 || usedCharacterIds.has(id) || !isUnlocked(id)) continue;
+    const character = canonicalCharacterForBattle(id, catalog);
+    if (!character) continue;
+    selectedCharacters.push({ character, temporary: false });
+    usedCharacterIds.add(canonicalCharacterId(character));
+  }
+  for (const character of catalog) {
+    if (selectedCharacters.length >= 4) break;
+    const id = canonicalCharacterId(character);
+    if (!id || usedCharacterIds.has(id)) continue;
+    selectedCharacters.push({ character, temporary: !isUnlocked(id) });
+    usedCharacterIds.add(id);
+  }
+  if (selectedCharacters.length !== 4) throw new Error("CANONICAL_PLAYER_FORMATION_REQUIRES_FOUR_CHARACTERS");
+
+  const playerUnits = selectedCharacters.map(({ character, temporary }) =>
+    buildLocalFourVFourUnit(character, { team: "PLAYER", temporary })
+  );
+  const enemyCandidates = catalog.filter((character) => {
+    const id = canonicalCharacterId(character);
+    return id && !usedCharacterIds.has(id);
+  });
+  const enemyUnits = enemyCandidates.slice(0, 4).map((character) =>
+    buildLocalFourVFourUnit(character, { team: "ENEMY", temporary: false })
+  );
+  if (enemyUnits.length !== 4) throw new Error("CANONICAL_ENEMY_FORMATION_REQUIRES_FOUR_CHARACTERS");
+  return { playerUnits, enemyUnits };
+}
+
+function buildLocalFourVFourCombatInit() {
+  const { playerUnits, enemyUnits } = buildLocalFourVFourFormation();
+  const dto = applyActiveRoster(createDemoCombatInit());
+  const characterById = new Map(gachaController.getCharacters().map((unit) => [canonicalCharacterId(unit), unit]));
+  const battleUnits = [...playerUnits, ...enemyUnits];
+  const assetsById = new Map();
+  for (const unit of battleUnits) {
+    const character = characterById.get(unit.characterId);
+    if (!character || assetsById.has(unit.characterId)) continue;
+    const assets = activeAssetDescriptors(unit.characterId);
+    assetsById.set(unit.characterId, {
+      card: { ...assets.card, id: unit.characterId },
+      sprite: { ...assets.sprite, id: unit.characterId }
+    });
+  }
+  const assets = [...assetsById.values()];
+  const firstPlayer = playerUnits[0];
+  const firstEnemy = enemyUnits[0];
+  return {
+    ...dto,
+    type: "CombatInitDTO",
+    match_id: "local-4v4-" + String(Date.now()),
+    mode: "4v4",
+    game_mode: "4v4",
+    player_team_units: playerUnits,
+    enemy_team_units: enemyUnits,
+    home_team: { id: "local-player-team", name: "YOUR SQUAD", score: 0 },
+    away_team: { id: "local-rival-team", name: "RIVAL SQUAD", score: 0 },
+    batter: {
+      id: firstPlayer.id,
+      character_id: firstPlayer.characterId,
+      card_id: firstPlayer.characterId,
+      name: firstPlayer.displayName,
+      element: firstPlayer.element,
+      rarity: firstPlayer.rarity,
+      faction: firstPlayer.faction,
+      stats: { ...firstPlayer.stats },
+      stamina: firstPlayer.stats.stamina
+    },
+    pitcher: {
+      id: firstEnemy.id,
+      character_id: firstEnemy.characterId,
+      card_id: firstEnemy.characterId,
+      name: firstEnemy.displayName,
+      element: firstEnemy.element,
+      rarity: firstEnemy.rarity,
+      faction: firstEnemy.faction,
+      stats: { ...firstEnemy.stats },
+      stamina: firstEnemy.stats.stamina
+    },
+    assets: { ...(dto.assets || {}), cards: assets.map((entry) => entry.card), sprites: assets.map((entry) => entry.sprite) },
+    state: { ...(dto.state || {}), mode: "4v4", tactical_turn: 0, tactical_max_turns: 5 }
+  };
+}
+
+async function startLocalFourVFour() {
+  if (!gachaController.ready || !renderer) {
+    if (fourVFourStatus) fourVFourStatus.textContent = "4V4 UNAVAILABLE // CANONICAL CATALOG NOT READY";
+    return false;
+  }
+  if (fourVFourStatus) fourVFourStatus.textContent = "4V4 STARTING // PREPARING CANONICAL FORMATION";
+  try {
+    const dto = buildLocalFourVFourCombatInit();
+    // Reveal the actual combat canvas before initialization so renderer setup
+    // cannot remain suspended while HOME keeps the canvas hidden.
+    document.querySelector("#app-container")?.classList.add("is-combat-4v4");
+    mainMenu.navigate("combat");
+    if (startFourVFourButton) startFourVFourButton.hidden = true;
+    if (startFourVFourHomeButton) startFourVFourHomeButton.hidden = true;
+    if (returnFourVFourButton) returnFourVFourButton.hidden = true;
+    if (batButton) batButton.disabled = false;
+    await renderer.setCombatInit(dto);
+    // The existing default-demo bootstrap can short-circuit when a renderer
+    // session already exists. Explicitly hide its blocking overlay for this
+    // newly initialized 4v4 session before exposing canvas input to the player.
+    setLoading(false);
+    if (fourVFourStatus) {
+      const temporary = dto.player_team_units.filter((unit) => unit.temporary).length;
+      fourVFourStatus.textContent = "4V4 READY // PLAYER 4 • RIVALS 4"
+        + (temporary ? " • TEMPORARY LOCAL UNITS " + temporary + " *" : "")
+        + " • SELECT UNITS BY TAPPING THE FIELD";
+    }
+    return true;
+  } catch (error) {
+    if (fourVFourStatus) fourVFourStatus.textContent = "4V4 START FAILED // " + String(error.message || error);
+    if (startFourVFourHomeButton) startFourVFourHomeButton.hidden = true;
+    if (startFourVFourButton) startFourVFourButton.hidden = false;
+    if (returnFourVFourButton) returnFourVFourButton.hidden = false;
+    if (batButton) batButton.disabled = true;
+    return false;
+  }
+}
+
+startFourVFourButton?.addEventListener("click", () => { void startLocalFourVFour(); });
+startFourVFourHomeButton?.addEventListener("click", () => { void startLocalFourVFour(); });
+returnFourVFourButton?.addEventListener("click", () => {
+  document.querySelector("#app-container")?.classList.remove("is-combat-4v4");
+  mainMenu.navigate("home");
+  if (startFourVFourButton) startFourVFourButton.hidden = true;
+  if (startFourVFourHomeButton) startFourVFourHomeButton.hidden = false;
+  if (returnFourVFourButton) returnFourVFourButton.hidden = true;
+  if (fourVFourStatus) fourVFourStatus.textContent = "HOME // LOCAL 4V4 RESULT • NO PERSISTENT REWARD";
+});
+
 async function initializeDefaultDemo() {
   if (api.configured() || renderer.matchReady) return false;
   const demoInitDTO = applyActiveRoster(createDemoCombatInit());
@@ -1055,7 +1324,7 @@ function updatePlayHud() {
 }
 
 function syncRosterControls() {
-  if (!rosterActiveSelect || !rosterSupport0 || !rosterSupport1) return;
+  if (!rosterActiveSelect || !rosterSupport0 || !rosterSupport1 || !rosterSupport2) return;
   const characters = gachaController.getCharacters().filter((unit) => gachaController.getState().inventory?.[unit.character_id]);
   const addOptions = (select, selected, allowEmpty = false) => {
     select.replaceChildren();
@@ -1077,10 +1346,13 @@ function syncRosterControls() {
   addOptions(rosterActiveSelect, roster.active_batter, false);
   addOptions(rosterSupport0, roster.supports[0], true);
   addOptions(rosterSupport1, roster.supports[1], true);
+  addOptions(rosterSupport2, teamManager.getFourthMemberId(), true);
+  if (rosterSupport2?.options?.length) rosterSupport2.options[0].textContent = "TEMPORARY LOCAL IF EMPTY";
   if (rosterSummary) {
     const active = teamManager.getActiveWaifu();
     rosterSummary.textContent = "BATTER // " + (active?.canonical?.display_name || "NONE")
-      + " • SUPPORT // " + teamManager.getSupportIds().filter(Boolean).length + "/2";
+      + " • SUPPORT // " + teamManager.getSupportIds().filter(Boolean).length + "/2"
+      + " • 4V4 MEMBER // " + (teamManager.getFourthMemberId() || "TEMPORARY LOCAL");
   }
 }
 
@@ -1424,10 +1696,14 @@ rosterApplyButton?.addEventListener("click", () => {
     const active = rosterActiveSelect?.value;
     const support0 = rosterSupport0?.value || null;
     const support1 = rosterSupport1?.value || null;
+    const fourthMember = rosterSupport2?.value || null;
+    const selectedIds = [active, support0, support1, fourthMember].filter(Boolean);
+    if (new Set(selectedIds).size !== selectedIds.length) throw new Error("Cada integrante del equipo debe ser único.");
     teamManager.setActiveBatter(active);
     lockerRoom.setActiveWaifu(active);
     teamManager.setSupport(0, support0);
     teamManager.setSupport(1, support1);
+    teamManager.setFourthMember(fourthMember);
     syncRosterControls();
     homeView.refresh();
     lockerRoom.setActiveWaifu(active);

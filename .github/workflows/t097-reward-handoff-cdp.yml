@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - main
+      - bwm-099-normal-combat-authority-handoff
   push:
     branches:
       - main
@@ -11,6 +12,14 @@ on:
       - "webapp/js/character_journey_browser_probe.mjs"
       - "webapp/js/app.js"
       - "webapp/js/combat.js"
+      - "webapp/js/combat_session_authority.js"
+      - "webapp/js/combat_runtime_controller.js"
+      - "webapp/js/combat_stage.js"
+      - "webapp/js/team_manager.js"
+      - "webapp/js/home_view.js"
+      - "webapp/js/combat_4v4_authority_test.mjs"
+      - "webapp/js/team_manager_test.mjs"
+      - "webapp/js/home_view_test.mjs"
       - "webapp/js/reward_pipeline.js"
       - "webapp/js/reward_authority.js"
       - "webapp/js/bone004_reward_authority_test.mjs"
@@ -124,6 +133,19 @@ jobs:
         run: |
           set -euo pipefail
           node --check webapp/js/character_journey_browser_probe.mjs
+
+      - name: Run BWM-105 4v4 authority, roster and regression tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --experimental-default-type=module webapp/js/combat_4v4_authority_test.mjs
+          node --experimental-default-type=module webapp/js/combat_session_authority_test.mjs
+          node --experimental-default-type=module webapp/js/combat_runtime_controller_test.mjs
+          node --experimental-default-type=module webapp/js/combat_stage_test.mjs
+          node --experimental-default-type=module webapp/js/team_manager_test.mjs
+          node --experimental-default-type=module webapp/js/player_meta_roster_integration_test.mjs
+          node --experimental-default-type=module webapp/js/home_view_test.mjs
+
       - name: BONE-004 Reward Authority Contract
         shell: bash
         run: |
@@ -158,6 +180,27 @@ jobs:
           set -euo pipefail
           mkdir -p "$T072_EVIDENCE_DIR"
           node webapp/js/character_journey_browser_probe.mjs
+      - name: Run BWM-105 main WebApp real 4v4 browser integration
+        if: always()
+        shell: bash
+        env:
+          T072_SITE_DIR: site
+          T072_EVIDENCE_DIR: browser-evidence/BWM-105/$GITHUB_SHA/$GITHUB_RUN_ID
+          BWM105_4V4: "1"
+          BROWSER_BIN: ${{ steps.chrome.outputs.browser_bin }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$T072_EVIDENCE_DIR"
+          node webapp/js/character_journey_browser_probe.mjs
+
+      - name: Upload BWM-105 4v4 browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bwm-105-webapp-4v4-evidence
+          path: browser-evidence/BWM-105/
+          if-no-files-found: warn
+
       - name: Run T101 normal combat defeat proof
         if: always()
         shell: bash
