@@ -1266,6 +1266,7 @@ async function startLocalFourVFour() {
     const dto = buildLocalFourVFourCombatInit();
     // Reveal the actual combat canvas before initialization so renderer setup
     // cannot remain suspended while HOME keeps the canvas hidden.
+    document.querySelector("#app-container")?.classList.add("is-combat-4v4");
     mainMenu.navigate("combat");
     if (startFourVFourButton) startFourVFourButton.hidden = true;
     if (startFourVFourHomeButton) startFourVFourHomeButton.hidden = true;
@@ -1292,6 +1293,7 @@ async function startLocalFourVFour() {
 startFourVFourButton?.addEventListener("click", () => { void startLocalFourVFour(); });
 startFourVFourHomeButton?.addEventListener("click", () => { void startLocalFourVFour(); });
 returnFourVFourButton?.addEventListener("click", () => {
+  document.querySelector("#app-container")?.classList.remove("is-combat-4v4");
   mainMenu.navigate("home");
   if (startFourVFourButton) startFourVFourButton.hidden = true;
   if (startFourVFourHomeButton) startFourVFourHomeButton.hidden = false;
