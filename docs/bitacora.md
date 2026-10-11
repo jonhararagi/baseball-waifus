@@ -11534,3 +11534,103 @@ El reemplazo de actores tiene causa raíz reproducida y una regresión determini
 
 **Tiempo real invertido:** no medido por cronómetro.  
 **Timer de BWM-101-R7-C2:** estimación restante de 2–4 horas para cerrar el input crítico y verificar artefactos; reserva de 1–2 horas extra si aún hay variación de Chromium o se descubre otro fallo independiente. La duración del lanzamiento multiplataforma es una estimación aparte y no se deduce de este bloque.
+
+---
+
+## BWM-101-R7-C2 · Cierre final de timing determinista y causalidad de actores
+
+**Estado final de este bloque: PASS_REAL.** Esta entrada es la autoridad documental final de R7-C2 y reemplaza la matriz provisional anterior de esta misma tarea.
+
+**PR:** [#51](https://github.com/jonhararagi/baseball-waifus/pull/51), permanece abierto y sin fusionar.  
+**Rama:** bwm-099-normal-combat-authority-handoff.  
+**HEAD de PR probado:** d43ff480fce7bedb88ada6ba04c1933583c0b22c.  
+**SHA de main consultado:** 988c0fa3c7c17077d18e5f7f0722726cae39a197.  
+**SHA en el contexto real de GitHub Actions:** a861c145f960ac0308c9e8984e62466adc6e119b, commit sintético de CI con padres main 988c0fa3c7c17077d18e5f7f0722726cae39a197 y PR HEAD d43ff480fce7bedb88ada6ba04c1933583c0b22c.
+
+### Estado remoto y workflows finales
+
+El run histórico 38057001352 y el artefacto 11671773283 fueron puntos de partida, no validaciones del código final. La matriz actual viene del workflow recién completado:
+
+- CDP QA: [run 38114128417](https://github.com/jonhararagi/baseball-waifus/actions/runs/38114128417), completed/success en el SHA de PR d43ff480fce7bedb88ada6ba04c1933583c0b22c y SHA de contexto a861c145f960ac0308c9e8984e62466adc6e119b.
+- Visual QA: [run 38114128323](https://github.com/jonhararagi/baseball-waifus/actions/runs/38114128323), completed/success en el mismo HEAD de PR, con 16/16 jobs exitosos, incluido el job de tests frontend P1-P10.
+- PR #51 sigue open, merged=false y mergeable=true. main no fue modificada.
+
+### Causa raíz T101 demostrada mediante identidad de objeto
+
+La traza causal final [11693325747](https://github.com/jonhararagi/baseball-waifus/actions/runs/38114128417/artifacts/11693325747) registra 1135 eventos, cero eventos descartados, cero errores de instrumentación, cero excepciones de transición y cero excepciones ACTION → FOCUS.
+
+En la secuencia 247 de CombatStage.setActors(), el actor lógico bw001 recibe una referencia nueva en el mapa del stage, object-ref-21, mientras la formación conserva object-ref-4. El evento indica observedDivergentBeforeOperation=false y firstDivergenceInsideOperation=true. En la misma operación se detectan nuevas referencias para los otros tres jugadores y referencias antiguas aún presentes en la formación. Esta es la primera divergencia de referencia observada en el run actual.
+
+La corrección mínima en webapp/js/combat_presentation_director.js verifica la identidad de los actores actuales del stage frente a la formación y resincroniza la formación cuando no apunta a las mismas referencias. _finishFormationActorsForReplacement() finaliza primero la generación visual activa anterior, antes de crear o sincronizar la siguiente. La validación de estados de CharacterActor2D5 se mantiene intacta, sin añadir la transición permisiva ACTION → FOCUS.
+
+La regresión tools/qa/combat-presentation-director.actor-identity.test.mjs reproduce la excepción con la implementación legacy y confirma la secuencia corregida con identidad de referencia sincronizada y presentación en COMPLETE.
+
+### Correlación causal del Timing Ring
+
+La línea base real se captura en fase de captura del evento pointerdown, antes de que el handler del canvas llame al resolver. Geometría y destino se preparan por adelantado; el instante de envío se programa a partir de la ventana TimingState y muestras reales de latencia CDP. Cada prueba envía una sola secuencia física de mouseMoved, mousePressed y mouseReleased. El probe exige un solo pointerdown, un solo pointerup, un handler real y una única pareja resolver before/after; la relación obligatoria es before.seq = after.callSeq. El DTO real se guarda antes de validar el grado esperado.
+
+| Escenario | Pareja before.seq / after.callSeq | DTO real | Estado y frontera de recompensas |
+|---|---:|---|---|
+| T097 | 230 / 230 | GREAT, elapsed_ms 687, target_ms 720, delta_ms -33 | VICTORY/HOME_RUN; RETURN, COMPLETE y recarga; SCRAP autoritativo 0, persistido 0, ledger vacío. |
+| T109 ronda 1 | 158 / 158 | MISS, elapsed_ms 266, target_ms 720, delta_ms -454 | TACTICAL/STRIKE y lastTiming.round 1; SCRAP, persistencia y ledger sin cambios. |
+| T109 ronda 2 | 355 / 355 | MISS, elapsed_ms 265, target_ms 720, delta_ms -455 | TACTICAL/STRIKE y lastTiming.round 2; la segunda entrada física sí resuelve su propia ventana, sin victoria prematura. |
+| T111 | Paso terminal completado | Resolución terminal válida | VICTORY/HOME_RUN y RETURN/COMPLETE; SCRAP 0, persistido 0, ledger vacío. |
+| T117 | 230 / 230 | GREAT, elapsed_ms 705, target_ms 720, delta_ms -15 | Diagnóstico HIT_VICTORY; VICTORY/HOME_RUN, retorno a COMPLETE; SCRAP 0, persistido 0, ledger vacío. |
+| T118 | 158 / 158 | MISS, elapsed_ms 267, target_ms 720, delta_ms -453 | TACTICAL/STRIKE; lastTiming concuerda con el DTO y se conservan SCRAP 0, persistido 0 y ledger vacío. |
+| T114-R2 | 158 / 158 | GREAT, elapsed_ms 717, target_ms 720, delta_ms -3 | VICTORY/HOME_RUN, terminalBoundary.localRewardBlocked=true y expectedDelta=0. |
+
+Todos los archivos timing-input de esta matriz reportan PASS_CORRELATED_INPUT, sameWindowCorrelation=true y exactPointerBaselineCaptured=true.
+
+T097 captura VICTORY, retorno visual a COMPLETE y después recarga. La recarga reinicia la batalla local a TACTICAL, pero SCRAP autoritativo y persistido se mantienen en cero y rewardLedger sigue vacío. T117, además, demuestra que el recorrido terminal anteriormente dependiente de una espera fija de 620 ms ahora puede usar el helper determinista y obtener un GREAT correlacionado de la entrada física.
+
+### Matriz completa de validación en el run 38114128417
+
+| Validación | Resultado |
+|---|---|
+| Preflight de la copia temporal y manifiesto R7-C2 con 14 anclas | PASS |
+| Fixtures del harness: válidas, ancla ausente, ancla duplicada e idempotencia | PASS |
+| node --check del probe | PASS |
+| Regresión determinista de identidad de actores, incluidos legacy y fix | PASS |
+| T097 local demo, victoria, retorno, recarga y frontera negativa de recompensa | PASS |
+| T101 derrota, persistencia y guardas de post-terminal | PASS |
+| T109 dos rondas con MISS real correlacionado a cada ventana | PASS |
+| T111 frontera terminal de recompensas | PASS |
+| T117 Timing Ring terminal y VICTORY real con GREAT correlacionado | PASS |
+| T118 MISS no terminal, DTO real y persistencia/ledger | PASS |
+| T114-R2 recuperación terminal y frontera de recompensas | PASS |
+| Contrato BONE-004 Reward Authority | PASS |
+| BONE-004 Native Chromium Reward Authority Validation | PASS |
+| Publicación de artefactos, incluidas trazas causales después de fallos | PASS |
+| Visual QA y suite frontend P1-P10 | PASS, 16/16 jobs |
+
+### Archivos modificados en este bloque
+
+- webapp/js/character_journey_browser_probe.mjs: helper temporal de Timing Ring compartido por T097/T109/T117/T118/T114-R2, correlación de DTO y secuencia física, planificación usando bandas reales y espera robusta de Home/Aiko.
+- tools/qa/bwm101r5-instrumentation.js: identidades estables de objetos, eventos lifecycle reduciendo el ruido de _ensureRuntimeFormation, baseline exacto de pointerdown y snapshots ligeros sin clonar la autoridad durante la entrada física.
+- tools/qa/instrument-browser-site.mjs y tools/qa/instrument-browser-site.test.mjs: manifiesto R7-C2, 14 anclas y fixtures actualizadas.
+- webapp/js/combat_presentation_director.js: reparación mínima de la sincronización de referencias stage/formación.
+- tools/qa/combat-presentation-director.actor-identity.test.mjs: reproducción de la excepción legacy y regresión de la corrección.
+- .github/workflows/t097-reward-handoff-cdp.yml: ejecución de regresión causal y publicación de evidencias con if: always().
+- docs/bitacora.md: esta entrada final.
+
+No se modificaron reglas de combate, daño, stamina, Timing Ring productivo, balance, economía, SCRAP, rewardLedger, gacha, pity, autenticación, attestation ni criptografía. El test local no representa un canje productivo contra un backend; las evidencias mantienen explícita la frontera negativa de recompensa local.
+
+### Enlaces a runs y artefactos finales
+
+- [CDP QA final, 38114128417](https://github.com/jonhararagi/baseball-waifus/actions/runs/38114128417)
+- [Visual QA final, 38114128323](https://github.com/jonhararagi/baseball-waifus/actions/runs/38114128323)
+- [T097, artefacto 11693161096](https://github.com/jonhararagi/baseball-waifus/actions/runs/38114128417/artifacts/11693161096)
+- [T101, artefacto 11692971513](https://github.com/jonhararagi/baseball-waifus/actions/runs/38114128417/artifacts/11692971513)
+- [T109, artefacto 11692901723](https://github.com/jonhararagi/baseball-waifus/actions/runs/38114128417/artifacts/11692901723)
+- [T111, artefacto 11692502839](https://github.com/jonhararagi/baseball-waifus/actions/runs/38114128417/artifacts/11692502839)
+- [T117, artefacto 11692338266](https://github.com/jonhararagi/baseball-waifus/actions/runs/38114128417/artifacts/11692338266)
+- [T118, artefacto 11692522785](https://github.com/jonhararagi/baseball-waifus/actions/runs/38114128417/artifacts/11692522785)
+- [T114-R2, artefacto 11692782318](https://github.com/jonhararagi/baseball-waifus/actions/runs/38114128417/artifacts/11692782318)
+- [T101/T118 trazas causales, artefacto 11693325747](https://github.com/jonhararagi/baseball-waifus/actions/runs/38114128417/artifacts/11693325747)
+- [BONE-004, artefacto 11693235546](https://github.com/jonhararagi/baseball-waifus/actions/runs/38114128417/artifacts/11693235546)
+
+### Timer y entrega
+
+Tiempo invertido medido con cronómetro: no disponible; no se inventa. La reserva inicial de BWM-101-R7-C2 fue de 3–6 horas. El bloque funcional queda completado; queda verificar la CI disparada por este commit documental. No se deduce la duración global del proyecto a partir de este bloque.
+
+**Estado del PR al cierre funcional:** #51 continúa open, sin fusionar. main no fue modificada.
