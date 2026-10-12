@@ -657,6 +657,7 @@ async function run() {
       return;
     }
 
+    if (!T097_REWARD_HANDOFF) {
     const defaultHome = await waitFor(
       async () => cdpEvaluate(cdp, `(() => {
         const root = document.querySelector("#home-view");
@@ -815,6 +816,8 @@ async function run() {
       console.log("TOUCH POINTERDOWN = "+touchPointer);
       console.log("DIAGNOSIS = "+diagnosis);
       return;
+    }
+
     }
 
     if (T097_REWARD_HANDOFF) {
