@@ -5,10 +5,6 @@ import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { stat, readFile } from "node:fs/promises";
 import { extname, normalize, relative, resolve, join } from "node:path";
 import { tmpdir } from "node:os";
-import { createAuthorityServer } from "../../backend/src/server.mjs";
-import { loadConfig } from "../../backend/src/config.mjs";
-import { InMemoryCombatStore } from "../../backend/src/combat_store.mjs";
-import { createEphemeralTestSigner } from "../../backend/src/attestation_signer.mjs";
 
 const T073_PRESENTATION = process.env.T073_PRESENTATION === "1";
 const T074_ART = process.env.T074_ART === "1";
@@ -73,6 +69,17 @@ async function waitFor(condition, { timeoutMs = 30000, intervalMs = 250, label =
 }
 
 async function startTestAuthorityServer() {
+  const [
+    { createAuthorityServer },
+    { loadConfig },
+    { InMemoryCombatStore },
+    { createEphemeralTestSigner }
+  ] = await Promise.all([
+    import("../../backend/src/server.mjs"),
+    import("../../backend/src/config.mjs"),
+    import("../../backend/src/combat_store.mjs"),
+    import("../../backend/src/attestation_signer.mjs")
+  ]);
   const config = loadConfig({
     NODE_ENV: "test",
     PORT: "0",
