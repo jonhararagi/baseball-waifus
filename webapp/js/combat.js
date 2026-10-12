@@ -1340,10 +1340,14 @@ export class CombatRenderer {
       this._drawNeonParticles(target);
     }
 
+    const isFourVFour = String(this.state?.game_mode || this.state?.mode || "").toLowerCase() === "4v4";
     if (this.matchReady && this.state) {
       this._syncCinematicOverlayState();
       target.save();
-      this.combatPresentation.applyCamera(target, w, h);
+      // Single-batter presentation uses a camera zoom/pan to dramatize one
+      // character. Applying that same transform to 4v4 crops the outside
+      // players and magnifies their selection rings over the live Timing Ring.
+      if (!isFourVFour) this.combatPresentation.applyCamera(target, w, h);
       this._drawMatchState(target, w, h);
       target.restore();
       const presentation = this.combatPresentation.getState();
@@ -1352,7 +1356,6 @@ export class CombatRenderer {
       }
     }
 
-    const isFourVFour = String(this.state?.game_mode || this.state?.mode || "").toLowerCase() === "4v4";
     if (this.kytosPresentationState && !isFourVFour) {
       this.kytosPresentation.render(target, w, h, this.kytosPresentationState, { time });
       this.batterRenderer.draw(target, w, h, {
@@ -1418,7 +1421,8 @@ export class CombatRenderer {
   _syncCinematicOverlayState() {
     const presentation = this.combatPresentation?.getState?.() || {};
     const active = Boolean(presentation.active);
-    const ultimateActive = active && String(presentation.sequenceKind || "").startsWith("ULTIMATE");
+    const isFourVFour = String(this.state?.game_mode || this.state?.mode || "").toLowerCase() === "4v4";
+    const ultimateActive = !isFourVFour && active && String(presentation.sequenceKind || "").startsWith("ULTIMATE");
     const card = this.activeWaifuCard || document.querySelector("#active-waifu-card");
     const feedback = this.timingFeedback || document.querySelector("#timing-feedback");
     const root = document.querySelector("#app-container");
@@ -1557,10 +1561,12 @@ export class CombatRenderer {
   }
 
   _drawMatchState(ctx, w, h) {
-    const camera = this.combatPresentation.getCameraTransform({ width: w, height: h });
+    const isFourVFour = String(this.state?.game_mode || this.state?.mode || "").toLowerCase() === "4v4";
+    const camera = isFourVFour
+      ? { phase: "FORMATION", focusTarget: "COMBAT", zoom: 1, x: 0, y: 0, rotationDeg: 0, progress: 1, easing: "linear" }
+      : this.combatPresentation.getCameraTransform({ width: w, height: h });
     const groundColor = this.themeManager.getCurrentTheme()?.groundColor || "#10162a";
     const ultimateActive = String(this.combatPresentation.getState().sequenceKind || "").startsWith("ULTIMATE");
-    const isFourVFour = String(this.state?.game_mode || this.state?.mode || "").toLowerCase() === "4v4";
     renderCombatStageWorld(ctx, this.combatStage, w, h, {
       cameraTransform: camera,
       groundColor,

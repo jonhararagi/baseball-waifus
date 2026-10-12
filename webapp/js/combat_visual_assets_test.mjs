@@ -102,3 +102,7 @@ const pointerHandler = combat.slice(
   combat.indexOf("this.handleDocumentVisibility = () => {")
 );
 assert.ok(!pointerHandler.includes("_compensateTimingFrameStall"), "pointerdown must not mutate the Timing Ring window after input capture");
+
+assert.ok(combat.includes("if (!isFourVFour) this.combatPresentation.applyCamera(target, w, h);"), "4v4 must not inherit the single-batter cinematic zoom/pan");
+assert.ok(combat.includes('focusTarget: "COMBAT", zoom: 1, x: 0, y: 0, rotationDeg: 0'), "4v4 stage background/parallax must use a neutral camera");
+assert.ok(combat.includes("const ultimateActive = !isFourVFour && active"), "single-batter cinematic UI must not take over the 4v4 HUD");
