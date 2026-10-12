@@ -908,13 +908,17 @@ async function run() {
         6000
       );
 
-      const timingElapsedAtInput = await waitFor(
+      const timingTargetState = await waitFor(
         async () => {
-          const elapsed = await cdpEvaluate(cdp, "window.__BW_T097_TIMING_ELAPSED__?.()");
-          return Number.isFinite(Number(elapsed)) && Number(elapsed) >= 690 && Number(elapsed) <= 760 ? Number(elapsed) : false;
+          const state = await cdpEvaluate(cdp, "window.__BW_T097_TIMING_STATE__?.()");
+          if (!state?.active || !Number.isFinite(Number(state.elapsedMs)) || !Number.isFinite(Number(state.targetMs))) return false;
+          const greatWindowMs = Number.isFinite(Number(state.greatWindowMs)) ? Number(state.greatWindowMs) : 60;
+          const targetToleranceMs = Math.max(6, Math.min(20, greatWindowMs / 3));
+          return Math.abs(Number(state.elapsedMs) - Number(state.targetMs)) <= targetToleranceMs ? state : false;
         },
-        { timeoutMs: 5000, intervalMs: 5, label: "T097 timing target band" }
+        { timeoutMs: 5000, intervalMs: 1, label: "T097 live GREAT timing target band" }
       );
+      const timingElapsedAtInput = Number(timingTargetState.elapsedMs);
       const timing = await readRuntime();
       requireCondition(timing.timingActive === true, "T097 timing window closed before physical input", timing);
       const rect = await cdpEvaluate(cdp, "(() => { const c = document.querySelector('#gameCanvas'); const r = c?.getBoundingClientRect(); return r ? { left:r.left, top:r.top, width:r.width, height:r.height } : null; })()");
