@@ -264,7 +264,7 @@ async function dispatchCorrelatedTimingPointer(cdp, { task, attempt = 1, expecte
     };
     proof.schedule = {
       strategy: expectedGrade === "MISS" ? "early-outside-twice-hit-window" : "late-hit-window-margin-for-frame-stall-tolerance",
-      mechanism: "adaptive polling of the live logical Timing Ring clock; exact physical baseline is captured during window-capture pointerdown before canvas handler",
+      mechanism: "page-requestAnimationFrame synchronized reads of the logical Timing Ring clock; exact physical baseline is captured during window-capture pointerdown before canvas handler",
       scheduledElapsedMs, leadMs, initialElapsedMs: initial.elapsedMs, targetMs: initial.targetMs,
       hitWindowMs: initial.hitWindowMs, greatWindowMs: initial.greatWindowMs, durationMs: initial.durationMs,
       harnessSequenceAtSchedule: initial.sequence, harnessEventCountAtSchedule: initial.eventCount,
@@ -277,9 +277,16 @@ async function dispatchCorrelatedTimingPointer(cdp, { task, attempt = 1, expecte
     // the real CDP pointer immediately once the scheduled interval is reached.
     const plannedTimerWaitMs = proof.schedule.timerWaitMs;
     const timerStart = performance.now();
-    const clockDeadline = timerStart + Math.max(2500, Number(initial.durationMs || 860) * 3);
+    const clockDeadline = timerStart + Math.max(3500, Number(initial.durationMs || 860) * 4);
     let liveClock = initial;
     let timingClockPollCount = 0;
+    // Sample only from a page animation frame. CombatRenderer's frame callback
+    // was registered earlier and applies any pending stall compensation before
+    // this later callback runs. A normal Runtime.evaluate poll can read 815ms,
+    // then encounter a 350ms stall which rewinds the logical clock to 480ms
+    // before CDP delivers the click. Frame-synchronized reads avoid that stale
+    // sample/dispatch race and preserve evidence of any shift that did occur.
+    const frameClockExpression = "new Promise(resolve => requestAnimationFrame(() => resolve(" + clockExpression + ")))";
     while (Number(liveClock?.elapsedMs) < scheduledElapsedMs) {
       requireCondition(liveClock?.active === true, task + " Timing Ring closed before the scheduled physical input", liveClock);
       requireCondition(liveClock.phase === "CLIMAX" && liveClock.round === initial.round
@@ -287,13 +294,9 @@ async function dispatchCorrelatedTimingPointer(cdp, { task, attempt = 1, expecte
         && liveClock.durationMs === initial.durationMs,
         task + " Timing Ring identity changed while scheduling correlated input", { initial, liveClock });
       requireCondition(performance.now() < clockDeadline,
-        task + " timed out synchronizing to live Timing Ring elapsed clock",
+        task + " timed out synchronizing to live Timing Ring animation-frame clock",
         { scheduledElapsedMs, liveClock, timingClockPollCount });
-      const remainingMs = scheduledElapsedMs - Number(liveClock.elapsedMs);
-      // Short bounded waits limit polling overhead; every decision uses the
-      // current browser clock again, so frame-stall compensation cannot skew it.
-      await sleep(Math.max(1, Math.min(8, remainingMs - 6)));
-      liveClock = await cdpEvaluate(cdp, clockExpression);
+      liveClock = await cdpEvaluate(cdp, frameClockExpression);
       timingClockPollCount += 1;
     }
     requireCondition(liveClock?.active === true && liveClock.phase === "CLIMAX"
