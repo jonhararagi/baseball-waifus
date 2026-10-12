@@ -6,11 +6,11 @@ export const AREA_THEMES = Object.freeze({
   cyberpunk: Object.freeze({
     id: "cyberpunk",
     name: "Sector Neón 01",
-    bgParallax: "./assets/stadiums/cyber_city_bg.png",
-    groundTexture: "./assets/stadiums/cyber_dirt.png",
+    bgParallax: "./assets/stadiums/cyber_city_bg.svg",
+    groundTexture: "./assets/stadiums/cyber_dirt.svg",
     groundColor: "#0b0b1a",
-    pitcherSprite: "./assets/characters/pitcher_android.png",
-    catcherSprite: "./assets/characters/catcher_cyber.png",
+    pitcherSprite: "./assets/characters/pitcher_android.svg",
+    catcherSprite: "./assets/characters/catcher_cyber.svg",
     strikeZoneColor: "#00f0ff",
     particleColor: "rgba(0, 240, 255, 0.6)",
     pitcherBlur: 3
