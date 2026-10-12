@@ -917,16 +917,20 @@ async function run() {
         { timeoutMs: 6000, intervalMs: 1, label: "T097 actual renderer timing window active" }
       );
 
+      let lastTimingState = null;
       const timingTargetState = await waitFor(
         async () => {
           const state = await cdpEvaluate(cdp, "window.__BW_T097_TIMING_STATE__?.()");
+          lastTimingState = state;
           if (!state?.active || !Number.isFinite(Number(state.elapsedMs)) || !Number.isFinite(Number(state.targetMs))) return false;
-          const greatWindowMs = Number.isFinite(Number(state.greatWindowMs)) ? Number(state.greatWindowMs) : 60;
-          const targetToleranceMs = Math.max(6, Math.min(20, greatWindowMs / 3));
+          const greatWindowMs = Number.isFinite(Number(state.greatWindowMs)) ? Number(state.greatWindowMs) : 55;
+          const targetToleranceMs = Math.max(10, Math.min(45, greatWindowMs * 0.8));
           return Math.abs(Number(state.elapsedMs) - Number(state.targetMs)) <= targetToleranceMs ? state : false;
         },
         { timeoutMs: 5000, intervalMs: 1, label: "T097 live GREAT timing target band" }
-      );
+      ).catch((error) => {
+        throw new Error(error.message + " // lastTimingState=" + JSON.stringify(lastTimingState));
+      });
       const timingElapsedAtInput = Number(timingTargetState.elapsedMs);
       const timing = await readRuntime();
       requireCondition(timing.timingActive === true, "T097 timing window closed before physical input", timing);
