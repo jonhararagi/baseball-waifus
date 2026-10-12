@@ -902,10 +902,12 @@ async function run() {
       }
 
       await mark("CLIMAX", (state) => state.battlePhase === "CLIMAX" && state.tacticalTurn === 5);
-      await mark(
-        "TIMING ACTIVE",
-        (state) => state.battlePhase === "CLIMAX" && state.tacticalTurn === 5 && state.timingActive === true,
-        6000
+      await waitFor(
+        async () => {
+          const state = await cdpEvaluate(cdp, "window.__BW_T097_TIMING_STATE__?.()");
+          return state?.active ? state : false;
+        },
+        { timeoutMs: 6000, intervalMs: 1, label: "T097 actual renderer timing window active" }
       );
 
       const timingTargetState = await waitFor(
