@@ -916,20 +916,43 @@ async function run() {
       }
 
       await mark("CLIMAX", (state) => state.battlePhase === "CLIMAX" && state.tacticalTurn === 5);
-      const terminalTimingAction = await waitFor(
-        async () => {
-          const entry = [...authorityTrace].reverse().find((item) =>
-            item.type === "TurnResultDTO" && item.outcome === "VICTORY" && item.attestationPresent
-          );
-          return entry || false;
-        },
-        { timeoutMs: 10000, intervalMs: 20, label: "T097 signed terminal result after actual client timing resolution" }
-      );
-      requireCondition(
-        ["GREAT", "HIT"].includes(String(terminalTimingAction.timingGrade || "").toUpperCase()),
-        "T097 server did not receive an accepted timing grade in the nested action contract",
-        terminalTimingAction
-      );
+      let terminalTimingAction = null;
+      if (T097_SERVER_AUTHORITY) {
+        terminalTimingAction = await waitFor(
+          async () => {
+            const entry = [...authorityTrace].reverse().find((item) =>
+              item.type === "TurnResultDTO" && item.outcome === "VICTORY" && item.attestationPresent
+            );
+            return entry || false;
+          },
+          { timeoutMs: 10000, intervalMs: 20, label: "T097 signed terminal result after actual client timing resolution" }
+        );
+        requireCondition(
+          ["GREAT", "HIT"].includes(String(terminalTimingAction.timingGrade || "").toUpperCase()),
+          "T097 server did not receive an accepted timing grade in the nested action contract",
+          terminalTimingAction
+        );
+      } else {
+        const rect = await cdpEvaluate(cdp, "(() => { const c = document.querySelector('#gameCanvas'); const r = c?.getBoundingClientRect(); return r ? { left:r.left, top:r.top, width:r.width, height:r.height } : null; })()");
+        requireCondition(rect && rect.width > 0 && rect.height > 0, "T097 local timing canvas geometry unavailable", rect);
+        const clickX = rect.left + rect.width / 2;
+        const clickY = rect.top + rect.height / 2;
+        const target = await cdpEvaluate(cdp, "(() => { const e = document.elementFromPoint(" + clickX + ", " + clickY + "); return { tag:e?.tagName || '', id:e?.id || '', isCanvas:e === document.querySelector('#gameCanvas') }; })()");
+        requireCondition(target.isCanvas === true, "T097 local timing target is not the game canvas", target);
+        await cdp.send("Input.setIgnoreInputEvents", { ignore: false });
+        await waitFor(
+          async () => {
+            const state = await cdpEvaluate(cdp, "window.__BW_T097_TIMING_STATE__?.()");
+            if (!state?.active || !Number.isFinite(Number(state.elapsedMs)) || !Number.isFinite(Number(state.targetMs))) return false;
+            const delta = Number(state.elapsedMs) - Number(state.targetMs);
+            const greatWindow = Number.isFinite(Number(state.greatWindowMs)) ? Number(state.greatWindowMs) : 55;
+            return delta >= -Math.min(40, greatWindow * 0.75) && delta <= -Math.min(10, greatWindow * 0.2) ? state : false;
+          },
+          { timeoutMs: 10000, intervalMs: 1, label: "T097 local GREAT timing target" }
+        );
+        await cdp.send("Input.dispatchMouseEvent", { type:"mousePressed", x:clickX, y:clickY, button:"left", buttons:1, clickCount:1 });
+        await cdp.send("Input.dispatchMouseEvent", { type:"mouseReleased", x:clickX, y:clickY, button:"left", buttons:0, clickCount:1 });
+      }
       const victory = await mark(
         "VICTORY",
         (state) => state.battlePhase === "VICTORY" && Boolean(state.combatResult),
