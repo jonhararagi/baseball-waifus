@@ -333,6 +333,7 @@ async function run() {
     await cdp.send("Runtime.enable");
     await cdp.send("Log.enable");
     await cdp.send("Network.enable");
+    if (T097_SERVER_AUTHORITY) await cdp.send("Network.setBypassServiceWorker", { bypass: true });
 
     const bone008PlayerMetaFixture = "{\"schemaVersion\":1,\"revision\":1,\"state\":{\"schemaVersion\":1,\"identity\":{\"playerId\":\"local-player\",\"provider\":\"local\"},\"inventory\":{\"characters\":{\"bw001\":{\"quantity\":1,\"unlocked\":true}}},\"currencies\":{\"SCRAP\":0,\"FRAGMENTS\":0},\"gacha\":{\"pullsSinceUR\":0},\"unlocks\":{},\"progression\":{\"characters\":{\"bw001\":{\"level\":1}}},\"roster\":{\"activeBatter\":\"bw001\",\"supports\":[null,null]},\"rewardLedger\":{}}}";
     let persistedFixture = null;
@@ -844,7 +845,7 @@ async function run() {
           await sleep(25);
         }
         state = await readRuntime();
-        throw new Error("T097 TIMEOUT: " + name + " " + JSON.stringify(state));
+        throw new Error("T097 TIMEOUT: " + name + " " + JSON.stringify({ state, authorityTrace }));
       };
 
       const t097Url = baseUrl + "?qa=t097" + (T097_SERVER_AUTHORITY ? "&match=" + encodeURIComponent(serverMatchId) : "");
