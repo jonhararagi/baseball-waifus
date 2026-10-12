@@ -880,11 +880,11 @@ async function run() {
 
       for (const turn of [1, 2, 3, 4, 5]) {
         const targetBattlePhase = turn === 5 ? "CLIMAX" : "TACTICAL";
-        await mark(
-          "TACTICAL " + String(turn),
-          (state) => state.tacticalTurn === turn && state.battlePhase === targetBattlePhase
-        );
         if (T097_SERVER_AUTHORITY) {
+          await mark(
+            "TACTICAL " + String(turn) + " READY",
+            (state) => state.battlePhase === "TACTICAL" && state.tacticalTurn === turn
+          );
           await waitFor(
             async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#action-bat') && !document.querySelector('#action-bat').disabled)"),
             { timeoutMs: 6000, label: "T097 server BATEAR ready for T" + String(turn) }
@@ -895,17 +895,25 @@ async function run() {
               "TACTICAL " + String(turn) + " COMPLETE",
               (state) => state.presentationPhase === "COMPLETE" && state.presentationActive === false
             );
+          } else {
+            await mark("CLIMAX", (state) => state.battlePhase === "CLIMAX" && state.tacticalTurn === 5);
           }
-        } else if (turn < 5) {
+        } else {
           await mark(
-            "TACTICAL " + String(turn) + " COMPLETE",
-            (state) => state.tacticalTurn === turn && state.presentationPhase === "COMPLETE" && state.presentationActive === false
+            "TACTICAL " + String(turn),
+            (state) => state.tacticalTurn === turn && state.battlePhase === targetBattlePhase
           );
-          await waitFor(
-            async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#action-bat') && !document.querySelector('#action-bat').disabled)"),
-            { timeoutMs: 6000, label: "T097 BATEAR ready before T" + String(turn + 1) }
-          );
-          await cdpClickSelector(cdp, "#action-bat");
+          if (turn < 5) {
+            await mark(
+              "TACTICAL " + String(turn) + " COMPLETE",
+              (state) => state.tacticalTurn === turn && state.presentationPhase === "COMPLETE" && state.presentationActive === false
+            );
+            await waitFor(
+              async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#action-bat') && !document.querySelector('#action-bat').disabled)"),
+              { timeoutMs: 6000, label: "T097 BATEAR ready before T" + String(turn + 1) }
+            );
+            await cdpClickSelector(cdp, "#action-bat");
+          }
         }
       }
 
