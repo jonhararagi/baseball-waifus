@@ -1,4 +1,4 @@
-const IMAGE_PROVIDER_BASE = "https://api.dicebear.com/9.x/lorelei/png";
+const LOCAL_CHARACTER_ASSET_BASE = "./assets/characters/";
 const CONFIG_URL = "./data/waifus_config.json";
 const CONFIG_STORAGE_KEY = "baseball_waifus_waifu_config_v2";
 
@@ -20,9 +20,9 @@ const MEMORY_FALLBACK_CONFIG = {
       "species": "capybara",
       "role": "Slugger",
       "archetype": "POWER",
-      "avatar_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Cari-Capybara&size=512&backgroundColor=0b0b14",
-      "card_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Cari-Capybara-Card&size=1024&backgroundColor=0b0b14",
-      "cutin_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Cari-Capybara-Cutin&size=1024&backgroundColor=0b0b14",
+      "avatar_url": "./assets/characters/cari.svg",
+      "card_art_url": "./assets/characters/cari.svg",
+      "cutin_art_url": "./assets/characters/cari.svg",
       "power": 82,
       "contact": 74,
       "speed": 78,
@@ -32,9 +32,9 @@ const MEMORY_FALLBACK_CONFIG = {
       "quote_victory": "¡Ganamos! ¡Eso estuvo genial!",
       "jiggle_intensity": 0.18,
       "assets": {
-        "avatar": "https://api.dicebear.com/9.x/lorelei/png?seed=Cari-Capybara&size=512&backgroundColor=0b0b14",
-        "card_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Cari-Capybara-Card&size=1024&backgroundColor=0b0b14",
-        "cutin_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Cari-Capybara-Cutin&size=1024&backgroundColor=0b0b14"
+        "avatar": "./assets/characters/cari.svg",
+        "card_art": "./assets/characters/cari.svg",
+        "cutin_art": "./assets/characters/cari.svg"
       }
     },
     {
@@ -44,9 +44,9 @@ const MEMORY_FALLBACK_CONFIG = {
       "species": "capybara",
       "role": "Strategist",
       "archetype": "EYE",
-      "avatar_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Cami-Capybara&size=512&backgroundColor=0b0b14",
-      "card_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Cami-Capybara-Card&size=1024&backgroundColor=0b0b14",
-      "cutin_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Cami-Capybara-Cutin&size=1024&backgroundColor=0b0b14",
+      "avatar_url": "./assets/characters/cami.svg",
+      "card_art_url": "./assets/characters/cami.svg",
+      "cutin_art_url": "./assets/characters/cami.svg",
       "power": 62,
       "contact": 76,
       "speed": 61,
@@ -56,9 +56,9 @@ const MEMORY_FALLBACK_CONFIG = {
       "quote_victory": "Funcionó exactamente como esperaba.",
       "jiggle_intensity": 0.08,
       "assets": {
-        "avatar": "https://api.dicebear.com/9.x/lorelei/png?seed=Cami-Capybara&size=512&backgroundColor=0b0b14",
-        "card_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Cami-Capybara-Card&size=1024&backgroundColor=0b0b14",
-        "cutin_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Cami-Capybara-Cutin&size=1024&backgroundColor=0b0b14"
+        "avatar": "./assets/characters/cami.svg",
+        "card_art": "./assets/characters/cami.svg",
+        "cutin_art": "./assets/characters/cami.svg"
       }
     },
     {
@@ -68,9 +68,9 @@ const MEMORY_FALLBACK_CONFIG = {
       "species": "serpent",
       "role": "Vanguard",
       "archetype": "POWER",
-      "avatar_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Sunna-Serpent&size=512&backgroundColor=0b0b14",
-      "card_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Sunna-Serpent-Card&size=1024&backgroundColor=0b0b14",
-      "cutin_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Sunna-Serpent-Cutin&size=1024&backgroundColor=0b0b14",
+      "avatar_url": "./assets/characters/sunna.svg",
+      "card_art_url": "./assets/characters/sunna.svg",
+      "cutin_art_url": "./assets/characters/sunna.svg",
       "power": 79,
       "contact": 66,
       "speed": 69,
@@ -80,9 +80,9 @@ const MEMORY_FALLBACK_CONFIG = {
       "quote_victory": "¡Lo logramos!",
       "jiggle_intensity": 0.12,
       "assets": {
-        "avatar": "https://api.dicebear.com/9.x/lorelei/png?seed=Sunna-Serpent&size=512&backgroundColor=0b0b14",
-        "card_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Sunna-Serpent-Card&size=1024&backgroundColor=0b0b14",
-        "cutin_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Sunna-Serpent-Cutin&size=1024&backgroundColor=0b0b14"
+        "avatar": "./assets/characters/sunna.svg",
+        "card_art": "./assets/characters/sunna.svg",
+        "cutin_art": "./assets/characters/sunna.svg"
       }
     },
     {
@@ -92,9 +92,9 @@ const MEMORY_FALLBACK_CONFIG = {
       "species": "mouse",
       "role": "Contact",
       "archetype": "CONTACT",
-      "avatar_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Chie-Mouse&size=512&backgroundColor=0b0b14",
-      "card_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Chie-Mouse-Card&size=1024&backgroundColor=0b0b14",
-      "cutin_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Chie-Mouse-Cutin&size=1024&backgroundColor=0b0b14",
+      "avatar_url": "./assets/characters/chie.svg",
+      "card_art_url": "./assets/characters/chie.svg",
+      "cutin_art_url": "./assets/characters/chie.svg",
       "power": 58,
       "contact": 89,
       "speed": 84,
@@ -104,9 +104,9 @@ const MEMORY_FALLBACK_CONFIG = {
       "quote_victory": "¡Kachi desu!",
       "jiggle_intensity": 0.1,
       "assets": {
-        "avatar": "https://api.dicebear.com/9.x/lorelei/png?seed=Chie-Mouse&size=512&backgroundColor=0b0b14",
-        "card_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Chie-Mouse-Card&size=1024&backgroundColor=0b0b14",
-        "cutin_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Chie-Mouse-Cutin&size=1024&backgroundColor=0b0b14"
+        "avatar": "./assets/characters/chie.svg",
+        "card_art": "./assets/characters/chie.svg",
+        "cutin_art": "./assets/characters/chie.svg"
       }
     },
     {
@@ -116,9 +116,9 @@ const MEMORY_FALLBACK_CONFIG = {
       "species": "fruit_bat",
       "role": "Slugger",
       "archetype": "POWER",
-      "avatar_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Scarlet-Bat&size=512&backgroundColor=0b0b14",
-      "card_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Scarlet-Bat-Card&size=1024&backgroundColor=0b0b14",
-      "cutin_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Scarlet-Bat-Cutin&size=1024&backgroundColor=0b0b14",
+      "avatar_url": "./assets/characters/scarlet.svg",
+      "card_art_url": "./assets/characters/scarlet.svg",
+      "cutin_art_url": "./assets/characters/scarlet.svg",
       "power": 86,
       "contact": 71,
       "speed": 67,
@@ -128,9 +128,9 @@ const MEMORY_FALLBACK_CONFIG = {
       "quote_victory": "¡Victoria dulce!",
       "jiggle_intensity": 0.22,
       "assets": {
-        "avatar": "https://api.dicebear.com/9.x/lorelei/png?seed=Scarlet-Bat&size=512&backgroundColor=0b0b14",
-        "card_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Scarlet-Bat-Card&size=1024&backgroundColor=0b0b14",
-        "cutin_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Scarlet-Bat-Cutin&size=1024&backgroundColor=0b0b14"
+        "avatar": "./assets/characters/scarlet.svg",
+        "card_art": "./assets/characters/scarlet.svg",
+        "cutin_art": "./assets/characters/scarlet.svg"
       }
     },
     {
@@ -140,9 +140,9 @@ const MEMORY_FALLBACK_CONFIG = {
       "species": "fruit_bat",
       "role": "Support",
       "archetype": "SPEED",
-      "avatar_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Chloe-Bat&size=512&backgroundColor=0b0b14",
-      "card_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Chloe-Bat-Card&size=1024&backgroundColor=0b0b14",
-      "cutin_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Chloe-Bat-Cutin&size=1024&backgroundColor=0b0b14",
+      "avatar_url": "./assets/characters/chloe.svg",
+      "card_art_url": "./assets/characters/chloe.svg",
+      "cutin_art_url": "./assets/characters/chloe.svg",
       "power": 59,
       "contact": 72,
       "speed": 93,
@@ -152,9 +152,9 @@ const MEMORY_FALLBACK_CONFIG = {
       "quote_victory": "Buen trabajo.",
       "jiggle_intensity": 0.14,
       "assets": {
-        "avatar": "https://api.dicebear.com/9.x/lorelei/png?seed=Chloe-Bat&size=512&backgroundColor=0b0b14",
-        "card_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Chloe-Bat-Card&size=1024&backgroundColor=0b0b14",
-        "cutin_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Chloe-Bat-Cutin&size=1024&backgroundColor=0b0b14"
+        "avatar": "./assets/characters/chloe.svg",
+        "card_art": "./assets/characters/chloe.svg",
+        "cutin_art": "./assets/characters/chloe.svg"
       }
     },
     {
@@ -164,9 +164,9 @@ const MEMORY_FALLBACK_CONFIG = {
       "species": "wolf",
       "role": "Runner",
       "archetype": "SPEED",
-      "avatar_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Fenrir-Wolf&size=512&backgroundColor=0b0b14",
-      "card_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Fenrir-Wolf-Card&size=1024&backgroundColor=0b0b14",
-      "cutin_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Fenrir-Wolf-Cutin&size=1024&backgroundColor=0b0b14",
+      "avatar_url": "./assets/characters/fenrir.svg",
+      "card_art_url": "./assets/characters/fenrir.svg",
+      "cutin_art_url": "./assets/characters/fenrir.svg",
       "power": 72,
       "contact": 68,
       "speed": 96,
@@ -176,9 +176,9 @@ const MEMORY_FALLBACK_CONFIG = {
       "quote_victory": "¡Esta carrera es mía!",
       "jiggle_intensity": 0.1,
       "assets": {
-        "avatar": "https://api.dicebear.com/9.x/lorelei/png?seed=Fenrir-Wolf&size=512&backgroundColor=0b0b14",
-        "card_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Fenrir-Wolf-Card&size=1024&backgroundColor=0b0b14",
-        "cutin_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Fenrir-Wolf-Cutin&size=1024&backgroundColor=0b0b14"
+        "avatar": "./assets/characters/fenrir.svg",
+        "card_art": "./assets/characters/fenrir.svg",
+        "cutin_art": "./assets/characters/fenrir.svg"
       }
     },
     {
@@ -188,9 +188,9 @@ const MEMORY_FALLBACK_CONFIG = {
       "species": "human",
       "role": "Legend",
       "archetype": "POWER",
-      "avatar_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Roxie-Vane&size=512&backgroundColor=0b0b14",
-      "card_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Roxie-Vane-Card&size=1024&backgroundColor=0b0b14",
-      "cutin_art_url": "https://api.dicebear.com/9.x/lorelei/png?seed=Roxie-Vane-Cutin&size=1024&backgroundColor=0b0b14",
+      "avatar_url": "./assets/characters/roxie_vane.svg",
+      "card_art_url": "./assets/characters/roxie_vane.svg",
+      "cutin_art_url": "./assets/characters/roxie_vane.svg",
       "power": 90,
       "contact": 74,
       "speed": 70,
@@ -200,9 +200,9 @@ const MEMORY_FALLBACK_CONFIG = {
       "quote_victory": "¡That's a home run!",
       "jiggle_intensity": 0.2,
       "assets": {
-        "avatar": "https://api.dicebear.com/9.x/lorelei/png?seed=Roxie-Vane&size=512&backgroundColor=0b0b14",
-        "card_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Roxie-Vane-Card&size=1024&backgroundColor=0b0b14",
-        "cutin_art": "https://api.dicebear.com/9.x/lorelei/png?seed=Roxie-Vane-Cutin&size=1024&backgroundColor=0b0b14"
+        "avatar": "./assets/characters/roxie_vane.svg",
+        "card_art": "./assets/characters/roxie_vane.svg",
+        "cutin_art": "./assets/characters/roxie_vane.svg"
       }
     }
   ]
@@ -240,6 +240,7 @@ function clampJiggle(value, fallback = 0.12) {
 
 function safeUrl(value, fallback) {
   const text = String(value || "").trim();
+  if (text.startsWith("./") && !text.startsWith(".//") && !text.includes("\\")) return text;
   try {
     return new URL(text).protocol === "https:" ? text : fallback;
   } catch {
@@ -251,10 +252,10 @@ function createGeneratedAssets(character = {}) {
   const name = String(character.name || character.id || "Waifu");
   const seed = encodeURIComponent(name + "-" + String(character.id || "waifu"));
   return {
-    avatar: IMAGE_PROVIDER_BASE + "?seed=" + seed + "-avatar&size=512&backgroundColor=0b0b14",
-    card_art: IMAGE_PROVIDER_BASE + "?seed=" + seed + "-card&size=1024&backgroundColor=0b0b14",
-    cutin_art: IMAGE_PROVIDER_BASE + "?seed=" + seed + "-cutin&size=1024&backgroundColor=0b0b14",
-    sprite: IMAGE_PROVIDER_BASE + "?seed=" + seed + "-sprite&size=256&backgroundColor=0b0b14"
+    avatar: LOCAL_CHARACTER_ASSET_BASE + id + ".svg",
+    card_art: LOCAL_CHARACTER_ASSET_BASE + id + ".svg",
+    cutin_art: LOCAL_CHARACTER_ASSET_BASE + id + ".svg",
+    sprite: LOCAL_CHARACTER_ASSET_BASE + id + ".svg"
   };
 }
 
