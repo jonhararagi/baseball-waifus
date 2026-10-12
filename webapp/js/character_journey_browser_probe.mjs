@@ -872,6 +872,12 @@ async function run() {
         async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#home-view') && !document.querySelector('#home-view').hidden)"),
         { timeoutMs: 30000, label: "T097 Home visible" }
       );
+      if (T097_SERVER_AUTHORITY) {
+        await waitFor(
+          async () => cdpEvaluate(cdp, "window.__BW_T097_SERVER_INIT_READY__?.() === true"),
+          { timeoutMs: 10000, intervalMs: 25, label: "T097 server init and authority context ready before input" }
+        );
+      }
 
       const initial = await readRuntime();
       checkpoints["INITIAL"] = { at_ms: Date.now() - runStartedAt, ...initial };
