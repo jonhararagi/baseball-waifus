@@ -994,11 +994,15 @@ export class CombatRenderer {
     // Hydrate the presentation/runtime mirror from the server DTO. The server
     // remains authoritative; local prediction must not leave phase/turn counters stale.
     const serverState = dto.state || {};
+    const serverPhase = String(serverState.phase || dto.phase || "TACTICAL").toUpperCase();
+    const serverTacticalTurn = Number(serverState.tactical_turn ?? 0);
     const serverBossMaxHp = Number(serverState.boss_max_hp ?? 100);
     const serverBossHp = Number(serverState.boss_hp ?? serverBossMaxHp);
     this.combatRuntime.syncAuthoritativeState({
-      phase: String(serverState.phase || dto.phase || "TACTICAL").toUpperCase(),
-      tacticalTurn: Number(serverState.tactical_turn ?? 0),
+      phase: serverPhase,
+      // The server's TACTICAL counter names the next action (1..5), while
+      // the renderer displays completed tactical actions (0..4); CLIMAX is 5.
+      tacticalTurn: serverPhase === "CLIMAX" ? serverTacticalTurn : Math.max(0, serverTacticalTurn - 1),
       tacticalMaxTurns: Number(serverState.tactical_max_turns ?? 5),
       bossHp: serverBossHp,
       bossMaxHp: serverBossMaxHp,
