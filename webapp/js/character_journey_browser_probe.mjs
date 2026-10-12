@@ -934,7 +934,9 @@ async function run() {
             return entry || false;
           },
           { timeoutMs: 10000, intervalMs: 20, label: "T097 signed terminal result after actual client timing resolution" }
-        );
+        ).catch((error) => {
+          throw new Error(error.message + " // authorityTrace=" + JSON.stringify(authorityTrace));
+        });
         requireCondition(
           ["GREAT", "HIT"].includes(String(terminalTimingAction.timingGrade || "").toUpperCase()),
           "T097 server did not receive an accepted timing grade in the nested action contract",
