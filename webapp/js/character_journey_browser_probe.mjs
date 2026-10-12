@@ -550,7 +550,7 @@ async function run() {
       requireCondition(!bone008PlayerMetaScript.trim().startsWith("() =>"), "BONE-008 fixture script is a bare function");
     }
 
-    if (T094_COMBAT_LOOP) {
+    if (!BWM4V4_E2E || T094_COMBAT_LOOP) {
       await cdp.send("Page.addScriptToEvaluateOnNewDocument", {
         source: bone008PlayerMetaScript
       });
