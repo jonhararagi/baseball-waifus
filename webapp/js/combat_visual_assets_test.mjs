@@ -96,3 +96,9 @@ assert.ok(combat.includes("_compensateTimingFrameStall"), "Timing Ring must comp
 assert.ok(combat.includes("const simulatedFrameMs = Math.min(frameGapMs, 50)"), "Timing Ring must share the renderer's 50 ms simulation frame cap");
 assert.ok(combat.includes("this._scheduleTimingTimeout()"), "Timing Ring timeout must be recalculated after a compensated frame stall");
 assert.ok(combat.includes("this.timingState.startedAt += Math.max(0, now - this.timingPausedAt)"), "visibility pauses must not consume Timing Ring time");
+
+const pointerHandler = combat.slice(
+  combat.indexOf("this.handleTimingPointer = (event) => {"),
+  combat.indexOf("this.handleDocumentVisibility = () => {")
+);
+assert.ok(!pointerHandler.includes("_compensateTimingFrameStall"), "pointerdown must not mutate the Timing Ring window after input capture");

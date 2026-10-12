@@ -290,10 +290,9 @@ export class CombatRenderer {
         if (String(this.state?.game_mode || this.state?.mode || "").toLowerCase() === "4v4") this._selectFourVFourCombatantAtPointer(event);
         return;
       }
-      // Do not penalize the player for main-thread stalls: _render/frame
-      // explicitly clamps simulation steps to 50 ms, so the timing clock must
-      // exclude any additional time when the canvas was not being updated.
-      this._compensateTimingFrameStall(performance.now());
+      // Keep the physical input tied to the exact Timing Ring window that
+      // the input-capture listener observed. Stall compensation runs at frame
+      // boundaries and timeout ticks, never between capture and resolution.
       event.preventDefault();
       this.resolveTimingInput("pointer");
     };
