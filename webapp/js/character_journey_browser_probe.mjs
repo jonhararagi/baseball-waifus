@@ -823,7 +823,8 @@ async function run() {
       const checkpoints = {};
       const timeline = [];
       const playerMetaKey = "baseball_waifus_player_meta_v1:local-player";
-      const expectedBattleId = "battle:demo-bw001-vs-bw002";
+      const serverMatchId = "t097-server-victory-match";
+      const expectedBattleId = T097_SERVER_AUTHORITY ? "battle:" + serverMatchId : "battle:demo-bw001-vs-bw002";
 
       const readRuntime = async () => cdpEvaluate(cdp, "(() => { const canvas = document.querySelector('#gameCanvas'); const d = canvas?.dataset || {}; const gacha = window.BaseballWaifusGacha?.getStatus?.() || null; const raw = localStorage.getItem('baseball_waifus_player_meta_v1:local-player'); let persisted = null; try { const persistedRecord = raw ? JSON.parse(raw) : null; persisted = persistedRecord?.schemaVersion === 1 && Number.isSafeInteger(persistedRecord?.revision) && persistedRecord?.state && typeof persistedRecord.state === 'object' ? persistedRecord.state : persistedRecord?.currencies && persistedRecord?.rewardLedger && typeof persistedRecord.currencies === 'object' ? persistedRecord : null; } catch { persisted = null; } return { battlePhase: d.combatBattlePhase || '', tacticalTurn: d.combatTacticalTurn === '' ? null : Number(d.combatTacticalTurn), timingActive: d.combatTimingActive === 'true', timingGrade: d.combatTimingGrade || '', combatResult: d.combatResult || '', presentationPhase: d.combatStagePresentationPhase || '', presentationActive: d.combatPresentationActive === 'true', rewardStatus: document.querySelector('#gacha-status')?.textContent?.trim() || '', scrap: Number(gacha?.scavenger_scrap ?? NaN), fragments: Number(gacha?.fragments ?? NaN), inventorySize: Number(gacha?.inventory_size ?? NaN), playerMetaRawPresent: Boolean(raw), persistedScrap: Number(persisted?.currencies?.SCRAP ?? NaN), rewardLedger: persisted?.rewardLedger || null, rewardLedgerKeys: persisted?.rewardLedger ? Object.keys(persisted.rewardLedger) : [], playerMeta: persisted }; })()");
 
@@ -843,7 +844,7 @@ async function run() {
         throw new Error("T097 TIMEOUT: " + name + " " + JSON.stringify(state));
       };
 
-      const t097Url = baseUrl + "?qa=t097";
+      const t097Url = baseUrl + "?qa=t097" + (T097_SERVER_AUTHORITY ? "&match=" + encodeURIComponent(serverMatchId) : "");
       await cdp.send("Page.navigate", { url: t097Url });
       await waitFor(
         async () => (await cdpEvaluate(cdp, "document.readyState")) === "complete",
@@ -869,13 +870,13 @@ async function run() {
       );
       await mark(
         "VICTORY PATH READY",
-        (state) => state.battlePhase === "TACTICAL" && state.tacticalTurn === 0
+        (state) => state.battlePhase === "TACTICAL" && (T097_SERVER_AUTHORITY ? state.tacticalTurn === 1 : state.tacticalTurn === 0)
       );
       await waitFor(
         async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#action-bat') && !document.querySelector('#action-bat').disabled)"),
         { timeoutMs: 6000, label: "T097 BATEAR ready for T1" }
       );
-      await cdpClickSelector(cdp, "#action-bat");
+      if (!T097_SERVER_AUTHORITY) await cdpClickSelector(cdp, "#action-bat");
 
       for (const turn of [1, 2, 3, 4, 5]) {
         const targetBattlePhase = turn === 5 ? "CLIMAX" : "TACTICAL";
@@ -883,7 +884,19 @@ async function run() {
           "TACTICAL " + String(turn),
           (state) => state.tacticalTurn === turn && state.battlePhase === targetBattlePhase
         );
-        if (turn < 5) {
+        if (T097_SERVER_AUTHORITY) {
+          await waitFor(
+            async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#action-bat') && !document.querySelector('#action-bat').disabled)"),
+            { timeoutMs: 6000, label: "T097 server BATEAR ready for T" + String(turn) }
+          );
+          await cdpClickSelector(cdp, "#action-bat");
+          if (turn < 5) {
+            await mark(
+              "TACTICAL " + String(turn) + " COMPLETE",
+              (state) => state.presentationPhase === "COMPLETE" && state.presentationActive === false
+            );
+          }
+        } else if (turn < 5) {
           await mark(
             "TACTICAL " + String(turn) + " COMPLETE",
             (state) => state.tacticalTurn === turn && state.presentationPhase === "COMPLETE" && state.presentationActive === false
@@ -931,10 +944,19 @@ async function run() {
       checkpoints["REWARD HANDOFF"] = await readRuntime();
       timeline.push({ at_ms: Date.now() - runStartedAt, label:"REWARD HANDOFF", ...checkpoints["REWARD HANDOFF"] });
 
-      requireCondition(victory.scrap === 100, "T097 victory did not apply the existing 100 Scrap reward", victory);
-      requireCondition(victory.persistedScrap === 100, "T097 victory Scrap is not persisted in Player Meta", victory);
-      requireCondition(victory.rewardLedgerKeys.length === 1 && victory.rewardLedgerKeys[0] === expectedBattleId, "T097 reward ledger does not contain exactly one completed battle reward", victory);
-      requireCondition(victory.rewardLedger?.[expectedBattleId] === true, "T097 reward ledger entry is not true", victory);
+      if (T097_SERVER_AUTHORITY) {
+        requireCondition(victory.scrap === 100, "T097 server victory did not apply exactly 100 Scrap", victory);
+        requireCondition(victory.persistedScrap === 100, "T097 server victory Scrap is not persisted in Player Meta", victory);
+        requireCondition(victory.rewardLedgerKeys.length === 1 && victory.rewardLedgerKeys[0] === expectedBattleId, "T097 server reward ledger does not contain exactly one battle reward", victory);
+        requireCondition(victory.rewardLedger?.[expectedBattleId] === true, "T097 server reward ledger entry is not true", victory);
+        requireCondition(authorityTrace.some((entry) => entry.type === "CombatInitDTO" && entry.publicKeyPresent), "T097 browser did not initialize from real backend authority", authorityTrace);
+        requireCondition(authorityTrace.some((entry) => entry.type === "TurnResultDTO" && entry.outcome === "VICTORY" && entry.attestationPresent), "T097 browser did not receive a signed terminal server result", authorityTrace);
+      } else {
+        requireCondition(victory.scrap === 0, "T097 local demo must not credit Scrap", victory);
+        requireCondition(victory.persistedScrap === 0, "T097 local demo must not persist Scrap", victory);
+        requireCondition(victory.rewardLedgerKeys.length === 0, "T097 local demo must not create an authoritative ledger entry", victory);
+        requireCondition(victory.rewardStatus.includes("LOCAL_RESULT") && victory.rewardStatus.includes("REWARD BLOCKED"), "T097 local demo did not expose the blocked-authority state", victory);
+      }
       // Reward handoff is authoritative in Player Meta state/ledger; HUD text is presentation-only.
 
       const returnState = await mark(
@@ -947,9 +969,10 @@ async function run() {
         (state) => state.presentationPhase === "COMPLETE" && state.presentationActive === false,
         5000
       );
-      requireCondition(completeState.scrap === 100, "T097 Scrap balance changed after RETURN", completeState);
-      requireCondition(completeState.persistedScrap === 100, "T097 persisted Scrap changed after RETURN", completeState);
-      requireCondition(completeState.rewardLedgerKeys.length === 1, "T097 reward ledger changed after RETURN", completeState);
+      const expectedScrap = T097_SERVER_AUTHORITY ? 100 : 0;
+      requireCondition(completeState.scrap === expectedScrap, "T097 Scrap balance changed after RETURN", completeState);
+      requireCondition(completeState.persistedScrap === expectedScrap, "T097 persisted Scrap changed after RETURN", completeState);
+      requireCondition(completeState.rewardLedgerKeys.length === (T097_SERVER_AUTHORITY ? 1 : 0), "T097 reward ledger changed after RETURN", completeState);
 
       await cdp.send("Page.navigate", { url: t097Url });
       await waitFor(
@@ -964,9 +987,13 @@ async function run() {
       checkpoints["RELOAD"] = { at_ms: Date.now() - runStartedAt, ...reloaded };
       timeline.push({ at_ms: Date.now() - runStartedAt, label:"RELOAD", ...reloaded });
 
-      requireCondition(reloaded.scrap === 100, "T097 persisted Scrap was not rehydrated after reload", reloaded);
-      requireCondition(reloaded.persistedScrap === 100, "T097 Player Meta persistence did not survive reload", reloaded);
-      requireCondition(reloaded.rewardLedgerKeys.length === 1 && reloaded.rewardLedger[expectedBattleId] === true, "T097 reward ledger did not survive reload", reloaded);
+      requireCondition(reloaded.scrap === expectedScrap, "T097 persisted Scrap was not rehydrated after reload", reloaded);
+      requireCondition(reloaded.persistedScrap === expectedScrap, "T097 Player Meta persistence did not survive reload", reloaded);
+      if (T097_SERVER_AUTHORITY) {
+        requireCondition(reloaded.rewardLedgerKeys.length === 1 && reloaded.rewardLedger[expectedBattleId] === true, "T097 server reward ledger did not survive reload", reloaded);
+      } else {
+        requireCondition(reloaded.rewardLedgerKeys.length === 0, "T097 local demo ledger must remain empty after reload", reloaded);
+      }
       requireCondition(reloaded.rewardStatus !== "REWARD ERROR", "T097 reward error state detected after reload", reloaded);
 
       const sameOriginErrors = pageExceptions
@@ -986,14 +1013,16 @@ async function run() {
           userAgent: browserVersion?.userAgent || ""
         },
         harness: "existing character_journey_browser_probe.mjs via T097_REWARD_HANDOFF=1",
+        authorityMode: T097_SERVER_AUTHORITY ? "REAL_HTTP_BACKEND_EPHEMERAL_P256" : "LOCAL_DEMO_REWARD_BLOCKED",
         baseUrl,
         expectedBattleId,
+        serverAuthorityTrace: authorityTrace,
         checkpoints,
         timeline,
         reward: {
           type: "SCRAP",
-          amount: 100,
-          source: "existing T062_REWARD_TABLE VICTORY entry"
+          amount: T097_SERVER_AUTHORITY ? 100 : 0,
+          source: T097_SERVER_AUTHORITY ? "existing T062_REWARD_TABLE VICTORY entry after server attestation" : "local demo is not an economic authority"
         },
         persistence: {
           mechanism: "PlayerMetaPersistenceAdapter/localStorage",
@@ -1015,8 +1044,9 @@ async function run() {
       console.log("T097 BROWSER AUTOMATION = PASS_REAL");
       console.log("VICTORY = PASS_REAL");
       console.log("REWARD HANDOFF = PASS_REAL");
-      console.log("REWARD = +100 SCRAP");
-      console.log("PLAYER STATE = SCRAP 0 -> 100");
+      console.log("REWARD MODE = " + (T097_SERVER_AUTHORITY ? "SERVER_AUTHORITY" : "LOCAL_DEMO_BLOCKED"));
+      console.log("REWARD = " + (T097_SERVER_AUTHORITY ? "+100 SCRAP" : "0 SCRAP; ledger empty"));
+      console.log("PLAYER STATE = SCRAP " + initial.scrap + " -> " + reloaded.scrap);
       console.log("PERSISTENCE = PASS_REAL");
       console.log("DUPLICATION = PASS_REAL");
       console.log("RETURN = PASS_REAL");
