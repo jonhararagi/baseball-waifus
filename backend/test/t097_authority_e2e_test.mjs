@@ -249,7 +249,7 @@ test("T097-TC-001: real HTTP combat authority, signed terminal outcomes, idempot
         { name: "missing", attestation: null, context },
         {
           name: "tampered-signature",
-          attestation: { ...terminal.reward_attestation, signature: terminal.reward_attestation.signature.slice(0, -1) + (terminal.reward_attestation.signature.endsWith("A") ? "B" : "A") },
+          attestation: { ...terminal.reward_attestation, signature: (terminal.reward_attestation.signature.startsWith("A") ? "B" : "A") + terminal.reward_attestation.signature.slice(1) },
           context
         },
         {
