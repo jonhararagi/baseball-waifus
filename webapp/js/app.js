@@ -1201,6 +1201,9 @@ async function sendAction(actionType, timing = {}) {
         : {})
     });
     if (!isTurnResultDTO(payload)) throw new Error("Server returned an invalid TurnResultDTO");
+    // Validate and persist an authoritative terminal reward before optional
+    // presentation hooks can throw or interrupt the accepted server result.
+    await handleTerminalCombatReward(payload);
     await renderer.applyTurnResult(payload);
     if (payload.super_swing === true || payload.animation?.super_swing === true || payload.animation?.event === "SUPER_SWING") {
       lockerRoom.handleEvent("ON_SUPER_SWING", getActiveLockerWaifu());
@@ -1208,7 +1211,6 @@ async function sendAction(actionType, timing = {}) {
     if (String(payload.result || payload.outcome || payload.state?.outcome || "").toUpperCase() === "VICTORY") {
       lockerRoom.handleEvent("ON_VICTORY", getActiveLockerWaifu());
     }
-    await handleTerminalCombatReward(payload);
     gameModes.registerResult(payload.result);
     updatePlayHud();
     saveSystem.save();
