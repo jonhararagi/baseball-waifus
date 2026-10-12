@@ -1,5 +1,6 @@
 // BONE-008-003-R8 T094 push-trigger checkpoint.
 import { spawn } from "node:child_process";
+import { randomUUID } from "node:crypto";
 import { createServer } from "node:http";
 import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { stat, readFile } from "node:fs/promises";
@@ -21,6 +22,9 @@ const T117_TERMINAL_TIMING_DIAGNOSTIC = process.env.T117_TERMINAL_TIMING_DIAGNOS
 const T118_NON_HIT_REWARD_VALIDATION = process.env.T118_NON_HIT_REWARD_VALIDATION === "1";
 const T094_COMBAT_LOOP = process.env.T094_COMBAT_LOOP === "1";
 const BWM105_4V4 = process.env.BWM105_4V4 === "1";
+const BWM104_4V4_E2E = process.env.BWM104_4V4_E2E === "1";
+const BWM4V4_E2E = BWM104_4V4_E2E || BWM105_4V4;
+const BWM4V4_TASK = BWM104_4V4_E2E ? "BWM-104" : "BWM-105";
 const SITE_DIR = resolve(process.env.T072_SITE_DIR || "site");
 const EVIDENCE_DIR = resolve(
   process.env.T072_EVIDENCE_DIR
@@ -549,12 +553,12 @@ async function run() {
     await cdp.send("Page.addScriptToEvaluateOnNewDocument", {
       source: bone008PlayerMetaScript
     });
-    if (BWM105_4V4) {
+    if (BWM4V4_E2E) {
       await cdp.send("Page.addScriptToEvaluateOnNewDocument", {
         source: "(() => { try { localStorage.clear(); sessionStorage.clear(); } catch {} })();"
       });
     }
-    await cdp.send("Page.navigate", { url: BWM105_4V4 ? baseUrl + "?qa=bwm105" : baseUrl });
+    await cdp.send("Page.navigate", { url: BWM4V4_E2E ? baseUrl + "?qa=" + (BWM104_4V4_E2E ? "bwm104" : "bwm105") : baseUrl });
 
     await waitFor(async () => (await cdpEvaluate(cdp, "document.readyState")) === "complete", {
       timeoutMs: 30000,
@@ -656,9 +660,12 @@ async function run() {
       })()`);
     }
 
-    if (BWM105_4V4) {
+    if (BWM4V4_E2E) {
+      const sessionId = BWM4V4_TASK + "-" + (process.env.GITHUB_RUN_ID || "local") + "-" + randomUUID();
+      const evidencePrefix = BWM104_4V4_E2E ? "bwm104" : "bwm105";
       const evidence = {
-        task: "BWM-105",
+        task: BWM4V4_TASK,
+        sessionId,
         status: "IN_PROGRESS",
         sha: process.env.GITHUB_SHA || "local",
         runId: process.env.GITHUB_RUN_ID || "local",
@@ -712,6 +719,7 @@ async function run() {
 
         const before = await captureState();
         evidence.playerMetaBefore = {
+          sessionId,
           scrap: before.currencies?.SCRAP ?? null,
           ledger: before.rewardLedger || [],
           inventoryIds: before.inventoryIds || [],
@@ -813,6 +821,7 @@ async function run() {
                 turnBefore: priorTurn, beforeEnemyHp, afterEnemyHp, phaseAfter: after.battle.phase, lastAction: after.battle.lastAction
               });
             evidence.actions.push({
+              sessionId,
               kind: "TACTICAL", turnBefore: priorTurn, turnAfter: after.battle.tacticalTurn, phaseAfter: after.battle.phase,
               playerHpBefore: beforePlayerHp, playerHpAfter: afterPlayerHp, enemyHpBefore: beforeEnemyHp, enemyHpAfter: afterEnemyHp,
               lastAction: after.battle.lastAction, enemyResponse: after.battle.lastAction?.enemyResponse || null
@@ -855,6 +864,7 @@ async function run() {
                 beforeEnemyHp, afterEnemyHp: healthTotal(after.battle.enemies), result: inputProof.resolution
               });
             evidence.timingInputs.push({
+              sessionId,
               round: active.battle.round, proof: inputProof, enemyHpBefore: beforeEnemyHp,
               enemyHpAfter: healthTotal(after.battle.enemies), playerHpBefore: beforePlayerHp,
               playerHpAfter: healthTotal(after.battle.players), lastTiming: after.lastTiming,
@@ -869,7 +879,11 @@ async function run() {
         }
 
         if (!terminalSnapshot) terminalSnapshot = await captureState();
-        requireCondition(tacticalActionCount >= 1, "BWM-105 did not execute a tactical input");
+        requireCondition(tacticalActionCount >= 5, "BWM-104/105 did not execute the full five-turn tactical sequence", { tacticalActionCount, actions: evidence.actions });
+        const firstFiveTactical = evidence.actions.filter((action) => action.kind === "TACTICAL").slice(0, 5);
+        requireCondition(firstFiveTactical.length === 5 && firstFiveTactical.every((action, index) => Number(action.turnBefore) === index && Number(action.turnAfter) === index + 1),
+          "BWM-104/105 first tactical round did not resolve turns 1 through 5 in order", firstFiveTactical);
+        requireCondition(firstFiveTactical[4]?.phaseAfter === "CLIMAX", "BWM-104/105 fifth tactical turn did not transition to CLIMAX", firstFiveTactical[4]);
         requireCondition(timingRound >= 1, "BWM-105 did not resolve physical Timing Ring input");
         requireCondition(["VICTORY", "DEFEAT"].includes(terminalSnapshot.battle.terminal || terminalSnapshot.battle.phase),
           "BWM-105 battle did not reach a legitimate terminal state within action budget", {
@@ -897,6 +911,7 @@ async function run() {
 
         const afterReturn = await captureState();
         evidence.playerMetaAfter = {
+          sessionId,
           scrap: afterReturn.currencies?.SCRAP ?? null,
           ledger: afterReturn.rewardLedger || [], inventoryIds: afterReturn.inventoryIds || [],
           roster: afterReturn.roster || null, persistedFourthMember: afterReturn.persistedFourthMember
@@ -917,6 +932,7 @@ async function run() {
           return snapshot?.gachaReady === true && snapshot?.currencies && Array.isArray(snapshot?.inventoryIds) ? snapshot : null;
         }, { timeoutMs: 30000, label: "BWM-105 Player Meta restored after reload" });
         evidence.persistenceAfterReload = {
+          sessionId,
           modeAfterReload: restored.mode, scrap: restored.currencies?.SCRAP ?? null,
           ledger: restored.rewardLedger || [], inventoryIds: restored.inventoryIds || [],
           roster: restored.roster || null, persistedFourthMember: restored.persistedFourthMember
@@ -940,7 +956,15 @@ async function run() {
         requireCondition(evidence.pageExceptions.length === 0, "BWM-105 browser recorded same-origin JavaScript exceptions", evidence.pageExceptions);
         evidence.completedAt = new Date().toISOString();
         evidence.status = "PASS_BROWSER_4V4_REAL";
-        writeFileSync(join(EVIDENCE_DIR, "bwm105-webapp-4v4-browser-evidence.json"), JSON.stringify(evidence, null, 2) + "\n", "utf8");
+        evidence.assertions = {
+          mainWebAppEntry: "PASS", fourPlayerUnits: "PASS", fourEnemyUnits: "PASS",
+          uniqueCanonicalIds: "PASS", physicalSelection: "PASS", tacticalFiveTurnSequence: "PASS",
+          correlatedTimingRing: "PASS", legitimateTerminal: "PASS", resultPresentation: "PASS",
+          returnHome: "PASS", realReload: "PASS", persistentStateRestored: "PASS",
+          localRewardsBlocked: "PASS", sameOriginExceptions: "PASS"
+        };
+        evidence.completedAt = new Date().toISOString();
+        writeFileSync(join(EVIDENCE_DIR, evidencePrefix + "-full-webapp-4v4-e2e-evidence.json"), JSON.stringify(evidence, null, 2) + "\n", "utf8");
         console.log("BWM-105 MAIN WEBAPP 4V4 FORMATION = PASS_REAL");
         console.log("BWM-105 PHYSICAL ACTOR/TARGET SELECTION = PASS_REAL");
         console.log("BWM-105 TACTICAL AUTHORITY = PASS_REAL");
@@ -963,7 +987,7 @@ async function run() {
           + "canvas:(()=>{const el=document.querySelector('#gameCanvas');return el?{mode:el.dataset.combatMode||'',actorCount:el.dataset.combatStageActorCount||'',players:el.dataset.combatStagePlayerCount||'',enemies:el.dataset.combatStageEnemyCount||'',phase:el.dataset.combatBattlePhase||''}:null})()}))()");
         evidence.runtimeAtFailure = await runtimeSnapshot();
         try { evidence.screenshots.failure = await screenshot(cdp, "bwm105-99-failure-state"); } catch {}
-        writeFileSync(join(EVIDENCE_DIR, "bwm105-webapp-4v4-browser-evidence.json"), JSON.stringify(evidence, null, 2) + "\n", "utf8");
+        writeFileSync(join(EVIDENCE_DIR, evidencePrefix + "-full-webapp-4v4-e2e-evidence.json"), JSON.stringify(evidence, null, 2) + "\n", "utf8");
         throw error;
       }
     }
