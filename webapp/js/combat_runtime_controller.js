@@ -80,17 +80,16 @@ export class CombatRuntimeController {
     });
   }
 
-  resolveTimingInput({
+  evaluateTimingInput({
     elapsedMs,
     source = "pointer",
     timingGraceMs = 0,
     timingWindow = null
   } = {}) {
     this.assertStarted();
-
     const state = this.getState();
     const window = timingWindow || this.getTimingWindow();
-    const timing = resolveTiming({
+    return resolveTiming({
       elapsedMs,
       targetMs: window.targetMs,
       greatWindowMs: window.greatWindowMs,
@@ -101,13 +100,12 @@ export class CombatRuntimeController {
       tacticalEffectiveness: state.tacticalEffectiveness,
       bossHpBefore: state.bossHp
     });
+  }
 
+  resolveTimingInput(options = {}) {
+    const timing = this.evaluateTimingInput(options);
     const transition = this.resolveClimaxTurn(timing.grade);
-
-    return Object.freeze({
-      timing,
-      transition
-    });
+    return Object.freeze({ timing, transition });
   }
 
   resolveTacticalTurn() {
