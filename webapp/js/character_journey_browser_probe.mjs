@@ -32,7 +32,7 @@ const EVIDENCE_DIR = resolve(
 );
 const BROWSER_BIN = process.env.BROWSER_BIN;
 
-const ACTION_BAT_VISIBLE_EXPRESSION = "(() => {   const shell = document.querySelector('.game-viewport');   const button = document.querySelector('#action-bat');   const shellRect = shell?.getBoundingClientRect();   const buttonRect = button?.getBoundingClientRect();   return Boolean(     shell && !shell.hidden && shellRect?.width > 0 && shellRect?.height > 0     && button && !button.hidden && !button.disabled     && buttonRect?.width > 0 && buttonRect?.height > 0     && getComputedStyle(button).visibility !== 'hidden'     && getComputedStyle(button).display !== 'none'   ); })()";
+const ACTION_BAT_VISIBLE_EXPRESSION = "(() => {   const home = document.querySelector('#home-view');   const shell = document.querySelector('.game-viewport');   const button = document.querySelector('#action-bat');   const shellRect = shell?.getBoundingClientRect();   const buttonRect = button?.getBoundingClientRect();   return Boolean(     home && home.hidden && getComputedStyle(home).display === 'none'     && shell && !shell.hidden && shellRect?.width > 0 && shellRect?.height > 0     && button && !button.hidden && !button.disabled     && buttonRect?.width > 0 && buttonRect?.height > 0     && getComputedStyle(button).visibility !== 'hidden'     && getComputedStyle(button).display !== 'none'   ); })()";
 
 
 const MIME = Object.freeze({
