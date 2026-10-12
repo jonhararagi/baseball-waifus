@@ -10,15 +10,21 @@ const read = (path) => readFileSync(resolve(webapp, path), "utf8");
 
 const config = JSON.parse(read("data/waifus_config.json"));
 assert.ok(Array.isArray(config.characters) && config.characters.length > 0, "character config must contain characters");
-
+const combatSprites = new Set();
 for (const character of config.characters) {
-  for (const field of ["avatar_url", "card_art_url", "cutin_art_url"]) {
+  for (const field of ["avatar_url", "card_art_url", "cutin_art_url", "sprite_url"]) {
     const url = character[field];
     assert.equal(typeof url, "string", character.id + " missing " + field);
     assert.ok(url.startsWith("./assets/characters/"), character.id + " must use a local " + field);
     assert.ok(existsSync(resolve(webapp, url)), character.id + " references missing " + field + ": " + url);
+    if (field === "sprite_url") {
+      assert.notEqual(url, "./assets/characters/placeholder.svg", character.id + " combat sprite cannot be generic placeholder");
+      assert.ok(read(url).includes('viewBox="0 0 360 720"'), character.id + " sprite must be full-body");
+      combatSprites.add(url);
+    }
   }
 }
+assert.equal(combatSprites.size, config.characters.length, "every fighter must have unique full-body art");
 
 const generatedFallbacks = getWaifuAssets({
   character_id: "bw999",
@@ -45,13 +51,21 @@ for (const path of [
 }
 
 const combat = read("js/combat.js");
-assert.ok(combat.includes("const targetHeight = clamp(h * 0.105 * transform.scale, 96, 148);"), "4v4 actor sprite height must remain bounded for formation readability");
-assert.ok(combat.includes("const localTeamSprites = ["), "known 4v4 team characters must preload local portraits");
-assert.ok(combat.includes("this._drawCombatSupportActor(ctx, actor, transform, color, h);"), "player formation actors must receive the bounded canvas height");
-assert.ok(combat.includes("this.assetBank.get(getWaifuAssets(actor.visual?.characterId || actor.actorId).spriteSheetUrl)"), "player formation actors must have a local art fallback");
+assert.ok(combat.includes("function combatantVisualHeight(width, height, scale = 1)"), "sprite sizing must adapt to real viewport");
+assert.ok(combat.includes("const localTeamSprites = ["), "canonical team art must be preloaded");
+assert.ok(combat.includes("this._drawCombatSupportActor(ctx, actor, transform, color, h, w);"), "ally sprites use actual canvas dimensions");
+assert.ok(combat.includes("this.assetBank.get(getWaifuAssets(actor.visual?.characterId || actor.actorId).spriteSheetUrl)"), "enemy render path must resolve canonical art");
+assert.ok(combat.includes("await this.assetBank.preload(localTeamSprites)"), "readiness requires local sprite decoding");
+assert.ok(combat.includes("waitForNextRenderedFrame"), "READY requires a real rendered frame");
 console.log("BWM-104 VISUAL ASSETS PASS", JSON.stringify({
   characters: config.characters.length,
   localPortraits: config.characters.length * 3,
+  distinctCombatSprites: combatSprites.size,
   externalDicebearReferences: 0,
   cyberpunkAssets: 4
 }));
+
+const app = read("js/app.js");
+assert.ok(app.includes('timingFeedback?.classList.remove("is-visible", "is-cinematic-action")'), "HOME must clear timing feedback");
+assert.ok(app.includes('appRoot?.classList.remove("is-combat-4v4", "is-cinematic-ultimate")'), "HOME must clear combat layout state");
+assert.ok(read("css/styles.css").includes("[hidden] { display: none !important; }"), "hidden controls must stay hidden");

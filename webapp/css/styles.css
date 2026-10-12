@@ -1563,3 +1563,21 @@ button {
 .art-panel-status{margin:0 12px 8px;min-height:18px;color:var(--accent-yellow);font:800 .52rem var(--font-header);letter-spacing:.06em}
 .art-panel-actions{display:flex;justify-content:flex-end;gap:7px;padding:0 12px 12px}
 @media(max-width:600px){.art-panel-controls,.art-panel-previews{grid-template-columns:1fr}.art-panel-preview-stage{min-height:210px}.art-panel-pipeline{flex-direction:column}.art-panel-pipeline strong{text-align:left}.art-panel-actions{flex-wrap:wrap}.art-panel-actions .art-panel-button{flex:1 1 180px}}
+
+
+[hidden] { display: none !important; }
+
+@media (min-width: 768px) {
+  #app-container.is-combat-4v4 {
+    width: min(100vw, 1600px); max-width: 1600px; height: 100dvh; margin-inline: auto;
+    border-left: 1px solid rgba(0,243,255,.24); border-right: 1px solid rgba(0,243,255,.24);
+    box-shadow: 0 0 44px rgba(0,243,255,.08);
+  }
+  #app-container.is-combat-4v4 .cyber-header { padding-inline: clamp(20px,2.5vw,40px); }
+  #app-container.is-combat-4v4 .game-viewport { width:100%; min-height:280px; flex:1 1 auto; }
+  #app-container.is-combat-4v4 .match-strip { width:calc(100% - 40px); max-width:1240px; margin-inline:auto; padding:8px 16px; }
+  #app-container.is-combat-4v4 .cyber-footer { padding:8px clamp(20px,2.5vw,40px) calc(8px + var(--safe-bottom)); gap:8px; }
+  #app-container.is-combat-4v4 .primary-actions { width:min(100%,960px); margin-inline:auto; gap:12px; }
+  #app-container.is-combat-4v4 .cyber-btn { min-height:54px; }
+  #app-container.is-combat-4v4 .secondary-nav { display:none; }
+}

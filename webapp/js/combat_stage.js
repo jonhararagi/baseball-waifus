@@ -62,10 +62,10 @@ const DEFAULT_SET_PIECES = Object.freeze([
   Object.freeze({ id: "FRONT_STEP", type: "RAMP", x: 0.23, y: 0.82, width: 0.54, height: 0.1, elevation: 0.08, depth: "NEAR", zone: "PLAYER_ZONE" })
 ]);
 const DEFAULT_PLAYER_POSITIONS = Object.freeze([
-  Object.freeze({ x: 0.19, y: 0.58, depth: "MID", scale: 0.94, elevation: 0.16, facing: 1 }),
-  Object.freeze({ x: 0.09, y: 0.46, depth: "FAR", scale: 0.84, elevation: 0.06, facing: 1 }),
-  Object.freeze({ x: 0.37, y: 0.68, depth: "NEAR", scale: 1.04, elevation: 0.08, facing: 1 }),
-  Object.freeze({ x: 0.48, y: 0.5, depth: "MID", scale: 0.96, elevation: 0.2, facing: 1 })
+  Object.freeze({ x: 0.12, y: 0.43, depth: "FAR", scale: 0.76, elevation: 0.02, facing: 1 }),
+  Object.freeze({ x: 0.24, y: 0.58, depth: "MID", scale: 0.88, elevation: 0.05, facing: 1 }),
+  Object.freeze({ x: 0.37, y: 0.42, depth: "FAR", scale: 0.80, elevation: 0.04, facing: 1 }),
+  Object.freeze({ x: 0.49, y: 0.61, depth: "NEAR", scale: 0.98, elevation: 0.07, facing: 1 })
 ]);
 const DEFAULT_ENEMY_POSITION = Object.freeze({ x: 0.76, y: 0.42, depth: "MID", scale: 1.06, elevation: 0.2, facing: -1 });
 
@@ -257,10 +257,10 @@ export function createCombatActor(options = {}) {
   return new CharacterActor2D5(options);
 }
 const DEFAULT_ENEMY_POSITIONS = Object.freeze([
-  Object.freeze({ x: 0.70, y: 0.35, depth: "FAR", scale: 0.84, elevation: 0.08, facing: -1 }),
-  Object.freeze({ x: 0.83, y: 0.48, depth: "MID", scale: 0.96, elevation: 0.14, facing: -1 }),
-  Object.freeze({ x: 0.72, y: 0.62, depth: "NEAR", scale: 1.02, elevation: 0.06, facing: -1 }),
-  Object.freeze({ x: 0.89, y: 0.73, depth: "MID", scale: 0.92, elevation: 0.12, facing: -1 })
+  Object.freeze({ x: 0.61, y: 0.40, depth: "FAR", scale: 0.76, elevation: 0.02, facing: -1 }),
+  Object.freeze({ x: 0.72, y: 0.57, depth: "MID", scale: 0.88, elevation: 0.05, facing: -1 }),
+  Object.freeze({ x: 0.83, y: 0.41, depth: "FAR", scale: 0.80, elevation: 0.04, facing: -1 }),
+  Object.freeze({ x: 0.93, y: 0.60, depth: "NEAR", scale: 0.96, elevation: 0.07, facing: -1 })
 ]);
 
 function buildRuntimeCombatActor(unit, team, position) {

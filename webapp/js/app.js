@@ -1273,9 +1273,7 @@ async function startLocalFourVFour() {
     if (returnFourVFourButton) returnFourVFourButton.hidden = true;
     if (batButton) batButton.disabled = false;
     await renderer.setCombatInit(dto);
-    // The existing default-demo bootstrap can short-circuit when a renderer
-    // session already exists. Explicitly hide its blocking overlay for this
-    // newly initialized 4v4 session before exposing canvas input to the player.
+    await renderer.waitForNextRenderedFrame();
     setLoading(false);
     if (fourVFourStatus) {
       const temporary = dto.player_team_units.filter((unit) => unit.temporary).length;
@@ -1639,6 +1637,16 @@ function setMainMenuView(view) {
   const showSettings = active === "settings";
   const showLocker = active === "locker";
   const showCombat = !showHome && !showGallery && !showRoster && !showSettings && !showLocker;
+  if (showHome) {
+    const appRoot = document.querySelector("#app-container");
+    appRoot?.classList.remove("is-combat-4v4", "is-cinematic-ultimate");
+    const timingFeedback = document.querySelector("#timing-feedback");
+    timingFeedback?.classList.remove("is-visible", "is-cinematic-action");
+    if (timingFeedback) { timingFeedback.textContent = ""; timingFeedback.style.opacity = ""; timingFeedback.style.transform = ""; }
+    document.querySelector("#cutin")?.classList.remove("visible");
+    document.querySelector("#eye-focus-overlay")?.classList.remove("is-active");
+    document.querySelector("#active-waifu-card")?.classList.remove("is-cinematic-action");
+  }
   if (combatShell) combatShell.hidden = !showCombat;
   if (homeViewRoot) homeViewRoot.hidden = !showHome;
   if (galleryView) galleryView.hidden = !showGallery;

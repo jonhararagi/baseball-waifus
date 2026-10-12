@@ -18,7 +18,8 @@
       "quote_super": "¡YO LE PEGARÉ!",
       "quote_idle": "¡Vamos, vamos!",
       "quote_victory": "¡Ganamos! ¡Eso estuvo genial!",
-      "jiggle_intensity": 0.18
+      "jiggle_intensity": 0.18,
+      "sprite_url": "./assets/characters/combat_cari.svg"
     },
     {
       "id": "cami",
@@ -37,7 +38,8 @@
       "quote_super": "Calculado. Ahora batea.",
       "quote_idle": "La estrategia primero.",
       "quote_victory": "Funcionó exactamente como esperaba.",
-      "jiggle_intensity": 0.08
+      "jiggle_intensity": 0.08,
+      "sprite_url": "./assets/characters/combat_cami.svg"
     },
     {
       "id": "sunna",
@@ -56,7 +58,8 @@
       "quote_super": "¡No apartaré la mirada!",
       "quote_idle": "El sol está ahí...",
       "quote_victory": "¡Lo logramos!",
-      "jiggle_intensity": 0.12
+      "jiggle_intensity": 0.12,
+      "sprite_url": "./assets/characters/combat_sunna.svg"
     },
     {
       "id": "chie",
@@ -75,7 +78,8 @@
       "quote_super": "¡Golpe limpio!",
       "quote_idle": "Tranquila... apunta.",
       "quote_victory": "¡Kachi desu!",
-      "jiggle_intensity": 0.1
+      "jiggle_intensity": 0.1,
+      "sprite_url": "./assets/characters/combat_chie.svg"
     },
     {
       "id": "scarlet",
@@ -94,7 +98,8 @@
       "quote_super": "¡Muerde la pelota!",
       "quote_idle": "La noche también juega.",
       "quote_victory": "¡Victoria dulce!",
-      "jiggle_intensity": 0.22
+      "jiggle_intensity": 0.22,
+      "sprite_url": "./assets/characters/combat_scarlet.svg"
     },
     {
       "id": "chloe",
@@ -113,7 +118,8 @@
       "quote_super": "¡Más rápido!",
       "quote_idle": "¿Necesitas algo?",
       "quote_victory": "Buen trabajo.",
-      "jiggle_intensity": 0.14
+      "jiggle_intensity": 0.14,
+      "sprite_url": "./assets/characters/combat_chloe.svg"
     },
     {
       "id": "fenrir",
@@ -132,7 +138,8 @@
       "quote_super": "¡Que empiece la cacería!",
       "quote_idle": "La luna me guía.",
       "quote_victory": "¡Esta carrera es mía!",
-      "jiggle_intensity": 0.1
+      "jiggle_intensity": 0.1,
+      "sprite_url": "./assets/characters/combat_fenrir.svg"
     },
     {
       "id": "roxie_vane",
@@ -151,7 +158,8 @@
       "quote_super": "¡IGNITION BUSTER!",
       "quote_idle": "Power check. Ready.",
       "quote_victory": "¡That's a home run!",
-      "jiggle_intensity": 0.2
+      "jiggle_intensity": 0.2,
+      "sprite_url": "./assets/characters/combat_roxie_vane.svg"
     }
   ]
 }
