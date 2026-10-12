@@ -5,6 +5,10 @@ import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { stat, readFile } from "node:fs/promises";
 import { extname, normalize, relative, resolve, join } from "node:path";
 import { tmpdir } from "node:os";
+import { createAuthorityServer } from "../../backend/src/server.mjs";
+import { loadConfig } from "../../backend/src/config.mjs";
+import { InMemoryCombatStore } from "../../backend/src/combat_store.mjs";
+import { createEphemeralTestSigner } from "../../backend/src/attestation_signer.mjs";
 
 const T073_PRESENTATION = process.env.T073_PRESENTATION === "1";
 const T074_ART = process.env.T074_ART === "1";
@@ -13,6 +17,7 @@ const T078_STAGE = process.env.T078_STAGE === "1";
 const T079_STAGE = process.env.T079_STAGE === "1";
 const T095_TIMING_DIAGNOSTIC = process.env.T095_TIMING_DIAGNOSTIC === "1";
 const T097_REWARD_HANDOFF = process.env.T097_REWARD_HANDOFF === "1";
+const T097_SERVER_AUTHORITY = process.env.T097_SERVER_AUTHORITY === "1";
 const T101_DEFEAT_PROOF = process.env.T101_DEFEAT_PROOF === "1";
 const T104_PERSISTENCE_PROOF = process.env.T104_PERSISTENCE_PROOF === "1";
 const T114R_TERMINAL_INPUT_RECOVERY = process.env.T114R_TERMINAL_INPUT_RECOVERY === "1";
@@ -67,42 +72,90 @@ async function waitFor(condition, { timeoutMs = 30000, intervalMs = 250, label =
   throw new Error("T072 TIMEOUT: " + label);
 }
 
-async function startStaticServer(root) {
+async function startTestAuthorityServer() {
+  const config = loadConfig({
+    NODE_ENV: "test",
+    PORT: "0",
+    ALLOWED_ORIGINS: "*",
+    AUTHORITY_PERSISTENCE_PROVIDER: "memory"
+  });
+  const store = new InMemoryCombatStore();
+  const signer = createEphemeralTestSigner();
+  const created = createAuthorityServer({ config, store, signer });
+  await new Promise((resolvePromise, reject) => {
+    created.server.once("error", reject);
+    created.server.listen(0, "127.0.0.1", resolvePromise);
+  });
+  const address = created.server.address();
+  requireCondition(address && typeof address === "object", "test authority server did not expose an address");
+  return { server: created.server, store, baseUrl: "http://127.0.0.1:" + address.port };
+}
+
+async function startStaticServer(root, { backendBaseUrl = "", testPlayerId = "" } = {}) {
+  const authorityTrace = [];
   const server = createServer(async (req, res) => {
     try {
-      const rawPath = decodeURIComponent(String(req.url || "/").split("?")[0]);
+      const requestUrl = new URL(String(req.url || "/"), "http://127.0.0.1");
+      const rawPath = decodeURIComponent(requestUrl.pathname);
+      if (backendBaseUrl && rawPath.startsWith("/__authority_api/")) {
+        const chunks = [];
+        for await (const chunk of req) chunks.push(chunk);
+        const headers = { accept: "application/json", "x-test-player-id": testPlayerId };
+        const options = { method: req.method, headers };
+        if (req.method !== "GET" && req.method !== "HEAD") {
+          headers["content-type"] = String(req.headers["content-type"] || "application/json");
+          options.body = Buffer.concat(chunks);
+        }
+        const upstreamPath = rawPath.slice("/__authority_api".length) + requestUrl.search;
+        const upstream = await fetch(backendBaseUrl + upstreamPath, options);
+        const responseText = await upstream.text();
+        let payload = null;
+        try { payload = JSON.parse(responseText); } catch {}
+        authorityTrace.push({
+          method: req.method, path: upstreamPath, status: upstream.status,
+          type: payload?.type || null, match_id: payload?.match_id || null,
+          turn_id: payload?.turn_id || null, result: payload?.result || null,
+          outcome: payload?.outcome || null,
+          phase: payload?.phase || payload?.state?.phase || null,
+          damage: Number.isFinite(payload?.damage) ? payload.damage : null,
+          attestationPresent: Boolean(payload?.reward_attestation),
+          publicKeyPresent: Boolean(payload?.reward_authority?.public_key_jwk)
+        });
+        res.writeHead(upstream.status, {
+          "content-type": upstream.headers.get("content-type") || "application/json",
+          "cache-control": "no-store"
+        });
+        res.end(responseText);
+        return;
+      }
       const requested = rawPath === "/" ? "/index.html" : rawPath;
       const filePath = resolve(root, "." + normalize(requested));
       const rel = relative(root, filePath);
       if (rel.startsWith("..") || rel.includes("..\\") || rel.includes("../")) {
-        res.statusCode = 403;
-        res.end("Forbidden");
-        return;
+        res.statusCode = 403; res.end("Forbidden"); return;
       }
       const info = await stat(filePath);
-      if (!info.isFile()) {
-        res.statusCode = 404;
-        res.end("Not found");
-        return;
-      }
+      if (!info.isFile()) { res.statusCode = 404; res.end("Not found"); return; }
       res.setHeader("Content-Type", MIME[extname(filePath).toLowerCase()] || "application/octet-stream");
       res.setHeader("Cache-Control", "no-store");
       res.statusCode = 200;
-      res.end(await readFile(filePath));
+      let fileContent = await readFile(filePath);
+      if (backendBaseUrl && extname(filePath).toLowerCase() === ".html" && filePath.endsWith("index.html")) {
+        const html = fileContent.toString("utf8");
+        fileContent = Buffer.from(html.replace("</head>", '<script>window.BASEBALL_WAIFUS_API_BASE_URL = window.location.origin + "/__authority_api";</script></head>'));
+      }
+      res.end(fileContent);
     } catch {
-      res.statusCode = 404;
-      res.end("Not found");
+      res.statusCode = 404; res.end("Not found");
     }
   });
-
   await new Promise((resolvePromise, reject) => {
     server.once("error", reject);
     server.listen(0, "127.0.0.1", resolvePromise);
   });
-
   const address = server.address();
   requireCondition(address && typeof address === "object", "static server did not expose an address");
-  return { server, baseUrl: "http://127.0.0.1:" + address.port + "/" };
+  return { server, authorityTrace, baseUrl: "http://127.0.0.1:" + address.port + "/" };
 }
 
 async function waitForJson(url, timeoutMs = 15000) {
@@ -239,7 +292,11 @@ async function findFreePort() {
 async function run() {
   requireCondition(BROWSER_BIN, "BROWSER_BIN not set");
   const debugPort = await findFreePort();
-  const { server, baseUrl } = await startStaticServer(SITE_DIR);
+  const authorityHarness = T097_SERVER_AUTHORITY ? await startTestAuthorityServer() : null;
+  const { server, baseUrl, authorityTrace } = await startStaticServer(SITE_DIR, {
+    backendBaseUrl: authorityHarness?.baseUrl || "",
+    testPlayerId: "local-player"
+  });
   let browser = null;
   let cdp = null;
   const consoleErrors = [];
@@ -2464,6 +2521,7 @@ async function run() {
     try { cdp?.close(); } catch {}
     try { browser?.kill("SIGTERM"); } catch {}
     try { server?.close(); } catch {}
+    try { authorityHarness?.server?.close(); } catch {}
   }
 }
 
