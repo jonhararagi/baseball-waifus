@@ -5,12 +5,7 @@ on:
   pull_request:
     paths:
       - "backend/**"
-      - "webapp/js/combat_core.js"
-      - "webapp/js/reward_authority.js"
-      - "webapp/js/reward_pipeline.js"
-      - "webapp/js/reward_resolver.js"
-      - "webapp/js/player_meta_state.js"
-      - "webapp/js/player_meta_persistence_adapter.js"
+      - "webapp/js/**"
       - ".github/workflows/t097_authority_e2e.yml"
 
 permissions:
@@ -19,7 +14,7 @@ permissions:
 jobs:
   t097-authority-e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     env:
       NODE_ENV: test
       T097_EVIDENCE_PATH: artifacts/t097-authority-e2e.json
@@ -47,10 +42,40 @@ jobs:
           mkdir -p artifacts
           npm --prefix backend test
 
+      - name: Install Chromium
+        id: chrome
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+
+      - name: Prepare WebApp browser fixture
+        run: |
+          mkdir -p site
+          cp -R webapp/. site/
+
+      - name: T097 real WebApp browser flow against isolated server
+        env:
+          BROWSER_BIN: ${{ steps.chrome.outputs.chrome-path }}
+          T072_SITE_DIR: site
+          T072_EVIDENCE_DIR: browser-evidence/t097-server-authority
+          T097_REWARD_HANDOFF: "1"
+          T097_SERVER_AUTHORITY: "1"
+        run: node webapp/js/character_journey_browser_probe.mjs
+
+      - name: T097 local demo still blocks economic rewards
+        env:
+          BROWSER_BIN: ${{ steps.chrome.outputs.chrome-path }}
+          T072_SITE_DIR: site
+          T072_EVIDENCE_DIR: browser-evidence/t097-local-demo
+          T097_REWARD_HANDOFF: "1"
+        run: node webapp/js/character_journey_browser_probe.mjs
+
       - name: Upload structured T097 evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: t097-server-authority-e2e
-          path: artifacts/t097-authority-e2e.json
+          path: |
+            artifacts/t097-authority-e2e.json
+            browser-evidence/**
           if-no-files-found: warn
