@@ -201,6 +201,29 @@ jobs:
           path: browser-evidence/BWM-105/
           if-no-files-found: warn
 
+
+      - name: Run BWM-104 full WebApp 4v4 E2E
+        if: always()
+        shell: bash
+        env:
+          T072_SITE_DIR: site
+          T072_EVIDENCE_DIR: browser-evidence/BWM-104
+          BWM104_4V4_E2E: "1"
+          BROWSER_BIN: ${{ steps.chrome.outputs.browser_bin }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$T072_EVIDENCE_DIR"
+          echo "Run BWM-104 full WebApp 4v4 E2E"
+          node webapp/js/character_journey_browser_probe.mjs | tee "$T072_EVIDENCE_DIR/bwm104-browser-output.txt"
+
+      - name: Upload BWM-104 full WebApp 4v4 E2E evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bwm-104-full-webapp-4v4-evidence
+          path: browser-evidence/BWM-104/
+          if-no-files-found: warn
+
       - name: Run T101 normal combat defeat proof
         if: always()
         shell: bash
