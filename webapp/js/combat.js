@@ -988,8 +988,18 @@ export class CombatRenderer {
     this._syncCombatStageDataset();
     this.lastTacticalEvent = null;
 
+    const localTeamSprites = [
+      ...(dto.player_team_units || []),
+      ...(dto.enemy_team_units || [])
+    ].map((unit) => {
+      const characterId = String(unit?.characterId || unit?.character_id || unit?.id || "");
+      if (!getWaifu(characterId)) return null;
+      const path = getWaifuAssets(characterId).spriteSheetUrl;
+      return { id: String(unit.id || characterId), sprite_url: path, path, kind: "sprite" };
+    }).filter(Boolean);
     const assetPreload = this.assetBank.preload([
       ...(dto.assets?.sprites || []).map((asset) => ({ ...asset, kind: "sprite" })),
+      ...localTeamSprites,
       ...(dto.assets?.cards || []).map((asset) => ({ ...asset, kind: "card" }))
     ]);
     if (String(dto.game_mode || dto.mode || "").toLowerCase() === "4v4") {
