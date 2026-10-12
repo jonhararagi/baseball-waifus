@@ -1753,7 +1753,12 @@ export class CombatRenderer {
   }
 
   _drawCombatEnemyActor(ctx, actor, transform, w, h, motion = null) {
-    const presentation = this.combatPresentation.getState();
+    const isFourVFour = String(this.state?.game_mode || this.state?.mode || "").toLowerCase() === "4v4";
+    // The cinematic director tracks one attacker and one target in legacy mode.
+    // Reusing its phase in 4v4 incorrectly adds oversized reaction halos to all rivals.
+    const presentation = isFourVFour
+      ? { phase: "FORMATION", progress: 0, sequenceKind: "" }
+      : this.combatPresentation.getState();
     const frame = motion || transform;
     const radius = 42 * frame.scale;
     const t = presentation.progress || 0;
@@ -1822,8 +1827,8 @@ export class CombatRenderer {
       ctx.stroke();
     }
 
-    const cinematicUltimate = String(this.combatPresentation.getState().sequenceKind || "").startsWith("ULTIMATE");
-    const isFourVFour = String(this.state?.game_mode || this.state?.mode || "").toLowerCase() === "4v4";
+    const cinematicUltimate = !isFourVFour
+      && String(this.combatPresentation.getState().sequenceKind || "").startsWith("ULTIMATE");
     if (!cinematicUltimate && !isFourVFour) {
       ctx.textAlign = "center";
       ctx.font = "900 9px Orbitron, system-ui, sans-serif";
@@ -2257,13 +2262,15 @@ export class CombatRenderer {
     if (!timing?.active) return;
 
     const elapsedMs = performance.now() - timing.startedAt;
+    const isFourVFour = String(this.state?.game_mode || this.state?.mode || "").toLowerCase() === "4v4";
+    const visualScale = isFourVFour ? 0.72 : 1;
     const baseRadius = timingRingRadius(elapsedMs);
     const radiusScale = Number(timing.radiusScale) || 1;
-    const radius = TIMING_RING_TARGET_RADIUS * radiusScale
-      + (baseRadius - TIMING_RING_TARGET_RADIUS) * radiusScale;
+    const radius = (TIMING_RING_TARGET_RADIUS * radiusScale
+      + (baseRadius - TIMING_RING_TARGET_RADIUS) * radiusScale) * visualScale;
     const cx = w * 0.5;
     const cy = h * 0.52;
-    const targetRadius = TIMING_RING_TARGET_RADIUS;
+    const targetRadius = TIMING_RING_TARGET_RADIUS * visualScale;
     const progress = clamp(elapsedMs / timing.durationMs, 0, 1);
     const pulse = 0.72 + Math.sin(time * 0.012) * 0.12;
 
@@ -2274,38 +2281,38 @@ export class CombatRenderer {
 
     ctx.globalAlpha = 0.22;
     ctx.strokeStyle = "#00f3ff";
-    ctx.lineWidth = 10;
+    ctx.lineWidth = 10 * visualScale;
     ctx.beginPath();
     ctx.arc(cx, cy, targetRadius, 0, Math.PI * 2);
     ctx.stroke();
 
     ctx.globalAlpha = pulse;
     ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 3 * visualScale;
     ctx.shadowColor = "#00f3ff";
-    ctx.shadowBlur = 18;
+    ctx.shadowBlur = 18 * visualScale;
     ctx.beginPath();
     ctx.arc(cx, cy, targetRadius, 0, Math.PI * 2);
     ctx.stroke();
 
     ctx.globalAlpha = 0.92;
     ctx.strokeStyle = progress > 0.82 ? "#ffdf00" : "#ff007f";
-    ctx.lineWidth = 5;
+    ctx.lineWidth = 5 * visualScale;
     ctx.shadowColor = progress > 0.82 ? "#ffdf00" : "#ff007f";
-    ctx.shadowBlur = 16;
+    ctx.shadowBlur = 16 * visualScale;
     ctx.beginPath();
     ctx.arc(cx, cy, radius, 0, Math.PI * 2);
     ctx.stroke();
 
     ctx.globalAlpha = 0.9;
     ctx.fillStyle = "#ffffff";
-    ctx.font = "900 13px Orbitron, system-ui, sans-serif";
+    ctx.font = "900 " + (13 * visualScale) + "px Orbitron, system-ui, sans-serif";
     ctx.fillText("TAP", cx, cy);
 
     ctx.globalAlpha = 0.68;
-    ctx.font = "800 9px Rajdhani, system-ui, sans-serif";
+    ctx.font = "800 " + (9 * visualScale) + "px Rajdhani, system-ui, sans-serif";
     ctx.fillStyle = "#9cefff";
-    ctx.fillText("TIMING", cx, cy + targetRadius + 22);
+    ctx.fillText("TIMING", cx, cy + targetRadius + 22 * visualScale);
 
     ctx.restore();
   }

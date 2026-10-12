@@ -106,3 +106,7 @@ assert.ok(!pointerHandler.includes("_compensateTimingFrameStall"), "pointerdown 
 assert.ok(combat.includes("if (!isFourVFour) this.combatPresentation.applyCamera(target, w, h);"), "4v4 must not inherit the single-batter cinematic zoom/pan");
 assert.ok(combat.includes('focusTarget: "COMBAT", zoom: 1, x: 0, y: 0, rotationDeg: 0'), "4v4 stage background/parallax must use a neutral camera");
 assert.ok(combat.includes("const ultimateActive = !isFourVFour && active"), "single-batter cinematic UI must not take over the 4v4 HUD");
+
+assert.ok(combat.includes('phase: "FORMATION", progress: 0, sequenceKind: ""'), "4v4 rivals must not inherit the single-target cinematic reaction rings");
+assert.ok(combat.includes("const visualScale = isFourVFour ? 0.72 : 1"), "4v4 Timing Ring must scale down to preserve the eight-unit formation");
+assert.ok(combat.includes("TIMING_RING_TARGET_RADIUS * visualScale"), "only the ring presentation radius is scaled");
