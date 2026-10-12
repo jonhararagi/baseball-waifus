@@ -91,3 +91,8 @@ assert.ok(app.includes('terminalSummary.textContent = result === "VICTORY"'), "t
 assert.ok(app.includes('if (!isTerminal) {'), "RETURN/HOME must not appear between tactical turns");
 assert.ok(html.includes('id="combat-terminal-summary"'), "terminal result overlay must exist in the real app markup");
 assert.ok(css.includes("#app-container.is-combat-terminal #action-bat"), "action buttons must disappear at terminal state");
+
+assert.ok(combat.includes("_compensateTimingFrameStall"), "Timing Ring must compensate for long browser frame stalls");
+assert.ok(combat.includes("const simulatedFrameMs = Math.min(frameGapMs, 50)"), "Timing Ring must share the renderer's 50 ms simulation frame cap");
+assert.ok(combat.includes("this._scheduleTimingTimeout()"), "Timing Ring timeout must be recalculated after a compensated frame stall");
+assert.ok(combat.includes("this.timingState.startedAt += Math.max(0, now - this.timingPausedAt)"), "visibility pauses must not consume Timing Ring time");

@@ -280,6 +280,8 @@ export class CombatRenderer {
     this.frameCtx = this.frameCanvas.getContext("2d", { alpha: false });
     this.lastFrame = performance.now();
     this.renderedFrameCount = 0;
+    this.lastTimingFrameAt = 0;
+    this.timingPausedAt = 0;
 
     this.handleViewportResize = () => this.resize();
     this.handleTimingPointer = (event) => {
@@ -288,6 +290,10 @@ export class CombatRenderer {
         if (String(this.state?.game_mode || this.state?.mode || "").toLowerCase() === "4v4") this._selectFourVFourCombatantAtPointer(event);
         return;
       }
+      // Do not penalize the player for main-thread stalls: _render/frame
+      // explicitly clamps simulation steps to 50 ms, so the timing clock must
+      // exclude any additional time when the canvas was not being updated.
+      this._compensateTimingFrameStall(performance.now());
       event.preventDefault();
       this.resolveTimingInput("pointer");
     };
@@ -371,6 +377,50 @@ export class CombatRenderer {
     this._ownedTimeouts.clear();
   }
 
+  _compensateTimingFrameStall(now = performance.now()) {
+    const timing = this.timingState;
+    if (!timing?.active) {
+      this.lastTimingFrameAt = 0;
+      return 0;
+    }
+
+    const previousFrameAt = Number.isFinite(this.lastTimingFrameAt) && this.lastTimingFrameAt > 0
+      ? this.lastTimingFrameAt
+      : timing.startedAt;
+    const frameGapMs = Math.max(0, now - previousFrameAt);
+    this.lastTimingFrameAt = now;
+
+    // Match the simulation's existing 50 ms frame-delta cap. Time beyond this
+    // budget represents a frame hitch, not time the player could see the ring.
+    const simulatedFrameMs = Math.min(frameGapMs, 50);
+    const pausedFrameMs = Math.max(0, frameGapMs - simulatedFrameMs);
+    if (pausedFrameMs > 1) timing.startedAt += pausedFrameMs;
+    return pausedFrameMs;
+  }
+
+  _scheduleTimingTimeout() {
+    this._clearOwnedTimeout(this.timingTimeout);
+    this.timingTimeout = 0;
+    const timing = this.timingState;
+    if (this.disposed || this.paused || !timing?.active) return;
+
+    const remainingMs = Math.max(0, timing.startedAt + timing.durationMs - performance.now());
+    this.timingTimeout = this._setOwnedTimeout(() => {
+      this.timingTimeout = 0;
+      if (!this.timingState?.active) return;
+      this._compensateTimingFrameStall(performance.now());
+      const current = this.timingState;
+      const stillRemainingMs = current
+        ? current.startedAt + current.durationMs - performance.now()
+        : 0;
+      if (stillRemainingMs > 1) {
+        this._scheduleTimingTimeout();
+        return;
+      }
+      this.resolveTimingInput("timeout");
+    }, remainingMs);
+  }
+
   getLifecycleDebugSnapshot() {
     return Object.freeze({
       active: !this.paused && !this.disposed,
@@ -386,6 +436,7 @@ export class CombatRenderer {
 
   pause() {
     if (this.disposed || this.paused) return this.getLifecycleDebugSnapshot();
+    if (this.timingState?.active) this.timingPausedAt = performance.now();
     this.paused = true;
     cancelAnimationFrame(this.frameHandle);
     this.frameHandle = 0;
@@ -402,11 +453,13 @@ export class CombatRenderer {
     this.paused = false;
 
     if (this.timingState?.active) {
-      const remaining = Math.max(0, this.timingState.startedAt + this.timingState.durationMs - performance.now());
-      this.timingTimeout = this._setOwnedTimeout(() => {
-        this.timingTimeout = 0;
-        this.resolveTimingInput("timeout");
-      }, remaining);
+      const now = performance.now();
+      if (this.timingPausedAt > 0) {
+        this.timingState.startedAt += Math.max(0, now - this.timingPausedAt);
+      }
+      this.timingPausedAt = 0;
+      this.lastTimingFrameAt = now;
+      this._scheduleTimingTimeout();
     } else if (
       this.matchReady
       && this.battlePhase === "CLIMAX"
@@ -479,6 +532,8 @@ export class CombatRenderer {
       hitWindowMs: timingWindow.hitWindowMs,
       radiusScale: 1 + advantage * 0.42
     };
+    this.lastTimingFrameAt = startedAt;
+    this.timingPausedAt = 0;
     this.onClimaxStart?.({
       round: this.round,
       tactical_turns: this.tacticalTurn,
@@ -487,11 +542,7 @@ export class CombatRenderer {
       effectiveness: this.tacticalEffectiveness
     });
     this.audioBridge?.playClimaxWarning?.();
-    this._clearOwnedTimeout(this.timingTimeout);
-    this.timingTimeout = this._setOwnedTimeout(() => {
-      this.timingTimeout = 0;
-      this.resolveTimingInput("timeout");
-    }, timingWindow.durationMs);
+    this._scheduleTimingTimeout();
     return true;
   }
 
@@ -500,9 +551,11 @@ export class CombatRenderer {
     const current = this.timingState;
     const elapsedMs = performance.now() - current.startedAt;
     const timingGraceMs = Math.max(0, Number(this.getEconomyBoosts()?.timingGraceMs) || 0);
-    window.clearTimeout(this.timingTimeout);
+    this._clearOwnedTimeout(this.timingTimeout);
     this.timingTimeout = 0;
     this.timingState = null;
+    this.lastTimingFrameAt = 0;
+    this.timingPausedAt = 0;
 
     const resolution = this.combatRuntime.resolveTimingInput({
       elapsedMs,
@@ -1148,6 +1201,8 @@ export class CombatRenderer {
     window.visualViewport?.removeEventListener("scroll", this.handleViewportResize);
     document.removeEventListener("visibilitychange", this.handleDocumentVisibility);
     this.timingState = null;
+    this.lastTimingFrameAt = 0;
+    this.timingPausedAt = 0;
     this._clearOwnedTimeouts();
     this.timingTimeout = 0;
     this.phaseTransitionTimeout = 0;
@@ -1163,6 +1218,8 @@ export class CombatRenderer {
       this.frameHandle = 0;
       return;
     }
+    const timingPausedFrameMs = this._compensateTimingFrameStall(time);
+    if (timingPausedFrameMs > 1) this._scheduleTimingTimeout();
     const delta = clamp((time - this.lastFrame) / 1000, 0, 0.05);
     this.lastFrame = time;
 
