@@ -302,8 +302,10 @@ function setRewardAuthorityStatus(message, error = false) {
 function recordRewardAuthorityContext(payload) {
   const context = payload?.reward_authority;
   if (!context || typeof context !== "object") {
-    rewardAuthorityContext = null;
-    return null;
+    // TurnResultDTOs intentionally do not repeat the init proof context.
+    // Preserve the context for this match instead of clearing it on each turn.
+    if (payload?.type === "CombatInitDTO") rewardAuthorityContext = null;
+    return rewardAuthorityContext;
   }
   const integration = gachaController.playerMetaIntegration;
   if (!integration || typeof context.nonce !== "string" || typeof context.public_key_jwk !== "object") {
