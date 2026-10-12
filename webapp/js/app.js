@@ -1202,7 +1202,17 @@ function buildLocalFourVFourFormation() {
 }
 
 function buildLocalFourVFourCombatInit() {
-  const { playerUnits, enemyUnits } = buildLocalFourVFourFormation();
+  const { playerUnits: rawPlayerUnits, enemyUnits: rawEnemyUnits } = buildLocalFourVFourFormation();
+  // Presentation-only art mapping: keep roster IDs, names, stats and rewards unchanged.
+  const combatArtIds = ["cari", "cami", "sunna", "chie", "scarlet", "chloe", "fenrir", "roxie_vane"];
+  const playerUnits = rawPlayerUnits.map((unit, index) => ({
+    ...unit,
+    combat_sprite_url: "./assets/characters/combat_" + combatArtIds[index] + ".svg"
+  }));
+  const enemyUnits = rawEnemyUnits.map((unit, index) => ({
+    ...unit,
+    combat_sprite_url: "./assets/characters/combat_" + combatArtIds[index + 4] + ".svg"
+  }));
   const dto = applyActiveRoster(createDemoCombatInit());
   const characterById = new Map(gachaController.getCharacters().map((unit) => [canonicalCharacterId(unit), unit]));
   const battleUnits = [...playerUnits, ...enemyUnits];
@@ -1251,7 +1261,17 @@ function buildLocalFourVFourCombatInit() {
       stats: { ...firstEnemy.stats },
       stamina: firstEnemy.stats.stamina
     },
-    assets: { ...(dto.assets || {}), cards: assets.map((entry) => entry.card), sprites: assets.map((entry) => entry.sprite) },
+    assets: {
+      ...(dto.assets || {}),
+      cards: assets.map((entry) => entry.card),
+      // The descriptor IDs exactly match the eight runtime actor IDs.
+      sprites: battleUnits.map((unit) => ({
+        id: unit.id,
+        sprite_url: unit.combat_sprite_url,
+        path: unit.combat_sprite_url,
+        kind: "sprite"
+      }))
+    },
     state: { ...(dto.state || {}), mode: "4v4", tactical_turn: 0, tactical_max_turns: 5 }
   };
 }

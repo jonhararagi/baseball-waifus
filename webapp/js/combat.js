@@ -1014,8 +1014,12 @@ export class CombatRenderer {
       ...(dto.enemy_team_units || [])
     ].map((unit) => {
       const characterId = String(unit?.characterId || unit?.character_id || unit?.id || "");
-      if (!getWaifu(characterId)) return null;
-      const path = getWaifuAssets(characterId).spriteSheetUrl;
+      const path = String(
+        unit?.combat_sprite_url
+        || unit?.sprite_url
+        || (getWaifu(characterId) ? getWaifuAssets(characterId).spriteSheetUrl : "")
+      );
+      if (!path) return null;
       return { id: String(unit.id || characterId), sprite_url: path, path, kind: "sprite" };
     }).filter(Boolean);
     const fourVFour = String(dto.game_mode || dto.mode || "").toLowerCase() === "4v4";
@@ -1292,7 +1296,8 @@ export class CombatRenderer {
       }
     }
 
-    if (this.kytosPresentationState) {
+    const isFourVFour = String(this.state?.game_mode || this.state?.mode || "").toLowerCase() === "4v4";
+    if (this.kytosPresentationState && !isFourVFour) {
       this.kytosPresentation.render(target, w, h, this.kytosPresentationState, { time });
       this.batterRenderer.draw(target, w, h, {
         accentColor: this.themeManager.getStrikeZoneColor(),
@@ -1503,7 +1508,7 @@ export class CombatRenderer {
       cameraTransform: camera,
       groundColor,
       showZones: false,
-      showSetPieceLabels: !ultimateActive
+      showSetPieceLabels: !ultimateActive && String(this.state?.game_mode || this.state?.mode || "").toLowerCase() !== "4v4"
     });
 
     for (const actor of this.combatStage.getSortedActors()) {
@@ -1558,7 +1563,8 @@ export class CombatRenderer {
   }
 
   _drawCombatSupportActor(ctx, actor, transform, color, h = this.pixelHeight, w = this.pixelWidth) {
-    const sprite = this._combatSpriteForActor(actor.actorId)
+    const sprite = this.assetBank.get(actor.visual?.combatSpriteUrl)
+      || this._combatSpriteForActor(actor.actorId)
       || this.assetBank.get(getWaifuAssets(actor.visual?.characterId || actor.actorId).spriteSheetUrl);
     if (sprite) {
       const targetHeight = combatantVisualHeight(w, h, transform.scale);
@@ -1695,7 +1701,8 @@ export class CombatRenderer {
     const y = frame.y;
     const rotation = (frame.rotationDeg ?? frame.rotation ?? 0) * Math.PI / 180;
 
-    const sprite = this._combatSpriteForActor(actor.actorId)
+    const sprite = this.assetBank.get(actor.visual?.combatSpriteUrl)
+      || this._combatSpriteForActor(actor.actorId)
       || this.assetBank.get(getWaifuAssets(actor.visual?.characterId || actor.actorId).spriteSheetUrl);
     ctx.save();
     ctx.translate(x, y);
@@ -1751,7 +1758,8 @@ export class CombatRenderer {
     }
 
     const cinematicUltimate = String(this.combatPresentation.getState().sequenceKind || "").startsWith("ULTIMATE");
-    if (!cinematicUltimate) {
+    const isFourVFour = String(this.state?.game_mode || this.state?.mode || "").toLowerCase() === "4v4";
+    if (!cinematicUltimate && !isFourVFour) {
       ctx.textAlign = "center";
       ctx.font = "900 9px Orbitron, system-ui, sans-serif";
       ctx.fillStyle = "#ffd6e8";

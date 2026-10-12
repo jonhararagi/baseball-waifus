@@ -69,3 +69,11 @@ const app = read("js/app.js");
 assert.ok(app.includes('timingFeedback?.classList.remove("is-visible", "is-cinematic-action")'), "HOME must clear timing feedback");
 assert.ok(app.includes('appRoot?.classList.remove("is-combat-4v4", "is-cinematic-ultimate")'), "HOME must clear combat layout state");
 assert.ok(read("css/styles.css").includes("[hidden] { display: none !important; }"), "hidden controls must stay hidden");
+
+assert.ok(app.includes('combatArtIds = ["cari", "cami", "sunna", "chie", "scarlet", "chloe", "fenrir", "roxie_vane"]'), "4v4 must bind one sprite per slot");
+assert.ok(app.includes("sprites: battleUnits.map((unit) => ({"), "sprite descriptors must use actor IDs");
+assert.ok(combat.includes("unit?.combat_sprite_url"), "critical preload must accept explicit local art");
+assert.ok(combat.includes("this.assetBank.get(actor.visual?.combatSpriteUrl)"), "renderer must use actor-specific art before ID fallback");
+assert.ok(combat.includes("this.kytosPresentationState && !isFourVFour"), "Kytos single-batter scene must not obscure 4v4");
+assert.ok(combat.includes('toLowerCase() !== "4v4"'), "4v4 must not draw set-piece placeholder labels");
+assert.ok(stage.includes('combatSpriteUrl: String(unit.combat_sprite_url || unit.sprite_url || "")'), "stage actor must preserve the combat sprite URL");

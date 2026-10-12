@@ -277,6 +277,7 @@ function buildRuntimeCombatActor(unit, team, position) {
     visual: {
       name: String(unit.displayName || unit.characterId || unit.id),
       characterId: String(unit.characterId || ""),
+      combatSpriteUrl: String(unit.combat_sprite_url || unit.sprite_url || ""),
       source: temporary ? "TEMPORARY_CANONICAL_LOCAL" : "CANONICAL_CHARACTER",
       temporary
     }
