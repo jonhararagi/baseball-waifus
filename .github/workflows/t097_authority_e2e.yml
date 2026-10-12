@@ -39,6 +39,9 @@ jobs:
           node --version
           npm --version
 
+      - name: Install backend runtime dependencies
+        run: npm --prefix backend install --ignore-scripts --no-audit --no-fund --package-lock=false
+
       - name: Run backend and T097 server-authority contract tests
         run: |
           mkdir -p artifacts
