@@ -374,10 +374,12 @@ async function run() {
 
     const bone008PlayerMetaScript = `(() => {
       try {
+        ${T097_REWARD_HANDOFF ? 'if (!localStorage.getItem("baseball_waifus_player_meta_v1:local-player")) {' : ""}
         localStorage.setItem(
           "baseball_waifus_player_meta_v1:local-player",
           ${JSON.stringify(bone008PlayerMetaFixture)}
         );
+        ${T097_REWARD_HANDOFF ? "}" : ""}
       } catch {}
     })();`;
     if (T094_COMBAT_LOOP) {
