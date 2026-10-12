@@ -888,8 +888,15 @@ async function run() {
               "BWM-105 Timing Ring opened outside fifth tactical turn", active.battle);
             const beforePlayerHp = healthTotal(active.battle.players);
             const beforeEnemyHp = healthTotal(active.battle.enemies);
+            // Capture the actual live ring before dispatching the physical pointer.
+            // The previous "-03-timing-ring-N" image was captured after resolution,
+            // so it showed the result flash instead of proving the ring was visible.
+            const activeTimingRound = timingRound + 1;
+            evidence.screenshots["timingWindowActive" + activeTimingRound] = await screenshot(
+              cdp, evidencePrefix + "-03-timing-ring-active-" + activeTimingRound
+            );
             const inputProof = await dispatchCorrelatedTimingPointer(cdp, {
-              task: BWM4V4_TASK, attempt: timingRound + 1, expectedGrade: "GREAT",
+              task: BWM4V4_TASK, attempt: activeTimingRound, expectedGrade: "GREAT",
               expectedRound: active.battle.round, expectedTurn: 5,
               preparedGeometryAndTargets: timingCanvasTarget
             });
@@ -919,7 +926,7 @@ async function run() {
               phaseAfter: after.battle.phase, terminalAfter: after.battle.terminal
             });
             timingRound += 1;
-            evidence.screenshots["timingRound" + timingRound] = await screenshot(cdp, evidencePrefix + "-03-timing-ring-" + timingRound);
+            evidence.screenshots["timingRound" + timingRound] = await screenshot(cdp, evidencePrefix + "-03-timing-result-" + timingRound);
             if (after.battle.terminal) { terminalSnapshot = after; break; }
             continue;
           }
