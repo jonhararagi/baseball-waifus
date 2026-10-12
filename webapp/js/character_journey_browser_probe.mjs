@@ -924,8 +924,40 @@ async function run() {
       await mark("CLIMAX", (state) => state.battlePhase === "CLIMAX" && state.tacticalTurn === 5);
       let terminalTimingAction = null;
       if (T097_SERVER_AUTHORITY) {
-        // The real renderer resolves the timing-window timeout and submits its
-        // actual grade; assert the signed server response, never synthesize one.
+        await waitFor(
+          async () => {
+            const state = await cdpEvaluate(cdp, "window.__BW_T097_TIMING_STATE__?.()");
+            return state?.active && Number.isFinite(Number(state.elapsedMs)) &&
+              Number.isFinite(Number(state.targetMs)) && Number(state.elapsedMs) < Number(state.targetMs) - 5
+              ? state : false;
+          },
+          { timeoutMs: 10000, intervalMs: 5, label: "T097 active server timing window before target" }
+        );
+        const timingDispatch = await cdpEvaluate(cdp, `(() => {
+          const state = window.__BW_T097_TIMING_STATE__?.();
+          const canvas = document.querySelector("#gameCanvas");
+          if (!state?.active || !canvas || Number(state.elapsedMs) >= Number(state.targetMs)) return null;
+          const delayMs = Math.max(0, Number(state.targetMs) - Number(state.elapsedMs));
+          const rect = canvas.getBoundingClientRect();
+          const x = rect.left + rect.width / 2;
+          const y = rect.top + rect.height / 2;
+          window.setTimeout(() => {
+            const pointer = { bubbles: true, cancelable: true, clientX: x, clientY: y, pointerId: 1, pointerType: "mouse", button: 0, buttons: 1 };
+            canvas.dispatchEvent(new PointerEvent("pointerdown", pointer));
+            canvas.dispatchEvent(new PointerEvent("pointerup", { ...pointer, buttons: 0 }));
+          }, delayMs);
+          return { scheduled: true, delayMs, elapsedMs: Number(state.elapsedMs), targetMs: Number(state.targetMs), greatWindowMs: Number(state.greatWindowMs) };
+        })()`);
+        requireCondition(timingDispatch?.scheduled === true, "T097 could not schedule a pre-target canvas input", timingDispatch);
+        const actualTimingResult = await waitFor(
+          async () => cdpEvaluate(cdp, "window.__BW_T097_LAST_TIMING_RESULT__ || false"),
+          { timeoutMs: 5000, intervalMs: 10, label: "T097 actual canvas timing result" }
+        );
+        requireCondition(
+          ["GREAT", "HIT"].includes(String(actualTimingResult.grade || "").toUpperCase()),
+          "T097 canvas input did not resolve inside an accepted timing window",
+          { timingDispatch, actualTimingResult }
+        );
         terminalTimingAction = await waitFor(
           async () => {
             const entry = [...authorityTrace].reverse().find((item) =>
@@ -935,7 +967,9 @@ async function run() {
           },
           { timeoutMs: 10000, intervalMs: 20, label: "T097 signed terminal result after actual client timing resolution" }
         ).catch((error) => {
-          throw new Error(error.message + " // authorityTrace=" + JSON.stringify(authorityTrace));
+          throw new Error(error.message + " // timingDispatch=" + JSON.stringify(timingDispatch) +
+            " // actualTimingResult=" + JSON.stringify(actualTimingResult) +
+            " // authorityTrace=" + JSON.stringify(authorityTrace));
         });
         requireCondition(
           ["GREAT", "HIT"].includes(String(terminalTimingAction.timingGrade || "").toUpperCase()),
