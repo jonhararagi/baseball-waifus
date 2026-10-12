@@ -557,6 +557,9 @@ if (new URLSearchParams(window.location.search).get("qa") === "t097") {
       hitWindowMs: Number(timing.hitWindowMs)
     };
   };
+  window.__BW_T097_SERVER_INIT_READY__ = () => Boolean(
+    renderer.matchReady && renderer.serverAuthoritative && rewardAuthorityContext?.matchId
+  );
 }
 const rosterPanel = new RosterPanel({
   root: rosterPanelRoot,
