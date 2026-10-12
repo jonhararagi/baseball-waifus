@@ -158,6 +158,8 @@ const leaderboard = new Leaderboard({
   playerName: telegram.getUserName()
 });
 const gachaController = new GachaController({
+  storage: window.localStorage,
+  playerMetaStorage: window.localStorage,
   audioBridge,
   hapticsBridge,
   cloudStorage
