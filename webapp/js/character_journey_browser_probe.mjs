@@ -911,14 +911,6 @@ async function run() {
       }
 
       await mark("CLIMAX", (state) => state.battlePhase === "CLIMAX" && state.tacticalTurn === 5);
-      await waitFor(
-        async () => {
-          const state = await cdpEvaluate(cdp, "window.__BW_T097_TIMING_STATE__?.()");
-          return state?.active ? state : false;
-        },
-        { timeoutMs: 6000, intervalMs: 1, label: "T097 actual renderer timing window active" }
-      );
-
       let lastTimingState = null;
       const timingTargetState = await waitFor(
         async () => {
@@ -926,11 +918,10 @@ async function run() {
           lastTimingState = state;
           if (!state?.active || !Number.isFinite(Number(state.elapsedMs)) || !Number.isFinite(Number(state.targetMs))) return false;
           const deltaFromTargetMs = Number(state.elapsedMs) - Number(state.targetMs);
-          // CDP dispatch has measurable latency; sample early enough that the
-          // actual pointer event lands inside the real GREAT window.
+          // Poll active state and target atomically; CDP dispatch has latency.
           return deltaFromTargetMs >= -75 && deltaFromTargetMs <= -35 ? state : false;
         },
-        { timeoutMs: 5000, intervalMs: 1, label: "T097 live GREAT timing target band" }
+        { timeoutMs: 10000, intervalMs: 1, label: "T097 active GREAT timing target band" }
       ).catch((error) => {
         throw new Error(error.message + " // lastTimingState=" + JSON.stringify(lastTimingState));
       });
