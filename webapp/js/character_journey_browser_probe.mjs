@@ -32,6 +32,9 @@ const EVIDENCE_DIR = resolve(
 );
 const BROWSER_BIN = process.env.BROWSER_BIN;
 
+const ACTION_BAT_VISIBLE_EXPRESSION = "(() => {   const shell = document.querySelector('.game-viewport');   const button = document.querySelector('#action-bat');   const shellRect = shell?.getBoundingClientRect();   const buttonRect = button?.getBoundingClientRect();   return Boolean(     shell && !shell.hidden && shellRect?.width > 0 && shellRect?.height > 0     && button && !button.hidden && !button.disabled     && buttonRect?.width > 0 && buttonRect?.height > 0     && getComputedStyle(button).visibility !== 'hidden'     && getComputedStyle(button).display !== 'none'   ); })()";
+
+
 const MIME = Object.freeze({
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
@@ -1455,7 +1458,7 @@ async function run() {
         (state) => state.battlePhase === "TACTICAL" && state.tacticalTurn === 0
       );
       await waitFor(
-        async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#action-bat') && !document.querySelector('#action-bat').disabled)"),
+        async () => cdpEvaluate(cdp, ACTION_BAT_VISIBLE_EXPRESSION),
         { timeoutMs: 6000, label: "T097 BATEAR ready for T1" }
       );
       await cdpClickSelector(cdp, "#action-bat");
@@ -1472,7 +1475,7 @@ async function run() {
             (state) => state.tacticalTurn === turn && state.presentationPhase === "COMPLETE" && state.presentationActive === false
           );
           await waitFor(
-            async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#action-bat') && !document.querySelector('#action-bat').disabled)"),
+            async () => cdpEvaluate(cdp, ACTION_BAT_VISIBLE_EXPRESSION),
             { timeoutMs: 6000, label: "T097 BATEAR ready before T" + String(turn + 1) }
           );
           await cdpClickSelector(cdp, "#action-bat");
@@ -1621,7 +1624,7 @@ async function run() {
       };
 
       const clickBat = async (label) => {
-        await waitFor(async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#action-bat') && !document.querySelector('#action-bat').disabled)"), { timeoutMs:6000, label:"T101 BATEAR ready " + label });
+        await waitFor(async () => cdpEvaluate(cdp, ACTION_BAT_VISIBLE_EXPRESSION), { timeoutMs:6000, label:"T101 BATEAR ready " + label });
         await cdpClickSelector(cdp, "#action-bat");
       };
 
@@ -1780,7 +1783,7 @@ async function run() {
 
       const clickBat = async (label) => {
         await waitFor(
-          async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#action-bat') && !document.querySelector('#action-bat').disabled)"),
+          async () => cdpEvaluate(cdp, ACTION_BAT_VISIBLE_EXPRESSION),
           { timeoutMs: 6000, label: "T109 BATEAR ready " + label }
         );
         await cdpClickSelector(cdp, "#action-bat");
@@ -2024,7 +2027,7 @@ async function run() {
 
       const clickBat = async (label) => {
         await waitFor(
-          async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#action-bat') && !document.querySelector('#action-bat').disabled)"),
+          async () => cdpEvaluate(cdp, ACTION_BAT_VISIBLE_EXPRESSION),
           { timeoutMs: 6000, label: "T117 BATEAR ready " + label }
         );
         await cdpClickSelector(cdp, "#action-bat");
@@ -2218,7 +2221,7 @@ async function run() {
 
       const clickBat = async (label) => {
         await waitFor(
-          async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#action-bat') && !document.querySelector('#action-bat').disabled)"),
+          async () => cdpEvaluate(cdp, ACTION_BAT_VISIBLE_EXPRESSION),
           { timeoutMs: 6000, label: "T114-R BATEAR ready " + label }
         );
         await cdpClickSelector(cdp, "#action-bat");
@@ -2427,7 +2430,7 @@ async function run() {
       );
 
       await waitFor(
-        async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#action-bat') && !document.querySelector('#action-bat').disabled)"),
+        async () => cdpEvaluate(cdp, ACTION_BAT_VISIBLE_EXPRESSION),
         { timeoutMs: 6000, label: "T094 BATEAR ready for T1" }
       );
       await cdpClickSelector(cdp, "#action-bat");
@@ -2444,7 +2447,7 @@ async function run() {
             { timeoutMs: 5000, label: "BONE-008 first presentation ACTION before replacement" }
           );
           await waitFor(
-            async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#action-bat') && !document.querySelector('#action-bat').disabled)"),
+            async () => cdpEvaluate(cdp, ACTION_BAT_VISIBLE_EXPRESSION),
             { timeoutMs: 5000, label: "BONE-008 replacement input ready" }
           );
           await cdpClickSelector(cdp, "#action-bat");
@@ -2461,7 +2464,7 @@ async function run() {
               { timeoutMs: 6000, label: "TACTICAL " + String(turn) + " presentation complete" }
             );
             await waitFor(
-              async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#action-bat') && !document.querySelector('#action-bat').disabled)"),
+              async () => cdpEvaluate(cdp, ACTION_BAT_VISIBLE_EXPRESSION),
               { timeoutMs: 6000, label: "T094 BATEAR ready before T" + String(turn + 1) }
             );
             await cdpClickSelector(cdp, "#action-bat");
