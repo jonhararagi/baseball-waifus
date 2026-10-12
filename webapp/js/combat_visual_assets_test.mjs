@@ -108,5 +108,7 @@ assert.ok(combat.includes('focusTarget: "COMBAT", zoom: 1, x: 0, y: 0, rotationD
 assert.ok(combat.includes("const ultimateActive = !isFourVFour && active"), "single-batter cinematic UI must not take over the 4v4 HUD");
 
 assert.ok(combat.includes('phase: "FORMATION", progress: 0, sequenceKind: ""'), "4v4 rivals must not inherit the single-target cinematic reaction rings");
-assert.ok(combat.includes("const visualScale = isFourVFour ? 0.72 : 1"), "4v4 Timing Ring must scale down to preserve the eight-unit formation");
+assert.ok(combat.includes("const visualScale = isFourVFour ? 0.5 : 1"), "4v4 Timing Ring must use a compact overlay to keep the eight-unit formation readable");
 assert.ok(combat.includes("TIMING_RING_TARGET_RADIUS * visualScale"), "only the ring presentation radius is scaled");
+
+assert.ok(combat.includes("const cy = h * (isFourVFour ? 0.60 : 0.52)"), "4v4 Timing Ring must sit lower over the infield rather than the character nameplates");

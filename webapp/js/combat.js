@@ -2263,13 +2263,13 @@ export class CombatRenderer {
 
     const elapsedMs = performance.now() - timing.startedAt;
     const isFourVFour = String(this.state?.game_mode || this.state?.mode || "").toLowerCase() === "4v4";
-    const visualScale = isFourVFour ? 0.72 : 1;
+    const visualScale = isFourVFour ? 0.5 : 1;
     const baseRadius = timingRingRadius(elapsedMs);
     const radiusScale = Number(timing.radiusScale) || 1;
     const radius = (TIMING_RING_TARGET_RADIUS * radiusScale
       + (baseRadius - TIMING_RING_TARGET_RADIUS) * radiusScale) * visualScale;
     const cx = w * 0.5;
-    const cy = h * 0.52;
+    const cy = h * (isFourVFour ? 0.60 : 0.52);
     const targetRadius = TIMING_RING_TARGET_RADIUS * visualScale;
     const progress = clamp(elapsedMs / timing.durationMs, 0, 1);
     const pulse = 0.72 + Math.sin(time * 0.012) * 0.12;
