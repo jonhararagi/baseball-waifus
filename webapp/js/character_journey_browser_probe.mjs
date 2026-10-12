@@ -923,7 +923,7 @@ async function run() {
         },
         { timeoutMs: 10000, intervalMs: 1, label: "T097 active GREAT timing target band" }
       ).catch((error) => {
-        throw new Error(error.message + " // lastTimingState=" + JSON.stringify(lastTimingState) + " // authorityTrace=" + JSON.stringify(authorityTrace) + " // runtime=" + JSON.stringify(await readRuntime()));
+        throw new Error(error.message + " // lastTimingState=" + JSON.stringify(lastTimingState) + " // authorityTrace=" + JSON.stringify(authorityTrace));
       });
       const timingElapsedAtInput = Number(timingTargetState.elapsedMs);
       const timing = await readRuntime();
