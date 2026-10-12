@@ -949,6 +949,13 @@ async function run() {
         const clickY = rect.top + rect.height / 2;
         const target = await cdpEvaluate(cdp, "(() => { const e = document.elementFromPoint(" + clickX + ", " + clickY + "); return { tag:e?.tagName || '', id:e?.id || '', isCanvas:e === document.querySelector('#gameCanvas') }; })()");
         requireCondition(target.isCanvas === true, "T097 local timing target is not the game canvas", target);
+        await waitFor(
+          async () => {
+            const state = await cdpEvaluate(cdp, "window.__BW_T097_TIMING_STATE__?.()");
+            return state?.active && Number.isFinite(Number(state.elapsedMs)) && Number.isFinite(Number(state.targetMs)) ? state : false;
+          },
+          { timeoutMs: 10000, intervalMs: 10, label: "T097 local renderer timing window active" }
+        );
         const localTimingDispatch = await cdpEvaluate(cdp, `(() => {
           const state = window.__BW_T097_TIMING_STATE__?.();
           const canvas = document.querySelector("#gameCanvas");
