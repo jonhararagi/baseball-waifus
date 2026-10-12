@@ -535,6 +535,18 @@ if (new URLSearchParams(window.location.search).get("qa") === "t097") {
     if (!renderer.isTimingWindowActive?.() || !Number.isFinite(Number(renderer.timingState?.startedAt))) return null;
     return performance.now() - Number(renderer.timingState.startedAt);
   };
+  window.__BW_T097_TIMING_STATE__ = () => {
+    const timing = renderer.timingState;
+    if (!timing || !Number.isFinite(Number(timing.startedAt))) return null;
+    return {
+      active: Boolean(renderer.isTimingWindowActive?.()),
+      elapsedMs: performance.now() - Number(timing.startedAt),
+      targetMs: Number(timing.targetMs),
+      durationMs: Number(timing.durationMs),
+      greatWindowMs: Number(timing.greatWindowMs),
+      hitWindowMs: Number(timing.hitWindowMs)
+    };
+  };
 }
 const rosterPanel = new RosterPanel({
   root: rosterPanelRoot,
