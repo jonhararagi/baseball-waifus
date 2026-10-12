@@ -60,7 +60,7 @@ function combatantVisualHeight(width, height, scale = 1) {
   const stageWidth = Math.max(1, safeNumber(width, 720));
   const stageHeight = Math.max(1, safeNumber(height, 480));
   const depthScale = clamp(safeNumber(scale, 1), 0.55, 1.25);
-  return clamp(Math.min(stageHeight * 0.30, stageWidth * 0.145) * depthScale, 56, 148);
+  return clamp(Math.min(stageHeight * 0.42, stageWidth * 0.215) * depthScale, 64, 176);
 }
 
 function normalizePoint(point, fallback) {
@@ -1504,11 +1504,14 @@ export class CombatRenderer {
     const camera = this.combatPresentation.getCameraTransform({ width: w, height: h });
     const groundColor = this.themeManager.getCurrentTheme()?.groundColor || "#10162a";
     const ultimateActive = String(this.combatPresentation.getState().sequenceKind || "").startsWith("ULTIMATE");
+    const isFourVFour = String(this.state?.game_mode || this.state?.mode || "").toLowerCase() === "4v4";
     renderCombatStageWorld(ctx, this.combatStage, w, h, {
       cameraTransform: camera,
       groundColor,
       showZones: false,
-      showSetPieceLabels: !ultimateActive && String(this.state?.game_mode || this.state?.mode || "").toLowerCase() !== "4v4"
+      showSetPieces: !isFourVFour,
+      showBaseballDiamond: isFourVFour,
+      showSetPieceLabels: !ultimateActive && !isFourVFour
     });
 
     for (const actor of this.combatStage.getSortedActors()) {
@@ -2137,41 +2140,8 @@ export class CombatRenderer {
     const loop = this.getBattleLoopState();
     if (!loop || !this.matchReady) return;
     if (loop.mode === "4v4") {
-      const playerAlive = (loop.players || []).filter((unit) => unit.health > 0);
-      const enemyAlive = (loop.enemies || []).filter((unit) => unit.health > 0);
-      const playerHp = (loop.players || []).reduce((sum, unit) => sum + unit.health, 0);
-      const playerMax = (loop.players || []).reduce((sum, unit) => sum + unit.maxHealth, 0);
-      const enemyHp = (loop.enemies || []).reduce((sum, unit) => sum + unit.health, 0);
-      const enemyMax = (loop.enemies || []).reduce((sum, unit) => sum + unit.maxHealth, 0);
-      const phaseLabel = loop.phase === "CLIMAX" ? "TIMING RING // CLIMAX"
-        : loop.phase === "VICTORY" ? "VICTORY // OPPONENT TEAM DEFEATED"
-        : loop.phase === "DEFEAT" ? "DEFEAT // YOUR TEAM DEFEATED"
-        : "TACTICAL // TURN " + loop.tacticalTurn + "/" + loop.tacticalMaxTurns;
-      const barX = w * 0.08;
-      const barW = w * 0.84;
-      ctx.save();
-      ctx.textAlign = "center";
-      ctx.font = "900 11px Orbitron, system-ui, sans-serif";
-      ctx.fillStyle = loop.phase === "CLIMAX" ? "#ffdf00" : loop.terminal === "DEFEAT" ? "#ff007f" : "#00f3ff";
-      ctx.shadowColor = ctx.fillStyle;
-      ctx.shadowBlur = 8;
-      ctx.fillText("ROUND " + loop.round + " • " + phaseLabel, w / 2, h * 0.205);
-      ctx.shadowBlur = 0;
-      ctx.textAlign = "left";
-      ctx.font = "800 8px Rajdhani, system-ui, sans-serif";
-      ctx.fillStyle = "#b8bed0";
-      ctx.fillText("YOUR TEAM " + playerAlive.length + "/4 • HP " + playerHp + "/" + playerMax, barX, h * 0.225);
-      ctx.fillStyle = "rgba(255,255,255,.10)";
-      ctx.fillRect(barX, h * 0.232, barW, 5);
-      ctx.fillStyle = "#00f3ff";
-      ctx.fillRect(barX, h * 0.232, barW * clamp(playerHp / Math.max(1, playerMax), 0, 1), 5);
-      ctx.fillStyle = "#b8bed0";
-      ctx.fillText("RIVALS " + enemyAlive.length + "/4 • HP " + enemyHp + "/" + enemyMax, barX, h * 0.251);
-      ctx.fillStyle = "rgba(255,255,255,.10)";
-      ctx.fillRect(barX, h * 0.258, barW, 5);
-      ctx.fillStyle = "#ff007f";
-      ctx.fillRect(barX, h * 0.258, barW * clamp(enemyHp / Math.max(1, enemyMax), 0, 1), 5);
-      ctx.restore();
+      // The DOM scoreboard plus each actor's own HP/name tag are the 4v4 HUD.
+      // A second aggregate HUD here covered the top of the field and overlapped it.
       return;
     }
 

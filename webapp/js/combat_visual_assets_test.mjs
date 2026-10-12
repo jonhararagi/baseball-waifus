@@ -78,3 +78,14 @@ assert.ok(combat.includes("this.assetBank.get(actor.visual?.combatSpriteUrl)"), 
 assert.ok(combat.includes("this.kytosPresentationState && !isFourVFour"), "Kytos single-batter scene must not obscure 4v4");
 assert.ok(combat.includes('toLowerCase() !== "4v4"'), "4v4 must not draw set-piece placeholder labels");
 assert.ok(stage.includes('combatSpriteUrl: String(unit.combat_sprite_url || unit.sprite_url || "")'), "stage actor must preserve the combat sprite URL");
+
+assert.ok(combat.includes("Math.min(stageHeight * 0.42, stageWidth * 0.215)"), "4v4 full-body units must be scaled for the actual canvas");
+assert.ok(combat.includes("showSetPieces: !isFourVFour"), "legacy tall tactical props must be disabled in 4v4");
+assert.ok(combat.includes("showBaseballDiamond: isFourVFour"), "4v4 ground must include baseball field markings");
+assert.ok(stage.includes("showSetPieces = true"), "stage renderer must support suppressing single-batter props");
+assert.ok(stage.includes("if (showBaseballDiamond)"), "field renderer must draw the infield geometry");
+assert.ok(combat.includes("// The DOM scoreboard plus each actor's own HP/name tag are the 4v4 HUD."), "duplicated aggregate HUD must not cover the field");
+assert.ok(app.includes('terminalSummary.textContent = result === "VICTORY"'), "terminal state must show a dedicated result overlay");
+assert.ok(app.includes('if (!isTerminal) {'), "RETURN/HOME must not appear between tactical turns");
+assert.ok(html.includes('id="combat-terminal-summary"'), "terminal result overlay must exist in the real app markup");
+assert.ok(css.includes("#app-container.is-combat-terminal #action-bat"), "action buttons must disappear at terminal state");

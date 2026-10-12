@@ -1581,3 +1581,46 @@ button {
   #app-container.is-combat-4v4 .cyber-btn { min-height:54px; }
   #app-container.is-combat-4v4 .secondary-nav { display:none; }
 }
+
+
+#app-container.is-combat-terminal .game-viewport::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  background: rgba(2, 5, 15, 0.40);
+  pointer-events: none;
+}
+.combat-terminal-summary {
+  position: absolute;
+  z-index: 13;
+  top: 48%;
+  left: 50%;
+  width: min(88%, 620px);
+  padding: clamp(22px, 3vw, 42px) clamp(20px, 4vw, 54px);
+  box-sizing: border-box;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(0, 243, 255, 0.84);
+  border-radius: 12px;
+  background: linear-gradient(130deg, rgba(5, 14, 31, 0.97), rgba(20, 12, 40, 0.96));
+  box-shadow: 0 0 30px rgba(0, 243, 255, 0.18), inset 0 0 32px rgba(0, 243, 255, 0.04);
+  color: #effcff;
+  font: 900 clamp(16px, 2.2vw, 28px) var(--font-header, Orbitron, system-ui, sans-serif);
+  letter-spacing: 0.09em;
+  line-height: 1.4;
+  text-align: center;
+  text-wrap: balance;
+  pointer-events: none;
+}
+.combat-terminal-summary.is-victory {
+  border-color: rgba(0, 243, 255, 0.92);
+  box-shadow: 0 0 32px rgba(0, 243, 255, 0.24), inset 0 0 28px rgba(0, 243, 255, 0.05);
+}
+.combat-terminal-summary.is-defeat {
+  border-color: rgba(255, 65, 143, 0.94);
+  box-shadow: 0 0 32px rgba(255, 0, 127, 0.24), inset 0 0 28px rgba(255, 0, 127, 0.05);
+}
+#app-container.is-combat-terminal #action-bat,
+#app-container.is-combat-terminal #btn-superswing {
+  display: none !important;
+}

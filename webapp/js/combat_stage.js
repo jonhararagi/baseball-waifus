@@ -738,7 +738,14 @@ function drawSetPiece(ctx, piece, w, h, { showLabel = true } = {}) {
   }
   ctx.restore();
 }
-export function renderCombatStageWorld(ctx, stage, width, height, { cameraTransform = null, groundColor = "#10162a", showZones = true, showSetPieceLabels = true } = {}) {
+export function renderCombatStageWorld(ctx, stage, width, height, {
+  cameraTransform = null,
+  groundColor = "#10162a",
+  showZones = true,
+  showSetPieceLabels = true,
+  showSetPieces = true,
+  showBaseballDiamond = false
+} = {}) {
   if (!ctx || !(stage instanceof CombatStage)) return false;
   const w = Math.max(1, Number(width) || stage.designWidth), h = Math.max(1, Number(height) || stage.designHeight);
   const camera = cameraTransform || { x: 0, y: 0 };
@@ -761,8 +768,68 @@ export function renderCombatStageWorld(ctx, stage, width, height, { cameraTransf
       const bottomX = w * (0.5 + xIndex * 0.14);
       ctx.beginPath(); ctx.moveTo(w * 0.5, horizon); ctx.lineTo(bottomX, h); ctx.stroke();
     }
-    for (const piece of stage.setPieces) {
-      drawSetPiece(ctx, piece, w, h, { showLabel: showSetPieceLabels });
+    // These tall rectangular props belong to the single-batter stage. They
+    // stretch across the field and read as debug geometry in tactical 4v4.
+    if (showSetPieces) {
+      for (const piece of stage.setPieces) {
+        drawSetPiece(ctx, piece, w, h, { showLabel: showSetPieceLabels });
+      }
+    }
+
+    if (showBaseballDiamond) {
+      ctx.save();
+      const home = { x: w * 0.5, y: h * 0.91 };
+      const first = { x: w * 0.69, y: h * 0.73 };
+      const second = { x: w * 0.5, y: h * 0.54 };
+      const third = { x: w * 0.31, y: h * 0.73 };
+      const mound = { x: w * 0.5, y: h * 0.70 };
+
+      // Subtle infield sand and clean foul lines make the setting read as baseball
+      // without adding tall polygons that compete with the eight sprites.
+      ctx.beginPath();
+      ctx.moveTo(home.x, home.y);
+      ctx.lineTo(first.x, first.y);
+      ctx.lineTo(second.x, second.y);
+      ctx.lineTo(third.x, third.y);
+      ctx.closePath();
+      ctx.fillStyle = "rgba(176, 101, 87, 0.16)";
+      ctx.fill();
+      ctx.strokeStyle = "rgba(222, 231, 248, 0.62)";
+      ctx.lineWidth = Math.max(1, w * 0.0022);
+      ctx.beginPath();
+      ctx.moveTo(home.x, home.y);
+      ctx.lineTo(w * 0.12, h * 0.40);
+      ctx.moveTo(home.x, home.y);
+      ctx.lineTo(w * 0.88, h * 0.40);
+      ctx.stroke();
+
+      ctx.strokeStyle = "rgba(228, 238, 255, 0.58)";
+      ctx.lineWidth = Math.max(1, w * 0.0018);
+      ctx.beginPath();
+      ctx.moveTo(first.x, first.y);
+      ctx.lineTo(second.x, second.y);
+      ctx.lineTo(third.x, third.y);
+      ctx.stroke();
+
+      for (const base of [home, first, second, third]) {
+        const size = Math.max(4, Math.min(w, h) * 0.018);
+        ctx.save();
+        ctx.translate(base.x, base.y);
+        ctx.rotate(Math.PI / 4);
+        ctx.fillStyle = "rgba(235, 246, 255, 0.94)";
+        ctx.strokeStyle = "rgba(0, 243, 255, 0.8)";
+        ctx.lineWidth = 1;
+        ctx.fillRect(-size / 2, -size / 2, size, size);
+        ctx.strokeRect(-size / 2, -size / 2, size, size);
+        ctx.restore();
+      }
+      ctx.beginPath();
+      ctx.ellipse(mound.x, mound.y, w * 0.035, h * 0.022, 0, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(222, 171, 135, 0.10)";
+      ctx.fill();
+      ctx.strokeStyle = "rgba(231, 238, 255, 0.38)";
+      ctx.stroke();
+      ctx.restore();
     }
     if (showZones) {
       for (const [id, zone] of Object.entries(stage.zones)) {
