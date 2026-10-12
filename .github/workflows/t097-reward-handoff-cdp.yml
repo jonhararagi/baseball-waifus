@@ -23,6 +23,8 @@ on:
       - "webapp/js/home_view_test.mjs"
       - "webapp/js/area_theme_manager.js"
       - "webapp/js/waifu_database.js"
+      - "webapp/js/waifu_database_test.mjs"
+      - "webapp/js/admin_panel_test.mjs"
       - "webapp/js/combat_visual_assets_test.mjs"
       - "webapp/data/waifus_config.json"
       - "webapp/assets/**"
