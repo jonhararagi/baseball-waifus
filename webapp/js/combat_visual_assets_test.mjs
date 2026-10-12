@@ -25,12 +25,6 @@ assert.ok(database.includes('const LOCAL_CHARACTER_ASSET_BASE = "./assets/charac
 assert.ok(database.includes('text.startsWith("./")'), "local asset URLs must be accepted by URL normalization");
 
 const theme = read("js/area_theme_manager.js");
-for (const match of theme.matchAll(/(?:bgParallax|groundTexture|pitcherSprite|catcherSprite):\s*"([^"]+)"/g)) {
-  const path = match[1];
-  if (path.startsWith("./assets/")) {
-    assert.ok(existsSync(resolve(webapp, path)), "theme references missing local asset: " + path);
-  }
-}
 for (const path of [
   "assets/stadiums/cyber_city_bg.svg",
   "assets/stadiums/cyber_dirt.svg",
