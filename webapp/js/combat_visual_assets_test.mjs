@@ -36,6 +36,9 @@ for (const path of [
 
 const combat = read("js/combat.js");
 assert.ok(combat.includes("const targetHeight = clamp(h * 0.105 * transform.scale, 96, 148);"), "4v4 actor sprite height must remain bounded for formation readability");
+assert.ok(combat.includes("const localTeamSprites = ["), "known 4v4 team characters must preload local portraits");
+assert.ok(combat.includes("this._drawCombatSupportActor(ctx, actor, transform, color, h);"), "player formation actors must receive the bounded canvas height");
+assert.ok(combat.includes("this.assetBank.get(getWaifuAssets(actor.visual?.characterId || actor.actorId).spriteSheetUrl)"), "player formation actors must have a local art fallback");
 console.log("BWM-104 VISUAL ASSETS PASS", JSON.stringify({
   characters: config.characters.length,
   localPortraits: config.characters.length * 3,
