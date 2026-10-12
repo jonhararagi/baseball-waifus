@@ -21,6 +21,11 @@ on:
       - "webapp/js/combat_4v4_authority_test.mjs"
       - "webapp/js/team_manager_test.mjs"
       - "webapp/js/home_view_test.mjs"
+      - "webapp/js/area_theme_manager.js"
+      - "webapp/js/waifu_database.js"
+      - "webapp/js/combat_visual_assets_test.mjs"
+      - "webapp/data/waifus_config.json"
+      - "webapp/assets/**"
       - "webapp/js/reward_pipeline.js"
       - "webapp/js/reward_authority.js"
       - "webapp/js/bone004_reward_authority_test.mjs"
@@ -134,6 +139,12 @@ jobs:
         run: |
           set -euo pipefail
           node --check webapp/js/character_journey_browser_probe.mjs
+
+      - name: Validate local combat art and 4v4 formation sizing
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --experimental-default-type=module webapp/js/combat_visual_assets_test.mjs
 
       - name: Run BWM-105 4v4 authority, roster and regression tests
         shell: bash
