@@ -991,6 +991,9 @@ export class CombatRenderer {
       away_team: dto.away_team || this.state.away_team,
       ...(areaId ? { area_id: areaId } : {})
     };
+    // Keep the renderer's phase/turn counters aligned with the server DTO.
+    // Local prediction is presentation-only and must not become the authority.
+    this._syncAuthorityState();
     this._syncCombatStageActors();
 
     const presentationEvent = createCombatPresentationEvent({
