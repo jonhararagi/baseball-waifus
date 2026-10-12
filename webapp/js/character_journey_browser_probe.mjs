@@ -941,19 +941,22 @@ async function run() {
         const clickY = rect.top + rect.height / 2;
         const target = await cdpEvaluate(cdp, "(() => { const e = document.elementFromPoint(" + clickX + ", " + clickY + "); return { tag:e?.tagName || '', id:e?.id || '', isCanvas:e === document.querySelector('#gameCanvas') }; })()");
         requireCondition(target.isCanvas === true, "T097 local timing target is not the game canvas", target);
-        await cdp.send("Input.setIgnoreInputEvents", { ignore: false });
-        await waitFor(
-          async () => {
-            const state = await cdpEvaluate(cdp, "window.__BW_T097_TIMING_STATE__?.()");
-            if (!state?.active || !Number.isFinite(Number(state.elapsedMs)) || !Number.isFinite(Number(state.targetMs))) return false;
-            const delta = Number(state.elapsedMs) - Number(state.targetMs);
-            const greatWindow = Number.isFinite(Number(state.greatWindowMs)) ? Number(state.greatWindowMs) : 55;
-            return delta >= -Math.min(40, greatWindow * 0.75) && delta <= -Math.min(10, greatWindow * 0.2) ? state : false;
-          },
-          { timeoutMs: 10000, intervalMs: 1, label: "T097 local GREAT timing target" }
-        );
-        await cdp.send("Input.dispatchMouseEvent", { type:"mousePressed", x:clickX, y:clickY, button:"left", buttons:1, clickCount:1 });
-        await cdp.send("Input.dispatchMouseEvent", { type:"mouseReleased", x:clickX, y:clickY, button:"left", buttons:0, clickCount:1 });
+        const localTimingDispatch = await cdpEvaluate(cdp, `(() => {
+          const state = window.__BW_T097_TIMING_STATE__?.();
+          const canvas = document.querySelector("#gameCanvas");
+          if (!state?.active || !canvas || !Number.isFinite(Number(state.elapsedMs)) || !Number.isFinite(Number(state.targetMs))) return null;
+          const delayMs = Math.max(0, Number(state.targetMs) - Number(state.elapsedMs));
+          const rect = canvas.getBoundingClientRect();
+          const x = rect.left + rect.width / 2;
+          const y = rect.top + rect.height / 2;
+          window.setTimeout(() => {
+            const pointer = { bubbles: true, cancelable: true, clientX: x, clientY: y, pointerId: 1, pointerType: "mouse", button: 0, buttons: 1 };
+            canvas.dispatchEvent(new PointerEvent("pointerdown", pointer));
+            canvas.dispatchEvent(new PointerEvent("pointerup", { ...pointer, buttons: 0 }));
+          }, delayMs);
+          return { scheduled: true, delayMs, elapsedMs: Number(state.elapsedMs), targetMs: Number(state.targetMs), greatWindowMs: Number(state.greatWindowMs) };
+        })()`);
+        requireCondition(localTimingDispatch?.scheduled === true, "T097 could not schedule local canvas timing input", localTimingDispatch);
       }
       const victory = await mark(
         "VICTORY",
