@@ -113,7 +113,7 @@ export class CombatService {
       state.internalEnergy = coreResult.energy_after;
       state.tacticalEffectiveness = coreResult.effectiveness_after;
       state.phase = coreResult.phase === "CLIMAX" ? "CLIMAX" : "TACTICAL";
-      state.tacticalTurn = coreResult.phase === "CLIMAX" ? 5 : coreResult.tactical_turn_after;
+      state.tacticalTurn = coreResult.phase === "CLIMAX" ? 5 : coreResult.tactical_turn_after + 1;
     } else if (state.phase === "CLIMAX") {
       coreResult = resolveClimaxTurn({
         grade: input.timingGrade,
