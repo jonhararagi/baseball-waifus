@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
+import { getWaifuAssets } from "./waifu_database.js";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -17,6 +18,15 @@ for (const character of config.characters) {
     assert.ok(url.startsWith("./assets/characters/"), character.id + " must use a local " + field);
     assert.ok(existsSync(resolve(webapp, url)), character.id + " references missing " + field + ": " + url);
   }
+}
+
+const generatedFallbacks = getWaifuAssets({
+  character_id: "bw999",
+  canonical: { display_name: "Unknown test character" }
+});
+for (const [label, url] of Object.entries(generatedFallbacks)) {
+  assert.equal(url, "./assets/characters/placeholder.svg", label + " must use the deterministic local placeholder");
+  assert.ok(existsSync(resolve(webapp, url)), label + " fallback path must exist: " + url);
 }
 
 const database = read("js/waifu_database.js");

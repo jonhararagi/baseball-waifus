@@ -248,20 +248,21 @@ function safeUrl(value, fallback) {
   }
 }
 
-function createGeneratedAssets(character = {}) {
-  const name = String(character.name || character.id || "Waifu");
-  const seed = encodeURIComponent(name + "-" + String(character.id || "waifu"));
+function createGeneratedAssets() {
+  // Unknown or partially configured characters must never produce guessed URLs
+  // that 404. Explicitly configured characters retain their own local art.
+  const fallbackAsset = LOCAL_CHARACTER_ASSET_BASE + "placeholder.svg";
   return {
-    avatar: LOCAL_CHARACTER_ASSET_BASE + id + ".svg",
-    card_art: LOCAL_CHARACTER_ASSET_BASE + id + ".svg",
-    cutin_art: LOCAL_CHARACTER_ASSET_BASE + id + ".svg",
-    sprite: LOCAL_CHARACTER_ASSET_BASE + id + ".svg"
+    avatar: fallbackAsset,
+    card_art: fallbackAsset,
+    cutin_art: fallbackAsset,
+    sprite: fallbackAsset
   };
 }
 
 function normalizeCharacter(input = {}) {
   const id = normalizeId(input.id || input.character_id || input.card_id || input.name || "waifu");
-  const generated = createGeneratedAssets({ ...input, id });
+  const generated = createGeneratedAssets();
   const stats = input.stats || {};
   const legacyAssets = input.assets || {};
 
