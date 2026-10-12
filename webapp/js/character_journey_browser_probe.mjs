@@ -1015,6 +1015,12 @@ async function run() {
         baseUrl,
         expectedBattleId,
         serverAuthorityTrace: authorityTrace,
+        timingTarget: {
+          elapsedMs: timingElapsedAtInput,
+          targetMs: timingTargetState.targetMs,
+          greatWindowMs: timingTargetState.greatWindowMs,
+          durationMs: timingTargetState.durationMs
+        },
         checkpoints,
         timeline,
         reward: {
