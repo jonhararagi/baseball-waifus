@@ -67,6 +67,8 @@ console.log("BWM-104 VISUAL ASSETS PASS", JSON.stringify({
 
 const app = read("js/app.js");
 const stage = read("js/combat_stage.js");
+const html = read("index.html");
+const css = read("css/styles.css");
 assert.ok(app.includes('timingFeedback?.classList.remove("is-visible", "is-cinematic-action")'), "HOME must clear timing feedback");
 assert.ok(app.includes('appRoot?.classList.remove("is-combat-4v4", "is-cinematic-ultimate")'), "HOME must clear combat layout state");
 assert.ok(read("css/styles.css").includes("[hidden] { display: none !important; }"), "hidden controls must stay hidden");
