@@ -244,6 +244,7 @@ export class CombatRenderer {
     this.state = null;
     this.lastTurn = null;
     this.matchReady = false;
+    this.serverAuthoritative = false;
     this.frameHandle = 0;
     this.paused = false;
     this.disposed = false;
@@ -479,15 +480,18 @@ export class CombatRenderer {
     this.timingTimeout = 0;
     this.timingState = null;
 
-    const resolution = this.combatRuntime.resolveTimingInput({
+    const timingInput = {
       elapsedMs,
       timingGraceMs,
       source,
       timingWindow: current
-    });
+    };
+    const resolution = this.serverAuthoritative
+      ? { timing: this.combatRuntime.evaluateTimingInput(timingInput), transition: null }
+      : this.combatRuntime.resolveTimingInput(timingInput);
     const timing = resolution.timing;
 
-    this._presentClimaxTransition(resolution.transition);
+    if (resolution.transition) this._presentClimaxTransition(resolution.transition);
 
     this.lastTiming = timing;
     this.audioBridge?.playTimingResult?.(timing.grade);
@@ -529,7 +533,7 @@ export class CombatRenderer {
       effectiveness: authoritative.tacticalEffectiveness
     });
 
-    if (this.tacticalTurn >= this.tacticalMaxTurns) {
+    if (this.tacticalTurn >= this.tacticalMaxTurns && !this.serverAuthoritative) {
       this._clearOwnedTimeout(this.phaseTransitionTimeout);
       this.phaseTransitionTimeout = this._setOwnedTimeout(() => {
         this.phaseTransitionTimeout = 0;
@@ -953,6 +957,7 @@ export class CombatRenderer {
       || "cyberpunk"
     );
     this.lastTurn = null;
+    this.serverAuthoritative = true;
     this.matchReady = true;
     this.resultPulse = 0;
     this.timingState = null;
@@ -973,6 +978,7 @@ export class CombatRenderer {
     if (!isTurnResultDTO(dto)) {
       throw new TypeError("Invalid TurnResultDTO");
     }
+    this.serverAuthoritative = true;
 
     if (!this.matchReady || !this.state) {
       throw new Error("Combat renderer is not initialized");
