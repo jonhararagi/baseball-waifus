@@ -551,7 +551,7 @@ if (new URLSearchParams(window.location.search).get("qa") === "t081") {
     stage: renderer.combatStage.getState()
   });
 }
-if (new URLSearchParams(window.location.search).get("qa") === "bwm105") {
+if (["bwm104", "bwm105"].includes(new URLSearchParams(window.location.search).get("qa"))) {
   window.__BW_BWM105_GET_RUNTIME__ = () => {
     const battle = renderer.getBattleLoopState?.() || {};
     const playerMeta = gachaController.playerMetaIntegration?.authority?.getSnapshot?.() || null;
