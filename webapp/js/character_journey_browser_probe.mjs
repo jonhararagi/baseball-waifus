@@ -13,6 +13,7 @@ const T078_STAGE = process.env.T078_STAGE === "1";
 const T079_STAGE = process.env.T079_STAGE === "1";
 const T095_TIMING_DIAGNOSTIC = process.env.T095_TIMING_DIAGNOSTIC === "1";
 const T097_REWARD_HANDOFF = process.env.T097_REWARD_HANDOFF === "1";
+const T097_SERVER_AUTHORITY = process.env.T097_SERVER_AUTHORITY === "1";
 const T101_DEFEAT_PROOF = process.env.T101_DEFEAT_PROOF === "1";
 const T104_PERSISTENCE_PROOF = process.env.T104_PERSISTENCE_PROOF === "1";
 const T114R_TERMINAL_INPUT_RECOVERY = process.env.T114R_TERMINAL_INPUT_RECOVERY === "1";
@@ -67,42 +68,106 @@ async function waitFor(condition, { timeoutMs = 30000, intervalMs = 250, label =
   throw new Error("T072 TIMEOUT: " + label);
 }
 
-async function startStaticServer(root) {
+async function startTestAuthorityServer() {
+  const [
+    { createAuthorityServer },
+    { loadConfig },
+    { InMemoryCombatStore },
+    { createEphemeralTestSigner }
+  ] = await Promise.all([
+    import("../../backend/src/server.mjs"),
+    import("../../backend/src/config.mjs"),
+    import("../../backend/src/combat_store.mjs"),
+    import("../../backend/src/attestation_signer.mjs")
+  ]);
+  const config = loadConfig({
+    NODE_ENV: "test",
+    PORT: "0",
+    ALLOWED_ORIGINS: "*",
+    AUTHORITY_PERSISTENCE_PROVIDER: "memory"
+  });
+  const store = new InMemoryCombatStore();
+  const signer = createEphemeralTestSigner();
+  const created = createAuthorityServer({ config, store, signer });
+  await new Promise((resolvePromise, reject) => {
+    created.server.once("error", reject);
+    created.server.listen(0, "127.0.0.1", resolvePromise);
+  });
+  const address = created.server.address();
+  requireCondition(address && typeof address === "object", "test authority server did not expose an address");
+  return { server: created.server, store, baseUrl: "http://127.0.0.1:" + address.port };
+}
+
+async function startStaticServer(root, { backendBaseUrl = "", testPlayerId = "" } = {}) {
+  const authorityTrace = [];
   const server = createServer(async (req, res) => {
     try {
-      const rawPath = decodeURIComponent(String(req.url || "/").split("?")[0]);
+      const requestUrl = new URL(String(req.url || "/"), "http://127.0.0.1");
+      const rawPath = decodeURIComponent(requestUrl.pathname);
+      if (backendBaseUrl && rawPath.startsWith("/__authority_api/")) {
+        const chunks = [];
+        for await (const chunk of req) chunks.push(chunk);
+        const requestBody = Buffer.concat(chunks);
+        let requestPayload = null;
+        try { requestPayload = JSON.parse(requestBody.toString("utf8")); } catch {}
+        const headers = { accept: "application/json", "x-test-player-id": testPlayerId };
+        const options = { method: req.method, headers };
+        if (req.method !== "GET" && req.method !== "HEAD") {
+          headers["content-type"] = String(req.headers["content-type"] || "application/json");
+          options.body = requestBody;
+        }
+        const upstreamPath = rawPath.slice("/__authority_api".length) + requestUrl.search;
+        const upstream = await fetch(backendBaseUrl + upstreamPath, options);
+        const responseText = await upstream.text();
+        let payload = null;
+        try { payload = JSON.parse(responseText); } catch {}
+        authorityTrace.push({
+          method: req.method, path: upstreamPath, status: upstream.status,
+          type: payload?.type || null, match_id: payload?.match_id || null,
+          turn_id: payload?.turn_id || null, result: payload?.result || null,
+          outcome: payload?.outcome || null,
+          phase: payload?.phase || payload?.state?.phase || null,
+          damage: Number.isFinite(payload?.damage) ? payload.damage : null,
+          actionType: requestPayload?.action?.type || null,
+          timingGrade: requestPayload?.action?.timing_grade || requestPayload?.timing_grade || null,
+          attestationPresent: Boolean(payload?.reward_attestation),
+          publicKeyPresent: Boolean(payload?.reward_authority?.public_key_jwk)
+        });
+        res.writeHead(upstream.status, {
+          "content-type": upstream.headers.get("content-type") || "application/json",
+          "cache-control": "no-store"
+        });
+        res.end(responseText);
+        return;
+      }
       const requested = rawPath === "/" ? "/index.html" : rawPath;
       const filePath = resolve(root, "." + normalize(requested));
       const rel = relative(root, filePath);
       if (rel.startsWith("..") || rel.includes("..\\") || rel.includes("../")) {
-        res.statusCode = 403;
-        res.end("Forbidden");
-        return;
+        res.statusCode = 403; res.end("Forbidden"); return;
       }
       const info = await stat(filePath);
-      if (!info.isFile()) {
-        res.statusCode = 404;
-        res.end("Not found");
-        return;
-      }
+      if (!info.isFile()) { res.statusCode = 404; res.end("Not found"); return; }
       res.setHeader("Content-Type", MIME[extname(filePath).toLowerCase()] || "application/octet-stream");
       res.setHeader("Cache-Control", "no-store");
       res.statusCode = 200;
-      res.end(await readFile(filePath));
+      let fileContent = await readFile(filePath);
+      if (backendBaseUrl && extname(filePath).toLowerCase() === ".html" && filePath.endsWith("index.html")) {
+        const html = fileContent.toString("utf8");
+        fileContent = Buffer.from(html.replace("</head>", '<script>window.BASEBALL_WAIFUS_API_BASE_URL = window.location.origin + "/__authority_api";</script></head>'));
+      }
+      res.end(fileContent);
     } catch {
-      res.statusCode = 404;
-      res.end("Not found");
+      res.statusCode = 404; res.end("Not found");
     }
   });
-
   await new Promise((resolvePromise, reject) => {
     server.once("error", reject);
     server.listen(0, "127.0.0.1", resolvePromise);
   });
-
   const address = server.address();
   requireCondition(address && typeof address === "object", "static server did not expose an address");
-  return { server, baseUrl: "http://127.0.0.1:" + address.port + "/" };
+  return { server, authorityTrace, baseUrl: "http://127.0.0.1:" + address.port + "/" };
 }
 
 async function waitForJson(url, timeoutMs = 15000) {
@@ -239,7 +304,11 @@ async function findFreePort() {
 async function run() {
   requireCondition(BROWSER_BIN, "BROWSER_BIN not set");
   const debugPort = await findFreePort();
-  const { server, baseUrl } = await startStaticServer(SITE_DIR);
+  const authorityHarness = T097_SERVER_AUTHORITY ? await startTestAuthorityServer() : null;
+  const { server, baseUrl, authorityTrace } = await startStaticServer(SITE_DIR, {
+    backendBaseUrl: authorityHarness?.baseUrl || "",
+    testPlayerId: "local-player"
+  });
   let browser = null;
   let cdp = null;
   const consoleErrors = [];
@@ -276,6 +345,7 @@ async function run() {
     await cdp.send("Runtime.enable");
     await cdp.send("Log.enable");
     await cdp.send("Network.enable");
+    if (T097_SERVER_AUTHORITY) await cdp.send("Network.setBypassServiceWorker", { bypass: true });
 
     const bone008PlayerMetaFixture = "{\"schemaVersion\":1,\"revision\":1,\"state\":{\"schemaVersion\":1,\"identity\":{\"playerId\":\"local-player\",\"provider\":\"local\"},\"inventory\":{\"characters\":{\"bw001\":{\"quantity\":1,\"unlocked\":true}}},\"currencies\":{\"SCRAP\":0,\"FRAGMENTS\":0},\"gacha\":{\"pullsSinceUR\":0},\"unlocks\":{},\"progression\":{\"characters\":{\"bw001\":{\"level\":1}}},\"roster\":{\"activeBatter\":\"bw001\",\"supports\":[null,null]},\"rewardLedger\":{}}}";
     let persistedFixture = null;
@@ -309,10 +379,12 @@ async function run() {
 
     const bone008PlayerMetaScript = `(() => {
       try {
+        ${T097_REWARD_HANDOFF ? 'if (!localStorage.getItem("baseball_waifus_player_meta_v1:local-player")) {' : ""}
         localStorage.setItem(
           "baseball_waifus_player_meta_v1:local-player",
           ${JSON.stringify(bone008PlayerMetaFixture)}
         );
+        ${T097_REWARD_HANDOFF ? "}" : ""}
       } catch {}
     })();`;
     if (T094_COMBAT_LOOP) {
@@ -600,6 +672,7 @@ async function run() {
       return;
     }
 
+    if (!T097_REWARD_HANDOFF) {
     const defaultHome = await waitFor(
       async () => cdpEvaluate(cdp, `(() => {
         const root = document.querySelector("#home-view");
@@ -760,13 +833,16 @@ async function run() {
       return;
     }
 
+    }
+
     if (T097_REWARD_HANDOFF) {
       const runStartedAt = Date.now();
       const browserVersion = await cdp.send("Browser.getVersion");
       const checkpoints = {};
       const timeline = [];
       const playerMetaKey = "baseball_waifus_player_meta_v1:local-player";
-      const expectedBattleId = "battle:demo-bw001-vs-bw002";
+      const serverMatchId = "t097-server-victory-match";
+      const expectedBattleId = T097_SERVER_AUTHORITY ? "battle:" + serverMatchId : "battle:demo-bw001-vs-bw002";
 
       const readRuntime = async () => cdpEvaluate(cdp, "(() => { const canvas = document.querySelector('#gameCanvas'); const d = canvas?.dataset || {}; const gacha = window.BaseballWaifusGacha?.getStatus?.() || null; const raw = localStorage.getItem('baseball_waifus_player_meta_v1:local-player'); let persisted = null; try { const persistedRecord = raw ? JSON.parse(raw) : null; persisted = persistedRecord?.schemaVersion === 1 && Number.isSafeInteger(persistedRecord?.revision) && persistedRecord?.state && typeof persistedRecord.state === 'object' ? persistedRecord.state : persistedRecord?.currencies && persistedRecord?.rewardLedger && typeof persistedRecord.currencies === 'object' ? persistedRecord : null; } catch { persisted = null; } return { battlePhase: d.combatBattlePhase || '', tacticalTurn: d.combatTacticalTurn === '' ? null : Number(d.combatTacticalTurn), timingActive: d.combatTimingActive === 'true', timingGrade: d.combatTimingGrade || '', combatResult: d.combatResult || '', presentationPhase: d.combatStagePresentationPhase || '', presentationActive: d.combatPresentationActive === 'true', rewardStatus: document.querySelector('#gacha-status')?.textContent?.trim() || '', scrap: Number(gacha?.scavenger_scrap ?? NaN), fragments: Number(gacha?.fragments ?? NaN), inventorySize: Number(gacha?.inventory_size ?? NaN), playerMetaRawPresent: Boolean(raw), persistedScrap: Number(persisted?.currencies?.SCRAP ?? NaN), rewardLedger: persisted?.rewardLedger || null, rewardLedgerKeys: persisted?.rewardLedger ? Object.keys(persisted.rewardLedger) : [], playerMeta: persisted }; })()");
 
@@ -783,10 +859,10 @@ async function run() {
           await sleep(25);
         }
         state = await readRuntime();
-        throw new Error("T097 TIMEOUT: " + name + " " + JSON.stringify(state));
+        throw new Error("T097 TIMEOUT: " + name + " " + JSON.stringify({ state, authorityTrace }));
       };
 
-      const t097Url = baseUrl + "?qa=t097";
+      const t097Url = baseUrl + "?qa=t097" + (T097_SERVER_AUTHORITY ? "&match=" + encodeURIComponent(serverMatchId) : "");
       await cdp.send("Page.navigate", { url: t097Url });
       await waitFor(
         async () => (await cdpEvaluate(cdp, "document.readyState")) === "complete",
@@ -796,6 +872,12 @@ async function run() {
         async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#home-view') && !document.querySelector('#home-view').hidden)"),
         { timeoutMs: 30000, label: "T097 Home visible" }
       );
+      if (T097_SERVER_AUTHORITY) {
+        await waitFor(
+          async () => cdpEvaluate(cdp, "window.__BW_T097_SERVER_INIT_READY__?.() === true"),
+          { timeoutMs: 10000, intervalMs: 25, label: "T097 server init and authority context ready before input" }
+        );
+      }
 
       const initial = await readRuntime();
       checkpoints["INITIAL"] = { at_ms: Date.now() - runStartedAt, ...initial };
@@ -840,32 +922,99 @@ async function run() {
       }
 
       await mark("CLIMAX", (state) => state.battlePhase === "CLIMAX" && state.tacticalTurn === 5);
-      await mark(
-        "TIMING ACTIVE",
-        (state) => state.battlePhase === "CLIMAX" && state.tacticalTurn === 5 && state.timingActive === true,
-        6000
-      );
-
-      const timingElapsedAtInput = await waitFor(
-        async () => {
-          const elapsed = await cdpEvaluate(cdp, "window.__BW_T097_TIMING_ELAPSED__?.()");
-          return Number.isFinite(Number(elapsed)) && Number(elapsed) >= 690 && Number(elapsed) <= 760 ? Number(elapsed) : false;
-        },
-        { timeoutMs: 5000, intervalMs: 5, label: "T097 timing target band" }
-      );
-      const timing = await readRuntime();
-      requireCondition(timing.timingActive === true, "T097 timing window closed before physical input", timing);
-      const rect = await cdpEvaluate(cdp, "(() => { const c = document.querySelector('#gameCanvas'); const r = c?.getBoundingClientRect(); return r ? { left:r.left, top:r.top, width:r.width, height:r.height } : null; })()");
-      requireCondition(rect && rect.width > 0 && rect.height > 0, "T097 timing canvas geometry unavailable", rect);
-      const clickX = rect.left + rect.width / 2;
-      const clickY = rect.top + rect.height / 2;
-      const target = await cdpEvaluate(cdp, "(() => { const e = document.elementFromPoint(" + clickX + ", " + clickY + "); return { tag:e?.tagName || '', id:e?.id || '', isCanvas:e === document.querySelector('#gameCanvas') }; })()");
-      requireCondition(target.isCanvas === true, "T097 timing target is not the game canvas", target);
-      await cdp.send("Input.setIgnoreInputEvents", { ignore: false });
-      await cdp.send("Input.dispatchMouseEvent", { type:"mouseMoved", x:clickX, y:clickY, button:"none", buttons:0 });
-      await cdp.send("Input.dispatchMouseEvent", { type:"mousePressed", x:clickX, y:clickY, button:"left", buttons:1, clickCount:1 });
-      await cdp.send("Input.dispatchMouseEvent", { type:"mouseReleased", x:clickX, y:clickY, button:"left", buttons:0, clickCount:1 });
-
+      if (!T097_SERVER_AUTHORITY) {
+        const localTimingState = await cdpEvaluate(cdp, "window.__BW_T097_TIMING_STATE__?.()");
+        if (!localTimingState?.active) {
+          const started = await cdpEvaluate(cdp, "window.__BW_T097_BEGIN_TIMING__?.()");
+          requireCondition(started === true, "T097 local renderer refused its existing CLIMAX timing-window entry", { localTimingState, started });
+        }
+      }
+      let terminalTimingAction = null;
+      if (T097_SERVER_AUTHORITY) {
+        await waitFor(
+          async () => {
+            const state = await cdpEvaluate(cdp, "window.__BW_T097_TIMING_STATE__?.()");
+            return state?.active && Number.isFinite(Number(state.elapsedMs)) &&
+              Number.isFinite(Number(state.targetMs)) && Number(state.elapsedMs) < Number(state.targetMs) - 5
+              ? state : false;
+          },
+          { timeoutMs: 10000, intervalMs: 5, label: "T097 active server timing window before target" }
+        );
+        const timingDispatch = await cdpEvaluate(cdp, `(() => {
+          const state = window.__BW_T097_TIMING_STATE__?.();
+          const canvas = document.querySelector("#gameCanvas");
+          if (!state?.active || !canvas || Number(state.elapsedMs) >= Number(state.targetMs)) return null;
+          const delayMs = Math.max(0, Number(state.targetMs) - Number(state.elapsedMs));
+          const rect = canvas.getBoundingClientRect();
+          const x = rect.left + rect.width / 2;
+          const y = rect.top + rect.height / 2;
+          window.setTimeout(() => {
+            const pointer = { bubbles: true, cancelable: true, clientX: x, clientY: y, pointerId: 1, pointerType: "mouse", button: 0, buttons: 1 };
+            canvas.dispatchEvent(new PointerEvent("pointerdown", pointer));
+            canvas.dispatchEvent(new PointerEvent("pointerup", { ...pointer, buttons: 0 }));
+          }, delayMs);
+          return { scheduled: true, delayMs, elapsedMs: Number(state.elapsedMs), targetMs: Number(state.targetMs), greatWindowMs: Number(state.greatWindowMs) };
+        })()`);
+        requireCondition(timingDispatch?.scheduled === true, "T097 could not schedule a pre-target canvas input", timingDispatch);
+        const actualTimingResult = await waitFor(
+          async () => cdpEvaluate(cdp, "window.__BW_T097_LAST_TIMING_RESULT__ || false"),
+          { timeoutMs: 5000, intervalMs: 10, label: "T097 actual canvas timing result" }
+        );
+        requireCondition(
+          actualTimingResult.source === "pointer" &&
+            ["GREAT", "HIT"].includes(String(actualTimingResult.grade || "").toUpperCase()),
+          "T097 canvas pointer input did not resolve inside an accepted timing window",
+          { timingDispatch, actualTimingResult }
+        );
+        terminalTimingAction = await waitFor(
+          async () => {
+            const entry = [...authorityTrace].reverse().find((item) =>
+              item.type === "TurnResultDTO" && item.outcome === "VICTORY" && item.attestationPresent
+            );
+            return entry || false;
+          },
+          { timeoutMs: 10000, intervalMs: 20, label: "T097 signed terminal result after actual client timing resolution" }
+        ).catch((error) => {
+          throw new Error(error.message + " // timingDispatch=" + JSON.stringify(timingDispatch) +
+            " // actualTimingResult=" + JSON.stringify(actualTimingResult) +
+            " // authorityTrace=" + JSON.stringify(authorityTrace));
+        });
+        requireCondition(
+          ["GREAT", "HIT"].includes(String(terminalTimingAction.timingGrade || "").toUpperCase()),
+          "T097 server did not receive an accepted timing grade in the nested action contract",
+          terminalTimingAction
+        );
+      } else {
+        const rect = await cdpEvaluate(cdp, "(() => { const c = document.querySelector('#gameCanvas'); const r = c?.getBoundingClientRect(); return r ? { left:r.left, top:r.top, width:r.width, height:r.height } : null; })()");
+        requireCondition(rect && rect.width > 0 && rect.height > 0, "T097 local timing canvas geometry unavailable", rect);
+        const clickX = rect.left + rect.width / 2;
+        const clickY = rect.top + rect.height / 2;
+        const target = await cdpEvaluate(cdp, "(() => { const e = document.elementFromPoint(" + clickX + ", " + clickY + "); return { tag:e?.tagName || '', id:e?.id || '', isCanvas:e === document.querySelector('#gameCanvas') }; })()");
+        requireCondition(target.isCanvas === true, "T097 local timing target is not the game canvas", target);
+        await waitFor(
+          async () => {
+            const state = await cdpEvaluate(cdp, "window.__BW_T097_TIMING_STATE__?.()");
+            return state?.active && Number.isFinite(Number(state.elapsedMs)) && Number.isFinite(Number(state.targetMs)) ? state : false;
+          },
+          { timeoutMs: 10000, intervalMs: 10, label: "T097 local renderer timing window active" }
+        );
+        const localTimingDispatch = await cdpEvaluate(cdp, `(() => {
+          const state = window.__BW_T097_TIMING_STATE__?.();
+          const canvas = document.querySelector("#gameCanvas");
+          if (!state?.active || !canvas || !Number.isFinite(Number(state.elapsedMs)) || !Number.isFinite(Number(state.targetMs))) return null;
+          const delayMs = Math.max(0, Number(state.targetMs) - Number(state.elapsedMs));
+          const rect = canvas.getBoundingClientRect();
+          const x = rect.left + rect.width / 2;
+          const y = rect.top + rect.height / 2;
+          window.setTimeout(() => {
+            const pointer = { bubbles: true, cancelable: true, clientX: x, clientY: y, pointerId: 1, pointerType: "mouse", button: 0, buttons: 1 };
+            canvas.dispatchEvent(new PointerEvent("pointerdown", pointer));
+            canvas.dispatchEvent(new PointerEvent("pointerup", { ...pointer, buttons: 0 }));
+          }, delayMs);
+          return { scheduled: true, delayMs, elapsedMs: Number(state.elapsedMs), targetMs: Number(state.targetMs), greatWindowMs: Number(state.greatWindowMs) };
+        })()`);
+        requireCondition(localTimingDispatch?.scheduled === true, "T097 could not schedule local canvas timing input", localTimingDispatch);
+      }
       const victory = await mark(
         "VICTORY",
         (state) => state.battlePhase === "VICTORY" && Boolean(state.combatResult),
@@ -874,10 +1023,19 @@ async function run() {
       checkpoints["REWARD HANDOFF"] = await readRuntime();
       timeline.push({ at_ms: Date.now() - runStartedAt, label:"REWARD HANDOFF", ...checkpoints["REWARD HANDOFF"] });
 
-      requireCondition(victory.scrap === 100, "T097 victory did not apply the existing 100 Scrap reward", victory);
-      requireCondition(victory.persistedScrap === 100, "T097 victory Scrap is not persisted in Player Meta", victory);
-      requireCondition(victory.rewardLedgerKeys.length === 1 && victory.rewardLedgerKeys[0] === expectedBattleId, "T097 reward ledger does not contain exactly one completed battle reward", victory);
-      requireCondition(victory.rewardLedger?.[expectedBattleId] === true, "T097 reward ledger entry is not true", victory);
+      if (T097_SERVER_AUTHORITY) {
+        requireCondition(victory.scrap === 100, "T097 server victory did not apply exactly 100 Scrap", victory);
+        requireCondition(victory.persistedScrap === 100, "T097 server victory Scrap is not persisted in Player Meta", victory);
+        requireCondition(victory.rewardLedgerKeys.length === 1 && victory.rewardLedgerKeys[0] === expectedBattleId, "T097 server reward ledger does not contain exactly one battle reward", victory);
+        requireCondition(victory.rewardLedger?.[expectedBattleId] === true, "T097 server reward ledger entry is not true", victory);
+        requireCondition(authorityTrace.some((entry) => entry.type === "CombatInitDTO" && entry.publicKeyPresent), "T097 browser did not initialize from real backend authority", authorityTrace);
+        requireCondition(authorityTrace.some((entry) => entry.type === "TurnResultDTO" && entry.outcome === "VICTORY" && entry.attestationPresent), "T097 browser did not receive a signed terminal server result", authorityTrace);
+      } else {
+        requireCondition(victory.scrap === 0, "T097 local demo must not credit Scrap", victory);
+        requireCondition(victory.persistedScrap === 0, "T097 local demo must not persist Scrap", victory);
+        requireCondition(victory.rewardLedgerKeys.length === 0, "T097 local demo must not create an authoritative ledger entry", victory);
+        requireCondition(victory.rewardStatus.includes("LOCAL_RESULT") && victory.rewardStatus.includes("REWARD BLOCKED"), "T097 local demo did not expose the blocked-authority state", victory);
+      }
       // Reward handoff is authoritative in Player Meta state/ledger; HUD text is presentation-only.
 
       const returnState = await mark(
@@ -890,9 +1048,10 @@ async function run() {
         (state) => state.presentationPhase === "COMPLETE" && state.presentationActive === false,
         5000
       );
-      requireCondition(completeState.scrap === 100, "T097 Scrap balance changed after RETURN", completeState);
-      requireCondition(completeState.persistedScrap === 100, "T097 persisted Scrap changed after RETURN", completeState);
-      requireCondition(completeState.rewardLedgerKeys.length === 1, "T097 reward ledger changed after RETURN", completeState);
+      const expectedScrap = T097_SERVER_AUTHORITY ? 100 : 0;
+      requireCondition(completeState.scrap === expectedScrap, "T097 Scrap balance changed after RETURN", completeState);
+      requireCondition(completeState.persistedScrap === expectedScrap, "T097 persisted Scrap changed after RETURN", completeState);
+      requireCondition(completeState.rewardLedgerKeys.length === (T097_SERVER_AUTHORITY ? 1 : 0), "T097 reward ledger changed after RETURN", completeState);
 
       await cdp.send("Page.navigate", { url: t097Url });
       await waitFor(
@@ -907,9 +1066,13 @@ async function run() {
       checkpoints["RELOAD"] = { at_ms: Date.now() - runStartedAt, ...reloaded };
       timeline.push({ at_ms: Date.now() - runStartedAt, label:"RELOAD", ...reloaded });
 
-      requireCondition(reloaded.scrap === 100, "T097 persisted Scrap was not rehydrated after reload", reloaded);
-      requireCondition(reloaded.persistedScrap === 100, "T097 Player Meta persistence did not survive reload", reloaded);
-      requireCondition(reloaded.rewardLedgerKeys.length === 1 && reloaded.rewardLedger[expectedBattleId] === true, "T097 reward ledger did not survive reload", reloaded);
+      requireCondition(reloaded.scrap === expectedScrap, "T097 persisted Scrap was not rehydrated after reload", reloaded);
+      requireCondition(reloaded.persistedScrap === expectedScrap, "T097 Player Meta persistence did not survive reload", reloaded);
+      if (T097_SERVER_AUTHORITY) {
+        requireCondition(reloaded.rewardLedgerKeys.length === 1 && reloaded.rewardLedger[expectedBattleId] === true, "T097 server reward ledger did not survive reload", reloaded);
+      } else {
+        requireCondition(reloaded.rewardLedgerKeys.length === 0, "T097 local demo ledger must remain empty after reload", reloaded);
+      }
       requireCondition(reloaded.rewardStatus !== "REWARD ERROR", "T097 reward error state detected after reload", reloaded);
 
       const sameOriginErrors = pageExceptions
@@ -929,14 +1092,17 @@ async function run() {
           userAgent: browserVersion?.userAgent || ""
         },
         harness: "existing character_journey_browser_probe.mjs via T097_REWARD_HANDOFF=1",
+        authorityMode: T097_SERVER_AUTHORITY ? "REAL_HTTP_BACKEND_EPHEMERAL_P256" : "LOCAL_DEMO_REWARD_BLOCKED",
         baseUrl,
         expectedBattleId,
+        serverAuthorityTrace: authorityTrace,
+        terminalTimingAction,
         checkpoints,
         timeline,
         reward: {
           type: "SCRAP",
-          amount: 100,
-          source: "existing T062_REWARD_TABLE VICTORY entry"
+          amount: T097_SERVER_AUTHORITY ? 100 : 0,
+          source: T097_SERVER_AUTHORITY ? "existing T062_REWARD_TABLE VICTORY entry after server attestation" : "local demo is not an economic authority"
         },
         persistence: {
           mechanism: "PlayerMetaPersistenceAdapter/localStorage",
@@ -958,8 +1124,9 @@ async function run() {
       console.log("T097 BROWSER AUTOMATION = PASS_REAL");
       console.log("VICTORY = PASS_REAL");
       console.log("REWARD HANDOFF = PASS_REAL");
-      console.log("REWARD = +100 SCRAP");
-      console.log("PLAYER STATE = SCRAP 0 -> 100");
+      console.log("REWARD MODE = " + (T097_SERVER_AUTHORITY ? "SERVER_AUTHORITY" : "LOCAL_DEMO_BLOCKED"));
+      console.log("REWARD = " + (T097_SERVER_AUTHORITY ? "+100 SCRAP" : "0 SCRAP; ledger empty"));
+      console.log("PLAYER STATE = SCRAP " + initial.scrap + " -> " + reloaded.scrap);
       console.log("PERSISTENCE = PASS_REAL");
       console.log("DUPLICATION = PASS_REAL");
       console.log("RETURN = PASS_REAL");
@@ -2464,6 +2631,7 @@ async function run() {
     try { cdp?.close(); } catch {}
     try { browser?.kill("SIGTERM"); } catch {}
     try { server?.close(); } catch {}
+    try { authorityHarness?.server?.close(); } catch {}
   }
 }
 

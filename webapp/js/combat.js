@@ -244,6 +244,7 @@ export class CombatRenderer {
     this.state = null;
     this.lastTurn = null;
     this.matchReady = false;
+    this.serverAuthoritative = false;
     this.frameHandle = 0;
     this.paused = false;
     this.disposed = false;
@@ -479,15 +480,28 @@ export class CombatRenderer {
     this.timingTimeout = 0;
     this.timingState = null;
 
-    const resolution = this.combatRuntime.resolveTimingInput({
+    const timingInput = {
       elapsedMs,
       timingGraceMs,
       source,
       timingWindow: current
-    });
+    };
+    const resolution = this.serverAuthoritative
+      ? { timing: this.combatRuntime.evaluateTimingInput(timingInput), transition: null }
+      : this.combatRuntime.resolveTimingInput(timingInput);
     const timing = resolution.timing;
+    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("qa") === "t097") {
+      window.__BW_T097_LAST_TIMING_RESULT__ = {
+        grade: timing.grade,
+        elapsedMs: Number(elapsedMs),
+        targetMs: Number(current.targetMs),
+        deltaMs: Number(elapsedMs) - Number(current.targetMs),
+        source,
+        serverAuthoritative: Boolean(this.serverAuthoritative)
+      };
+    }
 
-    this._presentClimaxTransition(resolution.transition);
+    if (resolution.transition) this._presentClimaxTransition(resolution.transition);
 
     this.lastTiming = timing;
     this.audioBridge?.playTimingResult?.(timing.grade);
@@ -529,7 +543,7 @@ export class CombatRenderer {
       effectiveness: authoritative.tacticalEffectiveness
     });
 
-    if (this.tacticalTurn >= this.tacticalMaxTurns) {
+    if (this.tacticalTurn >= this.tacticalMaxTurns && !this.serverAuthoritative) {
       this._clearOwnedTimeout(this.phaseTransitionTimeout);
       this.phaseTransitionTimeout = this._setOwnedTimeout(() => {
         this.phaseTransitionTimeout = 0;
@@ -953,6 +967,7 @@ export class CombatRenderer {
       || "cyberpunk"
     );
     this.lastTurn = null;
+    this.serverAuthoritative = true;
     this.matchReady = true;
     this.resultPulse = 0;
     this.timingState = null;
@@ -973,6 +988,7 @@ export class CombatRenderer {
     if (!isTurnResultDTO(dto)) {
       throw new TypeError("Invalid TurnResultDTO");
     }
+    this.serverAuthoritative = true;
 
     if (!this.matchReady || !this.state) {
       throw new Error("Combat renderer is not initialized");
@@ -991,6 +1007,31 @@ export class CombatRenderer {
       away_team: dto.away_team || this.state.away_team,
       ...(areaId ? { area_id: areaId } : {})
     };
+    // Hydrate the presentation/runtime mirror from the server DTO. The server
+    // remains authoritative; local prediction must not leave phase/turn counters stale.
+    const serverState = dto.state || {};
+    const serverPhase = String(serverState.phase || dto.phase || "TACTICAL").toUpperCase();
+    const serverTacticalTurn = Number(serverState.tactical_turn ?? 0);
+    const serverBossMaxHp = Number(serverState.boss_max_hp ?? 100);
+    const serverBossHp = Number(serverState.boss_hp ?? serverBossMaxHp);
+    this.combatRuntime.syncAuthoritativeState({
+      phase: serverPhase,
+      // The server's TACTICAL counter names the next action (1..5), while
+      // the renderer displays completed tactical actions (0..4); CLIMAX is 5.
+      tacticalTurn: serverPhase === "CLIMAX" ? serverTacticalTurn : Math.max(0, serverTacticalTurn - 1),
+      tacticalMaxTurns: Number(serverState.tactical_max_turns ?? 5),
+      bossHp: serverBossHp,
+      bossMaxHp: serverBossMaxHp,
+      bossConcentration: Math.round(serverBossMaxHp > 0 ? (serverBossHp / serverBossMaxHp) * 100 : 0),
+      playerStamina: Number(serverState.player_stamina ?? 70),
+      playerStaminaMax: Number(serverState.player_stamina_max ?? 70),
+      playerStaminaRoundCost: Number(serverState.player_stamina_round_cost ?? 25),
+      internalEnergy: Number(serverState.internal_energy ?? 0),
+      tacticalEffectiveness: Number(serverState.tactical_effectiveness ?? 0),
+      round: Number(serverState.round ?? 1),
+      batter: this.state.batter
+    });
+    this._syncAuthorityState();
     this._syncCombatStageActors();
 
     const presentationEvent = createCombatPresentationEvent({
@@ -1022,6 +1063,16 @@ export class CombatRenderer {
     this._triggerCutIn(dto);
     this._triggerVisualImpact(dto);
     this.resultPulse = 1;
+    const authoritativePhase = String(dto.state?.phase || dto.phase || "").toUpperCase();
+    if (authoritativePhase === "CLIMAX" && !this.timingState?.active) {
+      this._clearOwnedTimeout(this.phaseTransitionTimeout);
+      this.phaseTransitionTimeout = this._setOwnedTimeout(() => {
+        this.phaseTransitionTimeout = 0;
+        if (this.matchReady && this.battlePhase === "CLIMAX" && !this.timingState?.active) {
+          this.beginTimingWindow();
+        }
+      }, 260);
+    }
     this.onState?.(this.state);
   }
 

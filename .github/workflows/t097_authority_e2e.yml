@@ -1,0 +1,81 @@
+name: T097 Server Authority Reward E2E
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "backend/**"
+      - "webapp/js/**"
+      - ".github/workflows/t097_authority_e2e.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  t097-authority-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NODE_ENV: test
+      T097_EVIDENCE_PATH: artifacts/t097-authority-e2e.json
+    steps:
+      - name: Checkout isolated PR revision
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: backend/package.json
+
+      - name: Record runtime
+        run: |
+          node --version
+          npm --version
+
+      - name: Install backend runtime dependencies
+        run: npm --prefix backend install --ignore-scripts --no-audit --no-fund --package-lock=false
+
+      - name: Run backend and T097 server-authority contract tests
+        run: |
+          mkdir -p artifacts
+          npm --prefix backend test
+
+      - name: Install Chromium
+        id: chrome
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+
+      - name: Prepare WebApp browser fixture
+        run: |
+          mkdir -p site
+          cp -R webapp/. site/
+
+      - name: T097 real WebApp browser flow against isolated server
+        env:
+          BROWSER_BIN: ${{ steps.chrome.outputs.chrome-path }}
+          T072_SITE_DIR: site
+          T072_EVIDENCE_DIR: browser-evidence/t097-server-authority
+          T097_REWARD_HANDOFF: "1"
+          T097_SERVER_AUTHORITY: "1"
+        run: node webapp/js/character_journey_browser_probe.mjs
+
+      - name: T097 local demo still blocks economic rewards
+        env:
+          BROWSER_BIN: ${{ steps.chrome.outputs.chrome-path }}
+          T072_SITE_DIR: site
+          T072_EVIDENCE_DIR: browser-evidence/t097-local-demo
+          T097_REWARD_HANDOFF: "1"
+        run: node webapp/js/character_journey_browser_probe.mjs
+
+      - name: Upload structured T097 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: t097-server-authority-e2e
+          path: |
+            artifacts/t097-authority-e2e.json
+            browser-evidence/**
+          if-no-files-found: warn

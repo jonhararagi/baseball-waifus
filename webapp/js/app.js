@@ -158,6 +158,8 @@ const leaderboard = new Leaderboard({
   playerName: telegram.getUserName()
 });
 const gachaController = new GachaController({
+  storage: window.localStorage,
+  playerMetaStorage: window.localStorage,
   audioBridge,
   hapticsBridge,
   cloudStorage
@@ -300,8 +302,10 @@ function setRewardAuthorityStatus(message, error = false) {
 function recordRewardAuthorityContext(payload) {
   const context = payload?.reward_authority;
   if (!context || typeof context !== "object") {
-    rewardAuthorityContext = null;
-    return null;
+    // TurnResultDTOs intentionally do not repeat the init proof context.
+    // Preserve the context for this match instead of clearing it on each turn.
+    if (payload?.type === "CombatInitDTO") rewardAuthorityContext = null;
+    return rewardAuthorityContext;
   }
   const integration = gachaController.playerMetaIntegration;
   if (!integration || typeof context.nonce !== "string" || typeof context.public_key_jwk !== "object") {
@@ -369,8 +373,8 @@ async function applyServerCombatReward(turnResult, contextOverride = null) {
       : pipeline.rewardResult.rewards.length
         ? pipeline.rewardResult.rewards.map((reward) => "+" + reward.amount + " " + reward.currency).join(" • ")
         : "NO BATTLE REWARD";
-    setRewardAuthorityStatus(rewardText + " // " + result.outcome);
     updateGachaHud(gachaController.getStatus());
+    setRewardAuthorityStatus(rewardText + " // " + result.outcome);
     return pipeline;
   } catch (rewardError) {
     const code = rewardError instanceof RewardAuthorityError
@@ -496,7 +500,13 @@ const renderer = new CombatRenderer(document.querySelector("#combat-canvas, #gam
     if (timingFeedback) {
       timingFeedback.textContent = `TACTICAL ${event.turn}/5 • MOBS ×${event.mob_count ?? 0} • ENERGY ${event.energy ?? event.internal_energy ?? 0}%`;
     }
-    if (event.turn < 5) batButton.disabled = false;
+    if (api.configured()) {
+      // Tactical turns must reach the authoritative server as well; the local
+      // runtime is only a presentation mirror while the request is pending.
+      void sendAction("BAT");
+    } else if (event.turn < 5) {
+      batButton.disabled = false;
+    }
   },
   onClimaxStart: (state) => {
     if (timingFeedback) {
@@ -535,6 +545,22 @@ if (new URLSearchParams(window.location.search).get("qa") === "t097") {
     if (!renderer.isTimingWindowActive?.() || !Number.isFinite(Number(renderer.timingState?.startedAt))) return null;
     return performance.now() - Number(renderer.timingState.startedAt);
   };
+  window.__BW_T097_TIMING_STATE__ = () => {
+    const timing = renderer.timingState;
+    if (!timing || !Number.isFinite(Number(timing.startedAt))) return null;
+    return {
+      active: Boolean(renderer.isTimingWindowActive?.()),
+      elapsedMs: performance.now() - Number(timing.startedAt),
+      targetMs: Number(timing.targetMs),
+      durationMs: Number(timing.durationMs),
+      greatWindowMs: Number(timing.greatWindowMs),
+      hitWindowMs: Number(timing.hitWindowMs)
+    };
+  };
+  window.__BW_T097_SERVER_INIT_READY__ = () => Boolean(
+    renderer.matchReady && renderer.serverAuthoritative && rewardAuthorityContext?.matchId
+  );
+  window.__BW_T097_BEGIN_TIMING__ = () => renderer.beginTimingWindow?.() === true;
 }
 const rosterPanel = new RosterPanel({
   root: rosterPanelRoot,
@@ -1189,6 +1215,9 @@ async function sendAction(actionType, timing = {}) {
         : {})
     });
     if (!isTurnResultDTO(payload)) throw new Error("Server returned an invalid TurnResultDTO");
+    // Validate and persist an authoritative terminal reward before optional
+    // presentation hooks can throw or interrupt the accepted server result.
+    await handleTerminalCombatReward(payload);
     await renderer.applyTurnResult(payload);
     if (payload.super_swing === true || payload.animation?.super_swing === true || payload.animation?.event === "SUPER_SWING") {
       lockerRoom.handleEvent("ON_SUPER_SWING", getActiveLockerWaifu());
@@ -1196,7 +1225,6 @@ async function sendAction(actionType, timing = {}) {
     if (String(payload.result || payload.outcome || payload.state?.outcome || "").toUpperCase() === "VICTORY") {
       lockerRoom.handleEvent("ON_VICTORY", getActiveLockerWaifu());
     }
-    await handleTerminalCombatReward(payload);
     gameModes.registerResult(payload.result);
     updatePlayHud();
     saveSystem.save();
@@ -1223,7 +1251,7 @@ batButton.addEventListener("click", () => {
   if (actionPending || renderer.isTimingWindowActive?.()) return;
   const started = renderer.beginTimingWindow?.();
   if (started) {
-    batButton.disabled = Boolean(renderer.isTimingWindowActive?.());
+    batButton.disabled = actionPending || Boolean(renderer.isTimingWindowActive?.());
   }
 });
 
