@@ -240,10 +240,22 @@ async function dispatchCorrelatedTimingPointer(cdp, { task, attempt = 1, expecte
     if (expectedRound !== null) requireCondition(initial.round === expectedRound, task + " timing window belongs to wrong round", { expectedRound, initial });
     if (expectedTurn !== null) requireCondition(initial.tacticalTurn === expectedTurn, task + " timing window belongs to wrong turn", { expectedTurn, initial });
 
+    // For a success result, bias toward the late side of hitWindow. The
+    // logical clock can pause at a render stall between our last sample and
+    // Chromium delivering pointerdown; scheduling early made that stall turn a
+    // correct intended hit into a MISS. A late in-window target remains valid
+    // with or without a stall, while the MISS case stays well outside hitWindow.
+    const lateHitMarginMs = Math.min(
+      initial.hitWindowMs * 0.55,
+      Math.max(0, initial.durationMs - initial.targetMs - 35)
+    );
     const leadMs = expectedGrade === "MISS"
       ? (initial.hitWindowMs * 2) + initial.greatWindowMs + 30
-      : initial.hitWindowMs / 2;
-    const scheduledElapsedMs = Math.max(0, initial.targetMs - leadMs);
+      : -lateHitMarginMs;
+    const scheduledElapsedMs = Math.max(0, Math.min(
+      initial.durationMs - 30,
+      initial.targetMs - leadMs
+    ));
     proof.schedulerCalibration = {
       source: "measured Node/CDP runtime-evaluation round trips",
       evaluationRoundTripMs, medianEvaluationRoundTripMs: medianRttMs,
@@ -251,7 +263,7 @@ async function dispatchCorrelatedTimingPointer(cdp, { task, attempt = 1, expecte
       finalSampleRoundTripMs: evaluationRoundTripMs[evaluationRoundTripMs.length - 1]
     };
     proof.schedule = {
-      strategy: expectedGrade === "MISS" ? "early-outside-twice-hit-window" : "lead-by-half-hit-window",
+      strategy: expectedGrade === "MISS" ? "early-outside-twice-hit-window" : "late-hit-window-margin-for-frame-stall-tolerance",
       mechanism: "adaptive polling of the live logical Timing Ring clock; exact physical baseline is captured during window-capture pointerdown before canvas handler",
       scheduledElapsedMs, leadMs, initialElapsedMs: initial.elapsedMs, targetMs: initial.targetMs,
       hitWindowMs: initial.hitWindowMs, greatWindowMs: initial.greatWindowMs, durationMs: initial.durationMs,
