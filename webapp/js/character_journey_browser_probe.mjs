@@ -954,8 +954,9 @@ async function run() {
           { timeoutMs: 5000, intervalMs: 10, label: "T097 actual canvas timing result" }
         );
         requireCondition(
-          ["GREAT", "HIT"].includes(String(actualTimingResult.grade || "").toUpperCase()),
-          "T097 canvas input did not resolve inside an accepted timing window",
+          actualTimingResult.source === "pointer" &&
+            ["GREAT", "HIT"].includes(String(actualTimingResult.grade || "").toUpperCase()),
+          "T097 canvas pointer input did not resolve inside an accepted timing window",
           { timingDispatch, actualTimingResult }
         );
         terminalTimingAction = await waitFor(
