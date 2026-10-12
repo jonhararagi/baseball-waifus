@@ -922,6 +922,13 @@ async function run() {
       }
 
       await mark("CLIMAX", (state) => state.battlePhase === "CLIMAX" && state.tacticalTurn === 5);
+      if (!T097_SERVER_AUTHORITY) {
+        const localTimingState = await cdpEvaluate(cdp, "window.__BW_T097_TIMING_STATE__?.()");
+        if (!localTimingState?.active) {
+          const started = await cdpEvaluate(cdp, "window.__BW_T097_BEGIN_TIMING__?.()");
+          requireCondition(started === true, "T097 local renderer refused its existing CLIMAX timing-window entry", { localTimingState, started });
+        }
+      }
       let terminalTimingAction = null;
       if (T097_SERVER_AUTHORITY) {
         await waitFor(
