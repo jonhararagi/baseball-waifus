@@ -550,9 +550,11 @@ async function run() {
       requireCondition(!bone008PlayerMetaScript.trim().startsWith("() =>"), "BONE-008 fixture script is a bare function");
     }
 
-    await cdp.send("Page.addScriptToEvaluateOnNewDocument", {
-      source: bone008PlayerMetaScript
-    });
+    if (T094_COMBAT_LOOP) {
+      await cdp.send("Page.addScriptToEvaluateOnNewDocument", {
+        source: bone008PlayerMetaScript
+      });
+    }
     if (BWM4V4_E2E) {
       await cdp.send("Page.addScriptToEvaluateOnNewDocument", {
         source: "(() => { try { const key = '__bw_qa_storage_initialized'; if (localStorage.getItem(key) !== '1') { localStorage.clear(); sessionStorage.clear(); localStorage.setItem(key, '1'); } } catch {} })();"
@@ -729,7 +731,7 @@ async function run() {
         };
         requireCondition(Number.isFinite(Number(evidence.playerMetaBefore.scrap)),
           "BWM-105 Player Meta SCRAP snapshot is unavailable", evidence.playerMetaBefore);
-        evidence.screenshots.home = await screenshot(cdp, "bwm105-00-home");
+        evidence.screenshots.home = await screenshot(cdp, evidencePrefix + "-00-home");
         await cdpClickSelector(cdp, "#home-action-start-4v4");
 
         const formation = await waitFor(async () => {
@@ -746,7 +748,7 @@ async function run() {
         const enemies = formation.battle.enemies;
         const units = [...players, ...enemies];
         const actors = formation.actors || [];
-        evidence.formation = { mode: formation.mode, battleId: formation.battle.battleId || null,
+        evidence.formation = { sessionId, mode: formation.mode, battleId: formation.battle.battleId || null,
           playerUnits: players, enemyUnits: enemies, actors, stage: formation.stage };
         requireCondition(players.length === 4 && enemies.length === 4,
           "BWM-105 requires four authoritative units per team", { playerCount: players.length, enemyCount: enemies.length });
@@ -768,14 +770,14 @@ async function run() {
         requireCondition(temporary.every((id) => !evidence.playerMetaBefore.inventoryIds.includes(id)),
           "BWM-105 temporary local canonical unit already appears in Player Meta inventory",
           { temporary, inventory: evidence.playerMetaBefore.inventoryIds });
-        evidence.screenshots.formation = await screenshot(cdp, "bwm105-01-formation");
+        evidence.screenshots.formation = await screenshot(cdp, evidencePrefix + "-01-formation");
 
         // Cache an unobstructed physical canvas coordinate before the Timing Ring
         // starts. No DOM hit-testing or geometry query is needed once CLIMAX opens.
         const timingCanvasTarget = await cdpEvaluate(cdp, "(() => { const c=document.querySelector('#gameCanvas'); const r=c?.getBoundingClientRect(); if(!c||!r)return null; const fractions=[[.5,.5],[.8,.5],[.2,.5],[.5,.8],[.5,.2],[.8,.8],[.2,.8],[.8,.2],[.2,.2],[.92,.5],[.08,.5],[.5,.92],[.5,.08]]; const candidates=fractions.map(([fx,fy])=>{const x=r.left+r.width*fx,y=r.top+r.height*fy,e=document.elementFromPoint(x,y);return {x,y,fx,fy,isCanvas:e===c,tag:e?.tagName||'',id:e?.id||''};}); const accessible=candidates.filter(p=>p.isCanvas).sort((a,b)=>Math.hypot(a.fx-.5,a.fy-.5)-Math.hypot(b.fx-.5,b.fy-.5)); return {left:r.left,top:r.top,width:r.width,height:r.height,viewportWidth:innerWidth,viewportHeight:innerHeight,candidates,selected:accessible[0]||null}; })()");
         requireCondition(timingCanvasTarget?.selected?.isCanvas === true,
           "BWM-105 Timing Ring has no unobstructed physical canvas coordinate", timingCanvasTarget);
-        evidence.timingCanvasTarget = timingCanvasTarget;
+        evidence.timingCanvasTarget = { sessionId, ...timingCanvasTarget };
 
         const selectablePlayer = players.find((unit) => unit.id !== formation.battle.selectedPlayerId && unit.health > 0);
         const selectableEnemy = enemies.find((unit) => unit.id !== formation.battle.selectedEnemyId && unit.health > 0);
@@ -791,6 +793,7 @@ async function run() {
           return snapshot.battle.selectedEnemyId === selectableEnemy.id ? snapshot : null;
         }, { timeoutMs: 5000, label: "BWM-105 physical canvas selects enemy target" });
         evidence.selection = {
+          sessionId,
           player: { id: selectedPlayer.battle.selectedPlayerId, characterId: selectablePlayer.characterId },
           enemy: { id: selectedEnemy.battle.selectedEnemyId, characterId: selectableEnemy.characterId }
         };
@@ -828,7 +831,7 @@ async function run() {
               lastAction: after.battle.lastAction, enemyResponse: after.battle.lastAction?.enemyResponse || null
             });
             tacticalActionCount += 1;
-            if (tacticalActionCount === 1) evidence.screenshots.firstAction = await screenshot(cdp, "bwm105-02-first-action");
+            if (tacticalActionCount === 1) evidence.screenshots.firstAction = await screenshot(cdp, evidencePrefix + "-02-first-action");
             if (after.battle.terminal) { terminalSnapshot = after; break; }
             continue;
           }
@@ -842,7 +845,7 @@ async function run() {
             const beforePlayerHp = healthTotal(active.battle.players);
             const beforeEnemyHp = healthTotal(active.battle.enemies);
             const inputProof = await dispatchCorrelatedTimingPointer(cdp, {
-              task: "BWM-105", attempt: timingRound + 1, expectedGrade: "GREAT",
+              task: BWM4V4_TASK, attempt: timingRound + 1, expectedGrade: "GREAT",
               expectedRound: active.battle.round, expectedTurn: 5,
               preparedGeometryAndTargets: timingCanvasTarget
             });
@@ -872,7 +875,7 @@ async function run() {
               phaseAfter: after.battle.phase, terminalAfter: after.battle.terminal
             });
             timingRound += 1;
-            evidence.screenshots["timingRound" + timingRound] = await screenshot(cdp, "bwm105-03-timing-ring-" + timingRound);
+            evidence.screenshots["timingRound" + timingRound] = await screenshot(cdp, evidencePrefix + "-03-timing-ring-" + timingRound);
             if (after.battle.terminal) { terminalSnapshot = after; break; }
             continue;
           }
@@ -892,12 +895,13 @@ async function run() {
             players: terminalSnapshot.battle.players, enemies: terminalSnapshot.battle.enemies
           });
         evidence.terminal = {
+          sessionId,
           outcome: terminalSnapshot.battle.terminal || terminalSnapshot.battle.phase,
           phase: terminalSnapshot.battle.phase,
           playerUnits: terminalSnapshot.battle.players, enemyUnits: terminalSnapshot.battle.enemies,
           lastAction: terminalSnapshot.battle.lastAction
         };
-        evidence.screenshots.terminal = await screenshot(cdp, "bwm105-04-terminal");
+        evidence.screenshots.terminal = await screenshot(cdp, evidencePrefix + "-04-terminal");
 
         const visibleResult = await cdpEvaluate(cdp,
           "(() => ({status:document.querySelector('#combat-4v4-status')?.textContent||'',"
@@ -908,7 +912,7 @@ async function run() {
         await waitFor(async () => cdpEvaluate(cdp,
           "Boolean(document.querySelector('#home-view') && !document.querySelector('#home-view').hidden)"),
           { timeoutMs: 10000, label: "BWM-105 return to main HOME" });
-        evidence.screenshots.homeAfterResult = await screenshot(cdp, "bwm105-05-home-return");
+        evidence.screenshots.homeAfterResult = await screenshot(cdp, evidencePrefix + "-05-home-return");
 
         const afterReturn = await captureState();
         evidence.playerMetaAfter = {
@@ -939,6 +943,7 @@ async function run() {
         }, { timeoutMs: 30000, label: "BWM-105 Player Meta restored after reload" });
         evidence.persistedStorageAfterReload = await readPersistedEnvelope();
         requireCondition(evidence.persistedStorageAfterReload.rawPresent, "BWM-104/105 Player Meta persistence envelope missing after reload", evidence.persistedStorageAfterReload);
+        requireCondition(Number.isSafeInteger(Number(evidence.persistedStorageBeforeReload.revision)) && Number(evidence.persistedStorageAfterReload.revision) >= Number(evidence.persistedStorageBeforeReload.revision), "BWM-104/105 persisted Player Meta revision regressed across reload", { before: evidence.persistedStorageBeforeReload, after: evidence.persistedStorageAfterReload });
         requireCondition(evidence.persistedStorageAfterReload.playerId === evidence.persistedStorageBeforeReload.playerId, "BWM-104/105 persisted Player Meta identity changed across reload", { before: evidence.persistedStorageBeforeReload, after: evidence.persistedStorageAfterReload });
         requireCondition(evidence.persistedStorageAfterReload.scrap === evidence.persistedStorageBeforeReload.scrap, "BWM-104/105 persisted SCRAP changed across reload", { before: evidence.persistedStorageBeforeReload, after: evidence.persistedStorageAfterReload });
         requireCondition(sameList(evidence.persistedStorageAfterReload.inventoryIds, evidence.persistedStorageBeforeReload.inventoryIds), "BWM-104/105 persisted inventory changed across reload", { before: evidence.persistedStorageBeforeReload, after: evidence.persistedStorageAfterReload });
@@ -962,7 +967,7 @@ async function run() {
           "BWM-105 temporary formation changed persisted fourth slot", {
             before: evidence.playerMetaBefore.persistedFourthMember, after: restored.persistedFourthMember
           });
-        evidence.screenshots.homeAfterReload = await screenshot(cdp, "bwm105-06-home-after-reload");
+        evidence.screenshots.homeAfterReload = await screenshot(cdp, evidencePrefix + "-06-home-after-reload");
         evidence.consoleErrors = consoleErrors.map((entry) => ({ text: entry.text, url: entry.url, source: entry.source }));
         evidence.pageExceptions = pageExceptions.map((entry) => entry?.exception?.description || entry?.text || "")
           .filter(Boolean).filter((entry) => entry.includes("/js/") || entry.includes(baseUrl));
@@ -999,7 +1004,7 @@ async function run() {
           + "footerButton:(()=>{const el=document.querySelector('#action-start-4v4');if(!el)return null;const r=el.getBoundingClientRect();return {hidden:el.hidden,disabled:el.disabled,x:r.x,y:r.y,width:r.width,height:r.height}})(),"
           + "canvas:(()=>{const el=document.querySelector('#gameCanvas');return el?{mode:el.dataset.combatMode||'',actorCount:el.dataset.combatStageActorCount||'',players:el.dataset.combatStagePlayerCount||'',enemies:el.dataset.combatStageEnemyCount||'',phase:el.dataset.combatBattlePhase||''}:null})()}))()");
         evidence.runtimeAtFailure = await runtimeSnapshot();
-        try { evidence.screenshots.failure = await screenshot(cdp, "bwm105-99-failure-state"); } catch {}
+        try { evidence.screenshots.failure = await screenshot(cdp, evidencePrefix + "-99-failure-state"); } catch {}
         writeFileSync(join(EVIDENCE_DIR, evidencePrefix + "-full-webapp-4v4-e2e-evidence.json"), JSON.stringify(evidence, null, 2) + "\n", "utf8");
         throw error;
       }
