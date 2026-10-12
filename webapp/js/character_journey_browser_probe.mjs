@@ -673,7 +673,7 @@ async function run() {
         runId: process.env.GITHUB_RUN_ID || "local",
         runAttempt: process.env.GITHUB_RUN_ATTEMPT || "local",
         browser: BROWSER_BIN,
-        baseUrl: baseUrl + "?qa=bwm105",
+        baseUrl: baseUrl + "?qa=" + (BWM104_4V4_E2E ? "bwm104" : "bwm105"),
         startedAt: new Date().toISOString(),
         formation: null,
         selection: null,
@@ -983,13 +983,13 @@ async function run() {
         };
         evidence.completedAt = new Date().toISOString();
         writeFileSync(join(EVIDENCE_DIR, evidencePrefix + "-full-webapp-4v4-e2e-evidence.json"), JSON.stringify(evidence, null, 2) + "\n", "utf8");
-        console.log("BWM-105 MAIN WEBAPP 4V4 FORMATION = PASS_REAL");
-        console.log("BWM-105 PHYSICAL ACTOR/TARGET SELECTION = PASS_REAL");
-        console.log("BWM-105 TACTICAL AUTHORITY = PASS_REAL");
-        console.log("BWM-105 TIMING RING INPUT CORRELATION = PASS_REAL");
-        console.log("BWM-105 TERMINAL RESULT/HOME RETURN = PASS_REAL");
-        console.log("BWM-105 LOCAL REWARD BLOCK/RELOAD PERSISTENCE = PASS_REAL");
-        console.log("BWM-105 BROWSER INTEGRATION = PASS_REAL");
+        console.log(BWM4V4_TASK + " MAIN WEBAPP 4V4 FORMATION = PASS_REAL");
+        console.log(BWM4V4_TASK + " PHYSICAL ACTOR/TARGET SELECTION = PASS_REAL");
+        console.log(BWM4V4_TASK + " TACTICAL AUTHORITY = PASS_REAL");
+        console.log(BWM4V4_TASK + " TIMING RING INPUT CORRELATION = PASS_REAL");
+        console.log(BWM4V4_TASK + " TERMINAL RESULT/HOME RETURN = PASS_REAL");
+        console.log(BWM4V4_TASK + " LOCAL REWARD BLOCK/RELOAD PERSISTENCE = PASS_REAL");
+        console.log(BWM4V4_TASK + " BROWSER INTEGRATION = PASS_REAL");
         return;
       } catch (error) {
         evidence.status = "FAIL_BROWSER_4V4_REAL";
