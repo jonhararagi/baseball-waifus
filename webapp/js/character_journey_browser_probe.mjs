@@ -926,9 +926,12 @@ async function run() {
           lastTimingState = state;
           if (!state?.active || !Number.isFinite(Number(state.elapsedMs)) || !Number.isFinite(Number(state.targetMs))) return false;
           const deltaFromTargetMs = Number(state.elapsedMs) - Number(state.targetMs);
-          // Geometry is prepared before the target sample; only two pointer
-          // events remain, reducing dispatch latency inside the GREAT window.
-          return deltaFromTargetMs >= -75 && deltaFromTargetMs <= -35 ? state : false;
+          const greatWindowMs = Number.isFinite(Number(state.greatWindowMs)) ? Number(state.greatWindowMs) : 55;
+          const earlyLeadMs = Math.min(40, greatWindowMs * 0.75);
+          const lateLeadMs = Math.min(10, greatWindowMs * 0.2);
+          // Sample shortly before target so the two remaining pointer events
+          // land inside the actual GREAT window despite CDP dispatch latency.
+          return deltaFromTargetMs >= -earlyLeadMs && deltaFromTargetMs <= -lateLeadMs ? state : false;
         },
         { timeoutMs: 10000, intervalMs: 1, label: "T097 active GREAT timing target band" }
       ).catch((error) => {
