@@ -1485,7 +1485,7 @@ export class CombatRenderer {
     const color = actor.team === "ENEMY" ? "#ff007f" : "#00f3ff";
     if (String(this.state?.game_mode || this.state?.mode || "").toLowerCase() === "4v4") {
       if (actor.team === "ENEMY") this._drawCombatEnemyActor(ctx, actor, transform, w, h, transform);
-      else this._drawCombatSupportActor(ctx, actor, transform, color);
+      else this._drawCombatSupportActor(ctx, actor, transform, color, h);
       this._drawCombatantStatus(ctx, actor, transform, w, h, color);
       return;
     }
@@ -1521,7 +1521,25 @@ export class CombatRenderer {
     this._drawCombatSupportActor(ctx, actor, motion, color);
   }
 
-  _drawCombatSupportActor(ctx, actor, transform, color) {
+  _drawCombatSupportActor(ctx, actor, transform, color, h = this.pixelHeight) {
+    const sprite = this._combatSpriteForActor(actor.actorId)
+      || this.assetBank.get(getWaifuAssets(actor.visual?.characterId || actor.actorId).spriteSheetUrl);
+    if (sprite) {
+      const targetHeight = clamp(h * 0.105 * transform.scale, 96, 148);
+      const ratio = sprite.naturalWidth > 0 ? sprite.naturalHeight / sprite.naturalWidth : 1.45;
+      const targetWidth = targetHeight / ratio;
+      ctx.save();
+      ctx.translate(transform.x, transform.y);
+      ctx.rotate((transform.rotation * Math.PI) / 180);
+      ctx.globalAlpha = clamp(Number(transform.opacity ?? 1), 0, 1);
+      ctx.scale(actor.facing < 0 ? -1 : 1, 1);
+      ctx.shadowColor = "rgba(0,0,0,0.5)";
+      ctx.shadowBlur = 10;
+      ctx.drawImage(sprite, -targetWidth * 0.5, -targetHeight * 0.86, targetWidth, targetHeight);
+      ctx.restore();
+      return;
+    }
+
     const radius = 28 * transform.scale;
     ctx.save();
     ctx.translate(transform.x, transform.y);
