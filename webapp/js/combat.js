@@ -490,6 +490,16 @@ export class CombatRenderer {
       ? { timing: this.combatRuntime.evaluateTimingInput(timingInput), transition: null }
       : this.combatRuntime.resolveTimingInput(timingInput);
     const timing = resolution.timing;
+    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("qa") === "t097") {
+      window.__BW_T097_LAST_TIMING_RESULT__ = {
+        grade: timing.grade,
+        elapsedMs: Number(elapsedMs),
+        targetMs: Number(current.targetMs),
+        deltaMs: Number(elapsedMs) - Number(current.targetMs),
+        source,
+        serverAuthoritative: Boolean(this.serverAuthoritative)
+      };
+    }
 
     if (resolution.transition) this._presentClimaxTransition(resolution.transition);
 
