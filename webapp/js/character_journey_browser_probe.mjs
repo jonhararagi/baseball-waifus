@@ -925,9 +925,10 @@ async function run() {
           const state = await cdpEvaluate(cdp, "window.__BW_T097_TIMING_STATE__?.()");
           lastTimingState = state;
           if (!state?.active || !Number.isFinite(Number(state.elapsedMs)) || !Number.isFinite(Number(state.targetMs))) return false;
-          const greatWindowMs = Number.isFinite(Number(state.greatWindowMs)) ? Number(state.greatWindowMs) : 55;
-          const targetToleranceMs = Math.max(10, Math.min(45, greatWindowMs * 0.8));
-          return Math.abs(Number(state.elapsedMs) - Number(state.targetMs)) <= targetToleranceMs ? state : false;
+          const deltaFromTargetMs = Number(state.elapsedMs) - Number(state.targetMs);
+          // CDP dispatch has measurable latency; sample early enough that the
+          // actual pointer event lands inside the real GREAT window.
+          return deltaFromTargetMs >= -75 && deltaFromTargetMs <= -35 ? state : false;
         },
         { timeoutMs: 5000, intervalMs: 1, label: "T097 live GREAT timing target band" }
       ).catch((error) => {
