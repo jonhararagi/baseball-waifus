@@ -500,7 +500,13 @@ const renderer = new CombatRenderer(document.querySelector("#combat-canvas, #gam
     if (timingFeedback) {
       timingFeedback.textContent = `TACTICAL ${event.turn}/5 • MOBS ×${event.mob_count ?? 0} • ENERGY ${event.energy ?? event.internal_energy ?? 0}%`;
     }
-    if (event.turn < 5) batButton.disabled = false;
+    if (api.configured()) {
+      // Tactical turns must reach the authoritative server as well; the local
+      // runtime is only a presentation mirror while the request is pending.
+      void sendAction("BAT");
+    } else if (event.turn < 5) {
+      batButton.disabled = false;
+    }
   },
   onClimaxStart: (state) => {
     if (timingFeedback) {
