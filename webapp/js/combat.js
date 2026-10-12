@@ -1645,7 +1645,7 @@ export class CombatRenderer {
     ctx.fill();
 
     if (sprite) {
-      const targetHeight = clamp(h * 0.34 * transform.scale, 170, 340);
+      const targetHeight = clamp(h * 0.105 * transform.scale, 96, 148);
       const ratio = sprite.naturalWidth > 0 ? sprite.naturalHeight / sprite.naturalWidth : 1.45;
       const targetWidth = targetHeight / ratio;
       ctx.save();
