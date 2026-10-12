@@ -1022,6 +1022,16 @@ export class CombatRenderer {
     this._triggerCutIn(dto);
     this._triggerVisualImpact(dto);
     this.resultPulse = 1;
+    const authoritativePhase = String(dto.state?.phase || dto.phase || "").toUpperCase();
+    if (authoritativePhase === "CLIMAX" && !this.timingState?.active) {
+      this._clearOwnedTimeout(this.phaseTransitionTimeout);
+      this.phaseTransitionTimeout = this._setOwnedTimeout(() => {
+        this.phaseTransitionTimeout = 0;
+        if (this.matchReady && this.battlePhase === "CLIMAX" && !this.timingState?.active) {
+          this.beginTimingWindow();
+        }
+      }, 260);
+    }
     this.onState?.(this.state);
   }
 
