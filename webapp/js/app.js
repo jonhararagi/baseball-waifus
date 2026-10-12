@@ -369,8 +369,8 @@ async function applyServerCombatReward(turnResult, contextOverride = null) {
       : pipeline.rewardResult.rewards.length
         ? pipeline.rewardResult.rewards.map((reward) => "+" + reward.amount + " " + reward.currency).join(" • ")
         : "NO BATTLE REWARD";
-    setRewardAuthorityStatus(rewardText + " // " + result.outcome);
     updateGachaHud(gachaController.getStatus());
+    setRewardAuthorityStatus(rewardText + " // " + result.outcome);
     return pipeline;
   } catch (rewardError) {
     const code = rewardError instanceof RewardAuthorityError
