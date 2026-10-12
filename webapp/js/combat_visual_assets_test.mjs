@@ -78,7 +78,7 @@ assert.ok(app.includes("sprites: battleUnits.map((unit) => ({"), "sprite descrip
 assert.ok(combat.includes("unit?.combat_sprite_url"), "critical preload must accept explicit local art");
 assert.ok(combat.includes("this.assetBank.get(actor.visual?.combatSpriteUrl)"), "renderer must use actor-specific art before ID fallback");
 assert.ok(combat.includes("this.kytosPresentationState && !isFourVFour"), "Kytos single-batter scene must not obscure 4v4");
-assert.ok(combat.includes('toLowerCase() !== "4v4"'), "4v4 must not draw set-piece placeholder labels");
+assert.ok(combat.includes("showSetPieceLabels: !ultimateActive && !isFourVFour"), "4v4 must not draw set-piece placeholder labels");
 assert.ok(stage.includes('combatSpriteUrl: String(unit.combat_sprite_url || unit.sprite_url || "")'), "stage actor must preserve the combat sprite URL");
 
 assert.ok(combat.includes("Math.min(stageHeight * 0.42, stageWidth * 0.215)"), "4v4 full-body units must be scaled for the actual canvas");
