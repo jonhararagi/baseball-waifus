@@ -26,7 +26,9 @@ function normalizeBody(body) {
   }
   return Object.freeze({
     action,
-    timingGrade: normalizeGrade(body.timing_grade),
+    // The established WebApp HTTP contract nests timing_grade inside action.
+    // Keep accepting the original flat field for backwards compatibility.
+    timingGrade: normalizeGrade(body.action?.timing_grade ?? body.timing_grade),
     requestedTurnId: body.turn_id ? String(body.turn_id) : null
   });
 }
@@ -148,9 +150,11 @@ export class CombatService {
 
     let rewardAttestation = null;
     let rewardIdToPersist = null;
-    if (coreResult.victory) {
+    // Both terminal outcomes need a signed identity. The resolver, not the
+    // signer, decides whether a terminal outcome grants any economic reward.
+    if (coreResult.match_end && (coreResult.victory || coreResult.defeat)) {
       if (!this.signer) {
-        throw new AuthorityError(503, "REWARD_SIGNER_NOT_CONFIGURED", "Terminal reward authority is not configured");
+        throw new AuthorityError(503, "REWARD_SIGNER_NOT_CONFIGURED", "Terminal combat authority is not configured");
       }
       const rewardId = "battle:" + state.matchId;
       if (!this.store.hasRewardAuthorized(rewardId)) {
@@ -158,8 +162,8 @@ export class CombatService {
           matchId: state.matchId,
           playerId: state.playerId,
           turnId: processedTurnId,
-          outcome: "VICTORY",
-          result: coreResult.result || "VICTORY",
+          outcome: responseOutcome,
+          result: coreResult.result || coreResult.outcome,
           nonce: state.nonce
         });
         rewardIdToPersist = rewardId;
