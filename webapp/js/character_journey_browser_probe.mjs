@@ -555,7 +555,7 @@ async function run() {
     });
     if (BWM4V4_E2E) {
       await cdp.send("Page.addScriptToEvaluateOnNewDocument", {
-        source: "(() => { try { localStorage.clear(); sessionStorage.clear(); } catch {} })();"
+        source: "(() => { try { const key = '__bw_qa_storage_initialized'; if (localStorage.getItem(key) !== '1') { localStorage.clear(); sessionStorage.clear(); localStorage.setItem(key, '1'); } } catch {} })();"
       });
     }
     await cdp.send("Page.navigate", { url: BWM4V4_E2E ? baseUrl + "?qa=" + (BWM104_4V4_E2E ? "bwm104" : "bwm105") : baseUrl });
@@ -686,6 +686,7 @@ async function run() {
         pageExceptions: []
       };
       const runtimeSnapshot = async () => cdpEvaluate(cdp, "window.__BW_BWM105_GET_RUNTIME__?.() || null");
+      const readPersistedEnvelope = async () => cdpEvaluate(cdp, "(() => { const key='baseball_waifus_player_meta_v1:local-player'; const raw=localStorage.getItem(key); let envelope=null; try { envelope=raw?JSON.parse(raw):null; } catch {} const state=envelope?.state||envelope; return { key, rawPresent:Boolean(raw), schemaVersion:envelope?.schemaVersion??state?.schemaVersion??null, revision:envelope?.revision??null, playerId:state?.identity?.playerId??null, scrap:state?.currencies?.SCRAP??null, inventoryIds:Object.entries(state?.inventory?.characters||{}).filter(([,v])=>v?.unlocked===true&&Number(v?.quantity)>0).map(([id])=>id).sort(), roster:state?.roster||null, rewardLedgerKeys:Object.keys(state?.rewardLedger||{}).sort() }; })()");
       const healthTotal = (units) => (units || []).reduce((sum, unit) => sum + Number(unit.health || 0), 0);
       const sameList = (left, right) => JSON.stringify([...(left || [])].sort()) === JSON.stringify([...(right || [])].sort());
       const captureState = async () => {
@@ -920,6 +921,11 @@ async function run() {
           "BWM-105 local combat changed persistent SCRAP", { before: evidence.playerMetaBefore.scrap, after: afterReturn.currencies?.SCRAP });
         requireCondition(sameList(afterReturn.rewardLedger, evidence.playerMetaBefore.ledger),
           "BWM-105 local combat changed reward ledger", { before: evidence.playerMetaBefore.ledger, after: afterReturn.rewardLedger });
+        evidence.persistedStorageBeforeReload = await readPersistedEnvelope();
+        requireCondition(evidence.persistedStorageBeforeReload.rawPresent, "BWM-104/105 Player Meta persistence envelope missing before reload", evidence.persistedStorageBeforeReload);
+        requireCondition(evidence.persistedStorageBeforeReload.playerId === "local-player", "BWM-104/105 persisted Player Meta identity mismatch before reload", evidence.persistedStorageBeforeReload);
+        requireCondition(Number(evidence.persistedStorageBeforeReload.scrap) === Number(evidence.playerMetaBefore.scrap), "BWM-104/105 persisted SCRAP differs from runtime before reload", { persisted: evidence.persistedStorageBeforeReload, runtime: evidence.playerMetaBefore });
+        requireCondition(sameList(evidence.persistedStorageBeforeReload.rewardLedgerKeys, evidence.playerMetaBefore.ledger), "BWM-104/105 persisted reward ledger differs from runtime before reload", { persisted: evidence.persistedStorageBeforeReload, runtime: evidence.playerMetaBefore });
 
         await cdp.send("Page.reload", { ignoreCache: true });
         await waitFor(async () => (await cdpEvaluate(cdp, "document.readyState")) === "complete",
@@ -931,6 +937,13 @@ async function run() {
           const snapshot = await runtimeSnapshot();
           return snapshot?.gachaReady === true && snapshot?.currencies && Array.isArray(snapshot?.inventoryIds) ? snapshot : null;
         }, { timeoutMs: 30000, label: "BWM-105 Player Meta restored after reload" });
+        evidence.persistedStorageAfterReload = await readPersistedEnvelope();
+        requireCondition(evidence.persistedStorageAfterReload.rawPresent, "BWM-104/105 Player Meta persistence envelope missing after reload", evidence.persistedStorageAfterReload);
+        requireCondition(evidence.persistedStorageAfterReload.playerId === evidence.persistedStorageBeforeReload.playerId, "BWM-104/105 persisted Player Meta identity changed across reload", { before: evidence.persistedStorageBeforeReload, after: evidence.persistedStorageAfterReload });
+        requireCondition(evidence.persistedStorageAfterReload.scrap === evidence.persistedStorageBeforeReload.scrap, "BWM-104/105 persisted SCRAP changed across reload", { before: evidence.persistedStorageBeforeReload, after: evidence.persistedStorageAfterReload });
+        requireCondition(sameList(evidence.persistedStorageAfterReload.inventoryIds, evidence.persistedStorageBeforeReload.inventoryIds), "BWM-104/105 persisted inventory changed across reload", { before: evidence.persistedStorageBeforeReload, after: evidence.persistedStorageAfterReload });
+        requireCondition(JSON.stringify(evidence.persistedStorageAfterReload.roster) === JSON.stringify(evidence.persistedStorageBeforeReload.roster), "BWM-104/105 persisted roster changed across reload", { before: evidence.persistedStorageBeforeReload, after: evidence.persistedStorageAfterReload });
+        requireCondition(sameList(evidence.persistedStorageAfterReload.rewardLedgerKeys, evidence.persistedStorageBeforeReload.rewardLedgerKeys), "BWM-104/105 persisted reward ledger changed across reload", { before: evidence.persistedStorageBeforeReload, after: evidence.persistedStorageAfterReload });
         evidence.persistenceAfterReload = {
           sessionId,
           modeAfterReload: restored.mode, scrap: restored.currencies?.SCRAP ?? null,
