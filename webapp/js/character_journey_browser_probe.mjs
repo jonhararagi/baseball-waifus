@@ -252,27 +252,56 @@ async function dispatchCorrelatedTimingPointer(cdp, { task, attempt = 1, expecte
     };
     proof.schedule = {
       strategy: expectedGrade === "MISS" ? "early-outside-twice-hit-window" : "lead-by-half-hit-window",
-      mechanism: "single Node timer; no CDP poll or runtime query after the wait; exact baseline captured during window-capture pointerdown before canvas handler",
+      mechanism: "adaptive polling of the live logical Timing Ring clock; exact physical baseline is captured during window-capture pointerdown before canvas handler",
       scheduledElapsedMs, leadMs, initialElapsedMs: initial.elapsedMs, targetMs: initial.targetMs,
       hitWindowMs: initial.hitWindowMs, greatWindowMs: initial.greatWindowMs, durationMs: initial.durationMs,
       harnessSequenceAtSchedule: initial.sequence, harnessEventCountAtSchedule: initial.eventCount,
       timerWaitMs: Math.max(0, scheduledElapsedMs - Number(initial.elapsedMs || 0) - medianRttMs)
     };
-    const timerWaitMs = proof.schedule.timerWaitMs;
+    // A Node timer assumes the browser's animation clock advances at wall-clock
+    // speed. That is false here: the renderer deliberately shifts startedAt when
+    // frames stall, so a long fixed sleep can produce a click ~100-200ms early.
+    // Poll the same live logical clock that the resolver will use, then dispatch
+    // the real CDP pointer immediately once the scheduled interval is reached.
+    const plannedTimerWaitMs = proof.schedule.timerWaitMs;
     const timerStart = performance.now();
-    if (timerWaitMs > 0) await sleep(timerWaitMs);
+    const clockDeadline = timerStart + Math.max(2500, Number(initial.durationMs || 860) * 3);
+    let liveClock = initial;
+    let timingClockPollCount = 0;
+    while (Number(liveClock?.elapsedMs) < scheduledElapsedMs) {
+      requireCondition(liveClock?.active === true, task + " Timing Ring closed before the scheduled physical input", liveClock);
+      requireCondition(liveClock.phase === "CLIMAX" && liveClock.round === initial.round
+        && liveClock.tacticalTurn === initial.tacticalTurn && liveClock.targetMs === initial.targetMs
+        && liveClock.durationMs === initial.durationMs,
+        task + " Timing Ring identity changed while scheduling correlated input", { initial, liveClock });
+      requireCondition(performance.now() < clockDeadline,
+        task + " timed out synchronizing to live Timing Ring elapsed clock",
+        { scheduledElapsedMs, liveClock, timingClockPollCount });
+      const remainingMs = scheduledElapsedMs - Number(liveClock.elapsedMs);
+      // Short bounded waits limit polling overhead; every decision uses the
+      // current browser clock again, so frame-stall compensation cannot skew it.
+      await sleep(Math.max(1, Math.min(8, remainingMs - 6)));
+      liveClock = await cdpEvaluate(cdp, clockExpression);
+      timingClockPollCount += 1;
+    }
+    requireCondition(liveClock?.active === true && liveClock.phase === "CLIMAX"
+      && liveClock.round === initial.round && liveClock.tacticalTurn === initial.tacticalTurn,
+      task + " live Timing Ring changed at the target dispatch boundary", { initial, liveClock });
+    proof.schedule.plannedTimerWaitMs = plannedTimerWaitMs;
     proof.schedule.actualNodeWaitMs = performance.now() - timerStart;
+    proof.schedule.clockPollCount = timingClockPollCount;
+    proof.schedule.finalLiveElapsedMs = Number(liveClock.elapsedMs);
+    proof.schedule.startedAtShiftMs = Number(liveClock.startedAt) - Number(initial.startedAt);
     proof.preDispatchPlan = {
-      sequence: initial.sequence, eventCount: initial.eventCount,
-      phase: initial.phase, round: initial.round, tacticalTurn: initial.tacticalTurn,
+      sequence: liveClock.sequence, eventCount: liveClock.eventCount,
+      phase: liveClock.phase, round: liveClock.round, tacticalTurn: liveClock.tacticalTurn,
       window: {
-        active: initial.active, startedAt: initial.startedAt, targetMs: initial.targetMs,
-        durationMs: initial.durationMs, hitWindowMs: initial.hitWindowMs,
-        greatWindowMs: initial.greatWindowMs, windowId: initial.windowId,
-        elapsedMs: Number(initial.elapsedMs) + Number(evaluationRoundTripMs[evaluationRoundTripMs.length - 1] || 0)
-          + proof.schedule.actualNodeWaitMs
+        active: liveClock.active, startedAt: liveClock.startedAt, targetMs: liveClock.targetMs,
+        durationMs: liveClock.durationMs, hitWindowMs: liveClock.hitWindowMs,
+        greatWindowMs: liveClock.greatWindowMs, windowId: liveClock.windowId,
+        elapsedMs: Number(liveClock.elapsedMs)
       },
-      source: "pre-dispatch schedule; exact physical baseline is captured inside pointerdown capture"
+      source: "adaptive live-clock schedule; exact physical baseline is captured inside pointerdown capture"
     };
     proof.dispatch = { startedAt: new Date().toISOString(), wallStartMs: Date.now(), eventSequence: ["mouseMoved", "mousePressed", "mouseReleased"], dispatchMode: "queued-in-order-without-round-trip-gaps" };
     // WebSocket/CDP preserves command order. Queue each of the three physical events
