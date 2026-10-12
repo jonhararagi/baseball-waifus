@@ -61,6 +61,12 @@ export class CombatRuntimeController {
     return this.authority.getState();
   }
 
+  syncAuthoritativeState(snapshot = {}) {
+    const state = this.authority.startSession(snapshot);
+    this.started = true;
+    return state;
+  }
+
   getTimingWindow() {
     this.assertStarted();
     const state = this.getState();
