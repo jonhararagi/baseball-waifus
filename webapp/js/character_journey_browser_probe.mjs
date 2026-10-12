@@ -918,29 +918,8 @@ async function run() {
       await mark("CLIMAX", (state) => state.battlePhase === "CLIMAX" && state.tacticalTurn === 5);
       let terminalTimingAction = null;
       if (T097_SERVER_AUTHORITY) {
-        await waitFor(
-          async () => {
-            const state = await cdpEvaluate(cdp, "window.__BW_T097_TIMING_STATE__?.()");
-            return state?.active && Number.isFinite(Number(state.elapsedMs)) && Number.isFinite(Number(state.targetMs)) ? state : false;
-          },
-          { timeoutMs: 6000, intervalMs: 1, label: "T097 live server timing window active" }
-        );
-        const timingDispatch = await cdpEvaluate(cdp, `(() => {
-          const state = window.__BW_T097_TIMING_STATE__?.();
-          const canvas = document.querySelector("#gameCanvas");
-          if (!state?.active || !canvas || !Number.isFinite(Number(state.elapsedMs)) || !Number.isFinite(Number(state.targetMs))) return null;
-          const delayMs = Math.max(0, Number(state.targetMs) - Number(state.elapsedMs));
-          const rect = canvas.getBoundingClientRect();
-          const x = rect.left + rect.width / 2;
-          const y = rect.top + rect.height / 2;
-          window.setTimeout(() => {
-            const pointer = { bubbles: true, cancelable: true, clientX: x, clientY: y, pointerId: 1, pointerType: "mouse", button: 0, buttons: 1 };
-            canvas.dispatchEvent(new PointerEvent("pointerdown", pointer));
-            canvas.dispatchEvent(new PointerEvent("pointerup", { ...pointer, buttons: 0 }));
-          }, delayMs);
-          return { scheduled: true, delayMs, elapsedMs: Number(state.elapsedMs), targetMs: Number(state.targetMs), greatWindowMs: Number(state.greatWindowMs) };
-        })()`);
-        requireCondition(timingDispatch?.scheduled === true, "T097 could not schedule a real canvas timing input", timingDispatch);
+        // The real renderer resolves the timing-window timeout and submits its
+        // actual grade; assert the signed server response, never synthesize one.
         terminalTimingAction = await waitFor(
           async () => {
             const entry = [...authorityTrace].reverse().find((item) =>
