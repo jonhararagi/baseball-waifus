@@ -911,23 +911,6 @@ async function run() {
       }
 
       await mark("CLIMAX", (state) => state.battlePhase === "CLIMAX" && state.tacticalTurn === 5);
-      let lastTimingState = null;
-      const timingTargetState = await waitFor(
-        async () => {
-          const state = await cdpEvaluate(cdp, "window.__BW_T097_TIMING_STATE__?.()");
-          lastTimingState = state;
-          if (!state?.active || !Number.isFinite(Number(state.elapsedMs)) || !Number.isFinite(Number(state.targetMs))) return false;
-          const deltaFromTargetMs = Number(state.elapsedMs) - Number(state.targetMs);
-          // Poll active state and target atomically; CDP dispatch has latency.
-          return deltaFromTargetMs >= -75 && deltaFromTargetMs <= -35 ? state : false;
-        },
-        { timeoutMs: 10000, intervalMs: 1, label: "T097 active GREAT timing target band" }
-      ).catch((error) => {
-        throw new Error(error.message + " // lastTimingState=" + JSON.stringify(lastTimingState) + " // authorityTrace=" + JSON.stringify(authorityTrace));
-      });
-      const timingElapsedAtInput = Number(timingTargetState.elapsedMs);
-      const timing = await readRuntime();
-      requireCondition(timing.timingActive === true, "T097 timing window closed before physical input", timing);
       const rect = await cdpEvaluate(cdp, "(() => { const c = document.querySelector('#gameCanvas'); const r = c?.getBoundingClientRect(); return r ? { left:r.left, top:r.top, width:r.width, height:r.height } : null; })()");
       requireCondition(rect && rect.width > 0 && rect.height > 0, "T097 timing canvas geometry unavailable", rect);
       const clickX = rect.left + rect.width / 2;
@@ -935,7 +918,23 @@ async function run() {
       const target = await cdpEvaluate(cdp, "(() => { const e = document.elementFromPoint(" + clickX + ", " + clickY + "); return { tag:e?.tagName || '', id:e?.id || '', isCanvas:e === document.querySelector('#gameCanvas') }; })()");
       requireCondition(target.isCanvas === true, "T097 timing target is not the game canvas", target);
       await cdp.send("Input.setIgnoreInputEvents", { ignore: false });
-      await cdp.send("Input.dispatchMouseEvent", { type:"mouseMoved", x:clickX, y:clickY, button:"none", buttons:0 });
+
+      let lastTimingState = null;
+      const timingTargetState = await waitFor(
+        async () => {
+          const state = await cdpEvaluate(cdp, "window.__BW_T097_TIMING_STATE__?.()");
+          lastTimingState = state;
+          if (!state?.active || !Number.isFinite(Number(state.elapsedMs)) || !Number.isFinite(Number(state.targetMs))) return false;
+          const deltaFromTargetMs = Number(state.elapsedMs) - Number(state.targetMs);
+          // Geometry is prepared before the target sample; only two pointer
+          // events remain, reducing dispatch latency inside the GREAT window.
+          return deltaFromTargetMs >= -75 && deltaFromTargetMs <= -35 ? state : false;
+        },
+        { timeoutMs: 10000, intervalMs: 1, label: "T097 active GREAT timing target band" }
+      ).catch((error) => {
+        throw new Error(error.message + " // lastTimingState=" + JSON.stringify(lastTimingState) + " // authorityTrace=" + JSON.stringify(authorityTrace));
+      });
+      const timingElapsedAtInput = Number(timingTargetState.elapsedMs);
       await cdp.send("Input.dispatchMouseEvent", { type:"mousePressed", x:clickX, y:clickY, button:"left", buttons:1, clickCount:1 });
       await cdp.send("Input.dispatchMouseEvent", { type:"mouseReleased", x:clickX, y:clickY, button:"left", buttons:0, clickCount:1 });
 
