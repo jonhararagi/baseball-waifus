@@ -21,7 +21,7 @@ const enemyFocus = stage.getCameraAnchor("ENEMY_FOCUS", { actorId: "enemy-01" })
 assert.equal(playerFocus.source, "ACTOR"); assert.equal(playerFocus.actorId, "bw001");
 assert.equal(enemyFocus.source, "ACTOR"); assert.equal(enemyFocus.actorId, "enemy-01");
 const transform = stage.resolveActorTransform("bw001", { width: 720, height: 1280 });
-assert.ok(transform.x > 0 && transform.y > 0); assert.equal(transform.depth, "MID");
+assert.ok(transform.x > 0 && transform.y > 0); assert.equal(transform.depth, stage.getActor("bw001").depth);
 const custom = createCombatActor({ actorId: "far-test", position: { x: 0.5, y: 0.4 }, depth: COMBAT_STAGE_DEPTH.FAR });
 assert.equal(custom.depth, "FAR"); assert.ok(custom.scale < 1);
 const before = JSON.stringify(stage.getActor("bw001")); stage.setSelectedActor("bw001"); assert.equal(JSON.stringify(stage.getActor("bw001")), before);

@@ -56,6 +56,12 @@ function clamp(value, min, max) {
 function safeNumber(value, fallback = 0) {
   return Number.isFinite(Number(value)) ? Number(value) : fallback;
 }
+function combatantVisualHeight(width, height, scale = 1) {
+  const stageWidth = Math.max(1, safeNumber(width, 720));
+  const stageHeight = Math.max(1, safeNumber(height, 480));
+  const depthScale = clamp(safeNumber(scale, 1), 0.55, 1.25);
+  return clamp(Math.min(stageHeight * 0.42, stageWidth * 0.215) * depthScale, 64, 176);
+}
 
 function normalizePoint(point, fallback) {
   if (!point || typeof point !== "object") {
@@ -273,6 +279,9 @@ export class CombatRenderer {
     this.frameCanvas = document.createElement("canvas");
     this.frameCtx = this.frameCanvas.getContext("2d", { alpha: false });
     this.lastFrame = performance.now();
+    this.renderedFrameCount = 0;
+    this.lastTimingFrameAt = 0;
+    this.timingPausedAt = 0;
 
     this.handleViewportResize = () => this.resize();
     this.handleTimingPointer = (event) => {
@@ -281,6 +290,9 @@ export class CombatRenderer {
         if (String(this.state?.game_mode || this.state?.mode || "").toLowerCase() === "4v4") this._selectFourVFourCombatantAtPointer(event);
         return;
       }
+      // Keep the physical input tied to the exact Timing Ring window that
+      // the input-capture listener observed. Stall compensation runs at frame
+      // boundaries and timeout ticks, never between capture and resolution.
       event.preventDefault();
       this.resolveTimingInput("pointer");
     };
@@ -305,6 +317,20 @@ export class CombatRenderer {
 
     this.resize();
     this.frameHandle = requestAnimationFrame((time) => this.frame(time));
+  }
+
+  waitForNextRenderedFrame({ timeoutMs = 5000 } = {}) {
+    const startingFrame = this.renderedFrameCount;
+    const startedAt = performance.now();
+    return new Promise((resolve, reject) => {
+      const check = () => {
+        if (this.disposed) return reject(new Error("COMBAT_RENDERER_DISPOSED"));
+        if (!this.paused && this.matchReady && this.state && this.renderedFrameCount > startingFrame) return resolve(this.renderedFrameCount);
+        if (performance.now() - startedAt >= timeoutMs) return reject(new Error("COMBAT_FIRST_RENDER_TIMEOUT"));
+        requestAnimationFrame(check);
+      };
+      requestAnimationFrame(check);
+    });
   }
 
   get battlePhase() { return this.combatRuntime.getState().phase; }
@@ -350,6 +376,50 @@ export class CombatRenderer {
     this._ownedTimeouts.clear();
   }
 
+  _compensateTimingFrameStall(now = performance.now()) {
+    const timing = this.timingState;
+    if (!timing?.active) {
+      this.lastTimingFrameAt = 0;
+      return 0;
+    }
+
+    const previousFrameAt = Number.isFinite(this.lastTimingFrameAt) && this.lastTimingFrameAt > 0
+      ? this.lastTimingFrameAt
+      : timing.startedAt;
+    const frameGapMs = Math.max(0, now - previousFrameAt);
+    this.lastTimingFrameAt = now;
+
+    // Match the simulation's existing 50 ms frame-delta cap. Time beyond this
+    // budget represents a frame hitch, not time the player could see the ring.
+    const simulatedFrameMs = Math.min(frameGapMs, 50);
+    const pausedFrameMs = Math.max(0, frameGapMs - simulatedFrameMs);
+    if (pausedFrameMs > 1) timing.startedAt += pausedFrameMs;
+    return pausedFrameMs;
+  }
+
+  _scheduleTimingTimeout() {
+    this._clearOwnedTimeout(this.timingTimeout);
+    this.timingTimeout = 0;
+    const timing = this.timingState;
+    if (this.disposed || this.paused || !timing?.active) return;
+
+    const remainingMs = Math.max(0, timing.startedAt + timing.durationMs - performance.now());
+    this.timingTimeout = this._setOwnedTimeout(() => {
+      this.timingTimeout = 0;
+      if (!this.timingState?.active) return;
+      this._compensateTimingFrameStall(performance.now());
+      const current = this.timingState;
+      const stillRemainingMs = current
+        ? current.startedAt + current.durationMs - performance.now()
+        : 0;
+      if (stillRemainingMs > 1) {
+        this._scheduleTimingTimeout();
+        return;
+      }
+      this.resolveTimingInput("timeout");
+    }, remainingMs);
+  }
+
   getLifecycleDebugSnapshot() {
     return Object.freeze({
       active: !this.paused && !this.disposed,
@@ -365,6 +435,7 @@ export class CombatRenderer {
 
   pause() {
     if (this.disposed || this.paused) return this.getLifecycleDebugSnapshot();
+    if (this.timingState?.active) this.timingPausedAt = performance.now();
     this.paused = true;
     cancelAnimationFrame(this.frameHandle);
     this.frameHandle = 0;
@@ -381,11 +452,13 @@ export class CombatRenderer {
     this.paused = false;
 
     if (this.timingState?.active) {
-      const remaining = Math.max(0, this.timingState.startedAt + this.timingState.durationMs - performance.now());
-      this.timingTimeout = this._setOwnedTimeout(() => {
-        this.timingTimeout = 0;
-        this.resolveTimingInput("timeout");
-      }, remaining);
+      const now = performance.now();
+      if (this.timingPausedAt > 0) {
+        this.timingState.startedAt += Math.max(0, now - this.timingPausedAt);
+      }
+      this.timingPausedAt = 0;
+      this.lastTimingFrameAt = now;
+      this._scheduleTimingTimeout();
     } else if (
       this.matchReady
       && this.battlePhase === "CLIMAX"
@@ -458,6 +531,8 @@ export class CombatRenderer {
       hitWindowMs: timingWindow.hitWindowMs,
       radiusScale: 1 + advantage * 0.42
     };
+    this.lastTimingFrameAt = startedAt;
+    this.timingPausedAt = 0;
     this.onClimaxStart?.({
       round: this.round,
       tactical_turns: this.tacticalTurn,
@@ -466,11 +541,7 @@ export class CombatRenderer {
       effectiveness: this.tacticalEffectiveness
     });
     this.audioBridge?.playClimaxWarning?.();
-    this._clearOwnedTimeout(this.timingTimeout);
-    this.timingTimeout = this._setOwnedTimeout(() => {
-      this.timingTimeout = 0;
-      this.resolveTimingInput("timeout");
-    }, timingWindow.durationMs);
+    this._scheduleTimingTimeout();
     return true;
   }
 
@@ -479,9 +550,11 @@ export class CombatRenderer {
     const current = this.timingState;
     const elapsedMs = performance.now() - current.startedAt;
     const timingGraceMs = Math.max(0, Number(this.getEconomyBoosts()?.timingGraceMs) || 0);
-    window.clearTimeout(this.timingTimeout);
+    this._clearOwnedTimeout(this.timingTimeout);
     this.timingTimeout = 0;
     this.timingState = null;
+    this.lastTimingFrameAt = 0;
+    this.timingPausedAt = 0;
 
     const resolution = this.combatRuntime.resolveTimingInput({
       elapsedMs,
@@ -970,6 +1043,7 @@ export class CombatRenderer {
       throw new TypeError("Invalid CombatInitDTO");
     }
 
+    this.matchReady = false;
     this.state = cloneDTO(dto);
     this._syncCombatStageActors();
     await this.setArea(
@@ -980,7 +1054,6 @@ export class CombatRenderer {
       || "cyberpunk"
     );
     this.lastTurn = null;
-    this.matchReady = true;
     this.resultPulse = 0;
     this.timingState = null;
     this.combatRuntime.startSession(this.state);
@@ -988,18 +1061,36 @@ export class CombatRenderer {
     this._syncCombatStageDataset();
     this.lastTacticalEvent = null;
 
-    const assetPreload = this.assetBank.preload([
+    const localTeamSprites = [
+      ...(dto.player_team_units || []),
+      ...(dto.enemy_team_units || [])
+    ].map((unit) => {
+      const characterId = String(unit?.characterId || unit?.character_id || unit?.id || "");
+      const path = String(
+        unit?.combat_sprite_url
+        || unit?.sprite_url
+        || (getWaifu(characterId) ? getWaifuAssets(characterId).spriteSheetUrl : "")
+      );
+      if (!path) return null;
+      return { id: String(unit.id || characterId), sprite_url: path, path, kind: "sprite" };
+    }).filter(Boolean);
+    const fourVFour = String(dto.game_mode || dto.mode || "").toLowerCase() === "4v4";
+    const optionalAssetPreload = this.assetBank.preload([
       ...(dto.assets?.sprites || []).map((asset) => ({ ...asset, kind: "sprite" })),
       ...(dto.assets?.cards || []).map((asset) => ({ ...asset, kind: "card" }))
     ]);
-    if (String(dto.game_mode || dto.mode || "").toLowerCase() === "4v4") {
-      // Gameplay authority and user input must not wait for remote art to finish.
-      // Keep all assets eligible for cache population without blocking combat boot.
-      void assetPreload.catch(() => null);
+    if (fourVFour) {
+      await this.assetBank.preload(localTeamSprites);
+      const missingSprites = localTeamSprites.filter((asset) => {
+        const image = this.assetBank.get(asset.sprite_url || asset.path);
+        return !image || !(image.naturalWidth > 0 && image.naturalHeight > 0);
+      });
+      if (missingSprites.length) throw new Error("LOCAL_4V4_SPRITES_NOT_READY: " + missingSprites.map((asset) => asset.id).join(", "));
+      void optionalAssetPreload.catch(() => null);
     } else {
-      await assetPreload;
+      await Promise.all([optionalAssetPreload, this.assetBank.preload(localTeamSprites)]);
     }
-
+    this.matchReady = true;
     this.batterRenderer.setBatter(dto.batter);
     this.onState?.(this.state);
   }
@@ -1109,6 +1200,8 @@ export class CombatRenderer {
     window.visualViewport?.removeEventListener("scroll", this.handleViewportResize);
     document.removeEventListener("visibilitychange", this.handleDocumentVisibility);
     this.timingState = null;
+    this.lastTimingFrameAt = 0;
+    this.timingPausedAt = 0;
     this._clearOwnedTimeouts();
     this.timingTimeout = 0;
     this.phaseTransitionTimeout = 0;
@@ -1124,12 +1217,15 @@ export class CombatRenderer {
       this.frameHandle = 0;
       return;
     }
+    const timingPausedFrameMs = this._compensateTimingFrameStall(time);
+    if (timingPausedFrameMs > 1) this._scheduleTimingTimeout();
     const delta = clamp((time - this.lastFrame) / 1000, 0, 0.05);
     this.lastFrame = time;
 
     this._update(delta);
     if (this.performanceAdapter.shouldRender(time)) {
       this._render(time);
+      if (this.matchReady && this.state) this.renderedFrameCount += 1;
     }
 
     if (!this.disposed && !this.paused) {
@@ -1244,10 +1340,14 @@ export class CombatRenderer {
       this._drawNeonParticles(target);
     }
 
+    const isFourVFour = String(this.state?.game_mode || this.state?.mode || "").toLowerCase() === "4v4";
     if (this.matchReady && this.state) {
       this._syncCinematicOverlayState();
       target.save();
-      this.combatPresentation.applyCamera(target, w, h);
+      // Single-batter presentation uses a camera zoom/pan to dramatize one
+      // character. Applying that same transform to 4v4 crops the outside
+      // players and magnifies their selection rings over the live Timing Ring.
+      if (!isFourVFour) this.combatPresentation.applyCamera(target, w, h);
       this._drawMatchState(target, w, h);
       target.restore();
       const presentation = this.combatPresentation.getState();
@@ -1256,7 +1356,7 @@ export class CombatRenderer {
       }
     }
 
-    if (this.kytosPresentationState) {
+    if (this.kytosPresentationState && !isFourVFour) {
       this.kytosPresentation.render(target, w, h, this.kytosPresentationState, { time });
       this.batterRenderer.draw(target, w, h, {
         accentColor: this.themeManager.getStrikeZoneColor(),
@@ -1321,7 +1421,8 @@ export class CombatRenderer {
   _syncCinematicOverlayState() {
     const presentation = this.combatPresentation?.getState?.() || {};
     const active = Boolean(presentation.active);
-    const ultimateActive = active && String(presentation.sequenceKind || "").startsWith("ULTIMATE");
+    const isFourVFour = String(this.state?.game_mode || this.state?.mode || "").toLowerCase() === "4v4";
+    const ultimateActive = !isFourVFour && active && String(presentation.sequenceKind || "").startsWith("ULTIMATE");
     const card = this.activeWaifuCard || document.querySelector("#active-waifu-card");
     const feedback = this.timingFeedback || document.querySelector("#timing-feedback");
     const root = document.querySelector("#app-container");
@@ -1460,14 +1561,19 @@ export class CombatRenderer {
   }
 
   _drawMatchState(ctx, w, h) {
-    const camera = this.combatPresentation.getCameraTransform({ width: w, height: h });
+    const isFourVFour = String(this.state?.game_mode || this.state?.mode || "").toLowerCase() === "4v4";
+    const camera = isFourVFour
+      ? { phase: "FORMATION", focusTarget: "COMBAT", zoom: 1, x: 0, y: 0, rotationDeg: 0, progress: 1, easing: "linear" }
+      : this.combatPresentation.getCameraTransform({ width: w, height: h });
     const groundColor = this.themeManager.getCurrentTheme()?.groundColor || "#10162a";
     const ultimateActive = String(this.combatPresentation.getState().sequenceKind || "").startsWith("ULTIMATE");
     renderCombatStageWorld(ctx, this.combatStage, w, h, {
       cameraTransform: camera,
       groundColor,
       showZones: false,
-      showSetPieceLabels: !ultimateActive
+      showSetPieces: !isFourVFour,
+      showBaseballDiamond: isFourVFour,
+      showSetPieceLabels: !ultimateActive && !isFourVFour
     });
 
     for (const actor of this.combatStage.getSortedActors()) {
@@ -1485,7 +1591,7 @@ export class CombatRenderer {
     const color = actor.team === "ENEMY" ? "#ff007f" : "#00f3ff";
     if (String(this.state?.game_mode || this.state?.mode || "").toLowerCase() === "4v4") {
       if (actor.team === "ENEMY") this._drawCombatEnemyActor(ctx, actor, transform, w, h, transform);
-      else this._drawCombatSupportActor(ctx, actor, transform, color);
+      else this._drawCombatSupportActor(ctx, actor, transform, color, h, w);
       this._drawCombatantStatus(ctx, actor, transform, w, h, color);
       return;
     }
@@ -1521,7 +1627,26 @@ export class CombatRenderer {
     this._drawCombatSupportActor(ctx, actor, motion, color);
   }
 
-  _drawCombatSupportActor(ctx, actor, transform, color) {
+  _drawCombatSupportActor(ctx, actor, transform, color, h = this.pixelHeight, w = this.pixelWidth) {
+    const sprite = this.assetBank.get(actor.visual?.combatSpriteUrl)
+      || this._combatSpriteForActor(actor.actorId)
+      || this.assetBank.get(getWaifuAssets(actor.visual?.characterId || actor.actorId).spriteSheetUrl);
+    if (sprite) {
+      const targetHeight = combatantVisualHeight(w, h, transform.scale);
+      const ratio = sprite.naturalWidth > 0 ? sprite.naturalHeight / sprite.naturalWidth : 1.45;
+      const targetWidth = targetHeight / ratio;
+      ctx.save();
+      ctx.translate(transform.x, transform.y);
+      ctx.rotate((transform.rotation * Math.PI) / 180);
+      ctx.globalAlpha = clamp(Number(transform.opacity ?? 1), 0, 1);
+      ctx.scale(actor.facing < 0 ? -1 : 1, 1);
+      ctx.shadowColor = "rgba(0,0,0,0.5)";
+      ctx.shadowBlur = 10;
+      ctx.drawImage(sprite, -targetWidth * 0.5, -targetHeight * 0.86, targetWidth, targetHeight);
+      ctx.restore();
+      return;
+    }
+
     const radius = 28 * transform.scale;
     ctx.save();
     ctx.translate(transform.x, transform.y);
@@ -1563,25 +1688,34 @@ export class CombatRenderer {
     const loop = this.getBattleLoopState();
     const unit = [...(loop.players || []), ...(loop.enemies || [])].find((entry) => entry.id === actor.actorId);
     if (!unit) return;
+    const compact = w < 760;
     const x = transform.x;
-    const y = transform.y + 44 * transform.scale;
-    const barWidth = Math.max(36, 58 * transform.scale);
-    const barHeight = 4;
+    const actorHeight = combatantVisualHeight(w, h, transform.scale);
+    const y = transform.y + actorHeight * 0.14 + (compact ? 13 : 16);
+    const barWidth = clamp(w * (compact ? 0.10 : 0.052) * transform.scale, 30, 76);
+    const barHeight = compact ? 4 : 5;
+    const labelWidth = barWidth + (compact ? 8 : 18);
     const ratio = clamp(unit.health / Math.max(1, unit.maxHealth), 0, 1);
     const dimmed = unit.health <= 0;
+    const displayName = String(unit.displayName || unit.characterId || unit.id).slice(0, compact ? 8 : 12) + (unit.temporary ? " *" : "");
     ctx.save();
-    ctx.globalAlpha = dimmed ? 0.48 : 0.94;
+    ctx.globalAlpha = dimmed ? 0.48 : 0.98;
     ctx.textAlign = "center";
-    ctx.font = "800 9px Rajdhani, system-ui, sans-serif";
-    ctx.fillStyle = dimmed ? "#8a8a9b" : "#f2f8ff";
-    ctx.fillText(String(unit.displayName || unit.characterId || unit.id).slice(0, 14) + (unit.temporary ? " *" : ""), x, y);
-    ctx.fillStyle = "rgba(255,255,255,.14)";
+    ctx.shadowColor = "rgba(2, 6, 17, 0.98)";
+    ctx.shadowBlur = 5;
+    ctx.font = compact ? "800 8px Rajdhani, system-ui, sans-serif" : "800 10px Rajdhani, system-ui, sans-serif";
+    ctx.fillStyle = dimmed ? "#8a8a9b" : "#f7fbff";
+    ctx.fillText(displayName, x, y, labelWidth);
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "rgba(2, 6, 17, 0.9)";
+    ctx.fillRect(x - barWidth / 2 - 1, y + 3, barWidth + 2, barHeight + 2);
+    ctx.fillStyle = "rgba(255,255,255,.16)";
     ctx.fillRect(x - barWidth / 2, y + 4, barWidth, barHeight);
-    ctx.fillStyle = color;
+    ctx.fillStyle = dimmed ? "#687080" : color;
     ctx.fillRect(x - barWidth / 2, y + 4, barWidth * ratio, barHeight);
-    ctx.font = "700 8px Rajdhani, system-ui, sans-serif";
-    ctx.fillStyle = "#cbd5e8";
-    ctx.fillText(String(unit.health) + "/" + String(unit.maxHealth), x, y + 19);
+    ctx.font = compact ? "700 7px Rajdhani, system-ui, sans-serif" : "700 8px Rajdhani, system-ui, sans-serif";
+    ctx.fillStyle = "#e1eaf7";
+    ctx.fillText(String(unit.health) + "/" + String(unit.maxHealth), x, y + 17, labelWidth);
     if (loop.selectedEnemyId === unit.id) this._drawCombatActorRing(ctx, x, transform.y + 8, 34 * transform.scale, "#ffdf00", true);
     else if (loop.selectedPlayerId === unit.id) this._drawCombatActorRing(ctx, x, transform.y + 8, 30 * transform.scale, "#00f3ff", true);
     ctx.restore();
@@ -1619,7 +1753,12 @@ export class CombatRenderer {
   }
 
   _drawCombatEnemyActor(ctx, actor, transform, w, h, motion = null) {
-    const presentation = this.combatPresentation.getState();
+    const isFourVFour = String(this.state?.game_mode || this.state?.mode || "").toLowerCase() === "4v4";
+    // The cinematic director tracks one attacker and one target in legacy mode.
+    // Reusing its phase in 4v4 incorrectly adds oversized reaction halos to all rivals.
+    const presentation = isFourVFour
+      ? { phase: "FORMATION", progress: 0, sequenceKind: "" }
+      : this.combatPresentation.getState();
     const frame = motion || transform;
     const radius = 42 * frame.scale;
     const t = presentation.progress || 0;
@@ -1632,7 +1771,9 @@ export class CombatRenderer {
     const y = frame.y;
     const rotation = (frame.rotationDeg ?? frame.rotation ?? 0) * Math.PI / 180;
 
-    const sprite = this._combatSpriteForActor(actor.actorId);
+    const sprite = this.assetBank.get(actor.visual?.combatSpriteUrl)
+      || this._combatSpriteForActor(actor.actorId)
+      || this.assetBank.get(getWaifuAssets(actor.visual?.characterId || actor.actorId).spriteSheetUrl);
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(rotation);
@@ -1645,7 +1786,7 @@ export class CombatRenderer {
     ctx.fill();
 
     if (sprite) {
-      const targetHeight = clamp(h * 0.34 * transform.scale, 170, 340);
+      const targetHeight = combatantVisualHeight(w, h, frame.scale);
       const ratio = sprite.naturalWidth > 0 ? sprite.naturalHeight / sprite.naturalWidth : 1.45;
       const targetWidth = targetHeight / ratio;
       ctx.save();
@@ -1686,8 +1827,9 @@ export class CombatRenderer {
       ctx.stroke();
     }
 
-    const cinematicUltimate = String(this.combatPresentation.getState().sequenceKind || "").startsWith("ULTIMATE");
-    if (!cinematicUltimate) {
+    const cinematicUltimate = !isFourVFour
+      && String(this.combatPresentation.getState().sequenceKind || "").startsWith("ULTIMATE");
+    if (!cinematicUltimate && !isFourVFour) {
       ctx.textAlign = "center";
       ctx.font = "900 9px Orbitron, system-ui, sans-serif";
       ctx.fillStyle = "#ffd6e8";
@@ -2065,41 +2207,8 @@ export class CombatRenderer {
     const loop = this.getBattleLoopState();
     if (!loop || !this.matchReady) return;
     if (loop.mode === "4v4") {
-      const playerAlive = (loop.players || []).filter((unit) => unit.health > 0);
-      const enemyAlive = (loop.enemies || []).filter((unit) => unit.health > 0);
-      const playerHp = (loop.players || []).reduce((sum, unit) => sum + unit.health, 0);
-      const playerMax = (loop.players || []).reduce((sum, unit) => sum + unit.maxHealth, 0);
-      const enemyHp = (loop.enemies || []).reduce((sum, unit) => sum + unit.health, 0);
-      const enemyMax = (loop.enemies || []).reduce((sum, unit) => sum + unit.maxHealth, 0);
-      const phaseLabel = loop.phase === "CLIMAX" ? "TIMING RING // CLIMAX"
-        : loop.phase === "VICTORY" ? "VICTORY // OPPONENT TEAM DEFEATED"
-        : loop.phase === "DEFEAT" ? "DEFEAT // YOUR TEAM DEFEATED"
-        : "TACTICAL // TURN " + loop.tacticalTurn + "/" + loop.tacticalMaxTurns;
-      const barX = w * 0.08;
-      const barW = w * 0.84;
-      ctx.save();
-      ctx.textAlign = "center";
-      ctx.font = "900 11px Orbitron, system-ui, sans-serif";
-      ctx.fillStyle = loop.phase === "CLIMAX" ? "#ffdf00" : loop.terminal === "DEFEAT" ? "#ff007f" : "#00f3ff";
-      ctx.shadowColor = ctx.fillStyle;
-      ctx.shadowBlur = 8;
-      ctx.fillText("ROUND " + loop.round + " • " + phaseLabel, w / 2, h * 0.205);
-      ctx.shadowBlur = 0;
-      ctx.textAlign = "left";
-      ctx.font = "800 8px Rajdhani, system-ui, sans-serif";
-      ctx.fillStyle = "#b8bed0";
-      ctx.fillText("YOUR TEAM " + playerAlive.length + "/4 • HP " + playerHp + "/" + playerMax, barX, h * 0.225);
-      ctx.fillStyle = "rgba(255,255,255,.10)";
-      ctx.fillRect(barX, h * 0.232, barW, 5);
-      ctx.fillStyle = "#00f3ff";
-      ctx.fillRect(barX, h * 0.232, barW * clamp(playerHp / Math.max(1, playerMax), 0, 1), 5);
-      ctx.fillStyle = "#b8bed0";
-      ctx.fillText("RIVALS " + enemyAlive.length + "/4 • HP " + enemyHp + "/" + enemyMax, barX, h * 0.251);
-      ctx.fillStyle = "rgba(255,255,255,.10)";
-      ctx.fillRect(barX, h * 0.258, barW, 5);
-      ctx.fillStyle = "#ff007f";
-      ctx.fillRect(barX, h * 0.258, barW * clamp(enemyHp / Math.max(1, enemyMax), 0, 1), 5);
-      ctx.restore();
+      // The DOM scoreboard plus each actor's own HP/name tag are the 4v4 HUD.
+      // A second aggregate HUD here covered the top of the field and overlapped it.
       return;
     }
 
@@ -2153,13 +2262,15 @@ export class CombatRenderer {
     if (!timing?.active) return;
 
     const elapsedMs = performance.now() - timing.startedAt;
+    const isFourVFour = String(this.state?.game_mode || this.state?.mode || "").toLowerCase() === "4v4";
+    const visualScale = isFourVFour ? 0.5 : 1;
     const baseRadius = timingRingRadius(elapsedMs);
     const radiusScale = Number(timing.radiusScale) || 1;
-    const radius = TIMING_RING_TARGET_RADIUS * radiusScale
-      + (baseRadius - TIMING_RING_TARGET_RADIUS) * radiusScale;
+    const radius = (TIMING_RING_TARGET_RADIUS * radiusScale
+      + (baseRadius - TIMING_RING_TARGET_RADIUS) * radiusScale) * visualScale;
     const cx = w * 0.5;
-    const cy = h * 0.52;
-    const targetRadius = TIMING_RING_TARGET_RADIUS;
+    const cy = h * (isFourVFour ? 0.60 : 0.52);
+    const targetRadius = TIMING_RING_TARGET_RADIUS * visualScale;
     const progress = clamp(elapsedMs / timing.durationMs, 0, 1);
     const pulse = 0.72 + Math.sin(time * 0.012) * 0.12;
 
@@ -2170,38 +2281,38 @@ export class CombatRenderer {
 
     ctx.globalAlpha = 0.22;
     ctx.strokeStyle = "#00f3ff";
-    ctx.lineWidth = 10;
+    ctx.lineWidth = 10 * visualScale;
     ctx.beginPath();
     ctx.arc(cx, cy, targetRadius, 0, Math.PI * 2);
     ctx.stroke();
 
     ctx.globalAlpha = pulse;
     ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 3 * visualScale;
     ctx.shadowColor = "#00f3ff";
-    ctx.shadowBlur = 18;
+    ctx.shadowBlur = 18 * visualScale;
     ctx.beginPath();
     ctx.arc(cx, cy, targetRadius, 0, Math.PI * 2);
     ctx.stroke();
 
     ctx.globalAlpha = 0.92;
     ctx.strokeStyle = progress > 0.82 ? "#ffdf00" : "#ff007f";
-    ctx.lineWidth = 5;
+    ctx.lineWidth = 5 * visualScale;
     ctx.shadowColor = progress > 0.82 ? "#ffdf00" : "#ff007f";
-    ctx.shadowBlur = 16;
+    ctx.shadowBlur = 16 * visualScale;
     ctx.beginPath();
     ctx.arc(cx, cy, radius, 0, Math.PI * 2);
     ctx.stroke();
 
     ctx.globalAlpha = 0.9;
     ctx.fillStyle = "#ffffff";
-    ctx.font = "900 13px Orbitron, system-ui, sans-serif";
+    ctx.font = "900 " + (13 * visualScale) + "px Orbitron, system-ui, sans-serif";
     ctx.fillText("TAP", cx, cy);
 
     ctx.globalAlpha = 0.68;
-    ctx.font = "800 9px Rajdhani, system-ui, sans-serif";
+    ctx.font = "800 " + (9 * visualScale) + "px Rajdhani, system-ui, sans-serif";
     ctx.fillStyle = "#9cefff";
-    ctx.fillText("TIMING", cx, cy + targetRadius + 22);
+    ctx.fillText("TIMING", cx, cy + targetRadius + 22 * visualScale);
 
     ctx.restore();
   }

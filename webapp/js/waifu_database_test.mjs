@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
+import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import {
@@ -12,8 +13,7 @@ import {
 } from "./waifu_database.js";
 import {
   AssetLoader,
-  createPlaceholderSvg,
-  isHttpsUrl
+  createPlaceholderSvg
 } from "./asset_loader.js";
 
 console.log("🧪 Ejecutando pruebas unitarias de P13/P15...");
@@ -48,25 +48,30 @@ const requiredKeys = ["avatarUrl", "cardArtUrl", "spriteSheetUrl"];
 for (const [id, waifu] of Object.entries(WAIFU_DATABASE)) {
   assert.ok(waifu.name, id + " must have a display name");
   for (const key of requiredKeys) {
-    assert.equal(
-      isHttpsUrl(waifu[key]),
-      true,
-      id + "." + key + " must be a valid HTTPS URL"
+    assert.ok(
+      waifu[key].startsWith("./assets/characters/"),
+      id + "." + key + " must use a same-origin local asset"
     );
-    assert.ok(waifu[key].length > 20, id + "." + key + " must not be empty");
+    assert.ok(
+      existsSync(join(webappDir, waifu[key])),
+      id + "." + key + " must resolve to an existing local asset: " + waifu[key]
+    );
   }
 }
 
 const cariAssets = getWaifuAssets("cari");
-assert.ok(cariAssets.cardArtUrl.startsWith("https://"));
+assert.ok(cariAssets.cardArtUrl.startsWith("./assets/characters/"));
+assert.ok(cariAssets.cardArtUrl.endsWith("/cari.svg"));
+assert.ok(existsSync(join(webappDir, cariAssets.cardArtUrl)));
 
 const dynamicAssets = getWaifuAssets({
   character_id: "bw999",
   canonical: { display_name: "Test Waifu", archetype: "POWER" }
 });
-assert.ok(dynamicAssets.avatarUrl.startsWith("https://"));
-assert.ok(dynamicAssets.cardArtUrl.startsWith("https://"));
-assert.ok(dynamicAssets.spriteSheetUrl.startsWith("https://"));
+for (const [label, url] of Object.entries(dynamicAssets)) {
+  assert.equal(url, "./assets/characters/placeholder.svg", label + " must use the deterministic local placeholder for unknown characters");
+  assert.ok(existsSync(join(webappDir, url)), label + " fallback must exist on disk");
+}
 
 assert.equal(getArchetypeColor("POWER"), "#ff3b30");
 assert.equal(getArchetypeColor("CONTACT"), "#00e5ff");

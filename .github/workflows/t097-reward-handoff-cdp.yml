@@ -5,9 +5,11 @@ on:
     branches:
       - main
       - bwm-099-normal-combat-authority-handoff
+      - bwm-105-real-4v4-webapp
   push:
     branches:
       - main
+      - bwm-104-full-webapp-e2e
     paths:
       - "webapp/js/character_journey_browser_probe.mjs"
       - "webapp/js/app.js"
@@ -20,6 +22,13 @@ on:
       - "webapp/js/combat_4v4_authority_test.mjs"
       - "webapp/js/team_manager_test.mjs"
       - "webapp/js/home_view_test.mjs"
+      - "webapp/js/area_theme_manager.js"
+      - "webapp/js/waifu_database.js"
+      - "webapp/js/waifu_database_test.mjs"
+      - "webapp/js/admin_panel_test.mjs"
+      - "webapp/js/combat_visual_assets_test.mjs"
+      - "webapp/data/waifus_config.json"
+      - "webapp/assets/**"
       - "webapp/js/reward_pipeline.js"
       - "webapp/js/reward_authority.js"
       - "webapp/js/bone004_reward_authority_test.mjs"
@@ -134,6 +143,12 @@ jobs:
           set -euo pipefail
           node --check webapp/js/character_journey_browser_probe.mjs
 
+      - name: Validate local combat art and 4v4 formation sizing
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --experimental-default-type=module webapp/js/combat_visual_assets_test.mjs
+
       - name: Run BWM-105 4v4 authority, roster and regression tests
         shell: bash
         run: |
@@ -199,6 +214,29 @@ jobs:
         with:
           name: bwm-105-webapp-4v4-evidence
           path: browser-evidence/BWM-105/
+          if-no-files-found: warn
+
+
+      - name: Run BWM-104 full WebApp 4v4 E2E
+        if: always()
+        shell: bash
+        env:
+          T072_SITE_DIR: site
+          T072_EVIDENCE_DIR: browser-evidence/BWM-104
+          BWM104_4V4_E2E: "1"
+          BROWSER_BIN: ${{ steps.chrome.outputs.browser_bin }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$T072_EVIDENCE_DIR"
+          echo "Run BWM-104 full WebApp 4v4 E2E"
+          node webapp/js/character_journey_browser_probe.mjs | tee "$T072_EVIDENCE_DIR/bwm104-browser-output.txt"
+
+      - name: Upload BWM-104 full WebApp 4v4 E2E evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bwm-104-full-webapp-4v4-evidence
+          path: browser-evidence/BWM-104/
           if-no-files-found: warn
 
       - name: Run T101 normal combat defeat proof

@@ -64,7 +64,17 @@ for (const character of snapshot.characters) {
   assert.equal(typeof character.quote_idle, "string");
   assert.equal(typeof character.quote_victory, "string");
   assert.equal(typeof character.jiggle_intensity, "number");
-  assert.match(character.assets.avatar, /^https:\/\//);
+  for (const key of ["avatar", "card_art", "cutin_art"]) {
+    const localAsset = character.assets[key];
+    assert.ok(
+      localAsset.startsWith("./assets/characters/"),
+      character.id + "." + key + " must use a same-origin local asset"
+    );
+    await fs.access(
+      path.resolve(here, "..", localAsset),
+      undefined
+    );
+  }
 }
 
 const imageUpdates = [];

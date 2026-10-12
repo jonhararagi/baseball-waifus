@@ -1,5 +1,6 @@
 // BONE-008-003-R8 T094 push-trigger checkpoint.
 import { spawn } from "node:child_process";
+import { randomUUID } from "node:crypto";
 import { createServer } from "node:http";
 import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { stat, readFile } from "node:fs/promises";
@@ -21,12 +22,18 @@ const T117_TERMINAL_TIMING_DIAGNOSTIC = process.env.T117_TERMINAL_TIMING_DIAGNOS
 const T118_NON_HIT_REWARD_VALIDATION = process.env.T118_NON_HIT_REWARD_VALIDATION === "1";
 const T094_COMBAT_LOOP = process.env.T094_COMBAT_LOOP === "1";
 const BWM105_4V4 = process.env.BWM105_4V4 === "1";
+const BWM104_4V4_E2E = process.env.BWM104_4V4_E2E === "1";
+const BWM4V4_E2E = BWM104_4V4_E2E || BWM105_4V4;
+const BWM4V4_TASK = BWM104_4V4_E2E ? "BWM-104" : "BWM-105";
 const SITE_DIR = resolve(process.env.T072_SITE_DIR || "site");
 const EVIDENCE_DIR = resolve(
   process.env.T072_EVIDENCE_DIR
   || join("browser-evidence", "T072", process.env.GITHUB_SHA || "local", process.env.GITHUB_RUN_ID || "local")
 );
 const BROWSER_BIN = process.env.BROWSER_BIN;
+
+const ACTION_BAT_VISIBLE_EXPRESSION = "(() => {   const home = document.querySelector('#home-view');   const shell = document.querySelector('.game-viewport');   const button = document.querySelector('#action-bat');   const shellRect = shell?.getBoundingClientRect();   const buttonRect = button?.getBoundingClientRect();   return Boolean(     home && home.hidden && getComputedStyle(home).display === 'none'     && shell && !shell.hidden && shellRect?.width > 0 && shellRect?.height > 0     && button && !button.hidden && !button.disabled     && buttonRect?.width > 0 && buttonRect?.height > 0     && getComputedStyle(button).visibility !== 'hidden'     && getComputedStyle(button).display !== 'none'   ); })()";
+
 
 const MIME = Object.freeze({
   ".html": "text/html; charset=utf-8",
@@ -236,10 +243,22 @@ async function dispatchCorrelatedTimingPointer(cdp, { task, attempt = 1, expecte
     if (expectedRound !== null) requireCondition(initial.round === expectedRound, task + " timing window belongs to wrong round", { expectedRound, initial });
     if (expectedTurn !== null) requireCondition(initial.tacticalTurn === expectedTurn, task + " timing window belongs to wrong turn", { expectedTurn, initial });
 
+    // For a success result, bias toward the late side of hitWindow. The
+    // logical clock can pause at a render stall between our last sample and
+    // Chromium delivering pointerdown; scheduling early made that stall turn a
+    // correct intended hit into a MISS. A late in-window target remains valid
+    // with or without a stall, while the MISS case stays well outside hitWindow.
+    const lateHitMarginMs = Math.min(
+      initial.hitWindowMs * 0.55,
+      Math.max(0, initial.durationMs - initial.targetMs - 35)
+    );
     const leadMs = expectedGrade === "MISS"
       ? (initial.hitWindowMs * 2) + initial.greatWindowMs + 30
-      : initial.hitWindowMs / 2;
-    const scheduledElapsedMs = Math.max(0, initial.targetMs - leadMs);
+      : -lateHitMarginMs;
+    const scheduledElapsedMs = Math.max(0, Math.min(
+      initial.durationMs - 30,
+      initial.targetMs - leadMs
+    ));
     proof.schedulerCalibration = {
       source: "measured Node/CDP runtime-evaluation round trips",
       evaluationRoundTripMs, medianEvaluationRoundTripMs: medianRttMs,
@@ -247,28 +266,60 @@ async function dispatchCorrelatedTimingPointer(cdp, { task, attempt = 1, expecte
       finalSampleRoundTripMs: evaluationRoundTripMs[evaluationRoundTripMs.length - 1]
     };
     proof.schedule = {
-      strategy: expectedGrade === "MISS" ? "early-outside-twice-hit-window" : "lead-by-half-hit-window",
-      mechanism: "single Node timer; no CDP poll or runtime query after the wait; exact baseline captured during window-capture pointerdown before canvas handler",
+      strategy: expectedGrade === "MISS" ? "early-outside-twice-hit-window" : "late-hit-window-margin-for-frame-stall-tolerance",
+      mechanism: "page-requestAnimationFrame synchronized reads of the logical Timing Ring clock; exact physical baseline is captured during window-capture pointerdown before canvas handler",
       scheduledElapsedMs, leadMs, initialElapsedMs: initial.elapsedMs, targetMs: initial.targetMs,
       hitWindowMs: initial.hitWindowMs, greatWindowMs: initial.greatWindowMs, durationMs: initial.durationMs,
       harnessSequenceAtSchedule: initial.sequence, harnessEventCountAtSchedule: initial.eventCount,
       timerWaitMs: Math.max(0, scheduledElapsedMs - Number(initial.elapsedMs || 0) - medianRttMs)
     };
-    const timerWaitMs = proof.schedule.timerWaitMs;
+    // A Node timer assumes the browser's animation clock advances at wall-clock
+    // speed. That is false here: the renderer deliberately shifts startedAt when
+    // frames stall, so a long fixed sleep can produce a click ~100-200ms early.
+    // Poll the same live logical clock that the resolver will use, then dispatch
+    // the real CDP pointer immediately once the scheduled interval is reached.
+    const plannedTimerWaitMs = proof.schedule.timerWaitMs;
     const timerStart = performance.now();
-    if (timerWaitMs > 0) await sleep(timerWaitMs);
+    const clockDeadline = timerStart + Math.max(3500, Number(initial.durationMs || 860) * 4);
+    let liveClock = initial;
+    let timingClockPollCount = 0;
+    // Sample only from a page animation frame. CombatRenderer's frame callback
+    // was registered earlier and applies any pending stall compensation before
+    // this later callback runs. A normal Runtime.evaluate poll can read 815ms,
+    // then encounter a 350ms stall which rewinds the logical clock to 480ms
+    // before CDP delivers the click. Frame-synchronized reads avoid that stale
+    // sample/dispatch race and preserve evidence of any shift that did occur.
+    const frameClockExpression = "new Promise(resolve => requestAnimationFrame(() => resolve(" + clockExpression + ")))";
+    while (Number(liveClock?.elapsedMs) < scheduledElapsedMs) {
+      requireCondition(liveClock?.active === true, task + " Timing Ring closed before the scheduled physical input", liveClock);
+      requireCondition(liveClock.phase === "CLIMAX" && liveClock.round === initial.round
+        && liveClock.tacticalTurn === initial.tacticalTurn && liveClock.targetMs === initial.targetMs
+        && liveClock.durationMs === initial.durationMs,
+        task + " Timing Ring identity changed while scheduling correlated input", { initial, liveClock });
+      requireCondition(performance.now() < clockDeadline,
+        task + " timed out synchronizing to live Timing Ring animation-frame clock",
+        { scheduledElapsedMs, liveClock, timingClockPollCount });
+      liveClock = await cdpEvaluate(cdp, frameClockExpression);
+      timingClockPollCount += 1;
+    }
+    requireCondition(liveClock?.active === true && liveClock.phase === "CLIMAX"
+      && liveClock.round === initial.round && liveClock.tacticalTurn === initial.tacticalTurn,
+      task + " live Timing Ring changed at the target dispatch boundary", { initial, liveClock });
+    proof.schedule.plannedTimerWaitMs = plannedTimerWaitMs;
     proof.schedule.actualNodeWaitMs = performance.now() - timerStart;
+    proof.schedule.clockPollCount = timingClockPollCount;
+    proof.schedule.finalLiveElapsedMs = Number(liveClock.elapsedMs);
+    proof.schedule.startedAtShiftMs = Number(liveClock.startedAt) - Number(initial.startedAt);
     proof.preDispatchPlan = {
-      sequence: initial.sequence, eventCount: initial.eventCount,
-      phase: initial.phase, round: initial.round, tacticalTurn: initial.tacticalTurn,
+      sequence: liveClock.sequence, eventCount: liveClock.eventCount,
+      phase: liveClock.phase, round: liveClock.round, tacticalTurn: liveClock.tacticalTurn,
       window: {
-        active: initial.active, startedAt: initial.startedAt, targetMs: initial.targetMs,
-        durationMs: initial.durationMs, hitWindowMs: initial.hitWindowMs,
-        greatWindowMs: initial.greatWindowMs, windowId: initial.windowId,
-        elapsedMs: Number(initial.elapsedMs) + Number(evaluationRoundTripMs[evaluationRoundTripMs.length - 1] || 0)
-          + proof.schedule.actualNodeWaitMs
+        active: liveClock.active, startedAt: liveClock.startedAt, targetMs: liveClock.targetMs,
+        durationMs: liveClock.durationMs, hitWindowMs: liveClock.hitWindowMs,
+        greatWindowMs: liveClock.greatWindowMs, windowId: liveClock.windowId,
+        elapsedMs: Number(liveClock.elapsedMs)
       },
-      source: "pre-dispatch schedule; exact physical baseline is captured inside pointerdown capture"
+      source: "adaptive live-clock schedule; exact physical baseline is captured inside pointerdown capture"
     };
     proof.dispatch = { startedAt: new Date().toISOString(), wallStartMs: Date.now(), eventSequence: ["mouseMoved", "mousePressed", "mouseReleased"], dispatchMode: "queued-in-order-without-round-trip-gaps" };
     // WebSocket/CDP preserves command order. Queue each of the three physical events
@@ -546,15 +597,17 @@ async function run() {
       requireCondition(!bone008PlayerMetaScript.trim().startsWith("() =>"), "BONE-008 fixture script is a bare function");
     }
 
-    await cdp.send("Page.addScriptToEvaluateOnNewDocument", {
-      source: bone008PlayerMetaScript
-    });
-    if (BWM105_4V4) {
+    if (!BWM4V4_E2E || T094_COMBAT_LOOP) {
       await cdp.send("Page.addScriptToEvaluateOnNewDocument", {
-        source: "(() => { try { localStorage.clear(); sessionStorage.clear(); } catch {} })();"
+        source: bone008PlayerMetaScript
       });
     }
-    await cdp.send("Page.navigate", { url: BWM105_4V4 ? baseUrl + "?qa=bwm105" : baseUrl });
+    if (BWM4V4_E2E) {
+      await cdp.send("Page.addScriptToEvaluateOnNewDocument", {
+        source: "(() => { try { const key = '__bw_qa_storage_initialized'; if (localStorage.getItem(key) !== '1') { localStorage.clear(); sessionStorage.clear(); localStorage.setItem(key, '1'); } } catch {} })();"
+      });
+    }
+    await cdp.send("Page.navigate", { url: BWM4V4_E2E ? baseUrl + "?qa=" + (BWM104_4V4_E2E ? "bwm104" : "bwm105") : baseUrl });
 
     await waitFor(async () => (await cdpEvaluate(cdp, "document.readyState")) === "complete", {
       timeoutMs: 30000,
@@ -656,15 +709,18 @@ async function run() {
       })()`);
     }
 
-    if (BWM105_4V4) {
+    if (BWM4V4_E2E) {
+      const sessionId = BWM4V4_TASK + "-" + (process.env.GITHUB_RUN_ID || "local") + "-" + randomUUID();
+      const evidencePrefix = BWM104_4V4_E2E ? "bwm104" : "bwm105";
       const evidence = {
-        task: "BWM-105",
+        task: BWM4V4_TASK,
+        sessionId,
         status: "IN_PROGRESS",
         sha: process.env.GITHUB_SHA || "local",
         runId: process.env.GITHUB_RUN_ID || "local",
         runAttempt: process.env.GITHUB_RUN_ATTEMPT || "local",
         browser: BROWSER_BIN,
-        baseUrl: baseUrl + "?qa=bwm105",
+        baseUrl: baseUrl + "?qa=" + (BWM104_4V4_E2E ? "bwm104" : "bwm105"),
         startedAt: new Date().toISOString(),
         formation: null,
         selection: null,
@@ -679,6 +735,7 @@ async function run() {
         pageExceptions: []
       };
       const runtimeSnapshot = async () => cdpEvaluate(cdp, "window.__BW_BWM105_GET_RUNTIME__?.() || null");
+      const readPersistedEnvelope = async () => cdpEvaluate(cdp, "(() => { const key='baseball_waifus_player_meta_v1:local-player'; const raw=localStorage.getItem(key); let envelope=null; try { envelope=raw?JSON.parse(raw):null; } catch {} const state=envelope?.state||envelope; return { key, rawPresent:Boolean(raw), schemaVersion:envelope?.schemaVersion??state?.schemaVersion??null, revision:envelope?.revision??null, playerId:state?.identity?.playerId??null, scrap:state?.currencies?.SCRAP??null, inventoryIds:Object.entries(state?.inventory?.characters||{}).filter(([,v])=>v?.unlocked===true&&Number(v?.quantity)>0).map(([id])=>id).sort(), roster:state?.roster||null, rewardLedgerKeys:Object.keys(state?.rewardLedger||{}).sort() }; })()");
       const healthTotal = (units) => (units || []).reduce((sum, unit) => sum + Number(unit.health || 0), 0);
       const sameList = (left, right) => JSON.stringify([...(left || [])].sort()) === JSON.stringify([...(right || [])].sort());
       const captureState = async () => {
@@ -712,6 +769,7 @@ async function run() {
 
         const before = await captureState();
         evidence.playerMetaBefore = {
+          sessionId,
           scrap: before.currencies?.SCRAP ?? null,
           ledger: before.rewardLedger || [],
           inventoryIds: before.inventoryIds || [],
@@ -720,7 +778,7 @@ async function run() {
         };
         requireCondition(Number.isFinite(Number(evidence.playerMetaBefore.scrap)),
           "BWM-105 Player Meta SCRAP snapshot is unavailable", evidence.playerMetaBefore);
-        evidence.screenshots.home = await screenshot(cdp, "bwm105-00-home");
+        evidence.screenshots.home = await screenshot(cdp, evidencePrefix + "-00-home");
         await cdpClickSelector(cdp, "#home-action-start-4v4");
 
         const formation = await waitFor(async () => {
@@ -737,7 +795,7 @@ async function run() {
         const enemies = formation.battle.enemies;
         const units = [...players, ...enemies];
         const actors = formation.actors || [];
-        evidence.formation = { mode: formation.mode, battleId: formation.battle.battleId || null,
+        evidence.formation = { sessionId, mode: formation.mode, battleId: formation.battle.battleId || null,
           playerUnits: players, enemyUnits: enemies, actors, stage: formation.stage };
         requireCondition(players.length === 4 && enemies.length === 4,
           "BWM-105 requires four authoritative units per team", { playerCount: players.length, enemyCount: enemies.length });
@@ -759,14 +817,14 @@ async function run() {
         requireCondition(temporary.every((id) => !evidence.playerMetaBefore.inventoryIds.includes(id)),
           "BWM-105 temporary local canonical unit already appears in Player Meta inventory",
           { temporary, inventory: evidence.playerMetaBefore.inventoryIds });
-        evidence.screenshots.formation = await screenshot(cdp, "bwm105-01-formation");
+        evidence.screenshots.formation = await screenshot(cdp, evidencePrefix + "-01-formation");
 
         // Cache an unobstructed physical canvas coordinate before the Timing Ring
         // starts. No DOM hit-testing or geometry query is needed once CLIMAX opens.
         const timingCanvasTarget = await cdpEvaluate(cdp, "(() => { const c=document.querySelector('#gameCanvas'); const r=c?.getBoundingClientRect(); if(!c||!r)return null; const fractions=[[.5,.5],[.8,.5],[.2,.5],[.5,.8],[.5,.2],[.8,.8],[.2,.8],[.8,.2],[.2,.2],[.92,.5],[.08,.5],[.5,.92],[.5,.08]]; const candidates=fractions.map(([fx,fy])=>{const x=r.left+r.width*fx,y=r.top+r.height*fy,e=document.elementFromPoint(x,y);return {x,y,fx,fy,isCanvas:e===c,tag:e?.tagName||'',id:e?.id||''};}); const accessible=candidates.filter(p=>p.isCanvas).sort((a,b)=>Math.hypot(a.fx-.5,a.fy-.5)-Math.hypot(b.fx-.5,b.fy-.5)); return {left:r.left,top:r.top,width:r.width,height:r.height,viewportWidth:innerWidth,viewportHeight:innerHeight,candidates,selected:accessible[0]||null}; })()");
         requireCondition(timingCanvasTarget?.selected?.isCanvas === true,
           "BWM-105 Timing Ring has no unobstructed physical canvas coordinate", timingCanvasTarget);
-        evidence.timingCanvasTarget = timingCanvasTarget;
+        evidence.timingCanvasTarget = { sessionId, ...timingCanvasTarget };
 
         const selectablePlayer = players.find((unit) => unit.id !== formation.battle.selectedPlayerId && unit.health > 0);
         const selectableEnemy = enemies.find((unit) => unit.id !== formation.battle.selectedEnemyId && unit.health > 0);
@@ -782,6 +840,7 @@ async function run() {
           return snapshot.battle.selectedEnemyId === selectableEnemy.id ? snapshot : null;
         }, { timeoutMs: 5000, label: "BWM-105 physical canvas selects enemy target" });
         evidence.selection = {
+          sessionId,
           player: { id: selectedPlayer.battle.selectedPlayerId, characterId: selectablePlayer.characterId },
           enemy: { id: selectedEnemy.battle.selectedEnemyId, characterId: selectableEnemy.characterId }
         };
@@ -813,12 +872,13 @@ async function run() {
                 turnBefore: priorTurn, beforeEnemyHp, afterEnemyHp, phaseAfter: after.battle.phase, lastAction: after.battle.lastAction
               });
             evidence.actions.push({
+              sessionId,
               kind: "TACTICAL", turnBefore: priorTurn, turnAfter: after.battle.tacticalTurn, phaseAfter: after.battle.phase,
               playerHpBefore: beforePlayerHp, playerHpAfter: afterPlayerHp, enemyHpBefore: beforeEnemyHp, enemyHpAfter: afterEnemyHp,
               lastAction: after.battle.lastAction, enemyResponse: after.battle.lastAction?.enemyResponse || null
             });
             tacticalActionCount += 1;
-            if (tacticalActionCount === 1) evidence.screenshots.firstAction = await screenshot(cdp, "bwm105-02-first-action");
+            if (tacticalActionCount === 1) evidence.screenshots.firstAction = await screenshot(cdp, evidencePrefix + "-02-first-action");
             if (after.battle.terminal) { terminalSnapshot = after; break; }
             continue;
           }
@@ -831,8 +891,15 @@ async function run() {
               "BWM-105 Timing Ring opened outside fifth tactical turn", active.battle);
             const beforePlayerHp = healthTotal(active.battle.players);
             const beforeEnemyHp = healthTotal(active.battle.enemies);
+            // Capture the actual live ring before dispatching the physical pointer.
+            // The previous "-03-timing-ring-N" image was captured after resolution,
+            // so it showed the result flash instead of proving the ring was visible.
+            const activeTimingRound = timingRound + 1;
+            evidence.screenshots["timingWindowActive" + activeTimingRound] = await screenshot(
+              cdp, evidencePrefix + "-03-timing-ring-active-" + activeTimingRound
+            );
             const inputProof = await dispatchCorrelatedTimingPointer(cdp, {
-              task: "BWM-105", attempt: timingRound + 1, expectedGrade: "GREAT",
+              task: BWM4V4_TASK, attempt: activeTimingRound, expectedGrade: "GREAT",
               expectedRound: active.battle.round, expectedTurn: 5,
               preparedGeometryAndTargets: timingCanvasTarget
             });
@@ -855,13 +922,14 @@ async function run() {
                 beforeEnemyHp, afterEnemyHp: healthTotal(after.battle.enemies), result: inputProof.resolution
               });
             evidence.timingInputs.push({
+              sessionId,
               round: active.battle.round, proof: inputProof, enemyHpBefore: beforeEnemyHp,
               enemyHpAfter: healthTotal(after.battle.enemies), playerHpBefore: beforePlayerHp,
               playerHpAfter: healthTotal(after.battle.players), lastTiming: after.lastTiming,
               phaseAfter: after.battle.phase, terminalAfter: after.battle.terminal
             });
             timingRound += 1;
-            evidence.screenshots["timingRound" + timingRound] = await screenshot(cdp, "bwm105-03-timing-ring-" + timingRound);
+            evidence.screenshots["timingRound" + timingRound] = await screenshot(cdp, evidencePrefix + "-03-timing-result-" + timingRound);
             if (after.battle.terminal) { terminalSnapshot = after; break; }
             continue;
           }
@@ -869,7 +937,11 @@ async function run() {
         }
 
         if (!terminalSnapshot) terminalSnapshot = await captureState();
-        requireCondition(tacticalActionCount >= 1, "BWM-105 did not execute a tactical input");
+        requireCondition(tacticalActionCount >= 5, "BWM-104/105 did not execute the full five-turn tactical sequence", { tacticalActionCount, actions: evidence.actions });
+        const firstFiveTactical = evidence.actions.filter((action) => action.kind === "TACTICAL").slice(0, 5);
+        requireCondition(firstFiveTactical.length === 5 && firstFiveTactical.every((action, index) => Number(action.turnBefore) === index && Number(action.turnAfter) === index + 1),
+          "BWM-104/105 first tactical round did not resolve turns 1 through 5 in order", firstFiveTactical);
+        requireCondition(firstFiveTactical[4]?.phaseAfter === "CLIMAX", "BWM-104/105 fifth tactical turn did not transition to CLIMAX", firstFiveTactical[4]);
         requireCondition(timingRound >= 1, "BWM-105 did not resolve physical Timing Ring input");
         requireCondition(["VICTORY", "DEFEAT"].includes(terminalSnapshot.battle.terminal || terminalSnapshot.battle.phase),
           "BWM-105 battle did not reach a legitimate terminal state within action budget", {
@@ -877,12 +949,13 @@ async function run() {
             players: terminalSnapshot.battle.players, enemies: terminalSnapshot.battle.enemies
           });
         evidence.terminal = {
+          sessionId,
           outcome: terminalSnapshot.battle.terminal || terminalSnapshot.battle.phase,
           phase: terminalSnapshot.battle.phase,
           playerUnits: terminalSnapshot.battle.players, enemyUnits: terminalSnapshot.battle.enemies,
           lastAction: terminalSnapshot.battle.lastAction
         };
-        evidence.screenshots.terminal = await screenshot(cdp, "bwm105-04-terminal");
+        evidence.screenshots.terminal = await screenshot(cdp, evidencePrefix + "-04-terminal");
 
         const visibleResult = await cdpEvaluate(cdp,
           "(() => ({status:document.querySelector('#combat-4v4-status')?.textContent||'',"
@@ -893,10 +966,11 @@ async function run() {
         await waitFor(async () => cdpEvaluate(cdp,
           "Boolean(document.querySelector('#home-view') && !document.querySelector('#home-view').hidden)"),
           { timeoutMs: 10000, label: "BWM-105 return to main HOME" });
-        evidence.screenshots.homeAfterResult = await screenshot(cdp, "bwm105-05-home-return");
+        evidence.screenshots.homeAfterResult = await screenshot(cdp, evidencePrefix + "-05-home-return");
 
         const afterReturn = await captureState();
         evidence.playerMetaAfter = {
+          sessionId,
           scrap: afterReturn.currencies?.SCRAP ?? null,
           ledger: afterReturn.rewardLedger || [], inventoryIds: afterReturn.inventoryIds || [],
           roster: afterReturn.roster || null, persistedFourthMember: afterReturn.persistedFourthMember
@@ -905,6 +979,11 @@ async function run() {
           "BWM-105 local combat changed persistent SCRAP", { before: evidence.playerMetaBefore.scrap, after: afterReturn.currencies?.SCRAP });
         requireCondition(sameList(afterReturn.rewardLedger, evidence.playerMetaBefore.ledger),
           "BWM-105 local combat changed reward ledger", { before: evidence.playerMetaBefore.ledger, after: afterReturn.rewardLedger });
+        evidence.persistedStorageBeforeReload = await readPersistedEnvelope();
+        requireCondition(evidence.persistedStorageBeforeReload.rawPresent, "BWM-104/105 Player Meta persistence envelope missing before reload", evidence.persistedStorageBeforeReload);
+        requireCondition(evidence.persistedStorageBeforeReload.playerId === "local-player", "BWM-104/105 persisted Player Meta identity mismatch before reload", evidence.persistedStorageBeforeReload);
+        requireCondition(Number(evidence.persistedStorageBeforeReload.scrap) === Number(evidence.playerMetaBefore.scrap), "BWM-104/105 persisted SCRAP differs from runtime before reload", { persisted: evidence.persistedStorageBeforeReload, runtime: evidence.playerMetaBefore });
+        requireCondition(sameList(evidence.persistedStorageBeforeReload.rewardLedgerKeys, evidence.playerMetaBefore.ledger), "BWM-104/105 persisted reward ledger differs from runtime before reload", { persisted: evidence.persistedStorageBeforeReload, runtime: evidence.playerMetaBefore });
 
         await cdp.send("Page.reload", { ignoreCache: true });
         await waitFor(async () => (await cdpEvaluate(cdp, "document.readyState")) === "complete",
@@ -916,7 +995,16 @@ async function run() {
           const snapshot = await runtimeSnapshot();
           return snapshot?.gachaReady === true && snapshot?.currencies && Array.isArray(snapshot?.inventoryIds) ? snapshot : null;
         }, { timeoutMs: 30000, label: "BWM-105 Player Meta restored after reload" });
+        evidence.persistedStorageAfterReload = await readPersistedEnvelope();
+        requireCondition(evidence.persistedStorageAfterReload.rawPresent, "BWM-104/105 Player Meta persistence envelope missing after reload", evidence.persistedStorageAfterReload);
+        requireCondition(Number.isSafeInteger(Number(evidence.persistedStorageBeforeReload.revision)) && Number(evidence.persistedStorageAfterReload.revision) >= Number(evidence.persistedStorageBeforeReload.revision), "BWM-104/105 persisted Player Meta revision regressed across reload", { before: evidence.persistedStorageBeforeReload, after: evidence.persistedStorageAfterReload });
+        requireCondition(evidence.persistedStorageAfterReload.playerId === evidence.persistedStorageBeforeReload.playerId, "BWM-104/105 persisted Player Meta identity changed across reload", { before: evidence.persistedStorageBeforeReload, after: evidence.persistedStorageAfterReload });
+        requireCondition(evidence.persistedStorageAfterReload.scrap === evidence.persistedStorageBeforeReload.scrap, "BWM-104/105 persisted SCRAP changed across reload", { before: evidence.persistedStorageBeforeReload, after: evidence.persistedStorageAfterReload });
+        requireCondition(sameList(evidence.persistedStorageAfterReload.inventoryIds, evidence.persistedStorageBeforeReload.inventoryIds), "BWM-104/105 persisted inventory changed across reload", { before: evidence.persistedStorageBeforeReload, after: evidence.persistedStorageAfterReload });
+        requireCondition(JSON.stringify(evidence.persistedStorageAfterReload.roster) === JSON.stringify(evidence.persistedStorageBeforeReload.roster), "BWM-104/105 persisted roster changed across reload", { before: evidence.persistedStorageBeforeReload, after: evidence.persistedStorageAfterReload });
+        requireCondition(sameList(evidence.persistedStorageAfterReload.rewardLedgerKeys, evidence.persistedStorageBeforeReload.rewardLedgerKeys), "BWM-104/105 persisted reward ledger changed across reload", { before: evidence.persistedStorageBeforeReload, after: evidence.persistedStorageAfterReload });
         evidence.persistenceAfterReload = {
+          sessionId,
           modeAfterReload: restored.mode, scrap: restored.currencies?.SCRAP ?? null,
           ledger: restored.rewardLedger || [], inventoryIds: restored.inventoryIds || [],
           roster: restored.roster || null, persistedFourthMember: restored.persistedFourthMember
@@ -933,21 +1021,29 @@ async function run() {
           "BWM-105 temporary formation changed persisted fourth slot", {
             before: evidence.playerMetaBefore.persistedFourthMember, after: restored.persistedFourthMember
           });
-        evidence.screenshots.homeAfterReload = await screenshot(cdp, "bwm105-06-home-after-reload");
+        evidence.screenshots.homeAfterReload = await screenshot(cdp, evidencePrefix + "-06-home-after-reload");
         evidence.consoleErrors = consoleErrors.map((entry) => ({ text: entry.text, url: entry.url, source: entry.source }));
         evidence.pageExceptions = pageExceptions.map((entry) => entry?.exception?.description || entry?.text || "")
           .filter(Boolean).filter((entry) => entry.includes("/js/") || entry.includes(baseUrl));
         requireCondition(evidence.pageExceptions.length === 0, "BWM-105 browser recorded same-origin JavaScript exceptions", evidence.pageExceptions);
         evidence.completedAt = new Date().toISOString();
         evidence.status = "PASS_BROWSER_4V4_REAL";
-        writeFileSync(join(EVIDENCE_DIR, "bwm105-webapp-4v4-browser-evidence.json"), JSON.stringify(evidence, null, 2) + "\n", "utf8");
-        console.log("BWM-105 MAIN WEBAPP 4V4 FORMATION = PASS_REAL");
-        console.log("BWM-105 PHYSICAL ACTOR/TARGET SELECTION = PASS_REAL");
-        console.log("BWM-105 TACTICAL AUTHORITY = PASS_REAL");
-        console.log("BWM-105 TIMING RING INPUT CORRELATION = PASS_REAL");
-        console.log("BWM-105 TERMINAL RESULT/HOME RETURN = PASS_REAL");
-        console.log("BWM-105 LOCAL REWARD BLOCK/RELOAD PERSISTENCE = PASS_REAL");
-        console.log("BWM-105 BROWSER INTEGRATION = PASS_REAL");
+        evidence.assertions = {
+          mainWebAppEntry: "PASS", fourPlayerUnits: "PASS", fourEnemyUnits: "PASS",
+          uniqueCanonicalIds: "PASS", physicalSelection: "PASS", tacticalFiveTurnSequence: "PASS",
+          correlatedTimingRing: "PASS", legitimateTerminal: "PASS", resultPresentation: "PASS",
+          returnHome: "PASS", realReload: "PASS", persistentStateRestored: "PASS",
+          localRewardsBlocked: "PASS", sameOriginExceptions: "PASS"
+        };
+        evidence.completedAt = new Date().toISOString();
+        writeFileSync(join(EVIDENCE_DIR, evidencePrefix + "-full-webapp-4v4-e2e-evidence.json"), JSON.stringify(evidence, null, 2) + "\n", "utf8");
+        console.log(BWM4V4_TASK + " MAIN WEBAPP 4V4 FORMATION = PASS_REAL");
+        console.log(BWM4V4_TASK + " PHYSICAL ACTOR/TARGET SELECTION = PASS_REAL");
+        console.log(BWM4V4_TASK + " TACTICAL AUTHORITY = PASS_REAL");
+        console.log(BWM4V4_TASK + " TIMING RING INPUT CORRELATION = PASS_REAL");
+        console.log(BWM4V4_TASK + " TERMINAL RESULT/HOME RETURN = PASS_REAL");
+        console.log(BWM4V4_TASK + " LOCAL REWARD BLOCK/RELOAD PERSISTENCE = PASS_REAL");
+        console.log(BWM4V4_TASK + " BROWSER INTEGRATION = PASS_REAL");
         return;
       } catch (error) {
         evidence.status = "FAIL_BROWSER_4V4_REAL";
@@ -962,8 +1058,8 @@ async function run() {
           + "footerButton:(()=>{const el=document.querySelector('#action-start-4v4');if(!el)return null;const r=el.getBoundingClientRect();return {hidden:el.hidden,disabled:el.disabled,x:r.x,y:r.y,width:r.width,height:r.height}})(),"
           + "canvas:(()=>{const el=document.querySelector('#gameCanvas');return el?{mode:el.dataset.combatMode||'',actorCount:el.dataset.combatStageActorCount||'',players:el.dataset.combatStagePlayerCount||'',enemies:el.dataset.combatStageEnemyCount||'',phase:el.dataset.combatBattlePhase||''}:null})()}))()");
         evidence.runtimeAtFailure = await runtimeSnapshot();
-        try { evidence.screenshots.failure = await screenshot(cdp, "bwm105-99-failure-state"); } catch {}
-        writeFileSync(join(EVIDENCE_DIR, "bwm105-webapp-4v4-browser-evidence.json"), JSON.stringify(evidence, null, 2) + "\n", "utf8");
+        try { evidence.screenshots.failure = await screenshot(cdp, evidencePrefix + "-99-failure-state"); } catch {}
+        writeFileSync(join(EVIDENCE_DIR, evidencePrefix + "-full-webapp-4v4-e2e-evidence.json"), JSON.stringify(evidence, null, 2) + "\n", "utf8");
         throw error;
       }
     }
@@ -1362,7 +1458,7 @@ async function run() {
         (state) => state.battlePhase === "TACTICAL" && state.tacticalTurn === 0
       );
       await waitFor(
-        async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#action-bat') && !document.querySelector('#action-bat').disabled)"),
+        async () => cdpEvaluate(cdp, ACTION_BAT_VISIBLE_EXPRESSION),
         { timeoutMs: 6000, label: "T097 BATEAR ready for T1" }
       );
       await cdpClickSelector(cdp, "#action-bat");
@@ -1379,7 +1475,7 @@ async function run() {
             (state) => state.tacticalTurn === turn && state.presentationPhase === "COMPLETE" && state.presentationActive === false
           );
           await waitFor(
-            async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#action-bat') && !document.querySelector('#action-bat').disabled)"),
+            async () => cdpEvaluate(cdp, ACTION_BAT_VISIBLE_EXPRESSION),
             { timeoutMs: 6000, label: "T097 BATEAR ready before T" + String(turn + 1) }
           );
           await cdpClickSelector(cdp, "#action-bat");
@@ -1528,7 +1624,7 @@ async function run() {
       };
 
       const clickBat = async (label) => {
-        await waitFor(async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#action-bat') && !document.querySelector('#action-bat').disabled)"), { timeoutMs:6000, label:"T101 BATEAR ready " + label });
+        await waitFor(async () => cdpEvaluate(cdp, ACTION_BAT_VISIBLE_EXPRESSION), { timeoutMs:6000, label:"T101 BATEAR ready " + label });
         await cdpClickSelector(cdp, "#action-bat");
       };
 
@@ -1687,7 +1783,7 @@ async function run() {
 
       const clickBat = async (label) => {
         await waitFor(
-          async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#action-bat') && !document.querySelector('#action-bat').disabled)"),
+          async () => cdpEvaluate(cdp, ACTION_BAT_VISIBLE_EXPRESSION),
           { timeoutMs: 6000, label: "T109 BATEAR ready " + label }
         );
         await cdpClickSelector(cdp, "#action-bat");
@@ -1931,7 +2027,7 @@ async function run() {
 
       const clickBat = async (label) => {
         await waitFor(
-          async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#action-bat') && !document.querySelector('#action-bat').disabled)"),
+          async () => cdpEvaluate(cdp, ACTION_BAT_VISIBLE_EXPRESSION),
           { timeoutMs: 6000, label: "T117 BATEAR ready " + label }
         );
         await cdpClickSelector(cdp, "#action-bat");
@@ -2125,7 +2221,7 @@ async function run() {
 
       const clickBat = async (label) => {
         await waitFor(
-          async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#action-bat') && !document.querySelector('#action-bat').disabled)"),
+          async () => cdpEvaluate(cdp, ACTION_BAT_VISIBLE_EXPRESSION),
           { timeoutMs: 6000, label: "T114-R BATEAR ready " + label }
         );
         await cdpClickSelector(cdp, "#action-bat");
@@ -2334,7 +2430,7 @@ async function run() {
       );
 
       await waitFor(
-        async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#action-bat') && !document.querySelector('#action-bat').disabled)"),
+        async () => cdpEvaluate(cdp, ACTION_BAT_VISIBLE_EXPRESSION),
         { timeoutMs: 6000, label: "T094 BATEAR ready for T1" }
       );
       await cdpClickSelector(cdp, "#action-bat");
@@ -2351,7 +2447,7 @@ async function run() {
             { timeoutMs: 5000, label: "BONE-008 first presentation ACTION before replacement" }
           );
           await waitFor(
-            async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#action-bat') && !document.querySelector('#action-bat').disabled)"),
+            async () => cdpEvaluate(cdp, ACTION_BAT_VISIBLE_EXPRESSION),
             { timeoutMs: 5000, label: "BONE-008 replacement input ready" }
           );
           await cdpClickSelector(cdp, "#action-bat");
@@ -2368,7 +2464,7 @@ async function run() {
               { timeoutMs: 6000, label: "TACTICAL " + String(turn) + " presentation complete" }
             );
             await waitFor(
-              async () => cdpEvaluate(cdp, "Boolean(document.querySelector('#action-bat') && !document.querySelector('#action-bat').disabled)"),
+              async () => cdpEvaluate(cdp, ACTION_BAT_VISIBLE_EXPRESSION),
               { timeoutMs: 6000, label: "T094 BATEAR ready before T" + String(turn + 1) }
             );
             await cdpClickSelector(cdp, "#action-bat");

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 320" role="img" aria-labelledby="title desc">
+  <title id="title">BaseWarriors local character fallback</title>
+  <desc id="desc">Original cyberpunk baseball player silhouette used when character artwork is unavailable.</desc>
+  <defs>
+    <linearGradient id="jersey" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#15384f"/>
+      <stop offset="1" stop-color="#101426"/>
+    </linearGradient>
+    <linearGradient id="hair" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#a7fbff"/>
+      <stop offset="1" stop-color="#00a6d7"/>
+    </linearGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <ellipse cx="128" cy="296" rx="63" ry="10" fill="#00e5ff" opacity=".18"/>
+  <path d="M76 185 Q55 195 47 237 L39 282 Q39 294 51 296 L80 298 L93 252 L93 306 L164 306 L164 250 L180 295 L211 290 L197 224 Q192 197 175 186 Z"
+        fill="url(#jersey)" stroke="#00e5ff" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M92 194 L128 224 L164 194 L154 184 L102 184 Z" fill="#f3fbff"/>
+  <path d="M112 216 L128 229 L143 216 L137 246 L120 246 Z" fill="#ff3d9a"/>
+  <path d="M63 230 L51 282 M188 230 L202 280" fill="none" stroke="#00e5ff" stroke-width="5" stroke-linecap="round"/>
+  <path d="M96 270 L160 270" stroke="#00e5ff" stroke-width="3" opacity=".75"/>
+  <path d="M100 270 L100 298 M156 270 L156 298" stroke="#ff3d9a" stroke-width="3"/>
+  <path d="M109 180 L109 195 Q128 209 147 195 L147 180" fill="#c88970" stroke="#eaa88e" stroke-width="2"/>
+  <path d="M75 99 Q70 53 111 43 Q152 28 176 68 Q188 91 178 130 L169 165 Q157 187 128 189 Q96 186 84 159 Z"
+        fill="url(#hair)" stroke="#101426" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M84 111 Q84 74 111 67 Q143 59 163 84 L169 133 Q151 119 138 121 Q115 113 98 131 L87 144 Z"
+        fill="#141a31"/>
+  <ellipse cx="107" cy="126" rx="14" ry="18" fill="#f5fbff"/>
+  <ellipse cx="151" cy="126" rx="14" ry="18" fill="#f5fbff"/>
+  <ellipse cx="110" cy="128" rx="5" ry="10" fill="#00c7ed"/>
+  <ellipse cx="148" cy="128" rx="5" ry="10" fill="#00c7ed"/>
+  <circle cx="112" cy="124" r="2.3" fill="#fff"/>
+  <circle cx="150" cy="124" r="2.3" fill="#fff"/>
+  <path d="M115 154 Q128 164 141 153" fill="none" stroke="#57263f" stroke-width="4" stroke-linecap="round"/>
+  <path d="M66 91 Q75 53 119 51 Q165 46 185 84 L174 90 Q135 73 97 91 Z" fill="#ff3d9a" stroke="#101426" stroke-width="5"/>
+  <path d="M70 88 Q125 70 180 89 L176 101 Q122 84 74 102 Z" fill="#00e5ff" stroke="#101426" stroke-width="4"/>
+  <path d="M123 52 L132 34 L146 52" fill="#ff3d9a" stroke="#101426" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M73 153 Q61 135 75 118" fill="none" stroke="#f5fbff" stroke-width="5" opacity=".9"/>
+  <rect x="110" y="251" width="36" height="24" rx="5" fill="#08111d" stroke="#00e5ff" stroke-width="2"/>
+  <text x="128" y="268" font-family="sans-serif" font-size="13" font-weight="900" text-anchor="middle" fill="#00e5ff">BW</text>
+</svg>

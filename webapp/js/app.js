@@ -492,16 +492,53 @@ const renderer = new CombatRenderer(document.querySelector("#combat-canvas, #gam
   hapticsBridge,
   onScrapEarned: handleScrapEarned,
   onLocalCombatResult: (turnResult) => {
-    const local4v4 = renderer?.getBattleLoopState?.().mode === "4v4";
+    const loop = renderer?.getBattleLoopState?.();
+    const local4v4 = loop?.mode === "4v4";
     if (local4v4 || !api.configured()) handleLocalCombatResult(turnResult);
-    if (local4v4) {
-      const outcome = String(turnResult?.outcome || turnResult?.result || "").toUpperCase();
-      if (fourVFourStatus) fourVFourStatus.textContent = "4V4 RESULT // " + outcome + " • LOCAL DEMO • REWARDS BLOCKED";
-      if (returnFourVFourButton) returnFourVFourButton.hidden = false;
-      if (startFourVFourButton) startFourVFourButton.hidden = true;
-      if (startFourVFourHomeButton) startFourVFourHomeButton.hidden = true;
-      if (batButton) batButton.disabled = true;
+    if (!local4v4) return;
+
+    const reportedOutcome = String(turnResult?.outcome || turnResult?.state?.outcome || turnResult?.result || "").toUpperCase();
+    const phase = String(loop?.phase || "").toUpperCase();
+    const terminalValue = String(loop?.terminal || "").toUpperCase();
+    const outcome = ["VICTORY", "DEFEAT"].includes(terminalValue) ? terminalValue
+      : ["VICTORY", "DEFEAT"].includes(phase) ? phase
+      : ["VICTORY", "DEFEAT"].includes(reportedOutcome) ? reportedOutcome
+      : "";
+    const isTerminal = Boolean(loop?.terminal) || ["VICTORY", "DEFEAT"].includes(phase)
+      || ["VICTORY", "DEFEAT"].includes(reportedOutcome);
+    const terminalSummary = document.querySelector("#combat-terminal-summary");
+
+    if (!isTerminal) {
+      if (returnFourVFourButton) returnFourVFourButton.hidden = true;
+      if (terminalSummary) {
+        terminalSummary.hidden = true;
+        terminalSummary.classList.remove("is-victory", "is-defeat");
+        terminalSummary.textContent = "";
+      }
+      if (fourVFourStatus) {
+        fourVFourStatus.textContent = "4V4 TURN " + String(loop?.tacticalTurn ?? 0) + "/" + String(loop?.tacticalMaxTurns ?? 5)
+          + " // LOCAL DEMO • REWARDS BLOCKED";
+      }
+      return;
     }
+
+    const result = outcome || (terminalValue === "DEFEAT" ? "DEFEAT" : "VICTORY");
+    document.querySelector("#app-container")?.classList.add("is-combat-terminal");
+    if (terminalSummary) {
+      terminalSummary.hidden = false;
+      terminalSummary.classList.toggle("is-victory", result === "VICTORY");
+      terminalSummary.classList.toggle("is-defeat", result === "DEFEAT");
+      terminalSummary.textContent = result === "VICTORY"
+        ? "VICTORY // OPPONENT TEAM DEFEATED"
+        : "DEFEAT // YOUR TEAM WAS DEFEATED";
+    }
+    if (fourVFourStatus) fourVFourStatus.textContent = "4V4 RESULT // " + result + " • LOCAL DEMO • REWARDS BLOCKED";
+    if (returnFourVFourButton) returnFourVFourButton.hidden = false;
+    if (startFourVFourButton) startFourVFourButton.hidden = true;
+    if (startFourVFourHomeButton) startFourVFourHomeButton.hidden = true;
+    if (batButton) batButton.disabled = true;
+    const superSwing = document.querySelector("#btn-superswing");
+    if (superSwing) superSwing.disabled = true;
   },
   performanceAdapter,
   onTimingResult: (timing) => {
@@ -551,7 +588,7 @@ if (new URLSearchParams(window.location.search).get("qa") === "t081") {
     stage: renderer.combatStage.getState()
   });
 }
-if (new URLSearchParams(window.location.search).get("qa") === "bwm105") {
+if (["bwm104", "bwm105"].includes(new URLSearchParams(window.location.search).get("qa"))) {
   window.__BW_BWM105_GET_RUNTIME__ = () => {
     const battle = renderer.getBattleLoopState?.() || {};
     const playerMeta = gachaController.playerMetaIntegration?.authority?.getSnapshot?.() || null;
@@ -1202,7 +1239,17 @@ function buildLocalFourVFourFormation() {
 }
 
 function buildLocalFourVFourCombatInit() {
-  const { playerUnits, enemyUnits } = buildLocalFourVFourFormation();
+  const { playerUnits: rawPlayerUnits, enemyUnits: rawEnemyUnits } = buildLocalFourVFourFormation();
+  // Presentation-only art mapping: keep roster IDs, names, stats and rewards unchanged.
+  const combatArtIds = ["cari", "cami", "sunna", "chie", "scarlet", "chloe", "fenrir", "roxie_vane"];
+  const playerUnits = rawPlayerUnits.map((unit, index) => ({
+    ...unit,
+    combat_sprite_url: "./assets/characters/combat_" + combatArtIds[index] + ".svg"
+  }));
+  const enemyUnits = rawEnemyUnits.map((unit, index) => ({
+    ...unit,
+    combat_sprite_url: "./assets/characters/combat_" + combatArtIds[index + 4] + ".svg"
+  }));
   const dto = applyActiveRoster(createDemoCombatInit());
   const characterById = new Map(gachaController.getCharacters().map((unit) => [canonicalCharacterId(unit), unit]));
   const battleUnits = [...playerUnits, ...enemyUnits];
@@ -1251,7 +1298,17 @@ function buildLocalFourVFourCombatInit() {
       stats: { ...firstEnemy.stats },
       stamina: firstEnemy.stats.stamina
     },
-    assets: { ...(dto.assets || {}), cards: assets.map((entry) => entry.card), sprites: assets.map((entry) => entry.sprite) },
+    assets: {
+      ...(dto.assets || {}),
+      cards: assets.map((entry) => entry.card),
+      // The descriptor IDs exactly match the eight runtime actor IDs.
+      sprites: battleUnits.map((unit) => ({
+        id: unit.id,
+        sprite_url: unit.combat_sprite_url,
+        path: unit.combat_sprite_url,
+        kind: "sprite"
+      }))
+    },
     state: { ...(dto.state || {}), mode: "4v4", tactical_turn: 0, tactical_max_turns: 5 }
   };
 }
@@ -1266,6 +1323,15 @@ async function startLocalFourVFour() {
     const dto = buildLocalFourVFourCombatInit();
     // Reveal the actual combat canvas before initialization so renderer setup
     // cannot remain suspended while HOME keeps the canvas hidden.
+    const appRoot = document.querySelector("#app-container");
+    appRoot?.classList.remove("is-combat-terminal");
+    const terminalSummary = document.querySelector("#combat-terminal-summary");
+    if (terminalSummary) {
+      terminalSummary.hidden = true;
+      terminalSummary.textContent = "";
+      terminalSummary.classList.remove("is-victory", "is-defeat");
+    }
+    document.querySelector("#timing-feedback")?.classList.remove("is-visible", "is-cinematic-action");
     document.querySelector("#app-container")?.classList.add("is-combat-4v4");
     mainMenu.navigate("combat");
     if (startFourVFourButton) startFourVFourButton.hidden = true;
@@ -1273,9 +1339,7 @@ async function startLocalFourVFour() {
     if (returnFourVFourButton) returnFourVFourButton.hidden = true;
     if (batButton) batButton.disabled = false;
     await renderer.setCombatInit(dto);
-    // The existing default-demo bootstrap can short-circuit when a renderer
-    // session already exists. Explicitly hide its blocking overlay for this
-    // newly initialized 4v4 session before exposing canvas input to the player.
+    await renderer.waitForNextRenderedFrame();
     setLoading(false);
     if (fourVFourStatus) {
       const temporary = dto.player_team_units.filter((unit) => unit.temporary).length;
@@ -1297,7 +1361,14 @@ async function startLocalFourVFour() {
 startFourVFourButton?.addEventListener("click", () => { void startLocalFourVFour(); });
 startFourVFourHomeButton?.addEventListener("click", () => { void startLocalFourVFour(); });
 returnFourVFourButton?.addEventListener("click", () => {
-  document.querySelector("#app-container")?.classList.remove("is-combat-4v4");
+  const appRoot = document.querySelector("#app-container");
+  appRoot?.classList.remove("is-combat-4v4", "is-combat-terminal");
+  const terminalSummary = document.querySelector("#combat-terminal-summary");
+  if (terminalSummary) {
+    terminalSummary.hidden = true;
+    terminalSummary.textContent = "";
+    terminalSummary.classList.remove("is-victory", "is-defeat");
+  }
   mainMenu.navigate("home");
   if (startFourVFourButton) startFourVFourButton.hidden = true;
   if (startFourVFourHomeButton) startFourVFourHomeButton.hidden = false;
@@ -1639,6 +1710,16 @@ function setMainMenuView(view) {
   const showSettings = active === "settings";
   const showLocker = active === "locker";
   const showCombat = !showHome && !showGallery && !showRoster && !showSettings && !showLocker;
+  if (showHome) {
+    const appRoot = document.querySelector("#app-container");
+    appRoot?.classList.remove("is-combat-4v4", "is-cinematic-ultimate");
+    const timingFeedback = document.querySelector("#timing-feedback");
+    timingFeedback?.classList.remove("is-visible", "is-cinematic-action");
+    if (timingFeedback) { timingFeedback.textContent = ""; timingFeedback.style.opacity = ""; timingFeedback.style.transform = ""; }
+    document.querySelector("#cutin")?.classList.remove("visible");
+    document.querySelector("#eye-focus-overlay")?.classList.remove("is-active");
+    document.querySelector("#active-waifu-card")?.classList.remove("is-cinematic-action");
+  }
   if (combatShell) combatShell.hidden = !showCombat;
   if (homeViewRoot) homeViewRoot.hidden = !showHome;
   if (galleryView) galleryView.hidden = !showGallery;
