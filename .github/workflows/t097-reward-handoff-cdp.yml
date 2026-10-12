@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - bwm-099-normal-combat-authority-handoff
+      - bwm-105-real-4v4-webapp
   push:
     branches:
       - main
