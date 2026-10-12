@@ -991,8 +991,26 @@ export class CombatRenderer {
       away_team: dto.away_team || this.state.away_team,
       ...(areaId ? { area_id: areaId } : {})
     };
-    // Keep the renderer's phase/turn counters aligned with the server DTO.
-    // Local prediction is presentation-only and must not become the authority.
+    // Hydrate the presentation/runtime mirror from the server DTO. The server
+    // remains authoritative; local prediction must not leave phase/turn counters stale.
+    const serverState = dto.state || {};
+    const serverBossMaxHp = Number(serverState.boss_max_hp ?? 100);
+    const serverBossHp = Number(serverState.boss_hp ?? serverBossMaxHp);
+    this.combatRuntime.syncAuthoritativeState({
+      phase: String(serverState.phase || dto.phase || "TACTICAL").toUpperCase(),
+      tacticalTurn: Number(serverState.tactical_turn ?? 0),
+      tacticalMaxTurns: Number(serverState.tactical_max_turns ?? 5),
+      bossHp: serverBossHp,
+      bossMaxHp: serverBossMaxHp,
+      bossConcentration: Math.round(serverBossMaxHp > 0 ? (serverBossHp / serverBossMaxHp) * 100 : 0),
+      playerStamina: Number(serverState.player_stamina ?? 70),
+      playerStaminaMax: Number(serverState.player_stamina_max ?? 70),
+      playerStaminaRoundCost: Number(serverState.player_stamina_round_cost ?? 25),
+      internalEnergy: Number(serverState.internal_energy ?? 0),
+      tacticalEffectiveness: Number(serverState.tactical_effectiveness ?? 0),
+      round: Number(serverState.round ?? 1),
+      batter: this.state.batter
+    });
     this._syncAuthorityState();
     this._syncCombatStageActors();
 
