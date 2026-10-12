@@ -8,6 +8,7 @@ on:
   push:
     branches:
       - main
+      - bwm-104-full-webapp-e2e
     paths:
       - "webapp/js/character_journey_browser_probe.mjs"
       - "webapp/js/app.js"
